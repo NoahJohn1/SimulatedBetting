@@ -14,10 +14,15 @@
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d --wait && npm run db:test:create",
-    "db:test:create": "docker compose exec -T db psql -U simbet -d simbet -c 'CREATE DATABASE simbet_test' || true"
+    "db:test:create": "docker compose exec -T db psql -U simbet -d simbet -c 'CREATE DATABASE simbet_test' || true",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:migrate:test": "ENV_FILE=.env.test tsx src/db/migrate.ts"
   },
   "dependencies": {
+    "drizzle-orm": "^0.45.2",
     "next": "16.3.1",
+    "postgres": "^3.4.9",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
@@ -28,9 +33,11 @@
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.5",
     "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.12",
     "typescript": "^5",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.10"
