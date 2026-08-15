@@ -152,3 +152,100 @@ export async function settleGame(gameId: string): Promise<SettleGameSummary> {
     return summary;
   });
 }
+
+export interface SettleRunOptions {
+  maxGames?: number;
+  budgetMs?: number;
+  /** Injectable clock so tests exercise the budget without sleeping. */
+  now?: () => number;
+}
+
+export interface SettleRunSummary {
+  gamesSettled: number;
+  betsSettled: number;
+  centsPaid: bigint;
+  remaining: number;
+  exhausted: 'none' | 'maxGames' | 'budget';
+  errors: { gameId: string; message: string }[];
+}
+
+const DEFAULT_MAX_GAMES = 25;
+const DEFAULT_BUDGET_MS = 45_000;
+
+/**
+ * Settles every game that has pending legs and a finished-or-abandoned status.
+ *
+ * There is deliberately no checkpoint state between runs: the candidate query is derived
+ * entirely from the current pending legs, so a run that stops early simply finds the rest
+ * next time. Nothing to reset, nothing to get stuck.
+ *
+ * One transaction per game, so a single malformed fixture rolls back only itself and lands
+ * in `errors` while everyone else still gets paid. The budget is checked before starting a
+ * game, never during one — a settlement is never abandoned half-written.
+ */
+export async function settleFinalGames(
+  options: SettleRunOptions = {},
+): Promise<SettleRunSummary> {
+  const maxGames = options.maxGames ?? DEFAULT_MAX_GAMES;
+  const budgetMs = options.budgetMs ?? DEFAULT_BUDGET_MS;
+  const now = options.now ?? (() => Date.now());
+
+  const startedAt = now();
+
+  // The full candidate list, not a maxGames+1 window: `remaining` is reported as an exact
+  // count, and a limit of maxGames+1 can only prove "at least one more". This is a list of
+  // games with pending legs, so it stays small even on a full Saturday slate.
+  const candidates = await db
+    .selectDistinct({ id: games.id, startsAt: games.startsAt })
+    .from(games)
+    .innerJoin(markets, eq(markets.gameId, games.id))
+    .innerJoin(selections, eq(selections.marketId, markets.id))
+    .innerJoin(betLegs, eq(betLegs.selectionId, selections.id))
+    .where(
+      and(
+        eq(betLegs.status, 'PENDING'),
+        inArray(games.status, ['FINAL', 'POSTPONED', 'CANCELED']),
+      ),
+    )
+    .orderBy(asc(games.startsAt));
+
+  const summary: SettleRunSummary = {
+    gamesSettled: 0,
+    betsSettled: 0,
+    centsPaid: 0n,
+    remaining: 0,
+    exhausted: 'none',
+    errors: [],
+  };
+
+  const batch = candidates.slice(0, maxGames);
+  const overflow = candidates.length - batch.length;
+
+  for (let i = 0; i < batch.length; i++) {
+    if (now() - startedAt >= budgetMs) {
+      summary.exhausted = 'budget';
+      summary.remaining = batch.length - i + overflow;
+      return summary;
+    }
+
+    const game = batch[i];
+    try {
+      const settled = await settleGame(game.id);
+      summary.gamesSettled += 1;
+      summary.betsSettled += settled.betsSettled;
+      summary.centsPaid += settled.centsPaid;
+    } catch (err) {
+      summary.errors.push({
+        gameId: game.id,
+        message: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  if (overflow > 0) {
+    summary.exhausted = 'maxGames';
+    summary.remaining = overflow;
+  }
+
+  return summary;
+}
