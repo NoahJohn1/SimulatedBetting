@@ -3,6 +3,6 @@ import { db } from '@/db/client';
 
 export async function resetDb(): Promise<void> {
   await db.execute(
-    sql`TRUNCATE TABLE season_memberships, seasons, users RESTART IDENTITY CASCADE`,
+    sql`TRUNCATE TABLE ledger_entries, season_memberships, seasons, users RESTART IDENTITY CASCADE`,
   );
 }
