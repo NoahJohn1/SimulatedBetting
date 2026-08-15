@@ -1,3 +1,5 @@
+import { americanToRational, combine, payoutCents } from './odds';
+
 export type MarketType = 'MONEYLINE' | 'SPREAD' | 'TOTAL';
 export type Side = 'HOME' | 'AWAY' | 'OVER' | 'UNDER';
 export type LegStatus = 'PENDING' | 'WON' | 'LOST' | 'PUSHED' | 'VOIDED';
@@ -47,4 +49,31 @@ export function gradeLeg(input: GradeLegInput): SettledLegStatus {
 
   const total = result.homeScore + result.awayScore;
   return side === 'OVER' ? compare(total, line) : compare(line, total);
+}
+
+export function gradeParlay(statuses: LegStatus[]): LegStatus {
+  if (statuses.length === 0) throw new Error('a parlay needs at least one leg');
+
+  if (statuses.includes('LOST')) return 'LOST';
+  if (statuses.includes('PENDING')) return 'PENDING';
+
+  const surviving = statuses.filter((s) => s === 'WON');
+  return surviving.length === 0 ? 'PUSHED' : 'WON';
+}
+
+export interface SettledLeg {
+  status: LegStatus;
+  priceAmerican: number;
+}
+
+/** Total return for a settled bet. Pushed and voided legs are removed from the parlay. */
+export function settledPayoutCents(stakeCents: bigint, legs: SettledLeg[]): bigint {
+  const outcome = gradeParlay(legs.map((leg) => leg.status));
+
+  if (outcome === 'PENDING') throw new Error('cannot pay out a bet with pending legs');
+  if (outcome === 'LOST') return 0n;
+  if (outcome === 'PUSHED') return stakeCents;
+
+  const surviving = legs.filter((leg) => leg.status === 'WON');
+  return payoutCents(stakeCents, combine(surviving.map((leg) => americanToRational(leg.priceAmerican))));
 }
