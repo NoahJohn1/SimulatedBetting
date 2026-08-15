@@ -22,38 +22,46 @@
 ## Ownership — read this before starting
 
 This plan is built for **two workers running at the same time**, whether people or AI agents.
+
+- **Worker A — betting logic.** Owns `src/domain/**`. See [worker-a-brief.md](worker-a-brief.md).
+- **Worker B — data & money.** Owns `src/db/**` and `src/server/**`. See [worker-b-brief.md](worker-b-brief.md).
+
 Every task below carries an **Owner** line. Do only the tasks assigned to you.
 
 | Task | Owner | Depends on |
 |---|---|---|
 | 1. Project scaffold | **Both** (pair) | — |
 | 2. Local Postgres in Docker | **Both** (pair) | 1 |
-| 3. Drizzle client and identity schema | **A** | 2 |
-| 4. Ledger schema | **A** | 3 |
-| 5. The ledger write path | **A** | 4 |
-| 6. Season creation and joining | **A** | 5 |
-| 7. Weekly allowance | **A** | 6 |
-| 8. Admin adjustments | **A** | 5 |
-| 9. Reconciliation | **A** | 6 |
-| 10. Money formatting | **B** | 1 |
-| 11. Odds arithmetic | **B** | 1 |
-| 12. Leg grading | **B** | 1 |
-| 13. Parlay grading and settled payout | **B** | 11, 12 |
+| 3. Drizzle client and identity schema | **B** | 2 |
+| 4. Ledger schema | **B** | 3 |
+| 5. The ledger write path | **B** | 4 |
+| 6. Season creation and joining | **B** | 5 |
+| 7. Weekly allowance | **B** | 6 |
+| 8. Admin adjustments | **B** | 5 |
+| 9. Reconciliation | **B** | 6 |
+| 10. Money formatting | **A** | 1 |
+| 11. Odds arithmetic | **A** | 1 |
+| 12. Leg grading | **A** | 1 |
+| 13. Parlay grading and settled payout | **A** | 11, 12 |
 | 14. Continuous integration | **Both**, after A and B have merged | 9, 13 |
+
+Task numbers are not in worker order — B's tasks (3–9) are numbered before A's (10–13) simply
+because the database work was written first. The two sets are independent; neither waits on the
+other.
 
 ### File ownership
 
 | Path | Who may write it |
 |---|---|
-| `src/db/**` | A only |
-| `src/server/**` | A only |
-| `src/test/**` | A only |
-| `drizzle/**` | A only |
-| `src/domain/**` | B only |
-| `package.json`, `vitest.config.ts`, `tsconfig.json`, `.env*`, `docker-compose.yml` | Shared phase (Tasks 1–2) and Task 3's dependency install only |
+| `src/db/**` | B only |
+| `src/server/**` | B only |
+| `src/test/**` | B only |
+| `drizzle/**` | B only |
+| `src/domain/**` | A only |
+| `package.json`, `vitest.config.ts`, `tsconfig.json`, `.env*`, `docker-compose.yml` | Pair phase (Tasks 1–2), plus B's dependency install in Task 3 |
 | `.github/**`, `README.md` | Task 14 only |
 
-`src/domain/money.ts` is created in Task 1 with a single constant and then owned entirely by B.
+`src/domain/money.ts` is created in Task 1 with a single constant and then owned entirely by A.
 
 ### Rules that keep the two workers out of each other's way
 
@@ -62,28 +70,20 @@ Every task below carries an **Owner** line. Do only the tasks assigned to you.
 2. **Never edit the other worker's tests**, including to make your build pass.
 3. **The `Interfaces` block is the contract.** It states exactly what each task consumes and
    produces. Changing a published signature requires telling the other worker first.
-4. **One branch per task**, named `a/task-5-ledger` or `b/task-11-odds`. Merge to `main` as
+4. **One branch per task**, named `b/task-5-ledger` or `a/task-11-odds`. Merge to `main` as
    each task passes. Do not batch several tasks into one branch.
-5. **Run only your own tests while working**: `npm test -- src/server/` for A,
-   `npm test -- src/domain/` for B. The full suite is expected to fail for A until B's work
-   merges, and vice versa — that is not a bug and not something to fix.
-6. **A's tasks are strictly sequential** (3→4→5→6→7, with 8 and 9 after 5 and 6).
-   **B's tasks 10, 11, and 12 are independent** and may be done in any order; 13 needs 11 and 12.
+5. **Run only your own tests while working**: `npm test -- src/domain/` for A,
+   `npm test -- src/db/ src/server/` for B. The full suite is expected to fail for A until B's
+   work merges, and vice versa — that is not a bug and not something to fix.
+6. **B's tasks are strictly sequential** (3→4→5→6→7, with 8 and 9 after 5 and 6).
+   **A's tasks 10, 11, and 12 are independent** and may be done in any order; 13 needs 11 and 12.
 
 ### Handing this to two AI agents
 
-Give each agent the whole file plus one of these instructions:
+Give each agent its own brief — [worker-a-brief.md](worker-a-brief.md) or
+[worker-b-brief.md](worker-b-brief.md) — plus this plan file, and one of these instructions:
 
 > **Worker A:** You own Track A in `docs/plans/2026-08-15-01-foundation-and-money-core.md`.
-> Tasks 1 and 2 have already been completed jointly — verify they are done, then implement
-> Tasks 3 through 9 in order, exactly as written. You may only create or modify files under
-> `src/db/`, `src/server/`, `src/test/`, and `drizzle/`. Never touch `src/domain/` — another
-> worker owns it, and their files may be missing or incomplete while you work. Verify with
-> `npm test -- src/db/ src/server/`, not the full suite. Commit after each task using the
-> commit message given in that task's final step. Stop and report if any task requires a file
-> outside your ownership.
-
-> **Worker B:** You own Track B in `docs/plans/2026-08-15-01-foundation-and-money-core.md`.
 > Tasks 1 and 2 have already been completed jointly — verify they are done, then implement
 > Tasks 10 through 13 exactly as written. You may only create or modify files under
 > `src/domain/`. Never touch `src/db/`, `src/server/`, or `src/test/` — another worker owns
@@ -91,6 +91,15 @@ Give each agent the whole file plus one of these instructions:
 > anything from those directories. Verify with `npm test -- src/domain/`, not the full suite.
 > Commit after each task using the commit message given in that task's final step. Stop and
 > report if any task requires a file outside your ownership.
+
+> **Worker B:** You own Track B in `docs/plans/2026-08-15-01-foundation-and-money-core.md`.
+> Tasks 1 and 2 have already been completed jointly — verify they are done, then implement
+> Tasks 3 through 9 in order, exactly as written. You may only create or modify files under
+> `src/db/`, `src/server/`, `src/test/`, and `drizzle/`. Never touch `src/domain/` — another
+> worker owns it, and their files may be missing or incomplete while you work. Verify with
+> `npm test -- src/db/ src/server/`, not the full suite. Commit after each task using the
+> commit message given in that task's final step. Stop and report if any task requires a file
+> outside your ownership.
 
 Tasks 1, 2, and 14 are **not** agent-parallel work. Run them yourselves, or with a single
 agent, while both of you watch.
@@ -123,7 +132,7 @@ One, recorded here and in `docs/decisions.md`:
 | `src/server/money/reconcile.ts` | Balance-vs-ledger reconciliation |
 | `src/test/db.ts` | Test database helpers (`resetDb`, factories) |
 
-Track A (Tasks 3–9) touches only `src/db/**` and `src/server/**`. Track B (Tasks 10–13) touches only `src/domain/**`. They share no files, so the two tracks can run in parallel after Task 2.
+Track B (Tasks 3–9) touches only `src/db/**` and `src/server/**`. Track A (Tasks 10–13) touches only `src/domain/**`. They share no files, so the two tracks can run in parallel after Task 2.
 
 ---
 
@@ -350,11 +359,11 @@ git commit -m "feat: add local Postgres via Docker Compose"
 
 ---
 
-## Track A — Data & money (Tasks 3–9)
+## Track B — Data & money (Tasks 3–9) — Worker B
 
 ### Task 3: Drizzle client and identity schema
 
-**Owner: A**
+**Owner: B**
 
 **Files:**
 - Create: `drizzle.config.ts`, `src/db/client.ts`, `src/db/schema/identity.ts`, `src/db/schema/index.ts`, `src/db/migrate.ts`
@@ -622,7 +631,7 @@ git commit -m "feat: add Drizzle client and identity schema"
 
 ### Task 4: Ledger schema
 
-**Owner: A**
+**Owner: B**
 
 **Files:**
 - Create: `src/db/schema/money.ts`
@@ -815,7 +824,7 @@ git commit -m "feat: add append-only ledger schema"
 
 ### Task 5: The ledger write path
 
-**Owner: A** — the hardest task in the plan. Do not rush the concurrency test.
+**Owner: B** — the hardest task in the plan. Do not rush the concurrency test.
 
 **Files:**
 - Create: `src/server/money/errors.ts`, `src/server/money/ledger.ts`
@@ -1070,7 +1079,7 @@ git commit -m "feat: add idempotent ledger write path with row locking"
 
 ### Task 6: Season creation and joining
 
-**Owner: A**
+**Owner: B**
 
 **Files:**
 - Create: `src/server/seasons/service.ts`, `src/server/seasons/defaults.ts`
@@ -1259,7 +1268,7 @@ git commit -m "feat: add season creation and joining with starting grant"
 
 ### Task 7: Weekly allowance
 
-**Owner: A**
+**Owner: B**
 
 **Files:**
 - Create: `src/server/seasons/allowance.ts`
@@ -1436,7 +1445,7 @@ git commit -m "feat: add idempotent weekly allowance"
 
 ### Task 8: Admin adjustments
 
-**Owner: A**
+**Owner: B**
 
 **Files:**
 - Create: `src/server/admin/adjust.ts`
@@ -1595,7 +1604,7 @@ git commit -m "feat: add admin balance adjustments with mandatory notes"
 
 ### Task 9: Reconciliation
 
-**Owner: A** — last task of Track A. Merge to `main` after this passes.
+**Owner: B** — last task of Track B. Merge to `main` after this passes.
 
 **Files:**
 - Create: `src/server/money/reconcile.ts`
@@ -1726,13 +1735,13 @@ git commit -m "feat: add balance reconciliation against the ledger"
 
 ---
 
-## Track B — Betting math (Tasks 10–13)
+## Track A — Betting math (Tasks 10–13) — Worker A
 
-These four tasks import nothing from `src/db/` or `src/server/`. They need no database and can be built in parallel with Track A.
+These four tasks import nothing from `src/db/` or `src/server/`. They need no database and can be built in parallel with Track B.
 
 ### Task 10: Money formatting
 
-**Owner: B**
+**Owner: A**
 
 **Files:**
 - Modify: `src/domain/money.ts`
@@ -1837,7 +1846,7 @@ git commit -m "feat: add cents parsing and formatting"
 
 ### Task 11: Odds arithmetic
 
-**Owner: B** — the most correctness-critical task in Track A or B. Every payout depends on it.
+**Owner: A** — the most correctness-critical task in either track. Every payout depends on it.
 
 **Files:**
 - Create: `src/domain/odds.ts`
@@ -2006,7 +2015,7 @@ git commit -m "feat: add exact rational odds arithmetic"
 
 ### Task 12: Leg grading
 
-**Owner: B**
+**Owner: A**
 
 **Files:**
 - Create: `src/domain/grading.ts`
@@ -2168,7 +2177,7 @@ git commit -m "feat: add single-leg grading for moneyline, spread and total"
 
 ### Task 13: Parlay grading and settled payout
 
-**Owner: B** — last task of Track B. Merge to `main` after this passes.
+**Owner: A** — last task of Track A. Merge to `main` after this passes.
 
 **Files:**
 - Modify: `src/domain/grading.ts`
@@ -2304,13 +2313,13 @@ Note the import goes at the top of the file alongside the existing content, not 
 Run: `npm test -- src/domain/__tests__/grading-parlay.test.ts`
 Expected: PASS, 10 tests.
 
-- [ ] **Step 5: Run all of Track B**
+- [ ] **Step 5: Run all of Track A**
 
 Run: `npm test -- src/domain/`
 Expected: PASS — every test in Tasks 10 through 13.
 
-Do not run `npm run verify` here. It runs Track A's database tests too, which will fail if
-Track A has not merged yet. That failure would not be yours and not a bug.
+Do not run `npm run verify` here. It runs Worker B's database tests too, which will fail if
+Worker B has not merged yet. That failure would not be yours and not a bug.
 
 - [ ] **Step 6: Commit**
 

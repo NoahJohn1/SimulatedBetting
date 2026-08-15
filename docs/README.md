@@ -9,6 +9,8 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 |---|---|
 | [Core betting engine spec](specs/2026-08-14-core-betting-engine-design.md) | The v1 build: architecture, data model, odds math, grading rules, jobs, failure handling, screens, testing |
 | [Implementation plans](plans/README.md) | The three build plans, and how two people split the work |
+| [Worker A brief](plans/worker-a-brief.md) | Betting logic: odds math, grading, placement, settlement, betting screens |
+| [Worker B brief](plans/worker-b-brief.md) | Data & money: database, ledger, seasons, admin, odds ingestion, account screens |
 | [Roadmap](roadmap.md) | The four subsystems, what each adds, and build order |
 | [Decision log](decisions.md) | Every design decision, what was rejected, and why |
 
