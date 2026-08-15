@@ -114,6 +114,32 @@ describe('validatePlacement: shape', () => {
     expect(result).toEqual({ code: 'UNKNOWN_SELECTION', legIndex: 1, selectionId: 'sel-b' });
   });
 
+  it('reports UNKNOWN_SELECTION for a leg missing from a too-short selections array', () => {
+    const input = makeInput({
+      type: 'PARLAY',
+      legs: [makeLeg({ selectionId: 'sel-a' }), makeLeg({ selectionId: 'sel-b' })],
+    });
+    const ctx = makeCtx({
+      selections: [makeSelection({ selectionId: 'sel-a', gameId: 'game-a' })],
+    });
+    const result = validatePlacement(input, ctx);
+    expect(result).toEqual({ code: 'UNKNOWN_SELECTION', legIndex: 1, selectionId: 'sel-b' });
+  });
+
+  it('throws when ctx.selections is misaligned with input.legs', () => {
+    const input = makeInput({
+      type: 'PARLAY',
+      legs: [makeLeg({ selectionId: 'sel-a' }), makeLeg({ selectionId: 'sel-b' })],
+    });
+    const ctx = makeCtx({
+      selections: [
+        makeSelection({ selectionId: 'sel-b', gameId: 'game-b' }),
+        makeSelection({ selectionId: 'sel-a', gameId: 'game-a' }),
+      ],
+    });
+    expect(() => validatePlacement(input, ctx)).toThrow();
+  });
+
   it('rejects a SINGLE with two legs', () => {
     const input = makeInput({
       type: 'SINGLE',
@@ -228,6 +254,44 @@ describe('validatePlacement: shape', () => {
     });
     const result = validatePlacement(input, ctx);
     expect(result).toEqual({ code: 'INVALID_LEG_COUNT', legCount: 2, min: 1, max: 1 });
+  });
+});
+
+describe('validatePlacement: malformed leg values', () => {
+  it('rejects an invalid line', () => {
+    const input = makeInput({ legs: [makeLeg({ line: 'abc' })] });
+    const result = validatePlacement(input, makeCtx());
+    expect(result).toEqual({ code: 'INVALID_LEG_VALUE', legIndex: 0, field: 'line' });
+  });
+
+  it('rejects an invalid priceAmerican inside the -99..99 dead band', () => {
+    const input = makeInput({ legs: [makeLeg({ priceAmerican: 50 })] });
+    const result = validatePlacement(input, makeCtx());
+    expect(result).toEqual({ code: 'INVALID_LEG_VALUE', legIndex: 0, field: 'priceAmerican' });
+  });
+
+  it('reports the line before the price when both are invalid on the same leg', () => {
+    const input = makeInput({ legs: [makeLeg({ line: 'abc', priceAmerican: 50 })] });
+    const result = validatePlacement(input, makeCtx());
+    expect(result).toEqual({ code: 'INVALID_LEG_VALUE', legIndex: 0, field: 'line' });
+  });
+
+  it('reports INVALID_LEG_VALUE before UNKNOWN_SELECTION for the same leg', () => {
+    const input = makeInput({ legs: [makeLeg({ selectionId: 'sel-missing', line: 'abc' })] });
+    const ctx = makeCtx({ selections: [null] });
+    const result = validatePlacement(input, ctx);
+    expect(result).toEqual({ code: 'INVALID_LEG_VALUE', legIndex: 0, field: 'line' });
+  });
+
+  it('still returns null for a genuinely valid line and price', () => {
+    const input = makeInput({
+      legs: [makeLeg({ line: '-3.5', priceAmerican: -110 })],
+    });
+    const ctx = makeCtx({
+      selections: [makeSelection({ marketType: 'SPREAD', line: '-3.5', priceAmerican: -110 })],
+    });
+    const result = validatePlacement(input, ctx);
+    expect(result).toBeNull();
   });
 });
 

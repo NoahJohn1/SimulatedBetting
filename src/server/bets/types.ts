@@ -41,6 +41,7 @@ export type PlaceBetError =
   | { code: 'NO_ACTIVE_SEASON' }
   | { code: 'NOT_A_MEMBER' }
   | { code: 'UNKNOWN_SELECTION'; legIndex: number; selectionId: string }
+  | { code: 'INVALID_LEG_VALUE'; legIndex: number; field: 'line' | 'priceAmerican' }
   | { code: 'INVALID_LEG_COUNT'; legCount: number; min: number; max: number }
   | { code: 'DUPLICATE_GAME'; gameId: string; legIndexes: number[] }
   | { code: 'GAME_NOT_BETTABLE'; legIndex: number; gameStatus: string; startsAt: string }
