@@ -99,6 +99,11 @@ tests and will fail until their work merges. That failure is not yours.
 
 ## Plan 2 — Odds & betting engine
 
+> **Task detail is now written:**
+> [2026-08-15-02a-betting-engine-worker-a.md](2026-08-15-02a-betting-engine-worker-a.md).
+> It answers the five open questions below and turns them into Tasks A1–A8. The section here
+> stays as the statement of scope those tasks were derived from.
+
 **Pair phase first.** You and B agree the sports and betting schema together before either of
 you starts: `teams`, `games`, `markets`, `selections`, `odds_snapshots`, `bets`, `bet_legs`,
 and adding `bet_id` to `ledger_entries`. Both of your halves build directly on these tables,
@@ -140,6 +145,10 @@ placement.
 
 ## Plan 3 — the betting screens
 
+> **Task detail is now written:**
+> [2026-08-15-03a-web-app-worker-a.md](2026-08-15-03a-web-app-worker-a.md).
+> It answers the three open questions below and turns them into Tasks A9–A16.
+
 **Pair phase first:** auth, the app shell, the bottom tab bar, session and authorization
 helpers, and the shared UI primitives. Two people independently inventing a button component is
 exactly the conflict the split exists to prevent.
@@ -177,3 +186,5 @@ hardest: one sheet that is a single bet with one leg and reveals a Singles/Parla
 - [Core betting engine spec](../specs/2026-08-14-core-betting-engine-design.md) — grading rules, payout math, placement validation
 - [Decision log](../decisions.md) — why things are the way they are
 - [Plan 1](2026-08-15-01-foundation-and-money-core.md) — your Tasks 10–13, fully written
+- [Plan 2, Track A](2026-08-15-02a-betting-engine-worker-a.md) — your Tasks A1–A8: placement, settlement, re-settlement
+- [Plan 3, Track A](2026-08-15-03a-web-app-worker-a.md) — your Tasks A9–A16: the four betting screens
