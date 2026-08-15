@@ -7,8 +7,12 @@ own.
 | Plan | Produces | Status |
 |---|---|---|
 | [1 — Foundation & money core](2026-08-15-01-foundation-and-money-core.md) | Postgres schema, append-only ledger, seasons, allowance, admin adjustments, and the pure betting math. Headless — no odds, no UI. | **Task-level detail written. Ready to build.** |
-| 2 — Odds & betting engine | Provider interfaces, fixture data, odds sync, bet placement, settlement. Still headless. | Scoped in the worker briefs; task detail written after Plan 1 ships |
-| 3 — Web app & auth | Google/Apple sign-in, the four tabs, bet slip, admin screens, cron routes, deployment. | Scoped in the worker briefs; task detail written after Plan 2 ships |
+| 2 — Odds & betting engine | Provider interfaces, fixture data, odds sync, bet placement, settlement. Still headless. | [Track A written](2026-08-15-02a-betting-engine-worker-a.md). Track B still to write. |
+| 3 — Web app & auth | Google/Apple sign-in, the four tabs, bet slip, admin screens, cron routes, deployment. | [Track A written](2026-08-15-03a-web-app-worker-a.md). Track B still to write. |
+
+Plans 2 and 3 are written as **one document per worker** rather than one shared document, because
+each worker resolves their own open questions before writing their own tasks. Plan 1 predates that
+and covers both tracks in a single file.
 
 ---
 
@@ -20,9 +24,9 @@ own.
 |---|---|---|
 | Owns | Odds math, grading, bet placement, settlement, betting screens | Database, ledger, seasons, admin, odds ingestion, account screens |
 | Plan 1 | Tasks 10–13 | Tasks 3–9 |
-| Plan 2 | Bet placement, settlement | Providers, fixtures, odds sync |
-| Plan 3 | Games, Game detail, Bet slip, My Bets | Standings, Me/ledger, Admin |
-| Needs Docker | No — pure functions only | Yes |
+| Plan 2 | [Bet placement, settlement](2026-08-15-02a-betting-engine-worker-a.md) | Providers, fixtures, odds sync |
+| Plan 3 | [Games, Game detail, Bet slip, My Bets](2026-08-15-03a-web-app-worker-a.md) | Standings, Me/ledger, Admin |
+| Needs Docker | Not in Plan 1 — pure functions. Yes from Plan 2. | Yes |
 | Suits someone who likes | Algorithms, edge cases, product surface | Databases, transactions, correctness under concurrency |
 
 Each brief states exactly which directories that person may write, which they must never touch,

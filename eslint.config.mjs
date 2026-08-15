@@ -12,7 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Not part of this project's source:
     ".claude/**",
+    ".superpowers/**",
   ]),
 ]);
 
