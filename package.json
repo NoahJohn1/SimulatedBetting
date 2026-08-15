@@ -17,7 +17,8 @@
     "db:test:create": "docker compose exec -T db psql -U simbet -d simbet -c 'CREATE DATABASE simbet_test' || true",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
-    "db:migrate:test": "ENV_FILE=.env.test tsx src/db/migrate.ts"
+    "db:migrate:test": "ENV_FILE=.env.test tsx src/db/migrate.ts",
+    "admin:promote": "tsx src/db/promote-admin.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
