@@ -1,5 +1,3 @@
-import type { LegStatus, MarketType, Side } from '@/domain/grading';
-
 export interface PlaceBetLegInput {
   selectionId: string;
   /** Exactly the line the client displayed. null for moneyline. */

@@ -60,17 +60,6 @@ function toProviderGame(game: SlateGame): ProviderGame {
   };
 }
 
-/** The market status the slate declares, defaulting to OPEN. */
-export function fixtureMarketStatus(
-  gameExternalId: string,
-  type: MarketTypeValue,
-): MarketStatusValue {
-  const market = slate.markets.find(
-    (m) => m.gameExternalId === gameExternalId && m.type === type,
-  );
-  return (market?.status as MarketStatusValue) ?? 'OPEN';
-}
-
 export function allFixtureGameIds(): string[] {
   return slate.games.map((game) => game.externalId);
 }
@@ -112,6 +101,7 @@ export class FixtureOddsProvider implements OddsProvider {
         gameExternalId: market.gameExternalId,
         type: market.type as MarketTypeValue,
         sourceBook: market.sourceBook,
+        status: (market.status as MarketStatusValue) ?? 'OPEN',
         selections: atRound(market.rounds, this.round),
       }));
   }

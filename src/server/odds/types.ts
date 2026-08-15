@@ -1,4 +1,10 @@
-import type { GameStatus, MarketTypeValue, SelectionSide, Sport } from '@/db/schema';
+import type {
+  GameStatus,
+  MarketStatusValue,
+  MarketTypeValue,
+  SelectionSide,
+  Sport,
+} from '@/db/schema';
 
 /**
  * The shape a provider hands back, deliberately independent of our table columns: a real
@@ -38,6 +44,8 @@ export interface ProviderMarket {
   type: MarketTypeValue;
   /** The designated house book for this market (D9). */
   sourceBook: string;
+  /** What the book is currently offering. Defaults to OPEN when a provider omits it. */
+  status?: MarketStatusValue;
   selections: ProviderSelection[];
 }
 
