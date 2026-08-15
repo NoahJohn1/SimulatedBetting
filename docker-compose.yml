@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: simbet-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: simbet
+      POSTGRES_PASSWORD: simbet
+      POSTGRES_DB: simbet
+    ports:
+      - '5433:5432'
+    volumes:
+      - simbet-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U simbet']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  simbet-pgdata:

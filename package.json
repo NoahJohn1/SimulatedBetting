@@ -10,7 +10,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "verify": "npm run typecheck && npm run lint && npm test"
+    "verify": "npm run typecheck && npm run lint && npm test",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d --wait && npm run db:test:create",
+    "db:test:create": "docker compose exec -T db psql -U simbet -d simbet -c 'CREATE DATABASE simbet_test' || true"
   },
   "dependencies": {
     "next": "16.3.1",
