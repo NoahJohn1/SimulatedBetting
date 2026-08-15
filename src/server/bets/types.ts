@@ -1,16 +1,5 @@
 import type { LegStatus, MarketType, Side } from '@/domain/grading';
 
-/**
- * HTTP Status Mapping for PlaceBetError codes
- *
- * | Code | Status |
- * |---|---|
- * | `NOT_APPROVED`, `NOT_A_MEMBER`, `NO_ACTIVE_SEASON` | 403 |
- * | `LINE_MOVED` | 409 (spec: Failure handling) |
- * | `DUPLICATE_REQUEST` | 200 with the existing bet |
- * | everything else | 422 |
- */
-
 export interface PlaceBetLegInput {
   selectionId: string;
   /** Exactly the line the client displayed. null for moneyline. */
@@ -64,3 +53,14 @@ export type PlaceBetError =
 export type PlaceBetResult =
   | { ok: true; bet: PlacedBet }
   | { ok: false; error: PlaceBetError };
+
+/**
+ * HTTP Status Mapping for PlaceBetError codes
+ *
+ * | Code | Status |
+ * |---|---|
+ * | `NOT_APPROVED`, `NOT_A_MEMBER`, `NO_ACTIVE_SEASON` | 403 |
+ * | `LINE_MOVED` | 409 (spec: [Failure handling](../specs/2026-08-14-core-betting-engine-design.md#failure-handling)) |
+ * | `DUPLICATE_REQUEST` | 200 with the existing bet |
+ * | everything else | 422 |
+ */
