@@ -34,14 +34,20 @@ export async function settleGame(gameId: string): Promise<SettleGameSummary> {
     const [game] = await tx.select().from(games).where(eq(games.id, gameId)).for('update');
 
     if (!game) throw new Error(`no game ${gameId}`);
-    if (game.status !== 'FINAL') {
-      throw new Error(`game ${gameId} is ${game.status}, not FINAL`);
+
+    // FINAL grades from the score; POSTPONED and CANCELED void every pending leg without
+    // consulting gradeLeg at all — there is no result to grade against.
+    const voiding = game.status === 'POSTPONED' || game.status === 'CANCELED';
+    if (game.status !== 'FINAL' && !voiding) {
+      throw new Error(`game ${gameId} is ${game.status}, not settleable`);
     }
-    if (game.homeScore === null || game.awayScore === null) {
+    if (!voiding && (game.homeScore === null || game.awayScore === null)) {
       throw new Error(`game ${gameId} is FINAL but has no score`);
     }
 
-    const result = { homeScore: game.homeScore, awayScore: game.awayScore };
+    const result = voiding
+      ? null
+      : { homeScore: game.homeScore as number, awayScore: game.awayScore as number };
 
     const pending = await tx
       .select({
@@ -59,16 +65,15 @@ export async function settleGame(gameId: string): Promise<SettleGameSummary> {
     const settledAt = new Date();
 
     for (const leg of pending) {
-      const status = gradeLeg({
-        marketType: leg.marketType,
-        side: leg.side,
-        line: lineToNumber(leg.line),
-        result,
-      });
-      await tx
-        .update(betLegs)
-        .set({ status, settledAt })
-        .where(eq(betLegs.id, leg.legId));
+      const status: BetStatus = result
+        ? gradeLeg({
+            marketType: leg.marketType,
+            side: leg.side,
+            line: lineToNumber(leg.line),
+            result,
+          })
+        : 'VOIDED';
+      await tx.update(betLegs).set({ status, settledAt }).where(eq(betLegs.id, leg.legId));
     }
 
     const summary: SettleGameSummary = {
@@ -102,8 +107,16 @@ export async function settleGame(gameId: string): Promise<SettleGameSummary> {
         .where(eq(betLegs.betId, bet.id));
 
       const statuses = legs.map((leg) => leg.status as LegStatus);
-      const outcome = gradeParlay(statuses);
-      if (outcome === 'PENDING') continue;
+      const parlayOutcome = gradeParlay(statuses);
+      if (parlayOutcome === 'PENDING') continue;
+
+      // gradeParlay returns PUSHED for an all-void bet, which is right for a parlay — the
+      // stake comes back. A single whose only leg voided is more precisely VOIDED, and the
+      // ledger entry follows the bet status.
+      const outcome: BetStatus =
+        parlayOutcome === 'PUSHED' && bet.type === 'SINGLE' && statuses.every((s) => s === 'VOIDED')
+          ? 'VOIDED'
+          : (parlayOutcome as BetStatus);
 
       const attempts = bet.settlementAttempts + 1;
       const payout = settledPayoutCents(
@@ -114,7 +127,7 @@ export async function settleGame(gameId: string): Promise<SettleGameSummary> {
         })),
       );
 
-      const entryType = ENTRY_TYPE_FOR_STATUS[outcome as BetStatus];
+      const entryType = ENTRY_TYPE_FOR_STATUS[outcome];
       if (entryType && payout > 0n) {
         await postEntry(tx, {
           membershipId: bet.membershipId,
@@ -128,7 +141,7 @@ export async function settleGame(gameId: string): Promise<SettleGameSummary> {
 
       await tx
         .update(bets)
-        .set({ status: outcome as BetStatus, settledAt, settlementAttempts: attempts })
+        .set({ status: outcome, settledAt, settlementAttempts: attempts })
         .where(eq(bets.id, bet.id));
 
       summary.betsSettled += 1;
