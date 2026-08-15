@@ -7,8 +7,11 @@ export default async function PendingPage() {
   const user = await getSessionUser();
   if (!user) redirect('/sign-in');
 
+  // Only a genuinely PENDING account belongs here. Any other state — approved, disabled,
+  // approved but not yet joined — goes back through the root so requireApprovedMember can
+  // route it, otherwise an approved member sits on "waiting for approval" forever.
   const member = await currentMember();
-  if (member?.ok) redirect('/');
+  if (!member || member.ok || member.reason !== 'PENDING') redirect('/');
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-8 px-6 text-center">
