@@ -1,5 +1,5 @@
 import { and, asc, eq, inArray } from 'drizzle-orm';
-import { db, type Tx } from '@/db/client';
+import { db } from '@/db/client';
 import { betLegs, bets, games, markets, selections } from '@/db/schema';
 import type { BetStatus } from '@/db/schema';
 import { gradeLeg, gradeParlay, settledPayoutCents } from '@/domain/grading';
