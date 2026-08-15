@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/db/client';
-import { ledgerEntries, seasonMemberships } from '@/db/schema';
+import { bets, ledgerEntries, seasonMemberships } from '@/db/schema';
 import { MoneyError } from '@/server/money/errors';
 import { postEntry } from '@/server/money/ledger';
 import { resetDb } from '@/test/db';
@@ -17,6 +17,38 @@ async function balanceOf(membershipId: string): Promise<bigint> {
 
 describe('postEntry', () => {
   beforeEach(resetDb);
+
+  it('links an entry to the bet that caused it', async () => {
+    const membership = await makeMembership(1_000_000n);
+    const [bet] = await db
+      .insert(bets)
+      .values({
+        membershipId: membership.id,
+        type: 'SINGLE',
+        stakeCents: 10_000n,
+        potentialPayoutCents: 19_091n,
+        combinedPriceAmerican: -110,
+        clientRequestId: '11111111-1111-4111-8111-111111111111',
+      })
+      .returning();
+
+    await db.transaction((tx) =>
+      postEntry(tx, {
+        membershipId: membership.id,
+        amountCents: -10_000n,
+        type: 'BET_PLACED',
+        idempotencyKey: `bet:${bet.id}:placed`,
+        betId: bet.id,
+      }),
+    );
+
+    const [entry] = await db
+      .select()
+      .from(ledgerEntries)
+      .where(eq(ledgerEntries.membershipId, membership.id));
+
+    expect(entry.betId).toBe(bet.id);
+  });
 
   it('credits a balance and records the entry', async () => {
     const membership = await makeMembership(1_000_000n);

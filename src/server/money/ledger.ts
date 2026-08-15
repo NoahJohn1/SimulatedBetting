@@ -11,6 +11,8 @@ export interface PostEntryInput {
   type: LedgerEntryType;
   idempotencyKey: string;
   actorUserId?: string;
+  /** The bet this movement belongs to, for BET_PLACED and every settlement entry. */
+  betId?: string;
   note?: string;
 }
 
@@ -50,6 +52,7 @@ export async function postEntry(tx: Tx, input: PostEntryInput): Promise<PostEntr
       type: input.type,
       balanceAfterCents: nextBalance,
       actorUserId: input.actorUserId,
+      betId: input.betId,
       note: input.note,
       idempotencyKey: input.idempotencyKey,
     })

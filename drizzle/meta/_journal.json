@@ -15,6 +15,13 @@
       "when": 1786808563771,
       "tag": "0001_greedy_cloak",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786812219825,
+      "tag": "0002_demonic_falcon",
+      "breakpoints": true
     }
   ]
 }
