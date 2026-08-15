@@ -24,7 +24,8 @@ export function normalizeLine(line: string | number | null): string | null {
     throw new Error(`Invalid line: ${JSON.stringify(line)}`);
   }
 
-  let [integerPart, fractionPart] = trimmed.split('.');
+  const [integerPart, initialFractionPart] = trimmed.split('.');
+  let fractionPart = initialFractionPart;
 
   if (fractionPart !== undefined) {
     fractionPart = fractionPart.replace(/0+$/, '');
