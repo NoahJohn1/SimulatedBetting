@@ -11,6 +11,28 @@ export interface OAuthProfile {
 }
 
 /**
+ * Seeded admins, from `ADMIN_EMAILS` (comma-separated).
+ *
+ * These accounts arrive APPROVED with the ADMIN role instead of waiting in the D7 queue,
+ * which is what solves the bootstrap problem: the first admin has nobody to approve them.
+ * It is an explicit allowlist of known people rather than a blanket rule, so it stays
+ * correct in production too.
+ *
+ * Read per call rather than cached at module load so a changed env var takes effect on the
+ * next sign-in without a rebuild.
+ */
+function isSeededAdmin(email: string): boolean {
+  const configured = process.env.ADMIN_EMAILS;
+  if (!configured || !email) return false;
+
+  return configured
+    .split(',')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean)
+    .includes(email.trim().toLowerCase());
+}
+
+/**
  * Records an OAuth sign-in against our own `users` table.
  *
  * New accounts land PENDING and wait for an admin (D7). A repeat sign-in refreshes only the
@@ -21,6 +43,12 @@ export interface OAuthProfile {
  * the same address arriving via a different provider is a different account.
  */
 export async function upsertOAuthUser(profile: OAuthProfile) {
+  // Only seeded admins carry an elevation; for everyone else role and status are left
+  // untouched on a repeat sign-in, so signing in cannot undo an admin's decision.
+  const elevation = isSeededAdmin(profile.email)
+    ? { role: 'ADMIN' as const, status: 'APPROVED' as const }
+    : {};
+
   const [user] = await db
     .insert(users)
     .values({
@@ -29,6 +57,7 @@ export async function upsertOAuthUser(profile: OAuthProfile) {
       email: profile.email,
       displayName: profile.displayName,
       avatarUrl: profile.avatarUrl ?? null,
+      ...elevation,
     })
     .onConflictDoUpdate({
       target: [users.provider, users.providerAccountId],
@@ -36,6 +65,7 @@ export async function upsertOAuthUser(profile: OAuthProfile) {
         email: profile.email,
         displayName: profile.displayName,
         avatarUrl: profile.avatarUrl ?? null,
+        ...elevation,
       },
     })
     .returning();

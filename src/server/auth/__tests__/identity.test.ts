@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/db/client';
 import { seasonMemberships, seasons, users } from '@/db/schema';
 import { authorizeMember, upsertOAuthUser } from '@/server/auth/identity';
@@ -69,6 +69,83 @@ describe('upsertOAuthUser', () => {
     await db.update(users).set({ status: 'DISABLED' }).where(eq(users.id, first.id));
 
     expect((await upsertOAuthUser(GOOGLE_ACCOUNT)).status).toBe('DISABLED');
+  });
+});
+
+describe('upsertOAuthUser with seeded admins', () => {
+  const ORIGINAL = process.env.ADMIN_EMAILS;
+
+  beforeEach(async () => {
+    await resetDb();
+    process.env.ADMIN_EMAILS = 'owner@example.com, second@example.com';
+  });
+
+  afterEach(() => {
+    if (ORIGINAL === undefined) delete process.env.ADMIN_EMAILS;
+    else process.env.ADMIN_EMAILS = ORIGINAL;
+  });
+
+  it('lands a seeded address straight in as an approved admin', async () => {
+    const user = await upsertOAuthUser({ ...GOOGLE_ACCOUNT, email: 'owner@example.com' });
+
+    expect(user.role).toBe('ADMIN');
+    expect(user.status).toBe('APPROVED');
+  });
+
+  it('seeds every address in the list, not just the first', async () => {
+    const user = await upsertOAuthUser({
+      ...GOOGLE_ACCOUNT,
+      providerAccountId: 'google-second',
+      email: 'second@example.com',
+    });
+
+    expect(user.role).toBe('ADMIN');
+  });
+
+  it('matches regardless of case or surrounding whitespace', async () => {
+    const user = await upsertOAuthUser({ ...GOOGLE_ACCOUNT, email: '  Owner@Example.COM ' });
+
+    expect(user.role).toBe('ADMIN');
+  });
+
+  it('promotes a seeded address that already signed in while pending', async () => {
+    delete process.env.ADMIN_EMAILS;
+    const first = await upsertOAuthUser({ ...GOOGLE_ACCOUNT, email: 'owner@example.com' });
+    expect(first.status).toBe('PENDING');
+
+    process.env.ADMIN_EMAILS = 'owner@example.com';
+    const promoted = await upsertOAuthUser({ ...GOOGLE_ACCOUNT, email: 'owner@example.com' });
+
+    expect(promoted.id).toBe(first.id);
+    expect(promoted.role).toBe('ADMIN');
+    expect(promoted.status).toBe('APPROVED');
+  });
+
+  it('leaves everyone else in the approval queue', async () => {
+    const user = await upsertOAuthUser({ ...GOOGLE_ACCOUNT, email: 'stranger@example.com' });
+
+    expect(user.role).toBe('USER');
+    expect(user.status).toBe('PENDING');
+  });
+
+  it('grants nobody when the list is unset', async () => {
+    delete process.env.ADMIN_EMAILS;
+
+    const user = await upsertOAuthUser({ ...GOOGLE_ACCOUNT, email: 'owner@example.com' });
+
+    expect(user.role).toBe('USER');
+    expect(user.status).toBe('PENDING');
+  });
+
+  it('is not fooled by a substring of a seeded address', async () => {
+    // "notowner@example.com" contains no seeded entry as a whole value; a naive
+    // `includes` on the raw string would wrongly match it.
+    const user = await upsertOAuthUser({
+      ...GOOGLE_ACCOUNT,
+      email: 'notowner@example.com.attacker.test',
+    });
+
+    expect(user.role).toBe('USER');
   });
 });
 
