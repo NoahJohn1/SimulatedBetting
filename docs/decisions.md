@@ -172,7 +172,19 @@ No floating-point value touches a balance. Rounding never happens per parlay leg
 
 ---
 
-### D18 — No maximum bet, no cash-out
+### D18 — Primary keys are UUIDv4, not UUIDv7
+
+*Added 2026-08-15 during implementation planning.*
+
+The spec called for time-sortable UUIDv7. Postgres 16 has no native `uuidv7()`, and pulling in
+a dependency solely to generate primary keys is not worth it.
+
+Every table carries `created_at`, which is what ordering actually uses. Revisit if the project
+moves to Postgres 18, which has `uuidv7()` built in.
+
+---
+
+### D19 — No maximum bet, no cash-out
 
 Bet size is limited only by balance. There is no early cash-out.
 

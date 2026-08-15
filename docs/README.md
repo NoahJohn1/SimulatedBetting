@@ -8,6 +8,7 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | Document | What's in it |
 |---|---|
 | [Core betting engine spec](specs/2026-08-14-core-betting-engine-design.md) | The v1 build: architecture, data model, odds math, grading rules, jobs, failure handling, screens, testing |
+| [Implementation plans](plans/README.md) | The three build plans, and how two people split the work |
 | [Roadmap](roadmap.md) | The four subsystems, what each adds, and build order |
 | [Decision log](decisions.md) | Every design decision, what was rejected, and why |
 
@@ -30,8 +31,8 @@ Three properties the design is organized around:
 
 ## Where things stand
 
-The core betting engine spec is approved. Nothing is implemented yet — the next step is an
-implementation plan built from the spec.
+The core betting engine spec is approved and [Plan 1](plans/2026-08-15-01-foundation-and-money-core.md)
+is written and ready to build. Nothing is implemented yet.
 
 ## Conventions
 
