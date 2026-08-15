@@ -1,0 +1,39 @@
+{
+  "comment": "Results per score-provider round. Round 0 is the first report, later rounds are corrections. A round beyond the last reuses the last. Four games finalize in round 0 so the batch settlement runner has a real slate to work through.",
+  "results": [
+    {
+      "comment": "24-20 pushes both the -4 spread and the 44 total, and wins the moneyline.",
+      "gameExternalId": "nfl-2026-w1-buf-nyj",
+      "rounds": [{ "status": "FINAL", "homeScore": 24, "awayScore": 20 }]
+    },
+    {
+      "comment": "Tie, so the moneyline pushes. Only possible in the NFL.",
+      "gameExternalId": "nfl-2026-w1-dal-phi",
+      "rounds": [{ "status": "FINAL", "homeScore": 21, "awayScore": 21 }]
+    },
+    {
+      "gameExternalId": "nfl-2026-w1-sf-sea",
+      "rounds": [{ "status": "FINAL", "homeScore": 30, "awayScore": 17 }]
+    },
+    {
+      "comment": "Reported as an away win, then corrected to a home win. The raw material for resettleBet.",
+      "gameExternalId": "nfl-2026-w1-gb-chi",
+      "rounds": [
+        { "status": "FINAL", "homeScore": 17, "awayScore": 20 },
+        { "status": "FINAL", "homeScore": 24, "awayScore": 20 }
+      ]
+    },
+    {
+      "gameExternalId": "nfl-2026-w1-kc-den",
+      "rounds": [{ "status": "POSTPONED", "homeScore": null, "awayScore": null }]
+    },
+    {
+      "gameExternalId": "ncaaf-2026-w2-mich-osu",
+      "rounds": [{ "status": "CANCELED", "homeScore": null, "awayScore": null }]
+    },
+    {
+      "gameExternalId": "ncaaf-2026-w2-bama-uga",
+      "rounds": [{ "status": "FINAL", "homeScore": 31, "awayScore": 28 }]
+    }
+  ]
+}

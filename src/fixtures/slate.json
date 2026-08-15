@@ -1,0 +1,232 @@
+{
+  "comment": "Fixture slate for v1. Every game is SCHEDULED here; terminal statuses and scores come from results.json via FixtureScoreProvider, the way a real feed reports them. Markets carry one entry per sync round: round 0 is the opening number, later rounds are line movement. A round beyond the last reuses the last.",
+  "games": [
+    {
+      "externalId": "nfl-2026-w1-buf-nyj",
+      "sport": "NFL",
+      "home": { "externalId": "nfl-buf", "name": "Buffalo Bills", "abbreviation": "BUF" },
+      "away": { "externalId": "nfl-nyj", "name": "New York Jets", "abbreviation": "NYJ" },
+      "startsAt": "2026-09-10T20:15:00Z",
+      "seasonYear": 2026,
+      "week": 1,
+      "status": "SCHEDULED"
+    },
+    {
+      "externalId": "nfl-2026-w1-dal-phi",
+      "sport": "NFL",
+      "home": { "externalId": "nfl-dal", "name": "Dallas Cowboys", "abbreviation": "DAL" },
+      "away": { "externalId": "nfl-phi", "name": "Philadelphia Eagles", "abbreviation": "PHI" },
+      "startsAt": "2026-09-13T17:00:00Z",
+      "seasonYear": 2026,
+      "week": 1,
+      "status": "SCHEDULED"
+    },
+    {
+      "externalId": "nfl-2026-w1-kc-den",
+      "sport": "NFL",
+      "home": { "externalId": "nfl-kc", "name": "Kansas City Chiefs", "abbreviation": "KC" },
+      "away": { "externalId": "nfl-den", "name": "Denver Broncos", "abbreviation": "DEN" },
+      "startsAt": "2026-09-13T20:05:00Z",
+      "seasonYear": 2026,
+      "week": 1,
+      "status": "SCHEDULED"
+    },
+    {
+      "externalId": "ncaaf-2026-w2-mich-osu",
+      "sport": "NCAAF",
+      "home": { "externalId": "ncaaf-osu", "name": "Ohio State Buckeyes", "abbreviation": "OSU" },
+      "away": { "externalId": "ncaaf-mich", "name": "Michigan Wolverines", "abbreviation": "MICH" },
+      "startsAt": "2026-09-12T16:00:00Z",
+      "seasonYear": 2026,
+      "week": 2,
+      "status": "SCHEDULED"
+    },
+    {
+      "externalId": "nfl-2026-w1-sf-sea",
+      "sport": "NFL",
+      "home": { "externalId": "nfl-sf", "name": "San Francisco 49ers", "abbreviation": "SF" },
+      "away": { "externalId": "nfl-sea", "name": "Seattle Seahawks", "abbreviation": "SEA" },
+      "startsAt": "2026-09-13T20:25:00Z",
+      "seasonYear": 2026,
+      "week": 1,
+      "status": "SCHEDULED"
+    },
+    {
+      "externalId": "nfl-2026-w1-gb-chi",
+      "sport": "NFL",
+      "home": { "externalId": "nfl-gb", "name": "Green Bay Packers", "abbreviation": "GB" },
+      "away": { "externalId": "nfl-chi", "name": "Chicago Bears", "abbreviation": "CHI" },
+      "startsAt": "2026-09-13T17:00:00Z",
+      "seasonYear": 2026,
+      "week": 1,
+      "status": "SCHEDULED"
+    },
+    {
+      "externalId": "ncaaf-2026-w2-bama-uga",
+      "sport": "NCAAF",
+      "home": { "externalId": "ncaaf-uga", "name": "Georgia Bulldogs", "abbreviation": "UGA" },
+      "away": { "externalId": "ncaaf-bama", "name": "Alabama Crimson Tide", "abbreviation": "BAMA" },
+      "startsAt": "2026-09-12T19:30:00Z",
+      "seasonYear": 2026,
+      "week": 2,
+      "status": "SCHEDULED"
+    },
+    {
+      "externalId": "nfl-2026-w2-lar-ari",
+      "sport": "NFL",
+      "home": { "externalId": "nfl-ari", "name": "Arizona Cardinals", "abbreviation": "ARI" },
+      "away": { "externalId": "nfl-lar", "name": "Los Angeles Rams", "abbreviation": "LAR" },
+      "startsAt": "2026-09-20T20:05:00Z",
+      "seasonYear": 2026,
+      "week": 2,
+      "status": "SCHEDULED"
+    }
+  ],
+  "markets": [
+    {
+      "comment": "All three market types on one game, with whole-number spread and total so both can push against a 24-20 final.",
+      "gameExternalId": "nfl-2026-w1-buf-nyj",
+      "type": "MONEYLINE",
+      "sourceBook": "draftkings",
+      "rounds": [
+        [
+          { "side": "HOME", "line": null, "priceAmerican": -180 },
+          { "side": "AWAY", "line": null, "priceAmerican": 155 }
+        ]
+      ]
+    },
+    {
+      "gameExternalId": "nfl-2026-w1-buf-nyj",
+      "type": "SPREAD",
+      "sourceBook": "draftkings",
+      "rounds": [
+        [
+          { "side": "HOME", "line": "-4.00", "priceAmerican": -110 },
+          { "side": "AWAY", "line": "4.00", "priceAmerican": -110 }
+        ]
+      ]
+    },
+    {
+      "gameExternalId": "nfl-2026-w1-buf-nyj",
+      "type": "TOTAL",
+      "sourceBook": "draftkings",
+      "rounds": [
+        [
+          { "side": "OVER", "line": "44.00", "priceAmerican": -110 },
+          { "side": "UNDER", "line": "44.00", "priceAmerican": -110 }
+        ]
+      ]
+    },
+    {
+      "comment": "NFL game that finishes tied, so a moneyline can push. College football cannot tie.",
+      "gameExternalId": "nfl-2026-w1-dal-phi",
+      "type": "MONEYLINE",
+      "sourceBook": "draftkings",
+      "rounds": [
+        [
+          { "side": "HOME", "line": null, "priceAmerican": -105 },
+          { "side": "AWAY", "line": null, "priceAmerican": -115 }
+        ]
+      ]
+    },
+    {
+      "comment": "Postponed game, priced so bets can be attached before it is called off.",
+      "gameExternalId": "nfl-2026-w1-kc-den",
+      "type": "MONEYLINE",
+      "sourceBook": "draftkings",
+      "rounds": [
+        [
+          { "side": "HOME", "line": null, "priceAmerican": -240 },
+          { "side": "AWAY", "line": null, "priceAmerican": 195 }
+        ]
+      ]
+    },
+    {
+      "comment": "Canceled game, likewise priced.",
+      "gameExternalId": "ncaaf-2026-w2-mich-osu",
+      "type": "SPREAD",
+      "sourceBook": "draftkings",
+      "rounds": [
+        [
+          { "side": "HOME", "line": "-2.50", "priceAmerican": -110 },
+          { "side": "AWAY", "line": "2.50", "priceAmerican": -110 }
+        ]
+      ]
+    },
+    {
+      "comment": "Line movement across sync rounds: the spread and both prices change in round 1.",
+      "gameExternalId": "nfl-2026-w1-sf-sea",
+      "type": "SPREAD",
+      "sourceBook": "draftkings",
+      "rounds": [
+        [
+          { "side": "HOME", "line": "-3.50", "priceAmerican": -110 },
+          { "side": "AWAY", "line": "3.50", "priceAmerican": -110 }
+        ],
+        [
+          { "side": "HOME", "line": "-4.50", "priceAmerican": -120 },
+          { "side": "AWAY", "line": "4.50", "priceAmerican": 100 }
+        ]
+      ]
+    },
+    {
+      "comment": "Score gets corrected after the first report; see results.json.",
+      "gameExternalId": "nfl-2026-w1-gb-chi",
+      "type": "MONEYLINE",
+      "sourceBook": "draftkings",
+      "rounds": [
+        [
+          { "side": "HOME", "line": null, "priceAmerican": -130 },
+          { "side": "AWAY", "line": null, "priceAmerican": 110 }
+        ]
+      ]
+    },
+    {
+      "comment": "Left SUSPENDED by the slate so the suspended-market path has a fixture.",
+      "gameExternalId": "ncaaf-2026-w2-bama-uga",
+      "type": "MONEYLINE",
+      "sourceBook": "draftkings",
+      "status": "SUSPENDED",
+      "rounds": [
+        [
+          { "side": "HOME", "line": null, "priceAmerican": -115 },
+          { "side": "AWAY", "line": null, "priceAmerican": -105 }
+        ]
+      ]
+    },
+    {
+      "comment": "Still-upcoming game, so there is always something bettable in the slate.",
+      "gameExternalId": "nfl-2026-w2-lar-ari",
+      "type": "MONEYLINE",
+      "sourceBook": "draftkings",
+      "rounds": [
+        [
+          { "side": "HOME", "line": null, "priceAmerican": 120 },
+          { "side": "AWAY", "line": null, "priceAmerican": -140 }
+        ]
+      ]
+    },
+    {
+      "gameExternalId": "nfl-2026-w2-lar-ari",
+      "type": "SPREAD",
+      "sourceBook": "draftkings",
+      "rounds": [
+        [
+          { "side": "HOME", "line": "2.50", "priceAmerican": -110 },
+          { "side": "AWAY", "line": "-2.50", "priceAmerican": -110 }
+        ]
+      ]
+    },
+    {
+      "gameExternalId": "nfl-2026-w2-lar-ari",
+      "type": "TOTAL",
+      "sourceBook": "draftkings",
+      "rounds": [
+        [
+          { "side": "OVER", "line": "47.50", "priceAmerican": -110 },
+          { "side": "UNDER", "line": "47.50", "priceAmerican": -110 }
+        ]
+      ]
+    }
+  ]
+}
