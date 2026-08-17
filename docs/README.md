@@ -10,6 +10,7 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Core betting engine spec](specs/2026-08-14-core-betting-engine-design.md) | The v1 build: architecture, data model, odds math, grading rules, jobs, failure handling, screens, testing |
 | [Social layer spec](specs/2026-08-17-social-layer-design.md) | Subsystem 2: the season activity feed, reactions and comments, member profiles, per-viewer feed filters |
 | [Social layer plan](plans/2026-08-17-social-layer-implementation-plan.md) | The task-by-task implementation plan for subsystem 2 |
+| [Custom events spec](specs/2026-08-17-custom-events-design.md) | Subsystem 3: member-created markets, the credits currency, human resolution and disputes |
 | [Roadmap](roadmap.md) | The four subsystems, what each adds, and build order |
 | [Decision log](decisions.md) | Every design decision, what was rejected, and why |
 
@@ -71,8 +72,14 @@ See [D30](decisions.md#d30--correlated-subqueries-in-drizzle-need-literal-qualif
 for a real correlated-subquery bug the profile stats query's own test caught mid-build.
 
 Not built: a real odds provider adapter (still fixture-only — see [D2](decisions.md)) and
-production deployment/hosted Postgres wiring. Subsystems 3–4 (custom events, peer-to-peer
-bets) are [roadmap only](roadmap.md).
+production deployment/hosted Postgres wiring.
+
+**Subsystem 3 — custom events:** [specified](specs/2026-08-17-custom-events-design.md), not
+built. Member-created markets bet in **credits**, a second non-convertible currency
+([D31](decisions.md#d31--custom-events-are-bet-in-credits-a-second-non-convertible-currency)),
+on an `events` supertype above `games`
+([D33](decisions.md#d33--events-is-a-true-supertype-not-a-pair-of-nullable-foreign-keys)).
+Subsystem 4 (peer-to-peer bets) is [roadmap only](roadmap.md).
 
 ## Conventions
 

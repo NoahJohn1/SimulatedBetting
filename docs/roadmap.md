@@ -1,14 +1,14 @@
 # Roadmap
 
 The project is four independent subsystems. Each gets its own spec, plan, and build cycle.
-Subsystems 1 and 2 are specified in full; the rest are captured here at the level of detail
+Subsystems 1–3 are specified in full; subsystem 4 is captured here at the level of detail
 needed to make sure the earlier subsystems don't paint us into a corner.
 
 | # | Subsystem | Status |
 |---|---|---|
 | 1 | Core betting engine | [Built](specs/2026-08-14-core-betting-engine-design.md) — fixture odds only, no production deploy yet |
 | 2 | Social layer | [Built](specs/2026-08-17-social-layer-design.md) |
-| 3 | Custom events | Roadmap only |
+| 3 | Custom events | [Specified](specs/2026-08-17-custom-events-design.md) — not built |
 | 4 | Peer-to-peer bets | Roadmap only |
 
 ---
@@ -49,25 +49,32 @@ Jyxnzi Rainbow Six tournaments, for instance: who wins the tournament, individua
 winners, possibly player stat lines. A creator publishes an event with markets and prices,
 members bet, and the creator resolves it.
 
-**Why subsystem 1 is already compatible.** Bets reference a `selection`, never a `game`.
-Adding custom events means introducing an `event` supertype above `games` and pointing
-`markets` at it. Nothing in the betting, grading, or ledger path changes. This was a
-deliberate design choice in subsystem 1, not an accident.
+**Why subsystem 1 is already compatible.** Bets reference a `selection`, never a `game`
+([D11](decisions.md#d11--bets-reference-selections-never-games)). Adding custom events means
+introducing an `event` supertype above `games` and pointing `markets` at it
+([D33](decisions.md#d33--events-is-a-true-supertype-not-a-pair-of-nullable-foreign-keys)).
+The ledger and the grading functions are genuinely untouched by it — but the design session
+found one thing this framing understated: `placeBet` and `settleGame` both hard-join
+`markets → games → teams` for bettability checks and for the frozen feed snapshot, so those
+joins do have to become kind-aware. Confined and well-bounded, but not free.
 
 **The hard part is not the data model — it's resolution.** Sports games settle from an
-objective score feed. A custom event settles because a person says so. That needs:
+objective score feed. A custom event settles because a person says so.
 
-- A creator role with the authority to resolve their own events
-- An audit trail on every resolution (who, when, what evidence)
-- A dispute path when members disagree with a resolution
-- Odds set by hand, which means no automatic line movement and a real risk of badly priced
-  markets — worth thinking about whether creators can adjust prices after bets are placed
-  (they should not be able to, for already-placed bets — legs freeze their price, which the
-  engine already guarantees)
-
-**Open questions.** Can any member create events, or only admins? Is there a cap on how
-much simulated money can ride on a hand-priced market? What happens to an event whose
-creator disappears without resolving it?
+**Its open questions are now answered** — see [the spec](specs/2026-08-17-custom-events-design.md).
+Anyone can create events and creators may bet their own, disclosed rather than prohibited
+([D32](decisions.md#d32--anyone-can-create-events-and-creators-may-bet-their-own-with-disclosure)).
+There is no exposure cap, because custom events are bet in **credits** — a second, granted,
+non-convertible currency that cannot touch the cash bankroll the standings are built on
+([D31](decisions.md#d31--custom-events-are-bet-in-credits-a-second-non-convertible-currency),
+[D38](decisions.md#d38--no-exposure-cap-on-hand-priced-markets)). Resolution pays immediately
+and disputes are an admin re-resolution over the existing reversal path
+([D35](decisions.md#d35--custom-events-pay-on-resolution-disputes-are-an-admin-re-resolution)).
+An abandoned event surfaces through its own resolve-by date and is voided by an admin
+([D37](decisions.md#d37--events-carry-a-resolve-by-date-overdue-is-derived-and-swept-to-admins)).
+Creators cannot reprice placed bets, exactly as the roadmap expected — legs already freeze
+their price ([D10](decisions.md#d10--legs-freeze-their-line-and-price-at-placement)), so this
+needed no new mechanism.
 
 ---
 

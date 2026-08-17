@@ -368,3 +368,147 @@ sql`... FROM ledger_entries WHERE ledger_entries.bet_id = bets.id ...`
 *Consequence to watch:* any future correlated subquery in this codebase needs the same
 treatment — reach for `${table.column}` only when both sides of a comparison live in the
 query's known `FROM`/`JOIN` graph, never inside a subquery correlating against an outer table.
+
+---
+
+### D31 — Custom events are bet in credits, a second non-convertible currency
+
+*Added 2026-08-17 during the subsystem 3 design session.*
+
+Custom events are bet with **credits**, a second currency granted at season join and dripped
+weekly alongside the cash allowance. Credits never convert to cash and cash never converts to
+credits — there is no exchange rate, no admin override, and no one-way purchase.
+
+Hand-priced markets resolved by a person are a fundamentally different game from real
+sportsbook lines graded by a score feed. Mixing the two economies would mean a mispriced
+Rainbow Six market is a way to print bankroll, and the standings would stop measuring
+handicapping. Sealing credits off is what makes "anyone can create an event"
+([D32](#d32--anyone-can-create-events-and-creators-may-bet-their-own-with-disclosure)) safe
+enough to say yes to.
+
+*Rejected:* buying credits with cash, one-way. It ties the economies together — the cash leader
+dominates custom markets — and permanently drains bankroll out of the standings. *Rejected:*
+full convertibility, which makes credits a relabeled dollar and defeats the entire purpose.
+
+*Falls out for free:* a bet carries one stake in one currency, so a parlay mixing a game leg
+with a custom leg is impossible by construction. No rule needed — the money model enforces it.
+
+---
+
+### D32 — Anyone can create events, and creators may bet their own, with disclosure
+
+Any approved member creates events and resolves their own. A creator may also bet on the event
+they will resolve, and every place that bet appears — feed card, event page, profile — labels
+it as the creator's.
+
+Restricting creation to admins would make an admin the bottleneck on the most social feature in
+the app. The conflict of interest is real, and the answer is visibility rather than prohibition:
+in a league where everyone knows each other, a creator who prices soft and rules for himself is
+doing it in front of an audience, with an admin able to reverse it
+([D35](#d35--custom-events-pay-on-resolution-disputes-are-an-admin-re-resolution)).
+
+*Rejected:* barring creators from their own events — it excludes the person most interested in
+the market. *Rejected:* a creator who bets forfeits resolution rights, which gives one event two
+possible resolution paths and a rule members must learn.
+
+---
+
+### D33 — `events` is a true supertype, not a pair of nullable foreign keys
+
+A new `events` table (`id`, `kind`, `title`, `starts_at`) becomes what `markets` points at.
+`games` becomes a subtype with a unique `event_id`; `custom_events` is its sibling. One
+migration backfills an event row per existing game and drops `markets.game_id`.
+
+`events` carries no status column — each subtype owns its lifecycle, so no polymorphic status
+can be read wrong or drift out of agreement with its subtype.
+
+*Rejected:* nullable `game_id` + `custom_event_id` on `markets` with a CHECK that exactly one is
+set. It needs no backfill, but it puts two LEFT JOINs and a coalesce into every polymorphic
+query and moves an invariant out of the type system into a constraint. [D30](#d30--correlated-subqueries-in-drizzle-need-literal-qualified-identifiers)
+is a live reminder of what a subtly wrong join costs in this codebase.
+
+*Rejected:* parallel `custom_markets` / `custom_selections` tables with their own settlement
+path. Zero risk to subsystem 1, but it abandons [D11](#d11--bets-reference-selections-never-games)
+— whose entire purpose was making this moment cheap — and writes every future feature twice.
+
+---
+
+### D34 — Currency is a dimension on the existing ledger, not a second ledger
+
+`ledger_entries.currency` (`CASH` | `CREDITS`, existing rows backfilled `CASH`), a second cached
+balance column on `season_memberships`, and per-currency reconciliation. `postEntry` takes a
+currency and updates the matching cache.
+
+**No new entry types.** `BET_PLACED`, `BET_WON`, `WEEKLY_ALLOWANCE` and the rest mean exactly
+the same thing in either denomination; doubling the enum would say nothing new.
+[D5](#d5--balance-immutable-ledger-plus-a-cached-balance)'s "the ledger is truth" stays one
+invariant over two denominations.
+
+*Rejected:* a parallel `credit_ledger_entries` table. It proves a credits bug cannot touch cash,
+but it clones `postEntry`, reconciliation, the allowance job and the transaction history screen
+— and the clone is where the drift will be.
+
+---
+
+### D35 — Custom events pay on resolution; disputes are an admin re-resolution
+
+The creator resolves and winners are paid immediately. A member who disagrees files a dispute
+(one per member per event, with a reason); an admin re-resolves with a mandatory note, which
+reverses the previous payout and posts the corrected one.
+
+This is [D15](#d15--corrections-write-reversing-entries-history-is-never-edited) reused whole:
+`resolution_attempts` plays the role `settlement_attempts` already plays, so a correction can
+never collide with the original. No new money concept enters the system.
+
+*Rejected:* a 24-hour challenge window before payout. Nobody is ever paid on a wrong resolution,
+but it adds a held state, a cron sweep to finalize, and a day of delay on every event — to
+prevent something the reversal path already fixes. *Rejected:* mandatory admin confirmation on
+every resolution, which undoes [D32](#d32--anyone-can-create-events-and-creators-may-bet-their-own-with-disclosure).
+
+---
+
+### D36 — One custom market shape: N-way pick-the-winner
+
+A custom market is a question plus two or more labelled, hand-priced outcomes, exactly one of
+which wins. `market_type` gains `CUSTOM_OUTCOME`; `selections.side` becomes nullable and gains a
+`label`.
+
+A stat line is expressible as a two-outcome market in words ("Over 24.5 kills" / "Under 24.5
+kills"), which costs a creator nothing and saves the system a second grading path plus a numeric
+result-entry UI.
+
+*Rejected:* a real numeric total for custom events — creators would enter results as well as
+winners, doubling the resolution surface for a shape the N-way form already covers.
+*Rejected:* full parity with sports markets, which forces a tournament bracket into a two-sided
+home/away frame it is not.
+
+---
+
+### D37 — Events carry a resolve-by date; overdue is derived and swept to admins
+
+Every custom event has a `resolves_by`. The existing `settle` cron sweeps for `OPEN` events past
+it and emits one `CUSTOM_EVENT_OVERDUE` feed card per event. An admin then resolves it or voids
+it, refunding every stake through the path a postponed game already takes.
+
+Overdue is **derived** (`status = 'OPEN' AND resolves_by < now()`), never stored — a stored flag
+is a third state that can disagree with the clock and needs a job to maintain. The sweep rides
+in an existing cron route with no cursor, for the same reason lead-change detection does.
+
+*Rejected:* auto-voiding after a grace period. It guarantees credits are never locked forever,
+but it is a job that moves money because a date passed, and it will eventually void an event
+that needed one more day. *Rejected:* no deadline at all, where nothing surfaces a forgotten
+event and stale credits accumulate quietly.
+
+---
+
+### D38 — No exposure cap on hand-priced markets
+
+There is no limit on how many credits can ride on a member-priced market, and no validation of
+whether a creator's book adds to more than 100%. The create screen shows implied probability as
+information; it does not block.
+
+The roadmap flagged badly priced markets as a risk worth capping. Once credits are sealed off
+from cash ([D31](#d31--custom-events-are-bet-in-credits-a-second-non-convertible-currency)), a
+mispriced market can only redistribute credits — which is the point of splitting the currency.
+This follows [D19](#d19--no-maximum-bet-no-cash-out): a cap is a rule that would need tuning,
+and nothing yet says which number it should be.
