@@ -1,6 +1,7 @@
 import { bigint, index, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { seasonMemberships, users } from './identity';
 import { bets } from './betting';
+import { currency } from './currency';
 
 export const ledgerEntryType = pgEnum('ledger_entry_type', [
   'SEASON_STARTING_GRANT',
@@ -25,6 +26,7 @@ export const ledgerEntries = pgTable(
       .references(() => seasonMemberships.id),
     amountCents: bigint('amount_cents', { mode: 'bigint' }).notNull(),
     type: ledgerEntryType('type').notNull(),
+    currency: currency('currency').notNull().default('CASH'),
     balanceAfterCents: bigint('balance_after_cents', { mode: 'bigint' }).notNull(),
     actorUserId: uuid('actor_user_id').references(() => users.id),
     betId: uuid('bet_id').references(() => bets.id),
@@ -35,5 +37,6 @@ export const ledgerEntries = pgTable(
   (t) => [
     uniqueIndex('ledger_entries_idempotency_key_idx').on(t.idempotencyKey),
     index('ledger_entries_membership_idx').on(t.membershipId, t.createdAt),
+    index('ledger_entries_membership_currency_idx').on(t.membershipId, t.currency),
   ],
 );

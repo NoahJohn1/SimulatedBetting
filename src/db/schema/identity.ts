@@ -40,6 +40,12 @@ export const seasons = pgTable(
     endsAt: timestamp('ends_at', { withTimezone: true }).notNull(),
     startingBankrollCents: bigint('starting_bankroll_cents', { mode: 'bigint' }).notNull(),
     weeklyAllowanceCents: bigint('weekly_allowance_cents', { mode: 'bigint' }).notNull(),
+    startingCreditsCents: bigint('starting_credits_cents', { mode: 'bigint' })
+      .notNull()
+      .default(sql`0`),
+    weeklyCreditAllowanceCents: bigint('weekly_credit_allowance_cents', { mode: 'bigint' })
+      .notNull()
+      .default(sql`0`),
     allowanceWeekday: smallint('allowance_weekday').notNull(),
     status: seasonStatus('status').notNull().default('UPCOMING'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -62,6 +68,9 @@ export const seasonMemberships = pgTable(
       .notNull()
       .references(() => seasons.id),
     balanceCents: bigint('balance_cents', { mode: 'bigint' }).notNull(),
+    creditsBalanceCents: bigint('credits_balance_cents', { mode: 'bigint' })
+      .notNull()
+      .default(sql`0`),
     joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex('season_memberships_user_season_idx').on(t.userId, t.seasonId)],

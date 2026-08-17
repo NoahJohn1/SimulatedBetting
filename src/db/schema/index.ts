@@ -1,3 +1,4 @@
+export * from './currency';
 export * from './identity';
 export * from './sports';
 export * from './betting';
