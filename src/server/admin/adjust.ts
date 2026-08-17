@@ -3,6 +3,7 @@ import { db } from '@/db/client';
 import { seasonMemberships, users } from '@/db/schema';
 import { postEntry } from '@/server/money/ledger';
 import { emitFeedEvent } from '@/server/feed/emit';
+import { detectLeadChange } from '@/server/feed/leaders';
 
 export interface AdjustBalanceInput {
   membershipId: string;
@@ -57,6 +58,14 @@ export async function adjustBalance(input: AdjustBalanceInput): Promise<{ balanc
 
     return posted;
   });
+
+  if (result.applied) {
+    const [membership] = await db
+      .select({ seasonId: seasonMemberships.seasonId })
+      .from(seasonMemberships)
+      .where(eq(seasonMemberships.id, input.membershipId));
+    await detectLeadChange(membership.seasonId);
+  }
 
   return { balanceCents: result.balanceCents };
 }
