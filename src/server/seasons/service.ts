@@ -76,16 +76,26 @@ export async function joinSeason(userId: string, seasonId: string): Promise<Join
     // Credits are granted, never bought (D31). Same transaction, distinct key, so a
     // replayed join grants neither currency twice. A season with no credits configured
     // grants no credit row at all — a zero-amount row would be noise, not a grant.
-    const credits =
-      season.startingCreditsCents > 0n
-        ? await postEntry(tx, {
-            membershipId: membership.id,
-            amountCents: season.startingCreditsCents,
-            type: 'SEASON_STARTING_GRANT',
-            currency: 'CREDITS',
-            idempotencyKey: `grant:${membership.id}:credits`,
-          })
-        : { applied: false as const, balanceCents: 0n, entryId: null };
+    let credits: { applied: boolean; balanceCents: bigint; entryId: string | null };
+    if (season.startingCreditsCents > 0n) {
+      credits = await postEntry(tx, {
+        membershipId: membership.id,
+        amountCents: season.startingCreditsCents,
+        type: 'SEASON_STARTING_GRANT',
+        currency: 'CREDITS',
+        idempotencyKey: `grant:${membership.id}:credits`,
+      });
+    } else {
+      // No row to write, but the membership's real credits balance is not necessarily 0n —
+      // an admin can adjust credits independently of this season's economy, and this join
+      // may be a re-join. Report the true current balance, same as postEntry's own no-op
+      // replay path does, rather than a hardcoded stand-in.
+      const [current] = await tx
+        .select({ creditsBalanceCents: seasonMemberships.creditsBalanceCents })
+        .from(seasonMemberships)
+        .where(eq(seasonMemberships.id, membership.id));
+      credits = { applied: false, balanceCents: current.creditsBalanceCents, entryId: null };
+    }
 
     if (result.applied) {
       await emitFeedEvent(tx, {

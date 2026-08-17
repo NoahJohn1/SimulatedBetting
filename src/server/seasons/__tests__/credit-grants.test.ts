@@ -22,6 +22,21 @@ async function activeSeason() {
   return season;
 }
 
+/** A season with no credit fields specified — defaults to 0n, matching a pre-existing season. */
+async function zeroCreditSeason() {
+  const season = await createSeason({
+    name: 'Zero-credit season',
+    startsAt: new Date('2026-09-01T00:00:00Z'),
+    endsAt: new Date('2027-01-31T00:00:00Z'),
+    startingBankrollCents: 100_000n,
+    weeklyAllowanceCents: 5_000n,
+    startingCreditsCents: 0n,
+    weeklyCreditAllowanceCents: 0n,
+  });
+  await db.update(seasons).set({ status: 'ACTIVE' }).where(eq(seasons.id, season.id));
+  return season;
+}
+
 describe('credit grants', () => {
   beforeEach(resetDb);
 
@@ -110,5 +125,49 @@ describe('credit grants', () => {
         and(eq(ledgerEntries.membershipId, membershipId), eq(ledgerEntries.type, 'ADMIN_DEBIT')),
       );
     expect(entry.currency).toBe('CREDITS');
+  });
+
+  it('a zero-credit season grants a cash entry but writes no credit row on join', async () => {
+    const season = await zeroCreditSeason();
+    const user = await makeUser();
+
+    const result = await joinSeason(user.id, season.id);
+
+    expect(result.balanceCents).toBe(100_000n);
+    expect(result.creditsBalanceCents).toBe(0n);
+
+    const creditRows = await db
+      .select()
+      .from(ledgerEntries)
+      .where(
+        and(
+          eq(ledgerEntries.membershipId, result.membershipId),
+          eq(ledgerEntries.currency, 'CREDITS'),
+        ),
+      );
+    expect(creditRows).toEqual([]);
+  });
+
+  it('a zero-credit season drips no credit row on the weekly allowance run', async () => {
+    const season = await zeroCreditSeason();
+    const user = await makeUser();
+    const { membershipId } = await joinSeason(user.id, season.id);
+
+    const now = new Date('2026-09-08T12:00:00Z');
+    await payWeeklyAllowance(now);
+
+    const creditRows = await db
+      .select()
+      .from(ledgerEntries)
+      .where(
+        and(eq(ledgerEntries.membershipId, membershipId), eq(ledgerEntries.currency, 'CREDITS')),
+      );
+    expect(creditRows).toEqual([]);
+
+    const [row] = await db
+      .select({ credits: seasonMemberships.creditsBalanceCents })
+      .from(seasonMemberships)
+      .where(eq(seasonMemberships.id, membershipId));
+    expect(row.credits).toBe(0n);
   });
 });
