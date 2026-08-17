@@ -13,7 +13,7 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 
 ## The short version
 
-Members sign in with Google or Apple, an admin approves them, and they join a season with
+Members sign in with Google, an admin approves them, and they join a season with
 an equal starting bankroll plus a weekly allowance. They bet singles and parlays against
 real sportsbook lines on NFL and CFB games. Finished games settle automatically. A
 season-long leaderboard ranks everyone by balance.
@@ -45,9 +45,9 @@ reconciles the ledger correctly. Covered:
 - All four member screens (Games, My Bets, Standings, Me) and the admin area
 - The four cron routes: `sync-odds`, `settle`, `allowance`, `reconcile`
 
-Not built: a real odds provider adapter (still fixture-only — see [D2](decisions.md)),
-Apple sign-in, and production deployment/hosted Postgres wiring. Subsystems 2–4 (social
-layer, custom events, peer-to-peer bets) are [roadmap only](roadmap.md).
+Not built: a real odds provider adapter (still fixture-only — see [D2](decisions.md)) and
+production deployment/hosted Postgres wiring. Subsystems 2–4 (social layer, custom events,
+peer-to-peer bets) are [roadmap only](roadmap.md).
 
 ## Conventions
 

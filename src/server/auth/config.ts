@@ -3,9 +3,7 @@ import Google from 'next-auth/providers/google';
 import { upsertOAuthUser } from './identity';
 
 /**
- * Auth.js wiring. Google only for now — Apple is deferred, and adding it later is a second
- * entry in `providers` plus credentials, with no schema change, because identity is keyed
- * on (provider, providerAccountId) in our own `users` table.
+ * Auth.js wiring. Google is the only sign-in method.
  *
  * There is no Auth.js database adapter on purpose. Sessions are JWTs, and the only thing
  * persisted is our own `users` row, written through `upsertOAuthUser` on each sign-in. That

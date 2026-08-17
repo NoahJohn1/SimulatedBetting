@@ -86,7 +86,7 @@ touches a balance. All timestamps are `TIMESTAMPTZ`. Primary keys are UUIDv7 (ti
 | Column | Type | Notes |
 |---|---|---|
 | `id` | uuid | PK |
-| `provider` | enum | `GOOGLE` · `APPLE` |
+| `provider` | enum | `GOOGLE` |
 | `provider_account_id` | text | unique with `provider` |
 | `email` | text | from OAuth |
 | `display_name` | text | editable |
@@ -96,8 +96,8 @@ touches a balance. All timestamps are `TIMESTAMPTZ`. Primary keys are UUIDv7 (ti
 | `created_at` | timestamptz | |
 
 New OAuth sign-ins land in `PENDING`. A `PENDING` user can sign in and see a holding
-screen, and nothing else. This gate exists because Google/Apple sign-in means anyone with
-an account can reach the login page.
+screen, and nothing else. This gate exists because Google sign-in means anyone with a
+Google account can reach the login page.
 
 **`seasons`**
 | Column | Type | Notes |
@@ -344,7 +344,7 @@ always be replayed to explain how a balance came to be — including the mistake
 Four bottom tabs, plus detail views and a hidden admin area. Mobile-first, installable as
 a PWA.
 
-- **Sign in** — Google / Apple. Pending users see a holding screen.
+- **Sign in** — Google. Pending users see a holding screen.
 - **Games** (tab 1) — sport toggle, week selector, one row per game with a
   spread / moneyline / total grid. The default landing screen.
 - **Game detail** — all markets for one matchup, with line-movement history.
