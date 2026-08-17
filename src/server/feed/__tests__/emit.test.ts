@@ -19,7 +19,7 @@ describe('emitFeedEvent', () => {
         type: 'MEMBER_JOINED',
         subjectMembershipId: membership.id,
         dedupeKey: `membership:${membership.id}:joined`,
-        payload: { startingBankrollCents: '1000000' },
+        payload: { startingBankrollCents: '1000000', startingCreditsCents: '100000' },
         occurredAt,
       }),
     );
@@ -30,7 +30,7 @@ describe('emitFeedEvent', () => {
     const [row] = await db.select().from(feedEvents).where(eq(feedEvents.id, result.eventId!));
     expect(row.type).toBe('MEMBER_JOINED');
     expect(row.occurredAt).toEqual(occurredAt);
-    expect(row.payload).toEqual({ startingBankrollCents: '1000000' });
+    expect(row.payload).toEqual({ startingBankrollCents: '1000000', startingCreditsCents: '100000' });
   });
 
   it('is a no-op on a repeated dedupe key', async () => {
@@ -40,7 +40,7 @@ describe('emitFeedEvent', () => {
       type: 'MEMBER_JOINED' as const,
       subjectMembershipId: membership.id,
       dedupeKey: `membership:${membership.id}:joined`,
-      payload: { startingBankrollCents: '1000000' },
+      payload: { startingBankrollCents: '1000000', startingCreditsCents: '100000' },
       occurredAt: new Date(),
     };
 
@@ -64,7 +64,12 @@ describe('emitFeedEvent', () => {
         seasonId: membership.seasonId,
         type: 'ALLOWANCE_PAID',
         dedupeKey: 'allowance:x:2026-W36',
-        payload: { weekKey: '2026-W36', memberCount: 1, amountCents: '50000' },
+        payload: {
+          weekKey: '2026-W36',
+          memberCount: 1,
+          amountCents: '50000',
+          creditAmountCents: '10000',
+        },
       }),
     );
 

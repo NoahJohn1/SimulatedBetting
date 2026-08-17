@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { seasonMemberships, users } from '@/db/schema';
+import { seasonMemberships, users, type Currency } from '@/db/schema';
 import { postEntry } from '@/server/money/ledger';
 import { emitFeedEvent } from '@/server/feed/emit';
 import { detectLeadChange } from '@/server/feed/leaders';
@@ -8,6 +8,7 @@ import { detectLeadChange } from '@/server/feed/leaders';
 export interface AdjustBalanceInput {
   membershipId: string;
   amountCents: bigint;
+  currency?: Currency;
   note: string;
   actorUserId: string;
   idempotencyKey: string;
@@ -24,6 +25,7 @@ export async function adjustBalance(input: AdjustBalanceInput): Promise<{ balanc
       amountCents: input.amountCents,
       type: input.amountCents > 0n ? 'ADMIN_CREDIT' : 'ADMIN_DEBIT',
       idempotencyKey: input.idempotencyKey,
+      currency: input.currency,
       actorUserId: input.actorUserId,
       note: input.note,
     });
@@ -52,6 +54,7 @@ export async function adjustBalance(input: AdjustBalanceInput): Promise<{ balanc
         amountCents: input.amountCents.toString(),
         note: input.note,
         adminDisplayName: admin?.displayName ?? 'an admin',
+        currency: input.currency ?? 'CASH',
       },
     });
 
@@ -60,7 +63,9 @@ export async function adjustBalance(input: AdjustBalanceInput): Promise<{ balanc
 
   // Reuses the season id already read inside the transaction rather than a second
   // seasonMemberships lookup for the same membership.
-  if (result.applied && result.seasonId) {
+  // The lead means the standings, and the standings are cash (D31). A credits adjustment
+  // cannot reorder them, so there is nothing to detect.
+  if (result.applied && result.seasonId && (input.currency ?? 'CASH') === 'CASH') {
     await detectLeadChange(result.seasonId);
   }
 

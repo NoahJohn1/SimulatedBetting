@@ -50,14 +50,25 @@ export async function payWeeklyAllowance(now: Date = new Date()): Promise<Allowa
   let skipped = 0;
 
   for (const membership of memberships) {
-    const result = await db.transaction((tx) =>
-      postEntry(tx, {
+    const result = await db.transaction(async (tx) => {
+      const cash = await postEntry(tx, {
         membershipId: membership.id,
         amountCents: season.weeklyAllowanceCents,
         type: 'WEEKLY_ALLOWANCE',
         idempotencyKey: `allowance:${membership.id}:${weekKey}`,
-      }),
-    );
+      });
+      // A zero-credit season drips no credit row at all — same guard as the join grant.
+      if (season.weeklyCreditAllowanceCents > 0n) {
+        await postEntry(tx, {
+          membershipId: membership.id,
+          amountCents: season.weeklyCreditAllowanceCents,
+          type: 'WEEKLY_ALLOWANCE',
+          currency: 'CREDITS',
+          idempotencyKey: `allowance:${membership.id}:${weekKey}:credits`,
+        });
+      }
+      return cash;
+    });
     if (result.applied) credited += 1;
     else skipped += 1;
   }
@@ -74,6 +85,7 @@ export async function payWeeklyAllowance(now: Date = new Date()): Promise<Allowa
         weekKey,
         memberCount: memberships.length,
         amountCents: season.weeklyAllowanceCents.toString(),
+        creditAmountCents: season.weeklyCreditAllowanceCents.toString(),
       },
       occurredAt: now,
     }),

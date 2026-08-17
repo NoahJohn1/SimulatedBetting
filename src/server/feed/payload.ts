@@ -40,18 +40,21 @@ export interface BetSettledPayload extends BetPlacedPayload {
 
 export interface MemberJoinedPayload {
   startingBankrollCents: string;
+  startingCreditsCents: string;
 }
 
 export interface AllowancePaidPayload {
   weekKey: string;
   memberCount: number;
   amountCents: string;
+  creditAmountCents: string;
 }
 
 export interface AdminAdjustmentPayload {
   amountCents: string;
   note: string;
   adminDisplayName: string;
+  currency: 'CASH' | 'CREDITS';
 }
 
 export interface LeadChangePayload {
