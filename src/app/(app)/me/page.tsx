@@ -1,4 +1,5 @@
 import { desc, eq } from 'drizzle-orm';
+import Link from 'next/link';
 import { db } from '@/db/client';
 import { ledgerEntries } from '@/db/schema';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -38,6 +39,10 @@ export default async function MePage() {
           <Money cents={member.balanceCents} />
         </p>
       </section>
+
+      <Link href="/me/feed-preferences" className="text-xs text-zinc-500 hover:underline">
+        Feed filters
+      </Link>
 
       {entries.length === 0 ? (
         <EmptyState title="No activity yet" />
