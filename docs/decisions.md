@@ -205,3 +205,131 @@ single-value enum (`GOOGLE`), migrated with `drizzle/0003_drop-apple-auth-provid
 Identity is still keyed on `(provider, provider_account_id)` rather than email, so adding a
 provider back later is additive — a second enum value and a second `next-auth` provider
 entry, no redesign.
+
+---
+
+### D21 — No social graph; the season is the graph
+
+*Added 2026-08-17 during the subsystem 2 design session.*
+
+Supersedes the "friend or follow graph" sketched in [the roadmap](roadmap.md#2-social-layer).
+Season membership defines who can see whom. There is no follow, no friend request, no accept.
+
+Every member is already admin-approved into a small private league, so a graph would mostly
+reproduce the season roster with extra screens — plus a cold-start problem where a new
+member's feed is empty until they follow someone. If the group ever outgrows one shared feed,
+a graph is additive: a `follows` table and a read-time filter, no redesign.
+
+---
+
+### D22 — Bets are public the moment they are placed
+
+Feed cards appear at placement, not at kickoff and not at settlement.
+
+Standings already publish everyone's exact balance, so stakes were never really private.
+Visible-at-placement is what makes the feed worth opening — live sweating, and no quietly
+burying a bad take. Copying somebody's pick ("tailing") is treated as a feature.
+
+*Rejected:* hidden-until-kickoff, which needs a reveal-time concept (a `visible_at` column and
+either a job or a read filter, with parlays revealing on their earliest kickoff) to solve a
+copying problem this group does not have. *Rejected:* settled-only, which turns the feed into
+a results log.
+
+---
+
+### D23 — `feed_events` is a materialized, append-only table written in the source transaction
+
+Each event is a real row with a real id, emitted by `emitFeedEvent(tx, …)` from inside the
+transaction that caused it, carrying a deterministic unique `dedupe_key`.
+
+A real id is what lets reactions and comments be plain foreign keys. A single table is what
+makes pagination one indexed keyset query and per-viewer type filters a `WHERE type = ANY(…)`.
+
+*Rejected:* deriving the feed at read time from a `UNION` over `bets`, `ledger_entries` and
+`season_memberships`. Drift-proof and needs no backfill, but a synthetic union row has no
+durable id to attach a reaction to, keyset pagination across a five-way union with per-viewer
+filters is unmaintainable, and milestones cannot be expressed at all.
+
+*Rejected:* a cron feed-builder scanning for new rows since a cursor. It keeps the money core
+untouched, but the cheapest interval is minutes, which contradicts [D22](#d22--bets-are-public-the-moment-they-are-placed),
+and it adds a cursor that can get stuck.
+
+*Accepted cost:* a bug in payload construction can now reject a bet. The insert itself is one
+`INSERT … ON CONFLICT DO NOTHING` with no joins and no computation, so the only way it fails
+is a database that is down — in which case the bet should not commit either. This is the same
+argument [D5](#d5--balance-immutable-ledger-plus-a-cached-balance) already makes for the ledger.
+
+---
+
+### D24 — Admin adjustments are published to the season feed
+
+Extends [D16](#d16--every-member-sees-their-own-full-ledger). An `ADMIN_CREDIT` or
+`ADMIN_DEBIT` posts an `ADMIN_ADJUSTMENT` card to the whole season, carrying the amount and
+the mandatory note.
+
+D16's reasoning was that if an admin moves your money, you see it and see why. The same
+reasoning applied to the group is stronger: an admin cannot quietly gift anyone, because the
+league watches every adjustment land. The note field was already mandatory and already visible
+to the affected member; this widens the audience, not the disclosure.
+
+*Consequence to watch:* notes are now written for an audience. That is intended.
+
+---
+
+### D25 — Money inside a feed payload is a decimal string
+
+`stakeCents`, `payoutCents` and every other amount in a `feed_events.payload` is stored as a
+decimal string (`"95450"`), never a JSON number.
+
+`JSON.stringify` throws on a `bigint`, and a `number` silently loses precision past 2^53.
+A string round-trips through `BigInt()` exactly, which keeps
+[D17](#d17--all-money-is-integer-cents) true inside jsonb as well as in columns. Display-only
+ratios (a big win's multiple) are integer basis points for the same reason.
+
+---
+
+### D26 — Allowance posts one aggregated card per week
+
+`payWeeklyAllowance` emits a single `ALLOWANCE_PAID` event per season per ISO week
+(`allowance:<seasonId>:<weekKey>`), carrying the credited member count — not one card per
+member.
+
+Twelve members would otherwise produce twelve identical cards every Tuesday, which buries
+everything anyone actually wants to read. It is the only event type with no subject member.
+
+---
+
+### D27 — Head-to-head is deferred to subsystem 4
+
+Nobody bets *against* anybody until peer-to-peer bets exist, so "head-to-head record" has no
+unambiguous meaning yet. Subsystem 2 ships member profiles with season statistics instead.
+
+*Rejected for now:* scoring opposed positions on the same market (two members on either side
+of one line) as a matchup. It is the only genuine head-to-head available pre-P2P and it is
+appealing, but it is sparse in a small league and subsystem 4 may well redefine the metric.
+Defining it twice is worse than defining it once, late.
+
+---
+
+### D28 — Reactions hard-delete, comments soft-delete
+
+Removing a reaction deletes the row. Deleting a comment sets `deleted_at` and
+`deleted_by_user_id`, keeps the row, and renders as "Comment removed".
+
+A reaction has no history worth keeping. A comment does: the thread keeps its shape, and there
+is a record of whether the author or an admin removed it — the same instinct as
+[D15](#d15--corrections-write-reversing-entries-history-is-never-edited).
+
+*Rejected:* a report queue and a hidden state. In a league where everyone knows each other,
+the admin *is* the moderation system, and a queue is machinery that never runs.
+
+---
+
+### D29 — No real-time transport in v1
+
+The feed loads fresh on navigation and paginates through a server action. No websockets, no
+SSE, no polling interval, no unread badge.
+
+A five-person league checking the app after a game does not need a socket, and every real-time
+option adds either a connection to manage or a request every few seconds forever. Pull-to-refresh
+is the browser's job.

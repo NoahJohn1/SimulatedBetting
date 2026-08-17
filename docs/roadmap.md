@@ -1,13 +1,13 @@
 # Roadmap
 
 The project is four independent subsystems. Each gets its own spec, plan, and build cycle.
-Subsystem 1 is specified in full; the rest are captured here at the level of detail needed
-to make sure subsystem 1 doesn't paint us into a corner.
+Subsystems 1 and 2 are specified in full; the rest are captured here at the level of detail
+needed to make sure the earlier subsystems don't paint us into a corner.
 
 | # | Subsystem | Status |
 |---|---|---|
 | 1 | Core betting engine | [Built](specs/2026-08-14-core-betting-engine-design.md) — fixture odds only, no production deploy yet |
-| 2 | Social layer | Roadmap only |
+| 2 | Social layer | [Specified](specs/2026-08-17-social-layer-design.md) — not built |
 | 3 | Custom events | Roadmap only |
 | 4 | Peer-to-peer bets | Roadmap only |
 
@@ -31,10 +31,14 @@ how it resolved, reactions on bets, and head-to-head records between members.
 bet and settlement is already recorded. This is largely read-model and UI work — no changes
 to the money core.
 
-**Open questions for its own brainstorm.** Are bets visible before they settle, or only
-after? (Visible-immediately is more fun and more accountable; hidden-until-settled prevents
-copying.) Do reactions and comments need moderation among friends? Is the feed
-season-scoped or global?
+**Its open questions are now answered** — see [the spec](specs/2026-08-17-social-layer-design.md).
+Bets are visible at placement ([D22](decisions.md#d22--bets-are-public-the-moment-they-are-placed)).
+There is no friend or follow graph after all; season membership is the visibility boundary
+([D21](decisions.md#d21--no-social-graph-the-season-is-the-graph)), which also settles the
+season-scoped-vs-global question in favor of season-scoped. Moderation is author-delete plus
+admin-delete, with no queue ([D28](decisions.md#d28--reactions-hard-delete-comments-soft-delete)).
+Head-to-head moved to subsystem 4, where it has an unambiguous meaning
+([D27](decisions.md#d27--head-to-head-is-deferred-to-subsystem-4)).
 
 ---
 
