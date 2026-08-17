@@ -10,7 +10,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-export const authProvider = pgEnum('auth_provider', ['GOOGLE', 'APPLE']);
+export const authProvider = pgEnum('auth_provider', ['GOOGLE']);
 export const userRole = pgEnum('user_role', ['USER', 'ADMIN']);
 export const userStatus = pgEnum('user_status', ['PENDING', 'APPROVED', 'DISABLED']);
 export const seasonStatus = pgEnum('season_status', ['UPCOMING', 'ACTIVE', 'COMPLETED']);

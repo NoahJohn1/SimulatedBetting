@@ -190,3 +190,18 @@ Bet size is limited only by balance. There is no early cash-out.
 
 A max-bet cap is a rule that would need tuning; cash-out requires live odds that v1 does not
 have.
+
+---
+
+### D20 — Auth: Google only, Apple dropped
+
+*Added 2026-08-17.*
+
+Supersedes the Apple half of [D7](#d7--auth-google--apple-sign-in-with-admin-approval). The
+group all signs in with Google; Apple sign-in added a second OAuth integration and a second
+set of credentials to provision for no member who'd use it. `auth_provider` is now a
+single-value enum (`GOOGLE`), migrated with `drizzle/0003_drop-apple-auth-provider.sql`.
+
+Identity is still keyed on `(provider, provider_account_id)` rather than email, so adding a
+provider back later is additive — a second enum value and a second `next-auth` provider
+entry, no redesign.

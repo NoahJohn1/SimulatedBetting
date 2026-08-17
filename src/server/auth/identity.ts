@@ -3,7 +3,7 @@ import { db } from '@/db/client';
 import { seasonMemberships, seasons, users } from '@/db/schema';
 
 export interface OAuthProfile {
-  provider: 'GOOGLE' | 'APPLE';
+  provider: 'GOOGLE';
   providerAccountId: string;
   email: string;
   displayName: string;

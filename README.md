@@ -6,11 +6,13 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 Design documentation lives in [`docs/`](docs/README.md). Start with the
 [core betting engine spec](docs/specs/2026-08-14-core-betting-engine-design.md).
 
-Plan 1 — the headless money core — is complete: Postgres schema, the append-only
-ledger, seasons, weekly allowance, admin adjustments, reconciliation, and the pure
-betting math (money formatting, odds arithmetic, leg and parlay grading). There is
-no odds feed and no UI yet; those are
-[Plans 2 and 3](docs/plans/README.md).
+Subsystem 1 (the core betting engine) is built: Postgres schema, the append-only
+ledger, seasons, weekly allowance, admin adjustments, reconciliation, fixture-backed
+odds sync and settlement, Google sign-in with admin approval, and the four member
+screens (Games, My Bets, Standings, Me) plus the admin area. See
+[where things stand](docs/README.md#where-things-stand) for what's covered and what
+isn't. Subsystems 2–4 (social layer, custom events, peer-to-peer bets) are
+[roadmap only](docs/roadmap.md).
 
 ## Local development
 
