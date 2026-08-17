@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { seasonMemberships, seasons } from '@/db/schema';
 import { postEntry } from '@/server/money/ledger';
+import { emitFeedEvent } from '@/server/feed/emit';
 
 const LEAGUE_TIMEZONE = 'America/New_York';
 
@@ -60,6 +61,23 @@ export async function payWeeklyAllowance(now: Date = new Date()): Promise<Allowa
     if (result.applied) credited += 1;
     else skipped += 1;
   }
+
+  // One card for the whole run (D26). Twelve members would otherwise post twelve identical
+  // cards every Tuesday, which is how a feed dies. Emitted unconditionally — the week-scoped
+  // dedupe key already makes a repeat run a no-op, so there is nothing to branch on.
+  await db.transaction((tx) =>
+    emitFeedEvent(tx, {
+      seasonId: season.id,
+      type: 'ALLOWANCE_PAID',
+      dedupeKey: `allowance:${season.id}:${weekKey}`,
+      payload: {
+        weekKey,
+        memberCount: memberships.length,
+        amountCents: season.weeklyAllowanceCents.toString(),
+      },
+      occurredAt: now,
+    }),
+  );
 
   return { credited, skipped };
 }

@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { seasonMemberships, seasons } from '@/db/schema';
 import { postEntry } from '@/server/money/ledger';
+import { emitFeedEvent } from '@/server/feed/emit';
 import {
   DEFAULT_ALLOWANCE_WEEKDAY,
   DEFAULT_STARTING_BANKROLL_CENTS,
@@ -63,6 +64,17 @@ export async function joinSeason(userId: string, seasonId: string): Promise<Join
       type: 'SEASON_STARTING_GRANT',
       idempotencyKey: `grant:${membership.id}`,
     });
+
+    if (result.applied) {
+      await emitFeedEvent(tx, {
+        seasonId,
+        type: 'MEMBER_JOINED',
+        subjectMembershipId: membership.id,
+        dedupeKey: `membership:${membership.id}:joined`,
+        payload: { startingBankrollCents: season.startingBankrollCents.toString() },
+        occurredAt: membership.joinedAt,
+      });
+    }
 
     return { membershipId: membership.id, balanceCents: result.balanceCents };
   });

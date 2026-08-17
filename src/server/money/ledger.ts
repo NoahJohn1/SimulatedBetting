@@ -19,6 +19,8 @@ export interface PostEntryInput {
 export interface PostEntryResult {
   applied: boolean;
   balanceCents: bigint;
+  /** The row this call inserted, or null when the idempotency key already existed. */
+  entryId: string | null;
 }
 
 export async function postEntry(tx: Tx, input: PostEntryInput): Promise<PostEntryResult> {
@@ -60,7 +62,7 @@ export async function postEntry(tx: Tx, input: PostEntryInput): Promise<PostEntr
     .returning({ id: ledgerEntries.id });
 
   if (inserted.length === 0) {
-    return { applied: false, balanceCents: membership.balanceCents };
+    return { applied: false, balanceCents: membership.balanceCents, entryId: null };
   }
 
   await tx
@@ -68,5 +70,5 @@ export async function postEntry(tx: Tx, input: PostEntryInput): Promise<PostEntr
     .set({ balanceCents: nextBalance })
     .where(eq(seasonMemberships.id, input.membershipId));
 
-  return { applied: true, balanceCents: nextBalance };
+  return { applied: true, balanceCents: nextBalance, entryId: inserted[0].id };
 }
