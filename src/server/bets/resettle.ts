@@ -1,11 +1,33 @@
-import { and, eq, ne, sql } from 'drizzle-orm';
+import { and, asc, eq, ne, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { db } from '@/db/client';
-import { betLegs, bets, games, ledgerEntries, markets, selections } from '@/db/schema';
+import {
+  betLegs,
+  bets,
+  games,
+  ledgerEntries,
+  markets,
+  seasonMemberships,
+  selections,
+  teams,
+} from '@/db/schema';
 import type { BetStatus, LedgerEntryType } from '@/db/schema';
 import { gradeLeg, gradeParlay, settledPayoutCents } from '@/domain/grading';
 import type { LegStatus } from '@/domain/grading';
 import { lineToNumber } from '@/domain/line';
+import { isBigWin, isParlayHit, multipleBasisPoints, survivingLegCount } from '@/domain/milestones';
+import { emitFeedEvent } from '@/server/feed/emit';
+import { buildLegSnapshot } from '@/server/feed/snapshot';
+import type {
+  BetSettledPayload,
+  BigWinPayload,
+  LegOutcome,
+  ParlayHitPayload,
+} from '@/server/feed/payload';
 import { postEntry } from '@/server/money/ledger';
+
+const homeTeams = alias(teams, 'resettle_home_teams');
+const awayTeams = alias(teams, 'resettle_away_teams');
 
 export interface ResettleBetInput {
   betId: string;
@@ -76,6 +98,13 @@ export async function resettleBet(input: ResettleBetInput): Promise<ResettleBetR
       });
     }
 
+    // The season id needs its own small read: `bet` was loaded with `.for('update')`, and
+    // Postgres will not take a `FOR UPDATE` lock through an outer-joined query.
+    const [membership] = await tx
+      .select({ seasonId: seasonMemberships.seasonId })
+      .from(seasonMemberships)
+      .where(eq(seasonMemberships.id, bet.membershipId));
+
     // Re-grade every leg from the games' current scores.
     const legs = await tx
       .select({
@@ -87,12 +116,19 @@ export async function resettleBet(input: ResettleBetInput): Promise<ResettleBetR
         gameStatus: games.status,
         homeScore: games.homeScore,
         awayScore: games.awayScore,
+        sport: games.sport,
+        startsAt: games.startsAt,
+        homeAbbr: homeTeams.abbreviation,
+        awayAbbr: awayTeams.abbreviation,
       })
       .from(betLegs)
       .innerJoin(selections, eq(betLegs.selectionId, selections.id))
       .innerJoin(markets, eq(selections.marketId, markets.id))
       .innerJoin(games, eq(markets.gameId, games.id))
-      .where(eq(betLegs.betId, bet.id));
+      .innerJoin(homeTeams, eq(games.homeTeamId, homeTeams.id))
+      .innerJoin(awayTeams, eq(games.awayTeamId, awayTeams.id))
+      .where(eq(betLegs.betId, bet.id))
+      .orderBy(asc(betLegs.createdAt));
 
     const settledAt = new Date();
     const regraded: { status: LegStatus; priceAmerican: number }[] = [];
@@ -151,6 +187,76 @@ export async function resettleBet(input: ResettleBetInput): Promise<ResettleBetR
         settlementAttempts: attempt,
       })
       .where(eq(bets.id, bet.id));
+
+    // Guarded exactly like the payout block above: unlike settleGame's structural `continue`
+    // on PENDING, resettleBet has no such guarantee — a leg's game can revert away from FINAL
+    // between attempts, and this is the only thing standing between that case and a
+    // BET_SETTLED card lying about a bet that is still PENDING. The guard also narrows
+    // `newStatus` to exactly BetSettledPayload['outcome'], so no unsafe cast is needed below.
+    if (newStatus !== 'PENDING') {
+      const legOutcomes = regraded.map((leg) => leg.status as LegOutcome);
+
+      const settledPayload: BetSettledPayload = {
+        betType: bet.type,
+        stakeCents: bet.stakeCents.toString(),
+        potentialPayoutCents: bet.potentialPayoutCents.toString(),
+        combinedPriceAmerican: bet.combinedPriceAmerican,
+        legs: legs.map((leg) =>
+          buildLegSnapshot(leg, { line: leg.line, priceAmerican: leg.priceAtPlacement }),
+        ),
+        outcome: newStatus,
+        payoutCents: paidCents.toString(),
+        netCents: (paidCents - bet.stakeCents).toString(),
+        legOutcomes,
+        settlementAttempt: attempt,
+        // Always true here: a bet's first-ever settlement never goes through resettleBet.
+        correction: attempt > 1,
+      };
+
+      await emitFeedEvent(tx, {
+        seasonId: membership.seasonId,
+        type: 'BET_SETTLED',
+        subjectMembershipId: bet.membershipId,
+        betId: bet.id,
+        dedupeKey: `bet:${bet.id}:settled:${attempt}`,
+        payload: settledPayload,
+        occurredAt: settledAt,
+      });
+
+      if (newStatus === 'WON' && isBigWin(bet.stakeCents, paidCents)) {
+        const bigWin: BigWinPayload = {
+          stakeCents: bet.stakeCents.toString(),
+          payoutCents: paidCents.toString(),
+          multipleBasisPoints: multipleBasisPoints(bet.stakeCents, paidCents),
+        };
+        await emitFeedEvent(tx, {
+          seasonId: membership.seasonId,
+          type: 'MILESTONE_BIG_WIN',
+          subjectMembershipId: bet.membershipId,
+          betId: bet.id,
+          dedupeKey: `bet:${bet.id}:bigwin:${attempt}`,
+          payload: bigWin,
+          occurredAt: settledAt,
+        });
+      }
+
+      if (isParlayHit(bet.type, newStatus, legOutcomes)) {
+        const parlayHit: ParlayHitPayload = {
+          legCount: survivingLegCount(legOutcomes),
+          payoutCents: paidCents.toString(),
+          combinedPriceAmerican: bet.combinedPriceAmerican,
+        };
+        await emitFeedEvent(tx, {
+          seasonId: membership.seasonId,
+          type: 'MILESTONE_PARLAY_HIT',
+          subjectMembershipId: bet.membershipId,
+          betId: bet.id,
+          dedupeKey: `bet:${bet.id}:parlayhit:${attempt}`,
+          payload: parlayHit,
+          occurredAt: settledAt,
+        });
+      }
+    }
 
     return {
       ok: true as const,
