@@ -6,7 +6,7 @@ to make sure subsystem 1 doesn't paint us into a corner.
 
 | # | Subsystem | Status |
 |---|---|---|
-| 1 | Core betting engine | [Spec approved](specs/2026-08-14-core-betting-engine-design.md) |
+| 1 | Core betting engine | [Built](specs/2026-08-14-core-betting-engine-design.md) — fixture odds only, no production deploy yet |
 | 2 | Social layer | Roadmap only |
 | 3 | Custom events | Roadmap only |
 | 4 | Peer-to-peer bets | Roadmap only |

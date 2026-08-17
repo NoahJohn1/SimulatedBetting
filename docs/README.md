@@ -8,9 +8,6 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | Document | What's in it |
 |---|---|
 | [Core betting engine spec](specs/2026-08-14-core-betting-engine-design.md) | The v1 build: architecture, data model, odds math, grading rules, jobs, failure handling, screens, testing |
-| [Implementation plans](plans/README.md) | The three build plans, and how two people split the work |
-| [Worker A brief](plans/worker-a-brief.md) | Betting logic: odds math, grading, placement, settlement, betting screens |
-| [Worker B brief](plans/worker-b-brief.md) | Data & money: database, ledger, seasons, admin, odds ingestion, account screens |
 | [Roadmap](roadmap.md) | The four subsystems, what each adds, and build order |
 | [Decision log](decisions.md) | Every design decision, what was rejected, and why |
 
@@ -33,8 +30,24 @@ Three properties the design is organized around:
 
 ## Where things stand
 
-The core betting engine spec is approved and [Plan 1](plans/2026-08-15-01-foundation-and-money-core.md)
-is written and ready to build. Nothing is implemented yet.
+Subsystem 1 (the core betting engine) is built end-to-end and verified: `npm run verify`
+(typecheck, lint, 26 test files / 222 tests) passes clean, and the app runs, seeds a
+fixture slate, takes a bet through placement and settlement (including a push), and
+reconciles the ledger correctly. Covered:
+
+- Postgres schema (Drizzle), the append-only ledger, seasons, weekly allowance, admin
+  balance adjustments, and daily reconciliation
+- Odds math and grading (moneyline/spread/total, singles and parlays) as pure functions
+- Fixture-backed odds sync and result sync, with market suspension on stale data
+- Bet placement (with line/price re-validation at commit) and idempotent settlement,
+  including resumable batching and admin-triggered re-settlement
+- Google sign-in with admin-approval gating, seeded admins via `ADMIN_EMAILS`
+- All four member screens (Games, My Bets, Standings, Me) and the admin area
+- The four cron routes: `sync-odds`, `settle`, `allowance`, `reconcile`
+
+Not built: a real odds provider adapter (still fixture-only — see [D2](decisions.md)),
+Apple sign-in, and production deployment/hosted Postgres wiring. Subsystems 2–4 (social
+layer, custom events, peer-to-peer bets) are [roadmap only](roadmap.md).
 
 ## Conventions
 

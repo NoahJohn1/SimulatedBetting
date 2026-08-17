@@ -1,7 +1,7 @@
 # Core Betting Engine — Design Spec
 
 **Date:** 2026-08-14
-**Status:** Approved
+**Status:** Built (fixture odds only; see [docs/README.md](../README.md#where-things-stand))
 **Scope:** Subsystem 1 of 4 (see [../roadmap.md](../roadmap.md))
 
 ## Purpose
