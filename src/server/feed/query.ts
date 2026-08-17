@@ -152,3 +152,67 @@ export async function getSeasonFeed(
 
   return { cards, nextCursor };
 }
+
+/**
+ * One card by id, scoped to the viewer's season.
+ *
+ * Returns null both when the event does not exist and when it belongs to another season, so
+ * the detail page cannot be used to probe for valid ids. Mutes are deliberately NOT applied:
+ * a muted type should stay out of the feed, but a card someone linked you to should still open.
+ */
+export async function getFeedEvent(opts: {
+  eventId: string;
+  seasonId: string;
+  viewerUserId: string;
+  viewerMembershipId: string;
+}): Promise<FeedCard | null> {
+  const [row] = await db
+    .select({
+      id: feedEvents.id,
+      type: feedEvents.type,
+      occurredAt: feedEvents.occurredAt,
+      payload: feedEvents.payload,
+      subjectMembershipId: feedEvents.subjectMembershipId,
+      displayName: users.displayName,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(feedEvents)
+    .leftJoin(seasonMemberships, eq(feedEvents.subjectMembershipId, seasonMemberships.id))
+    .leftJoin(users, eq(seasonMemberships.userId, users.id))
+    .where(and(eq(feedEvents.id, opts.eventId), eq(feedEvents.seasonId, opts.seasonId)));
+
+  if (!row) return null;
+
+  const [reactionRows, commentRows] = await Promise.all([
+    db
+      .select({
+        emoji: feedReactions.emoji,
+        count: sql<number>`count(*)::int`,
+        mine: sql<boolean>`bool_or(${feedReactions.membershipId} = ${opts.viewerMembershipId}::uuid)`,
+      })
+      .from(feedReactions)
+      .where(eq(feedReactions.eventId, opts.eventId))
+      .groupBy(feedReactions.emoji),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(feedComments)
+      .where(and(eq(feedComments.eventId, opts.eventId), isNull(feedComments.deletedAt))),
+  ]);
+
+  return {
+    id: row.id,
+    type: row.type,
+    occurredAt: row.occurredAt,
+    subject:
+      row.subjectMembershipId && row.displayName
+        ? {
+            membershipId: row.subjectMembershipId,
+            displayName: row.displayName,
+            avatarUrl: row.avatarUrl,
+          }
+        : null,
+    payload: row.payload as FeedEventPayload,
+    reactions: reactionRows.map((r) => ({ emoji: r.emoji, count: r.count, mine: r.mine })),
+    commentCount: commentRows[0]?.count ?? 0,
+  };
+}
