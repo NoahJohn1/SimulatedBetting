@@ -1,37 +1,10 @@
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { feedComments, feedEvents, feedReactions, seasonMemberships, users } from '@/db/schema';
+import { isAllowedEmoji, FeedError, MAX_COMMENT_LENGTH } from './reaction-emoji';
 
-/**
- * Six, fixed, in this order everywhere.
- *
- * An open emoji field means an unbounded GROUP BY per card, a legend nobody can read, and a
- * picker on a phone. Six covers celebration, mockery and respect, which is the entire
- * emotional range of a betting group chat.
- */
-export const REACTION_EMOJI = ['🔥', '😂', '💀', '🤝', '🎯', '🤡'] as const;
-
-export const MAX_COMMENT_LENGTH = 500;
-
-export type FeedErrorCode =
-  | 'EMOJI_NOT_ALLOWED'
-  | 'EVENT_NOT_FOUND'
-  | 'WRONG_SEASON'
-  | 'COMMENT_EMPTY'
-  | 'COMMENT_TOO_LONG'
-  | 'COMMENT_NOT_FOUND'
-  | 'NOT_ALLOWED';
-
-export class FeedError extends Error {
-  constructor(readonly code: FeedErrorCode) {
-    super(code);
-    this.name = 'FeedError';
-  }
-}
-
-export function isAllowedEmoji(emoji: string): boolean {
-  return (REACTION_EMOJI as readonly string[]).includes(emoji);
-}
+export { REACTION_EMOJI, MAX_COMMENT_LENGTH, FeedError, isAllowedEmoji } from './reaction-emoji';
+export type { FeedErrorCode } from './reaction-emoji';
 
 /** Every interaction confirms the event is in the actor's own season before touching it. */
 async function requireEventInSeason(eventId: string, seasonId: string): Promise<void> {
