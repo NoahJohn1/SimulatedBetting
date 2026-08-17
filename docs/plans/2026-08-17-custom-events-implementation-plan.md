@@ -24,6 +24,7 @@
 - **Database for tests:** see [Environment setup](#environment-setup). The `npm run db:up` path needs Docker and does **not** work in the Claude Code cloud environment. Tests run against `simbet_test`.
 - **Verification command:** `npm run verify` (typecheck + lint + test). It must pass before the final commit of every task. Two pre-existing lint *warnings* exist (`src/server/feed/leaders.ts` unused `seasonId`, `src/server/feed/__tests__/money-emission.test.ts` unused `_`); they are not errors and are not yours to fix. Zero errors is the bar.
 - **Commit after every task**, with a `feat:` / `test:` / `docs:` prefix matching the existing history style.
+- **UI polish is deferred by decision of the project owner.** Tasks 16–21 must be correct, server-side authorized, and complete enough to exercise every path the services expose. They do not need to be finished design — match the existing screens' Tailwind idiom, keep the markup plain, and do not spend task budget on layout experiments. A later pass owns the visual work.
 
 ---
 
@@ -931,10 +932,18 @@ Expected: FAIL — `startingCreditsCents` is not accepted by `createSeason`.
 In `src/server/seasons/defaults.ts`, add beside the existing constants:
 
 ```ts
-/** Credits are a smaller economy than cash on purpose — a custom market is a side bet. */
-export const DEFAULT_STARTING_CREDITS_CENTS = 100_000n;
-export const DEFAULT_WEEKLY_CREDIT_ALLOWANCE_CENTS = 10_000n;
+/**
+ * Credits are a smaller economy than cash on purpose — a custom market is a side bet.
+ *
+ * These are CENTS, like every other amount in this codebase (D17). A member starts a season
+ * with 1,000.00 credits against a 10,000.00 cash bankroll, and is dripped 100.00 credits a
+ * week against 500.00 cash. Do not "fix" these to look like the numbers they render as.
+ */
+export const DEFAULT_STARTING_CREDITS_CENTS = 100_000n; // 1,000.00 credits
+export const DEFAULT_WEEKLY_CREDIT_ALLOWANCE_CENTS = 10_000n; // 100.00 credits
 ```
+
+With `MIN_STAKE_CENTS` at `100n` (1.00), a starting balance of 1,000.00 credits is a real bankroll rather than a token — a member can take a meaningful position on several events before the weekly drip matters.
 
 - [ ] **Step 4: Grant credits on season creation and join**
 
@@ -6134,6 +6143,8 @@ git commit -m "feat: add the admin queue for overdue and disputed events"
 `src/components/ui/tab-bar.tsx` gains `{ href: '/events', label: 'Events' }` after Games, and `grid-cols-5` becomes `grid-cols-6`. Update the doc comment: six tabs, Games still the landing route.
 
 If six tabs read as crowded on a real phone, the documented fallback is a segmented control on the Games screen rather than a seventh tab — note it in the comment, do not build it now.
+
+**Visual polish across Tasks 16–21 is explicitly deferred.** The bar for these screens is that they are correct, authorized server-side, and complete enough to exercise every path the services expose — not that they are finished design. Match the existing screens' Tailwind idiom, keep the markup plain, and leave refinement for a later pass. Do not spend task budget on layout experiments.
 
 - [ ] **Step 2: Standings gets a second scoreboard**
 
