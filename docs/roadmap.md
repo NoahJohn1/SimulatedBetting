@@ -7,7 +7,7 @@ needed to make sure the earlier subsystems don't paint us into a corner.
 | # | Subsystem | Status |
 |---|---|---|
 | 1 | Core betting engine | [Built](specs/2026-08-14-core-betting-engine-design.md) — fixture odds only, no production deploy yet |
-| 2 | Social layer | [Specified](specs/2026-08-17-social-layer-design.md) — not built |
+| 2 | Social layer | [Built](specs/2026-08-17-social-layer-design.md) |
 | 3 | Custom events | Roadmap only |
 | 4 | Peer-to-peer bets | Roadmap only |
 

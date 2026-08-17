@@ -32,10 +32,12 @@ Three properties the design is organized around:
 
 ## Where things stand
 
-Subsystem 1 (the core betting engine) is built end-to-end and verified: `npm run verify`
-(typecheck, lint, 26 test files / 222 tests) passes clean, and the app runs, seeds a
-fixture slate, takes a bet through placement and settlement (including a push), and
-reconciles the ledger correctly. Covered:
+Subsystems 1 and 2 are built end-to-end and verified: `npm run verify` (typecheck, lint, 40
+test files / 305 tests) passes clean, and the app runs, seeds a fixture slate, takes a bet
+through placement and settlement (including a push), reconciles the ledger correctly, and
+posts and reads back the feed cards those actions generate.
+
+**Subsystem 1 — core betting engine:**
 
 - Postgres schema (Drizzle), the append-only ledger, seasons, weekly allowance, admin
   balance adjustments, and daily reconciliation
@@ -44,12 +46,33 @@ reconciles the ledger correctly. Covered:
 - Bet placement (with line/price re-validation at commit) and idempotent settlement,
   including resumable batching and admin-triggered re-settlement
 - Google sign-in with admin-approval gating, seeded admins via `ADMIN_EMAILS`
-- All four member screens (Games, My Bets, Standings, Me) and the admin area
 - The four cron routes: `sync-odds`, `settle`, `allowance`, `reconcile`
 
+**Subsystem 2 — social layer:**
+
+- `feed_events`, an append-only, dedupe-keyed table mirroring the ledger's idempotency
+  pattern, emitted inline from `placeBet`, `settleGame`, `resettleBet`, `joinSeason`,
+  `payWeeklyAllowance`, and `adjustBalance`
+- Eight event types: bets placed and settled, members joining, the weekly allowance
+  (aggregated to one card, not one per member), admin adjustments (now season-visible — see
+  [D24](decisions.md#d24--admin-adjustments-are-published-to-the-season-feed)), lead changes,
+  big wins (10×+), and parlay hits (4+ surviving legs)
+- Lead-change detection riding along in the `settle` cron route and after admin adjustments,
+  with no new schedule and no cursor to get stuck
+- A keyset-paginated feed read, reactions (six fixed emoji, toggle on/off), and comments
+  (flat, author or admin soft-delete)
+- Member profiles with season record, ROI, net, streak, and biggest win, computed by a pure
+  `computeMemberStats` function
+- Per-member feed filters, applied at read time so nothing muted is ever deleted
+- Five member screens (Games, Feed, My Bets, Standings, Me) plus event detail and member
+  profile pages
+
+See [D30](decisions.md#d30--correlated-subqueries-in-drizzle-need-literal-qualified-identifiers)
+for a real correlated-subquery bug the profile stats query's own test caught mid-build.
+
 Not built: a real odds provider adapter (still fixture-only — see [D2](decisions.md)) and
-production deployment/hosted Postgres wiring. Subsystems 2–4 (social layer, custom events,
-peer-to-peer bets) are [roadmap only](roadmap.md).
+production deployment/hosted Postgres wiring. Subsystems 3–4 (custom events, peer-to-peer
+bets) are [roadmap only](roadmap.md).
 
 ## Conventions
 

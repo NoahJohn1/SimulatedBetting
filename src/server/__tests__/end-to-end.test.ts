@@ -6,10 +6,10 @@
  * only appear when the layers are wired together.
  */
 import { randomUUID } from 'node:crypto';
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/db/client';
-import { bets, games, markets, seasonMemberships, seasons, selections, users } from '@/db/schema';
+import { bets, feedEvents, games, markets, seasonMemberships, seasons, selections, users } from '@/db/schema';
 import { FixtureOddsProvider, FixtureScoreProvider } from '@/fixtures/providers';
 import { placeBet } from '@/server/bets/place';
 import { settleFinalGames } from '@/server/bets/settle';
@@ -119,6 +119,27 @@ describe('end to end', () => {
 
     // 6. The cached balance still equals the ledger.
     expect(await reconcileBalances()).toEqual([]);
+
+    // 7. The feed is a read model over the same events the ledger recorded. If these two
+    // ever disagree, one of them is lying.
+    const events = await db
+      .select({ type: feedEvents.type, betId: feedEvents.betId })
+      .from(feedEvents)
+      .orderBy(asc(feedEvents.occurredAt), asc(feedEvents.id));
+
+    const types = events.map((event) => event.type);
+    expect(types).toContain('MEMBER_JOINED');
+    expect(types).toContain('BET_PLACED');
+    expect(types).toContain('BET_SETTLED');
+
+    // Four bets placed, four settled — one card of each type per bet, no more, no less.
+    expect(types.filter((t) => t === 'BET_PLACED')).toHaveLength(4);
+    expect(types.filter((t) => t === 'BET_SETTLED')).toHaveLength(4);
+
+    // Every placement card points at a real, distinct bet.
+    const placedCards = events.filter((event) => event.type === 'BET_PLACED');
+    expect(new Set(placedCards.map((card) => card.betId)).size).toBe(placedCards.length);
+    expect(placedCards.every((card) => card.betId !== null)).toBe(true);
   });
 
   it('voids bets on a canceled game and still reconciles', async () => {
