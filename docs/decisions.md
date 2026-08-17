@@ -333,3 +333,38 @@ SSE, no polling interval, no unread badge.
 A five-person league checking the app after a game does not need a socket, and every real-time
 option adds either a connection to manage or a request every few seconds forever. Pull-to-refresh
 is the browser's job.
+
+---
+
+### D30 — Correlated subqueries in Drizzle need literal, qualified identifiers
+
+*Added 2026-08-17 during subsystem 2 implementation.*
+
+`src/server/feed/stats.ts` sums a bet's ledger entries with a correlated subquery. The first
+version wrote it the way every other query in this codebase writes SQL — interpolating
+`${table.column}` inside a `sql` template:
+
+```ts
+sql`... WHERE ${ledgerEntries.betId} = ${bets.id} ...`
+```
+
+This is silently wrong. Drizzle renders `${table.column}` as a bare, unqualified column name
+inside a raw `sql` fragment — it does not know the fragment is a subquery correlated against
+an outer table it can't see. Both sides of the comparison resolved against the subquery's own
+`FROM ledger_entries`, so the WHERE clause became `ledger_entries.bet_id =
+ledger_entries.id` — never true — and every settled bet's profile silently read back a $0
+payout. `npm run verify` did not catch it: the query executes without error and returns a
+type-correct empty sum. It surfaced only because `getMemberProfile`'s own test
+(`src/server/feed/__tests__/stats.test.ts`) asserted the actual `netCents` value on a known
+win rather than just checking the query didn't throw.
+
+The fix is to write the subquery with literal, table-qualified identifiers instead of
+drizzle's column helpers:
+
+```ts
+sql`... FROM ledger_entries WHERE ledger_entries.bet_id = bets.id ...`
+```
+
+*Consequence to watch:* any future correlated subquery in this codebase needs the same
+treatment — reach for `${table.column}` only when both sides of a comparison live in the
+query's known `FROM`/`JOIN` graph, never inside a subquery correlating against an outer table.

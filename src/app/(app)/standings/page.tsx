@@ -1,4 +1,5 @@
 import { desc, eq } from 'drizzle-orm';
+import Link from 'next/link';
 import { db } from '@/db/client';
 import { seasonMemberships, users } from '@/db/schema';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -35,7 +36,12 @@ export default async function StandingsPage() {
             }`}
           >
             <span className="w-6 text-sm tabular-nums text-zinc-400">{i + 1}</span>
-            <span className="flex-1 truncate text-sm font-medium">{row.displayName}</span>
+            <Link
+              href={`/members/${row.membershipId}`}
+              className="flex-1 truncate text-sm font-medium hover:underline"
+            >
+              {row.displayName}
+            </Link>
             <Money cents={row.balanceCents} className="text-sm font-semibold" />
           </li>
         );
