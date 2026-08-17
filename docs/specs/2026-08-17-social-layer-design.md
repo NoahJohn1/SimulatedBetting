@@ -220,6 +220,9 @@ export interface BetPlacedPayload {
   legs: FeedLegSnapshot[];
 }
 
+/** A leg's graded outcome. Reuses the engine's `BetStatus` values minus `PENDING`. */
+export type LegOutcome = 'WON' | 'LOST' | 'PUSHED' | 'VOIDED';
+
 export interface BetSettledPayload extends BetPlacedPayload {
   outcome: 'WON' | 'LOST' | 'PUSHED' | 'VOIDED';
   payoutCents: string;                    // "0" for LOST
@@ -241,6 +244,17 @@ export interface LeadChangePayload {
 }
 export interface BigWinPayload    { stakeCents: string; payoutCents: string; multipleBasisPoints: number }
 export interface ParlayHitPayload { legCount: number; payoutCents: string; combinedPriceAmerican: number }
+
+/** The union stored in `feed_events.payload`, discriminated by the row's `type` column. */
+export type FeedEventPayload =
+  | BetPlacedPayload
+  | BetSettledPayload
+  | MemberJoinedPayload
+  | AllowancePaidPayload
+  | AdminAdjustmentPayload
+  | LeadChangePayload
+  | BigWinPayload
+  | ParlayHitPayload;
 ```
 
 `multipleBasisPoints` rather than a float multiple: `payout × 10000 / stake` as integer
@@ -330,9 +344,9 @@ number, with `correction: true`.
 on `postEntry` having applied, so re-joining an existing membership doesn't re-announce it.
 
 **`payWeeklyAllowance`** (`src/server/seasons/allowance.ts`) — one `ALLOWANCE_PAID` after the
-per-membership loop, in its own transaction, carrying the credited count. Emitted even when
-`credited` is 0? No — a run that credited nobody is a repeat run, and the dedupe key already
-makes it a no-op. The event is emitted unconditionally and the unique key decides.
+per-membership loop, in its own transaction, carrying the credited count. It is emitted
+unconditionally — a run that credited nobody is a repeat run, and the week-scoped dedupe key
+already makes that a no-op, so there is no reason for the caller to branch on the count.
 
 **`adjustBalance`** (`src/server/admin/adjust.ts`) — `ADMIN_ADJUSTMENT` in the same
 transaction, keyed on the ledger entry id, with the admin's display name resolved into the
