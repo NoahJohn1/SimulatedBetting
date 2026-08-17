@@ -1,4 +1,5 @@
 import type { MarketType, Side } from '@/domain/grading';
+import type { Sport } from '@/db/schema';
 import { americanToRational, combine, payoutCents, rationalToAmerican } from '@/domain/odds';
 import { linesEqual, normalizeLine } from '@/domain/line';
 import type { LineMovement, PlaceBetError, PlaceBetInput } from './types';
@@ -32,6 +33,10 @@ export interface LoadedSelection {
   gameId: string;
   gameStatus: string;
   gameStartsAt: Date;
+  // Carried for the feed card's frozen snapshot, not for validation.
+  sport: Sport;
+  homeAbbr: string;
+  awayAbbr: string;
 }
 
 /** Shared arithmetic for both the submitted-price quote and the current-price re-quote. */

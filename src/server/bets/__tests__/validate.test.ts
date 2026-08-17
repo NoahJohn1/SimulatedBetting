@@ -26,6 +26,9 @@ function makeSelection(overrides: Partial<LoadedSelection> = {}): LoadedSelectio
     gameId: 'game-1',
     gameStatus: 'SCHEDULED',
     gameStartsAt: FUTURE,
+    sport: 'NFL',
+    homeAbbr: 'HOME',
+    awayAbbr: 'AWAY',
     ...overrides,
   };
 }

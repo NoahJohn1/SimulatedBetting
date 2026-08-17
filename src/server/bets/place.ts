@@ -1,4 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { db, type Tx } from '@/db/client';
 import {
   betLegs,
@@ -8,9 +9,13 @@ import {
   seasonMemberships,
   seasons,
   selections,
+  teams,
   users,
 } from '@/db/schema';
 import { postEntry } from '@/server/money/ledger';
+import { emitFeedEvent } from '@/server/feed/emit';
+import { buildLegSnapshot } from '@/server/feed/snapshot';
+import type { BetPlacedPayload } from '@/server/feed/payload';
 import type { PlaceBetError, PlaceBetInput, PlaceBetResult } from './types';
 import {
   quotePlacement,
@@ -28,6 +33,9 @@ class PlacementRejected extends Error {
 }
 
 type Reader = Tx | typeof db;
+
+const homeTeams = alias(teams, 'home_teams');
+const awayTeams = alias(teams, 'away_teams');
 
 async function loadSelections(
   reader: Reader,
@@ -48,10 +56,15 @@ async function loadSelections(
       gameId: games.id,
       gameStatus: games.status,
       gameStartsAt: games.startsAt,
+      sport: games.sport,
+      homeAbbr: homeTeams.abbreviation,
+      awayAbbr: awayTeams.abbreviation,
     })
     .from(selections)
     .innerJoin(markets, eq(selections.marketId, markets.id))
     .innerJoin(games, eq(markets.gameId, games.id))
+    .innerJoin(homeTeams, eq(games.homeTeamId, homeTeams.id))
+    .innerJoin(awayTeams, eq(games.awayTeamId, awayTeams.id))
     .where(inArray(selections.id, ids));
 
   const bySelectionId = new Map(rows.map((row) => [row.selectionId, row as LoadedSelection]));
@@ -141,7 +154,7 @@ export async function placeBet(
           clientRequestId: input.clientRequestId,
         })
         .onConflictDoNothing({ target: bets.clientRequestId })
-        .returning({ id: bets.id });
+        .returning({ id: bets.id, placedAt: bets.placedAt });
 
       if (inserted.length === 0) {
         const [existing] = await tx
@@ -152,6 +165,7 @@ export async function placeBet(
       }
 
       const betId = inserted[0].id;
+      const placedAt = inserted[0].placedAt;
 
       const fresh = await loadPlacementContext(input, tx, true);
       const error = validatePlacement(input, fresh);
@@ -179,6 +193,33 @@ export async function placeBet(
         type: 'BET_PLACED',
         idempotencyKey: `bet:${betId}:placed`,
         betId,
+      });
+
+      const payload: BetPlacedPayload = {
+        betType: input.type,
+        stakeCents: input.stakeCents.toString(),
+        potentialPayoutCents: freshQuote.potentialPayoutCents.toString(),
+        combinedPriceAmerican: freshQuote.combinedPriceAmerican,
+        legs: input.legs.map((_leg, i) =>
+          buildLegSnapshot(
+            // LoadedSelection names the field gameStartsAt; SnapshotSource wants startsAt.
+            { ...freshSelections[i], startsAt: freshSelections[i].gameStartsAt },
+            {
+              line: freshSelections[i].line,
+              priceAmerican: freshSelections[i].priceAmerican,
+            },
+          ),
+        ),
+      };
+
+      await emitFeedEvent(tx, {
+        seasonId: fresh.activeSeasonId!,
+        type: 'BET_PLACED',
+        subjectMembershipId: fresh.membership!.id,
+        betId,
+        dedupeKey: `bet:${betId}:placed`,
+        payload,
+        occurredAt: placedAt,
       });
 
       return {
