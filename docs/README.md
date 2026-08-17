@@ -11,6 +11,7 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Social layer spec](specs/2026-08-17-social-layer-design.md) | Subsystem 2: the season activity feed, reactions and comments, member profiles, per-viewer feed filters |
 | [Social layer plan](plans/2026-08-17-social-layer-implementation-plan.md) | The task-by-task implementation plan for subsystem 2 |
 | [Custom events spec](specs/2026-08-17-custom-events-design.md) | Subsystem 3: member-created markets, the credits currency, human resolution and disputes |
+| [Custom events plan](plans/2026-08-17-custom-events-implementation-plan.md) | The task-by-task implementation plan for subsystem 3 |
 | [Roadmap](roadmap.md) | The four subsystems, what each adds, and build order |
 | [Decision log](decisions.md) | Every design decision, what was rejected, and why |
 
