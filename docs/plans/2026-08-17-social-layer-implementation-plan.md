@@ -20,9 +20,54 @@
 - **Every ledger write and every feed write carries a deterministic idempotency/dedupe key.** Running any background job twice must move no extra money and create no extra events.
 - **Authorization is server-side on every request**, never by hiding UI. Use the existing `requireApprovedMember()` (pages, redirects) and `requireApprovedMemberOrThrow()` (server actions, throws).
 - **Do not change existing money or grading behavior.** The existing 222 tests must still pass. The only edits to `place.ts`, `settle.ts`, `resettle.ts`, `service.ts`, `allowance.ts` and `adjust.ts` are added emit calls plus the extra columns those emits need.
-- **Database for tests:** `npm run db:up` then `npm run db:test:create` then `npm run db:migrate:test`. Tests run against `simbet_test`.
+- **Database for tests:** see [Environment setup](#environment-setup) — the `npm run db:up` path needs Docker and does **not** work in the Claude Code cloud environment. Tests run against `simbet_test`.
 - **Verification command:** `npm run verify` (typecheck + lint + test). It must pass before the final commit of every task.
 - **Commit after every task**, with a `feat:` / `test:` / `docs:` prefix matching the existing history style.
+
+---
+
+## Environment setup
+
+Run this once at the start of the session, before Task 1. These commands were executed and verified in the Claude Code cloud environment on 2026-08-17: `npm ci` succeeds through the proxy, and `npm run verify` passes clean at 26 files / 222 tests against the database this sets up.
+
+**Docker is not available.** The `docker` CLI is installed but no daemon is running, so `npm run db:up`, `npm run db:down` and `npm run db:reset` all fail. Do not try to start the daemon — a full Postgres 16 server is already installed locally, which is what the commands below use instead. The only difference is the port: **5432**, not the 5433 the compose file publishes.
+
+```bash
+npm ci
+
+# Start the preinstalled Postgres cluster (port 5432, already initialized).
+pg_ctlcluster 16 main start
+
+# Create the role and both databases. The role needs SUPERUSER only so that
+# TRUNCATE ... RESTART IDENTITY CASCADE in src/test/db.ts works on every table.
+su postgres -c "psql -q -c \"CREATE ROLE simbet LOGIN PASSWORD 'simbet' SUPERUSER\""
+su postgres -c "psql -q -c 'CREATE DATABASE simbet OWNER simbet'"
+su postgres -c "psql -q -c 'CREATE DATABASE simbet_test OWNER simbet'"
+
+cat > .env << 'EOF'
+DATABASE_URL=postgres://simbet:simbet@127.0.0.1:5432/simbet
+TEST_DATABASE_URL=postgres://simbet:simbet@127.0.0.1:5432/simbet_test
+AUTH_SECRET=dev-secret-not-for-production-use-only
+AUTH_GOOGLE_ID=dev
+AUTH_GOOGLE_SECRET=dev
+ADMIN_EMAILS=dev@example.com
+CRON_SECRET=dev-cron-secret
+EOF
+
+# .env.test points DATABASE_URL at the test database — src/db/migrate.ts reads
+# DATABASE_URL, not TEST_DATABASE_URL, when ENV_FILE=.env.test.
+cp .env .env.test
+sed -i 's#^DATABASE_URL=.*#DATABASE_URL=postgres://simbet:simbet@127.0.0.1:5432/simbet_test#' .env.test
+
+npm run db:migrate:test
+npm run verify
+```
+
+Expected from the last command: **26 test files, 222 tests, all passing.** If that does not hold, stop and fix the environment before starting Task 1 — every task in this plan gates on `npm run verify`, and you cannot tell your own regression from a broken setup.
+
+Both `.env` files are covered by `.gitignore` (`.env*`), so they will not be committed. Re-run `npm run db:migrate:test` after Task 1 generates the new migration.
+
+**The running app cannot be signed into here.** Sign-in is Google OAuth only ([D20](../decisions.md#d20--auth-google-only-apple-dropped)) with no dev bypass, so `npm run dev` will serve the app but you cannot get past `/sign-in` without real Google credentials. Tasks 12–15 therefore mark their browser steps as local-only and give a substitute gate that does work here: `npm run build`, which compiles every route for real and is what catches server/client boundary mistakes — the actual risk in those tasks.
 
 ---
 
@@ -4003,10 +4048,12 @@ export default async function FeedPage() {
 }
 ```
 
-- [ ] **Step 6: Run the app and look at it**
+- [ ] **Step 6: Prove the routes compile**
 
-Run: `npm run db:up && npm run db:migrate && npm run db:seed && npm run dev`
-Then open `http://localhost:3000/feed`. Place a bet from the Games tab and confirm a card appears in the feed. Confirm the reaction buttons toggle and the count survives a page reload.
+Run: `npm run build`
+Expected: PASS, with `/feed` listed as a route (`ƒ /feed`). This is the gate that matters here — it compiles the server/client boundary for real, which is where the mistakes in this task live (a server-only import pulled into `feed-list.tsx`, an action that isn't actually serializable).
+
+*Local only, skip in the cloud environment:* `npm run dev`, then sign in and open `http://localhost:3000/feed` — place a bet from the Games tab, confirm a card appears, and confirm a reaction toggle survives a reload. Sign-in needs real Google credentials, so this is not runnable in the cloud environment. Do not treat it as a blocker; `npm run build` plus the Task 10 and 11 test suites cover the same ground.
 
 - [ ] **Step 7: Verify and commit**
 
@@ -4369,9 +4416,12 @@ export default async function FeedEventPage({ params }: PageProps<'/feed/[eventI
 }
 ```
 
-- [ ] **Step 7: Exercise it in the browser**
+- [ ] **Step 7: Prove the route compiles**
 
-With `npm run dev` running, open a card from `/feed`, post a comment, delete it, and confirm it renders as "Comment removed" rather than disappearing. Sign in as a non-admin second user and confirm the Delete control is absent on somebody else's comment.
+Run: `npm run build`
+Expected: PASS, with `ƒ /feed/[eventId]` in the route list.
+
+*Local only, skip in the cloud environment:* open a card from `/feed`, post a comment, delete it, and confirm it renders as "Comment removed" rather than disappearing; then sign in as a second non-admin user and confirm the Delete control is absent on somebody else's comment. Both behaviors are already asserted server-side by the Task 11 tests (`deleteComment` soft-deletes and keeps the row; a non-author non-admin is rejected), so the cloud environment loses the visual confirmation only, not the coverage.
 
 - [ ] **Step 8: Verify and commit**
 
@@ -4854,9 +4904,12 @@ Read `src/app/(app)/me/page.tsx` and add a link near the top of the page, matchi
 </Link>
 ```
 
-- [ ] **Step 4: Exercise it, verify and commit**
+- [ ] **Step 4: Prove it compiles, verify and commit**
 
-With `npm run dev` running: uncheck "Weekly allowance", save, and confirm the allowance card disappears from `/feed`. Re-check it and confirm the card comes back.
+Run: `npm run build`
+Expected: PASS, with `ƒ /me/feed-preferences` in the route list. This is also where an inline `'use server'` function passed as a prop will fail if this Next version disallows it — if it does, move the action into `src/app/(app)/feed/actions.ts` as Step 1 noted.
+
+*Local only, skip in the cloud environment:* uncheck "Weekly allowance", save, and confirm the allowance card disappears from `/feed`, then re-check it and confirm it comes back. The Task 10 muting test already asserts exactly this round trip against the database.
 
 Run: `npm run verify`
 Expected: PASS.
@@ -4979,5 +5032,7 @@ Checked against the spec, section by section:
 | Feed preferences screen | Task 15 |
 | Every test in the spec's Testing section | Tasks 1–16, one per listed case |
 
-**Known open item for the implementer:** `node_modules` was not installed when this plan was written, so the bundled Next.js documentation could not be read. Tasks 12–15 use the conventions the existing code in this repo demonstrates (`LayoutProps<'/'>`-style generated route types, `'use server'` action files, `revalidatePath`), and each UI task begins by telling you to confirm those conventions against `node_modules/next/dist/docs/`. If a convention differs, follow the docs and adjust the code shown here — the shapes of the data and the server functions are what matter and those are settled.
+**Environment verified:** the setup in [Environment setup](#environment-setup) was executed in the Claude Code cloud environment on 2026-08-17 — `npm ci`, a locally started Postgres 16 (no Docker), `npm run db:migrate:test`, `npm run verify` at 26 files / 222 tests passing, and `npm run build` compiling all 17 existing routes. Every task in this plan is executable there. The only thing that is not is signing into the running app, because sign-in is Google OAuth with no dev bypass; Tasks 12–15 substitute `npm run build` for their browser steps and say so.
+
+**Known open item for the implementer:** the bundled Next.js documentation could not be read when this plan was written, because `node_modules` was not yet installed at that point. Tasks 12–15 use the conventions the existing code in this repo demonstrates (`LayoutProps<'/'>`-style generated route types, `'use server'` action files, `revalidatePath`), and each UI task begins by telling you to confirm those conventions against `node_modules/next/dist/docs/`. If a convention differs, follow the docs and adjust the code shown here — the shapes of the data and the server functions are what matter and those are settled.
 
