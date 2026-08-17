@@ -103,6 +103,7 @@ export async function deleteCommentAction(
       commentId,
       actorUserId: member.userId,
       actorMembershipId: member.membershipId,
+      seasonId: member.seasonId,
       isAdmin: member.role === 'ADMIN',
     });
     revalidatePath(`/feed/${eventId}`);

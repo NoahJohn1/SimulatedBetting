@@ -58,8 +58,15 @@ export async function detectLeadChange(seasonId: string): Promise<{ emitted: boo
     : [];
 
   const payload: LeadChangePayload = {
-    // Deterministic given prior state: two concurrent runs compute the same number and one
-    // loses the unique-key race harmlessly.
+    // Not fully race-free: two concurrent calls that read the same prior-event count but
+    // disagree on the current leader (a settlement and an admin adjustment landing close
+    // together) both compute this sequence number; whichever writes second loses the unique
+    // dedupeKey race and its announcement is silently dropped, not merely deduplicated. The
+    // dropped announcement is the only casualty — no balance or ledger data is at risk, and
+    // the next call to this function (next settle cycle, next admin action) reads the true
+    // current leader fresh and self-heals within one more transition. Given how rarely two
+    // standings-moving events land in the same instant in a small private league, this is an
+    // accepted gap rather than one worth a serializable transaction for.
     sequence: priorEvents.length + 1,
     previousLeaderMembershipId: previous?.subjectMembershipId ?? null,
     previousLeaderDisplayName: previousLeader?.displayName ?? null,

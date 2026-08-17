@@ -29,17 +29,16 @@ export async function adjustBalance(input: AdjustBalanceInput): Promise<{ balanc
     });
 
     // A replayed adjustment moved no money, so it announces nothing.
-    if (!posted.applied || posted.entryId === null) return posted;
+    if (!posted.applied || posted.entryId === null) return { ...posted, seasonId: null };
 
-    const [membership] = await tx
-      .select({ seasonId: seasonMemberships.seasonId })
-      .from(seasonMemberships)
-      .where(eq(seasonMemberships.id, input.membershipId));
-
-    const [admin] = await tx
-      .select({ displayName: users.displayName })
-      .from(users)
-      .where(eq(users.id, input.actorUserId));
+    // Independent lookups, run together rather than round-tripping twice.
+    const [[membership], [admin]] = await Promise.all([
+      tx
+        .select({ seasonId: seasonMemberships.seasonId })
+        .from(seasonMemberships)
+        .where(eq(seasonMemberships.id, input.membershipId)),
+      tx.select({ displayName: users.displayName }).from(users).where(eq(users.id, input.actorUserId)),
+    ]);
 
     // Published to the whole season on purpose (D24): an admin cannot quietly gift anyone
     // when the league watches every adjustment land.
@@ -56,15 +55,13 @@ export async function adjustBalance(input: AdjustBalanceInput): Promise<{ balanc
       },
     });
 
-    return posted;
+    return { ...posted, seasonId: membership.seasonId };
   });
 
-  if (result.applied) {
-    const [membership] = await db
-      .select({ seasonId: seasonMemberships.seasonId })
-      .from(seasonMemberships)
-      .where(eq(seasonMemberships.id, input.membershipId));
-    await detectLeadChange(membership.seasonId);
+  // Reuses the season id already read inside the transaction rather than a second
+  // seasonMemberships lookup for the same membership.
+  if (result.applied && result.seasonId) {
+    await detectLeadChange(result.seasonId);
   }
 
   return { balanceCents: result.balanceCents };

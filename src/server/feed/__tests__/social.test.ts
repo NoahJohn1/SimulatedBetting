@@ -150,6 +150,7 @@ describe('deleteComment', () => {
       commentId,
       actorUserId: user.id,
       actorMembershipId: membership.id,
+      seasonId: season.id,
       isAdmin: false,
     });
     expect(result).toEqual({ deleted: true });
@@ -177,9 +178,34 @@ describe('deleteComment', () => {
         commentId,
         actorUserId: bystander.user.id,
         actorMembershipId: bystander.membership.id,
+        seasonId: season.id,
         isAdmin: false,
       }),
     ).rejects.toThrow(/NOT_ALLOWED/);
+  });
+
+  it('refuses an admin from a different season, even for their own comment’s id', async () => {
+    const mine = await makeSeason({ status: 'ACTIVE' });
+    const theirs = await makeSeason();
+    const author = await seedMember(theirs.id);
+    const admin = await seedMember(mine.id);
+    const event = await seedEvent(theirs.id, author.membership.id);
+    const { commentId } = await addComment({
+      eventId: event.id,
+      membershipId: author.membership.id,
+      seasonId: theirs.id,
+      body: 'from another season',
+    });
+
+    await expect(
+      deleteComment({
+        commentId,
+        actorUserId: admin.user.id,
+        actorMembershipId: admin.membership.id,
+        seasonId: mine.id,
+        isAdmin: true,
+      }),
+    ).rejects.toThrow(/WRONG_SEASON/);
   });
 
   it('lets an admin delete anyone’s and records who did it', async () => {
@@ -198,6 +224,7 @@ describe('deleteComment', () => {
       commentId,
       actorUserId: admin.user.id,
       actorMembershipId: admin.membership.id,
+      seasonId: season.id,
       isAdmin: true,
     });
 
@@ -220,6 +247,7 @@ describe('deleteComment', () => {
       commentId,
       actorUserId: user.id,
       actorMembershipId: membership.id,
+      seasonId: season.id,
       isAdmin: false,
     };
     await deleteComment(args);
@@ -251,6 +279,7 @@ describe('listComments', () => {
       commentId: first.commentId,
       actorUserId: user.id,
       actorMembershipId: membership.id,
+      seasonId: season.id,
       isAdmin: false,
     });
 

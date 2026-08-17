@@ -76,14 +76,24 @@ export async function deleteComment(input: {
   commentId: string;
   actorUserId: string;
   actorMembershipId: string;
+  seasonId: string;
   isAdmin: boolean;
 }): Promise<{ deleted: boolean }> {
   const [comment] = await db
-    .select({ membershipId: feedComments.membershipId, deletedAt: feedComments.deletedAt })
+    .select({
+      membershipId: feedComments.membershipId,
+      deletedAt: feedComments.deletedAt,
+      eventId: feedComments.eventId,
+    })
     .from(feedComments)
     .where(eq(feedComments.id, input.commentId));
 
   if (!comment) throw new FeedError('COMMENT_NOT_FOUND');
+
+  // An admin's reach stops at their own season, same as every other interaction here —
+  // without this, an admin who somehow learns another season's comment id (e.g. an old bug
+  // report) could moderate it from the current season's session.
+  await requireEventInSeason(comment.eventId, input.seasonId);
 
   const isAuthor = comment.membershipId === input.actorMembershipId;
   if (!isAuthor && !input.isAdmin) throw new FeedError('NOT_ALLOWED');
