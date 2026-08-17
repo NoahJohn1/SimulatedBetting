@@ -1,12 +1,25 @@
 import { and, asc, eq, inArray } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { db } from '@/db/client';
-import { betLegs, bets, games, markets, selections } from '@/db/schema';
+import { betLegs, bets, games, markets, seasonMemberships, selections, teams } from '@/db/schema';
 import type { BetStatus } from '@/db/schema';
 import { gradeLeg, gradeParlay, settledPayoutCents } from '@/domain/grading';
 import type { LegStatus } from '@/domain/grading';
 import { lineToNumber } from '@/domain/line';
+import { isBigWin, isParlayHit, multipleBasisPoints, survivingLegCount } from '@/domain/milestones';
 import type { LedgerEntryType } from '@/db/schema';
 import { postEntry } from '@/server/money/ledger';
+import { emitFeedEvent } from '@/server/feed/emit';
+import { buildLegSnapshot } from '@/server/feed/snapshot';
+import type {
+  BetSettledPayload,
+  BigWinPayload,
+  LegOutcome,
+  ParlayHitPayload,
+} from '@/server/feed/payload';
+
+const homeTeams = alias(teams, 'settle_home_teams');
+const awayTeams = alias(teams, 'settle_away_teams');
 
 export interface SettleGameSummary {
   gameId: string;
@@ -92,8 +105,18 @@ export async function settleGame(gameId: string): Promise<SettleGameSummary> {
       touchedBetIds.length === 0
         ? []
         : await tx
-            .select()
+            .select({
+              id: bets.id,
+              membershipId: bets.membershipId,
+              seasonId: seasonMemberships.seasonId,
+              type: bets.type,
+              stakeCents: bets.stakeCents,
+              potentialPayoutCents: bets.potentialPayoutCents,
+              combinedPriceAmerican: bets.combinedPriceAmerican,
+              settlementAttempts: bets.settlementAttempts,
+            })
             .from(bets)
+            .innerJoin(seasonMemberships, eq(bets.membershipId, seasonMemberships.id))
             .where(and(inArray(bets.id, touchedBetIds), eq(bets.status, 'PENDING')))
             .orderBy(asc(bets.membershipId));
 
@@ -102,9 +125,22 @@ export async function settleGame(gameId: string): Promise<SettleGameSummary> {
         .select({
           status: betLegs.status,
           priceAtPlacement: betLegs.priceAtPlacement,
+          lineAtPlacement: betLegs.lineAtPlacement,
+          marketType: markets.type,
+          side: selections.side,
+          sport: games.sport,
+          startsAt: games.startsAt,
+          homeAbbr: homeTeams.abbreviation,
+          awayAbbr: awayTeams.abbreviation,
         })
         .from(betLegs)
-        .where(eq(betLegs.betId, bet.id));
+        .innerJoin(selections, eq(betLegs.selectionId, selections.id))
+        .innerJoin(markets, eq(selections.marketId, markets.id))
+        .innerJoin(games, eq(markets.gameId, games.id))
+        .innerJoin(homeTeams, eq(games.homeTeamId, homeTeams.id))
+        .innerJoin(awayTeams, eq(games.awayTeamId, awayTeams.id))
+        .where(eq(betLegs.betId, bet.id))
+        .orderBy(asc(betLegs.createdAt));
 
       const statuses = legs.map((leg) => leg.status as LegStatus);
       const parlayOutcome = gradeParlay(statuses);
@@ -143,6 +179,71 @@ export async function settleGame(gameId: string): Promise<SettleGameSummary> {
         .update(bets)
         .set({ status: outcome, settledAt, settlementAttempts: attempts })
         .where(eq(bets.id, bet.id));
+
+      const legOutcomes = legs.map((leg) => leg.status as LegOutcome);
+
+      const settledPayload: BetSettledPayload = {
+        betType: bet.type,
+        stakeCents: bet.stakeCents.toString(),
+        potentialPayoutCents: bet.potentialPayoutCents.toString(),
+        combinedPriceAmerican: bet.combinedPriceAmerican,
+        legs: legs.map((leg) =>
+          buildLegSnapshot(leg, { line: leg.lineAtPlacement, priceAmerican: leg.priceAtPlacement }),
+        ),
+        // `outcome` is typed BetStatus (includes PENDING) for the ledger/grading logic above,
+        // but the `continue` on parlayOutcome === 'PENDING' guarantees it can't be PENDING
+        // here — narrowing to the payload's outcome union is a type-only adaptation.
+        outcome: outcome as BetSettledPayload['outcome'],
+        payoutCents: payout.toString(),
+        netCents: (payout - bet.stakeCents).toString(),
+        legOutcomes,
+        settlementAttempt: attempts,
+        correction: attempts > 1,
+      };
+
+      await emitFeedEvent(tx, {
+        seasonId: bet.seasonId,
+        type: 'BET_SETTLED',
+        subjectMembershipId: bet.membershipId,
+        betId: bet.id,
+        dedupeKey: `bet:${bet.id}:settled:${attempts}`,
+        payload: settledPayload,
+        occurredAt: settledAt,
+      });
+
+      if (outcome === 'WON' && isBigWin(bet.stakeCents, payout)) {
+        const bigWin: BigWinPayload = {
+          stakeCents: bet.stakeCents.toString(),
+          payoutCents: payout.toString(),
+          multipleBasisPoints: multipleBasisPoints(bet.stakeCents, payout),
+        };
+        await emitFeedEvent(tx, {
+          seasonId: bet.seasonId,
+          type: 'MILESTONE_BIG_WIN',
+          subjectMembershipId: bet.membershipId,
+          betId: bet.id,
+          dedupeKey: `bet:${bet.id}:bigwin:${attempts}`,
+          payload: bigWin,
+          occurredAt: settledAt,
+        });
+      }
+
+      if (isParlayHit(bet.type, outcome, legOutcomes)) {
+        const parlayHit: ParlayHitPayload = {
+          legCount: survivingLegCount(legOutcomes),
+          payoutCents: payout.toString(),
+          combinedPriceAmerican: bet.combinedPriceAmerican,
+        };
+        await emitFeedEvent(tx, {
+          seasonId: bet.seasonId,
+          type: 'MILESTONE_PARLAY_HIT',
+          subjectMembershipId: bet.membershipId,
+          betId: bet.id,
+          dedupeKey: `bet:${bet.id}:parlayhit:${attempts}`,
+          payload: parlayHit,
+          occurredAt: settledAt,
+        });
+      }
 
       summary.betsSettled += 1;
     }
