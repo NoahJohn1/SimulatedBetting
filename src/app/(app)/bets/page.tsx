@@ -1,26 +1,55 @@
-import { desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
+import Link from 'next/link';
 import { db } from '@/db/client';
-import { betLegs, bets, games, markets, selections, teams } from '@/db/schema';
+import { betLegs, bets, events, markets, selections } from '@/db/schema';
+import type { Currency } from '@/db/schema';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Money, Price } from '@/components/ui/money';
 import { requireApprovedMember } from '@/server/auth/session';
 
-export default async function MyBetsPage() {
+export default async function MyBetsPage({ searchParams }: PageProps<'/bets'>) {
   const member = await requireApprovedMember();
+  const params = await searchParams;
+  const filterCurrency: Currency = params.currency === 'CREDITS' ? 'CREDITS' : 'CASH';
 
   const rows = await db
     .select()
     .from(bets)
-    .where(eq(bets.membershipId, member.membershipId))
+    .where(and(eq(bets.membershipId, member.membershipId), eq(bets.currency, filterCurrency)))
     .orderBy(desc(bets.placedAt));
+
+  const filterLinks = (
+    <div className="flex gap-2 px-1">
+      {(['CASH', 'CREDITS'] as const).map((c) => (
+        <Link
+          key={c}
+          href={c === 'CASH' ? '/bets' : '/bets?currency=CREDITS'}
+          className={`rounded-full px-3 py-1 text-xs font-medium ${
+            filterCurrency === c
+              ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+              : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'
+          }`}
+        >
+          {c === 'CASH' ? 'Cash' : 'Credits'}
+        </Link>
+      ))}
+    </div>
+  );
 
   if (rows.length === 0) {
     return (
-      <EmptyState title="No bets yet" body="Pick something off the board to get started." />
+      <div className="flex flex-col gap-4 px-4 py-4">
+        {filterLinks}
+        <EmptyState title="No bets yet" body="Pick something off the board to get started." />
+      </div>
     );
   }
 
+  // Kind-aware, matching place.ts's loadSelections (Task 11): a custom-event leg's market
+  // has no matching `games` row, so a plain inner join to `games` silently dropped it from
+  // the leg list. Joining through `events` — always present via markets.eventId — instead of
+  // `games` keeps every leg, and `events.kind` tells us how to render it.
   const legRows = await db
     .select({
       betId: betLegs.betId,
@@ -29,14 +58,15 @@ export default async function MyBetsPage() {
       price: betLegs.priceAtPlacement,
       side: selections.side,
       marketType: markets.type,
-      homeAbbr: teams.abbreviation,
-      gameId: games.id,
+      marketTitle: markets.title,
+      outcomeLabel: selections.label,
+      eventKind: events.kind,
+      eventTitle: events.title,
     })
     .from(betLegs)
     .innerJoin(selections, eq(betLegs.selectionId, selections.id))
     .innerJoin(markets, eq(selections.marketId, markets.id))
-    .innerJoin(games, eq(markets.eventId, games.eventId))
-    .innerJoin(teams, eq(games.homeTeamId, teams.id))
+    .innerJoin(events, eq(markets.eventId, events.id))
     .where(
       inArray(
         betLegs.betId,
@@ -54,6 +84,7 @@ export default async function MyBetsPage() {
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4">
+      {filterLinks}
       <Section title="Pending" bets={pending} legsByBet={legsByBet} />
       <Section title="Settled" bets={settled} legsByBet={legsByBet} />
     </div>
@@ -75,7 +106,10 @@ function Section({
       price: number;
       side: string | null;
       marketType: string;
-      homeAbbr: string;
+      marketTitle: string | null;
+      outcomeLabel: string | null;
+      eventKind: 'GAME' | 'CUSTOM';
+      eventTitle: string;
     }[]
   >;
 }) {
@@ -100,8 +134,9 @@ function Section({
             {(legsByBet.get(bet.id) ?? []).map((leg, i) => (
               <li key={i} className="flex items-center justify-between text-sm">
                 <span className="text-zinc-600 dark:text-zinc-400">
-                  {leg.marketType} · {leg.side}
-                  {leg.line !== null ? ` ${Number(leg.line)}` : ''}
+                  {leg.eventKind === 'CUSTOM'
+                    ? `${leg.eventTitle} · ${leg.marketTitle ?? ''} · ${leg.outcomeLabel ?? ''}`
+                    : `${leg.marketType} · ${leg.side}${leg.line !== null ? ` ${Number(leg.line)}` : ''}`}
                 </span>
                 <span className="flex items-center gap-2">
                   <Price american={leg.price} />

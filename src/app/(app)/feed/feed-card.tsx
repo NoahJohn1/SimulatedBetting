@@ -8,12 +8,35 @@ import type {
   BetPlacedPayload,
   BetSettledPayload,
   BigWinPayload,
+  CustomEventCreatedPayload,
+  CustomEventDisputedPayload,
+  CustomEventOverduePayload,
+  CustomEventResolvedPayload,
+  CustomEventVoidedPayload,
   FeedLegSnapshot,
   LeadChangePayload,
   MemberJoinedPayload,
   ParlayHitPayload,
 } from '@/server/feed/payload';
 import type { SerializedFeedCard } from './actions';
+
+/** "Fri 8pm" — a compact close/resolve-by time, matching the copy in the brief's feed table. */
+function formatDeadline(iso: string): string {
+  const date = new Date(iso);
+  const weekday = date.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/New_York' });
+  const timeOpts: Intl.DateTimeFormatOptions = { hour: 'numeric', timeZone: 'America/New_York' };
+  if (date.getMinutes() !== 0) timeOpts.minute = '2-digit';
+  const time = date.toLocaleTimeString('en-US', timeOpts).replace(' ', '').toLowerCase();
+  return `${weekday} ${time}`;
+}
+
+function EventTitleLink({ eventId, title }: { eventId: string; title: string }) {
+  return (
+    <Link href={`/events/${eventId}`} className="font-semibold hover:underline">
+      {title}
+    </Link>
+  );
+}
 
 /** "KC −3.5 (−110)" for a sports leg, "{event} · {market} · {outcome} (price)" for a custom one. */
 function describeLeg(leg: FeedLegSnapshot): React.ReactNode {
@@ -187,6 +210,65 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
         <p className="text-sm">
           hit a <span className="font-semibold">{hit.legCount}-leg parlay</span> ·{' '}
           <Money cents={BigInt(hit.payoutCents)} />
+        </p>
+      );
+    }
+
+    case 'CUSTOM_EVENT_CREATED': {
+      const created = payload as CustomEventCreatedPayload;
+      return (
+        <p className="text-sm">
+          opened <EventTitleLink eventId={created.eventId} title={created.title} /> ·{' '}
+          {created.marketCount} {created.marketCount === 1 ? 'market' : 'markets'} · closes{' '}
+          {formatDeadline(created.resolvesBy)}
+        </p>
+      );
+    }
+
+    case 'CUSTOM_EVENT_RESOLVED': {
+      const resolved = payload as CustomEventResolvedPayload;
+      const winners = resolved.outcomes.map((o) => o.winningLabel).join(', ');
+      return (
+        <p className="text-sm">
+          <EventTitleLink eventId={resolved.eventId} title={resolved.title} /> resolved by{' '}
+          <span className="italic">{resolved.resolvedByDisplayName}</span> · {winners} win
+          {resolved.correction ? (
+            <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900">
+              correction
+            </span>
+          ) : null}
+        </p>
+      );
+    }
+
+    case 'CUSTOM_EVENT_DISPUTED': {
+      const disputed = payload as CustomEventDisputedPayload;
+      return (
+        <p className="text-sm">
+          disputed <EventTitleLink eventId={disputed.eventId} title={disputed.title} /> — “
+          {disputed.reason}”
+        </p>
+      );
+    }
+
+    case 'CUSTOM_EVENT_VOIDED': {
+      const voided = payload as CustomEventVoidedPayload;
+      return (
+        <p className="text-sm">
+          <EventTitleLink eventId={voided.eventId} title={voided.title} /> voided by admin{' '}
+          <span className="italic">{voided.adminDisplayName}</span> · {voided.refundedBetCount}{' '}
+          {voided.refundedBetCount === 1 ? 'bet' : 'bets'} refunded
+        </p>
+      );
+    }
+
+    case 'CUSTOM_EVENT_OVERDUE': {
+      const overdue = payload as CustomEventOverduePayload;
+      return (
+        <p className="text-sm">
+          <EventTitleLink eventId={overdue.eventId} title={overdue.title} /> is past its
+          resolve-by date · {overdue.openBetCount} {overdue.openBetCount === 1 ? 'bet' : 'bets'}{' '}
+          open
         </p>
       );
     }
