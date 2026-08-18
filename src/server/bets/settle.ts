@@ -1,22 +1,13 @@
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { db } from '@/db/client';
-import { betLegs, bets, games, markets, seasonMemberships, selections, teams } from '@/db/schema';
+import { betLegs, games, markets, selections, teams } from '@/db/schema';
 import type { BetStatus } from '@/db/schema';
-import { gradeLeg, gradeParlay, settledPayoutCents } from '@/domain/grading';
+import { gradeLeg } from '@/domain/grading';
 import type { LegStatus, MarketType, Side } from '@/domain/grading';
 import { lineToNumber } from '@/domain/line';
-import { isBigWin, isParlayHit, multipleBasisPoints, survivingLegCount } from '@/domain/milestones';
-import type { LedgerEntryType } from '@/db/schema';
-import { postEntry } from '@/server/money/ledger';
-import { emitFeedEvent } from '@/server/feed/emit';
+import { settleBetsForLegs } from '@/server/bets/grade-legs';
 import { buildLegSnapshot } from '@/server/feed/snapshot';
-import type {
-  BetSettledPayload,
-  BigWinPayload,
-  LegOutcome,
-  ParlayHitPayload,
-} from '@/server/feed/payload';
 
 const homeTeams = alias(teams, 'settle_home_teams');
 const awayTeams = alias(teams, 'settle_away_teams');
@@ -42,13 +33,6 @@ export interface SettleGameSummary {
   betsSettled: number;
   centsPaid: bigint;
 }
-
-/** The ledger entry a settled bet writes. LOST writes nothing — the stake left at placement. */
-const ENTRY_TYPE_FOR_STATUS: Partial<Record<BetStatus, LedgerEntryType>> = {
-  WON: 'BET_WON',
-  PUSHED: 'BET_PUSHED',
-  VOIDED: 'BET_VOIDED',
-};
 
 /**
  * Settles every pending leg on a finished game, then every bet those legs belong to.
@@ -115,158 +99,45 @@ export async function settleGame(gameId: string): Promise<SettleGameSummary> {
 
     const touchedBetIds = [...new Set(pending.map((leg) => leg.betId))];
 
-    // Only bets still PENDING are candidates — a parlay that already lost on an earlier
-    // game does not reopen because a later leg finally graded. Ordering by membership_id
-    // keeps the lock order consistent with placement, so the two cannot deadlock.
-    const candidates =
-      touchedBetIds.length === 0
-        ? []
-        : await tx
+    const settled = await settleBetsForLegs(tx, {
+      betIds: touchedBetIds,
+      settledAt,
+      snapshotLegs: async (betId) => {
+        const legs = (
+          await tx
             .select({
-              id: bets.id,
-              membershipId: bets.membershipId,
-              seasonId: seasonMemberships.seasonId,
-              type: bets.type,
-              stakeCents: bets.stakeCents,
-              potentialPayoutCents: bets.potentialPayoutCents,
-              combinedPriceAmerican: bets.combinedPriceAmerican,
-              settlementAttempts: bets.settlementAttempts,
+              status: betLegs.status,
+              priceAtPlacement: betLegs.priceAtPlacement,
+              lineAtPlacement: betLegs.lineAtPlacement,
+              marketType: markets.type,
+              side: selections.side,
+              sport: games.sport,
+              startsAt: games.startsAt,
+              homeAbbr: homeTeams.abbreviation,
+              awayAbbr: awayTeams.abbreviation,
             })
-            .from(bets)
-            .innerJoin(seasonMemberships, eq(bets.membershipId, seasonMemberships.id))
-            .where(and(inArray(bets.id, touchedBetIds), eq(bets.status, 'PENDING')))
-            .orderBy(asc(bets.membershipId));
+            .from(betLegs)
+            .innerJoin(selections, eq(betLegs.selectionId, selections.id))
+            .innerJoin(markets, eq(selections.marketId, markets.id))
+            .innerJoin(games, eq(markets.eventId, games.eventId))
+            .innerJoin(homeTeams, eq(games.homeTeamId, homeTeams.id))
+            .innerJoin(awayTeams, eq(games.awayTeamId, awayTeams.id))
+            .where(eq(betLegs.betId, betId))
+            .orderBy(asc(betLegs.createdAt))
+        ).map(toSportsLeg);
 
-    for (const bet of candidates) {
-      const legs = (
-        await tx
-          .select({
-            status: betLegs.status,
-            priceAtPlacement: betLegs.priceAtPlacement,
-            lineAtPlacement: betLegs.lineAtPlacement,
-            marketType: markets.type,
-            side: selections.side,
-            sport: games.sport,
-            startsAt: games.startsAt,
-            homeAbbr: homeTeams.abbreviation,
-            awayAbbr: awayTeams.abbreviation,
-          })
-          .from(betLegs)
-          .innerJoin(selections, eq(betLegs.selectionId, selections.id))
-          .innerJoin(markets, eq(selections.marketId, markets.id))
-          .innerJoin(games, eq(markets.eventId, games.eventId))
-          .innerJoin(homeTeams, eq(games.homeTeamId, homeTeams.id))
-          .innerJoin(awayTeams, eq(games.awayTeamId, awayTeams.id))
-          .where(eq(betLegs.betId, bet.id))
-          .orderBy(asc(betLegs.createdAt))
-      ).map(toSportsLeg);
-
-      const statuses = legs.map((leg) => leg.status as LegStatus);
-      const parlayOutcome = gradeParlay(statuses);
-      if (parlayOutcome === 'PENDING') continue;
-
-      // gradeParlay returns PUSHED for an all-void bet, which is right for a parlay — the
-      // stake comes back. A single whose only leg voided is more precisely VOIDED, and the
-      // ledger entry follows the bet status.
-      const outcome: BetStatus =
-        parlayOutcome === 'PUSHED' && bet.type === 'SINGLE' && statuses.every((s) => s === 'VOIDED')
-          ? 'VOIDED'
-          : (parlayOutcome as BetStatus);
-
-      const attempts = bet.settlementAttempts + 1;
-      const payout = settledPayoutCents(
-        bet.stakeCents,
-        legs.map((leg) => ({
-          status: leg.status as LegStatus,
-          priceAmerican: leg.priceAtPlacement,
-        })),
-      );
-
-      const entryType = ENTRY_TYPE_FOR_STATUS[outcome];
-      if (entryType && payout > 0n) {
-        await postEntry(tx, {
-          membershipId: bet.membershipId,
-          amountCents: payout,
-          type: entryType,
-          idempotencyKey: `bet:${bet.id}:settled:${attempts}`,
-          betId: bet.id,
-        });
-        summary.centsPaid += payout;
-      }
-
-      await tx
-        .update(bets)
-        .set({ status: outcome, settledAt, settlementAttempts: attempts })
-        .where(eq(bets.id, bet.id));
-
-      const legOutcomes = legs.map((leg) => leg.status as LegOutcome);
-
-      const settledPayload: BetSettledPayload = {
-        betType: bet.type,
-        currency: 'CASH',
-        stakeCents: bet.stakeCents.toString(),
-        potentialPayoutCents: bet.potentialPayoutCents.toString(),
-        combinedPriceAmerican: bet.combinedPriceAmerican,
-        legs: legs.map((leg) =>
-          buildLegSnapshot(leg, { line: leg.lineAtPlacement, priceAmerican: leg.priceAtPlacement }),
-        ),
-        // `outcome` is typed BetStatus (includes PENDING) for the ledger/grading logic above,
-        // but the `continue` on parlayOutcome === 'PENDING' guarantees it can't be PENDING
-        // here — narrowing to the payload's outcome union is a type-only adaptation.
-        outcome: outcome as BetSettledPayload['outcome'],
-        payoutCents: payout.toString(),
-        netCents: (payout - bet.stakeCents).toString(),
-        legOutcomes,
-        settlementAttempt: attempts,
-        correction: attempts > 1,
-      };
-
-      await emitFeedEvent(tx, {
-        seasonId: bet.seasonId,
-        type: 'BET_SETTLED',
-        subjectMembershipId: bet.membershipId,
-        betId: bet.id,
-        dedupeKey: `bet:${bet.id}:settled:${attempts}`,
-        payload: settledPayload,
-        occurredAt: settledAt,
-      });
-
-      if (outcome === 'WON' && isBigWin(bet.stakeCents, payout)) {
-        const bigWin: BigWinPayload = {
-          stakeCents: bet.stakeCents.toString(),
-          payoutCents: payout.toString(),
-          multipleBasisPoints: multipleBasisPoints(bet.stakeCents, payout),
+        return {
+          statuses: legs.map((leg) => leg.status as LegStatus),
+          prices: legs.map((leg) => leg.priceAtPlacement),
+          snapshots: legs.map((leg) =>
+            buildLegSnapshot(leg, { line: leg.lineAtPlacement, priceAmerican: leg.priceAtPlacement }),
+          ),
         };
-        await emitFeedEvent(tx, {
-          seasonId: bet.seasonId,
-          type: 'MILESTONE_BIG_WIN',
-          subjectMembershipId: bet.membershipId,
-          betId: bet.id,
-          dedupeKey: `bet:${bet.id}:bigwin:${attempts}`,
-          payload: bigWin,
-          occurredAt: settledAt,
-        });
-      }
+      },
+    });
 
-      if (isParlayHit(bet.type, outcome, legOutcomes)) {
-        const parlayHit: ParlayHitPayload = {
-          legCount: survivingLegCount(legOutcomes),
-          payoutCents: payout.toString(),
-          combinedPriceAmerican: bet.combinedPriceAmerican,
-        };
-        await emitFeedEvent(tx, {
-          seasonId: bet.seasonId,
-          type: 'MILESTONE_PARLAY_HIT',
-          subjectMembershipId: bet.membershipId,
-          betId: bet.id,
-          dedupeKey: `bet:${bet.id}:parlayhit:${attempts}`,
-          payload: parlayHit,
-          occurredAt: settledAt,
-        });
-      }
-
-      summary.betsSettled += 1;
-    }
+    summary.betsSettled = settled.betsSettled;
+    summary.centsPaid = settled.centsPaid;
 
     await tx.update(markets).set({ status: 'SETTLED' }).where(eq(markets.eventId, game.eventId));
 
