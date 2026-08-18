@@ -236,6 +236,38 @@ export async function resolveCustomEvent(
         if (result.ok) {
           betsSettled += 1;
           creditsPaid += result.paidCents;
+        } else if (result.error.code === 'BET_STILL_PENDING') {
+          // A bet still pending on another leg was never paid, so there is nothing to
+          // reverse — but its leg on this (corrected) event still needs the right grade for
+          // whenever it does settle. Without this, a parlay spanning two custom events would
+          // settle later against the superseded attempt-1 grade.
+          const stale = await tx
+            .select({
+              legId: betLegs.id,
+              selectionId: betLegs.selectionId,
+              marketId: selections.marketId,
+            })
+            .from(betLegs)
+            .innerJoin(selections, eq(betLegs.selectionId, selections.id))
+            .where(
+              and(
+                eq(betLegs.betId, betId),
+                // Deliberately not filtered to PENDING: these legs already carry attempt 1's
+                // grade, which is exactly the value being overwritten.
+                inArray(selections.marketId, eventMarkets.map((m) => m.id)),
+              ),
+            );
+
+          for (const leg of stale) {
+            const status = gradeCustomLeg({
+              selectionId: leg.selectionId,
+              winningSelectionId: chosen.get(leg.marketId) ?? null,
+            });
+            await tx
+              .update(betLegs)
+              .set({ status, settledAt: now })
+              .where(eq(betLegs.id, leg.legId));
+          }
         }
       }
     }
@@ -384,6 +416,27 @@ export async function voidCustomEvent(
         if (result.ok) {
           refundedBets += 1;
           refundedCents += result.paidCents;
+        } else if (result.error.code === 'BET_STILL_PENDING') {
+          // Nothing was paid on a bet still pending on another leg, so there is nothing to
+          // reverse or refund here — but its leg on this event has to be VOIDED so it drops
+          // out of the parlay when the bet finally settles (D12). The refund follows then.
+          await tx
+            .update(betLegs)
+            .set({ status: 'VOIDED', settledAt: now })
+            .where(
+              and(
+                eq(betLegs.betId, betId),
+                // Not filtered to PENDING: this leg already carries the grade the previous
+                // resolution gave it, which the void supersedes.
+                inArray(
+                  betLegs.selectionId,
+                  tx
+                    .select({ id: selections.id })
+                    .from(selections)
+                    .where(inArray(selections.marketId, marketIds)),
+                ),
+              ),
+            );
         }
       }
     } else {

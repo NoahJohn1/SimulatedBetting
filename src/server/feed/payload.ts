@@ -85,12 +85,19 @@ export interface BigWinPayload {
   payoutCents: string;
   /** payout × 10000 / stake, as integer BigInt division. 124000 renders as "12.4×". */
   multipleBasisPoints: number;
+  /**
+   * Optional only for rows written before credits existed: every one of those was a cash
+   * bet, so the card reads them as CASH. New rows always carry it.
+   */
+  currency?: 'CASH' | 'CREDITS';
 }
 
 export interface ParlayHitPayload {
   legCount: number;
   payoutCents: string;
   combinedPriceAmerican: number;
+  /** Optional for pre-credits rows, exactly as on `BigWinPayload`. */
+  currency?: 'CASH' | 'CREDITS';
 }
 
 export interface CustomEventCreatedPayload {

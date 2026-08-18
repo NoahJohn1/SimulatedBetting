@@ -68,6 +68,12 @@ async function upsertGame(game: ProviderGame): Promise<{ id: string; eventId: st
       eventId = event.id;
     }
 
+    // The supertype's kickoff has to track the feed's, not freeze at first sync: placement
+    // validates against `events.starts_at`, so a rescheduled game whose event row went stale
+    // would keep accepting bets after it had actually kicked off. Idempotent either way — a
+    // freshly inserted event is simply rewritten with the value it already has.
+    await tx.update(events).set({ startsAt: game.startsAt }).where(eq(events.id, eventId));
+
     const [row] = await tx
       .insert(games)
       .values({

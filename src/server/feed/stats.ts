@@ -77,7 +77,11 @@ export async function getMemberProfile(opts: {
       ), 0)`,
     })
     .from(bets)
-    .where(eq(bets.membershipId, opts.membershipId));
+    // Cash only. Credits are a separate, non-convertible economy (D31), and every number
+    // below — net, biggest win, ROI, the pending stake — renders as dollars. Blending the
+    // two would put a credits loss on a member's cash line. This also keeps the profile
+    // scoped to exactly what "the standings" already means everywhere else.
+    .where(and(eq(bets.membershipId, opts.membershipId), eq(bets.currency, 'CASH')));
 
   const outcomes: BetOutcomeRow[] = betRows.map((bet) => ({
     status: bet.status,

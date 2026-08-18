@@ -322,6 +322,7 @@ export async function resettleBetInTx(tx: Tx, input: ResettleBetInput): Promise<
         stakeCents: bet.stakeCents.toString(),
         payoutCents: paidCents.toString(),
         multipleBasisPoints: multipleBasisPoints(bet.stakeCents, paidCents),
+        currency: bet.currency,
       };
       await emitFeedEvent(tx, {
         seasonId: membership.seasonId,
@@ -339,6 +340,7 @@ export async function resettleBetInTx(tx: Tx, input: ResettleBetInput): Promise<
         legCount: survivingLegCount(legOutcomes),
         payoutCents: paidCents.toString(),
         combinedPriceAmerican: bet.combinedPriceAmerican,
+        currency: bet.currency,
       };
       await emitFeedEvent(tx, {
         seasonId: membership.seasonId,

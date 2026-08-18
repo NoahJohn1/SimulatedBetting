@@ -127,6 +127,7 @@ export async function settleBetsForLegs(
         stakeCents: bet.stakeCents.toString(),
         payoutCents: payout.toString(),
         multipleBasisPoints: multipleBasisPoints(bet.stakeCents, payout),
+        currency: bet.currency as Currency,
       };
       await emitFeedEvent(tx, {
         seasonId: bet.seasonId,
@@ -144,6 +145,7 @@ export async function settleBetsForLegs(
         legCount: survivingLegCount(legOutcomes),
         payoutCents: payout.toString(),
         combinedPriceAmerican: bet.combinedPriceAmerican,
+        currency: bet.currency as Currency,
       };
       await emitFeedEvent(tx, {
         seasonId: bet.seasonId,

@@ -13,6 +13,11 @@ const OPTIONS: PreferenceOption[] = [
   { type: 'MILESTONE_LEAD_CHANGE', label: 'Lead changes', description: 'When the standings lead changes hands' },
   { type: 'MILESTONE_BIG_WIN', label: 'Big wins', description: 'Payouts of 10× or better' },
   { type: 'MILESTONE_PARLAY_HIT', label: 'Parlay hits', description: 'Parlays of four legs or more cashing' },
+  { type: 'CUSTOM_EVENT_CREATED', label: 'Events created', description: 'When somebody opens a custom event' },
+  { type: 'CUSTOM_EVENT_RESOLVED', label: 'Events resolved', description: 'How custom events were called' },
+  { type: 'CUSTOM_EVENT_DISPUTED', label: 'Events disputed', description: 'When somebody questions a call' },
+  { type: 'CUSTOM_EVENT_VOIDED', label: 'Events voided', description: 'Events an admin voided and refunded' },
+  { type: 'CUSTOM_EVENT_OVERDUE', label: 'Overdue events', description: 'Events past their resolve-by date' },
 ];
 
 export default async function FeedPreferencesPage() {

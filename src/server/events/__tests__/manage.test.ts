@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { db } from '@/db/client';
-import { markets, selections } from '@/db/schema';
+import { events, markets, selections } from '@/db/schema';
 import { placeBet } from '@/server/bets/place';
 import { editCustomEvent, setMarketStatus } from '@/server/events/manage';
 import { postEntry } from '@/server/money/ledger';
@@ -101,6 +101,62 @@ describe('editCustomEvent', () => {
       .from(selections)
       .where(eq(selections.id, event.marketSelections[0].selectionIds[0]));
     expect(outcome.priceAmerican).toBe(-200);
+  });
+
+  it('refuses a member who did not create the event, and changes nothing', async () => {
+    const { other, event } = await seed();
+
+    const result = await editCustomEvent({
+      eventId: event.eventId,
+      actorMembershipId: other.membership.id,
+      title: 'Somebody else’s cup',
+      markets: event.marketSelections.map((m) => ({
+        marketId: m.marketId,
+        title: 'Rewritten',
+        outcomes: m.selectionIds.map((selectionId) => ({ selectionId, priceAmerican: -500 })),
+      })),
+    });
+
+    expect(result).toEqual({ ok: false, error: { code: 'NOT_AUTHORIZED' } });
+
+    // The rejection is checked before anything is written, so the board is untouched.
+    const [row] = await db.select().from(events).where(eq(events.id, event.eventId));
+    expect(row.title).toBe('Test Cup');
+    const [outcome] = await db
+      .select()
+      .from(selections)
+      .where(eq(selections.id, event.marketSelections[0].selectionIds[0]));
+    expect(outcome.priceAmerican).toBe(100);
+  });
+
+  it('refuses an outcome submitted under a market it does not belong to', async () => {
+    const { creator, event } = await seed();
+    const [cup, map] = event.marketSelections;
+
+    const result = await editCustomEvent({
+      eventId: event.eventId,
+      actorMembershipId: creator.membership.id,
+      markets: [
+        {
+          marketId: cup.marketId,
+          title: 'Who wins the cup?',
+          // This id is the map market's outcome, smuggled in under the cup market — the
+          // ownership check has to catch it rather than repricing another market's board.
+          outcomes: [{ selectionId: map.selectionIds[0], priceAmerican: -400 }],
+        },
+      ],
+    });
+
+    expect(result).toEqual({ ok: false, error: { code: 'MARKET_NOT_FOUND' } });
+
+    const [smuggled] = await db
+      .select()
+      .from(selections)
+      .where(eq(selections.id, map.selectionIds[0]));
+    expect(smuggled.priceAmerican).toBe(100);
+
+    const [cupMarket] = await db.select().from(markets).where(eq(markets.id, cup.marketId));
+    expect(cupMarket.title).toBe('Who wins the cup?');
   });
 
   it('refuses once a single credit is at risk', async () => {

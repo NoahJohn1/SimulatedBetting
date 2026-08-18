@@ -5,11 +5,16 @@ import { db } from '@/db/client';
 import { bets, customEvents, feedEvents, ledgerEntries, markets, seasonMemberships } from '@/db/schema';
 import { placeBet } from '@/server/bets/place';
 import { resolveCustomEvent } from '@/server/events/resolve';
-import type { BetSettledPayload, CustomLegSnapshot } from '@/server/feed/payload';
+import type {
+  BetSettledPayload,
+  BigWinPayload,
+  CustomLegSnapshot,
+  ParlayHitPayload,
+} from '@/server/feed/payload';
 import { postEntry } from '@/server/money/ledger';
 import { resetDb } from '@/test/db';
 import { makeCustomEvent } from '@/test/factories';
-import { makeMembership } from '@/server/bets/__tests__/helpers';
+import { makeMembership, makeUser } from '@/server/bets/__tests__/helpers';
 
 async function seed() {
   const creator = await makeMembership(1_000_000n);
@@ -48,6 +53,42 @@ function allWinners(event: Awaited<ReturnType<typeof makeCustomEvent>>, index = 
     marketId: m.marketId,
     winningSelectionId: m.selectionIds[index],
   }));
+}
+
+/**
+ * Four even-money custom events and a 1,000-credit parlay taking the first outcome in each.
+ * Four surviving legs is a parlay hit, and 2⁴ = 16× the stake is a big win, so one settlement
+ * emits both milestone cards.
+ */
+async function fourEventParlay(
+  creator: Awaited<ReturnType<typeof seed>>['creator'],
+  bettor: Awaited<ReturnType<typeof seed>>['bettor'],
+  first: Awaited<ReturnType<typeof makeCustomEvent>>,
+) {
+  const events = [first];
+  for (let i = 0; i < 3; i++) {
+    events.push(
+      await makeCustomEvent({
+        creatorMembershipId: creator.membership.id,
+        seasonId: creator.seasonId,
+      }),
+    );
+  }
+
+  const placed = await placeBet({
+    userId: bettor.user.id,
+    type: 'PARLAY',
+    stakeCents: 1_000n,
+    clientRequestId: randomUUID(),
+    legs: events.map((event) => ({
+      selectionId: event.marketSelections[0].selectionIds[0],
+      line: null,
+      priceAmerican: 100,
+    })),
+  });
+  if (!placed.ok) throw new Error(`expected placement to succeed, got ${placed.error.code}`);
+
+  return { events, betId: placed.bet.id };
 }
 
 describe('resolveCustomEvent', () => {
@@ -287,6 +328,103 @@ describe('resolveCustomEvent', () => {
     });
 
     expect(result).toEqual({ ok: false, error: { code: 'NOT_AUTHORIZED' } });
+  });
+
+  it('marks the milestone cards a credits settlement emits as CREDITS', async () => {
+    const { creator, bettor, event } = await seed();
+    const { events, betId } = await fourEventParlay(creator, bettor, event);
+
+    for (const each of events) {
+      await resolveCustomEvent({
+        eventId: each.eventId,
+        actorUserId: creator.user.id,
+        actorMembershipId: creator.membership.id,
+        isAdmin: false,
+        winners: allWinners(each, 0),
+      });
+    }
+
+    const [bet] = await db.select().from(bets).where(eq(bets.id, betId));
+    expect(bet.status).toBe('WON');
+    // 100,000 − 1,000 staked + 16,000 paid.
+    expect(await credits(bettor.membership.id)).toBe(115_000n);
+
+    const [bigWin] = await db
+      .select()
+      .from(feedEvents)
+      .where(eq(feedEvents.type, 'MILESTONE_BIG_WIN'));
+    const [parlayHit] = await db
+      .select()
+      .from(feedEvents)
+      .where(eq(feedEvents.type, 'MILESTONE_PARLAY_HIT'));
+
+    expect(bigWin.payload as BigWinPayload).toMatchObject({
+      payoutCents: '16000',
+      currency: 'CREDITS',
+    });
+    expect(parlayHit.payload as ParlayHitPayload).toMatchObject({
+      legCount: 4,
+      currency: 'CREDITS',
+    });
+  });
+
+  it('marks the milestone cards a credits correction emits as CREDITS', async () => {
+    const { creator, bettor, event } = await seed();
+    const { events, betId } = await fourEventParlay(creator, bettor, event);
+
+    // The first event is called against the bettor, so the parlay settles LOST.
+    await resolveCustomEvent({
+      eventId: events[0].eventId,
+      actorUserId: creator.user.id,
+      actorMembershipId: creator.membership.id,
+      isAdmin: false,
+      winners: allWinners(events[0], 1),
+    });
+    for (const each of events.slice(1)) {
+      await resolveCustomEvent({
+        eventId: each.eventId,
+        actorUserId: creator.user.id,
+        actorMembershipId: creator.membership.id,
+        isAdmin: false,
+        winners: allWinners(each, 0),
+      });
+    }
+
+    const [lost] = await db.select().from(bets).where(eq(bets.id, betId));
+    expect(lost.status).toBe('LOST');
+    expect(
+      await db.select().from(feedEvents).where(eq(feedEvents.type, 'MILESTONE_BIG_WIN')),
+    ).toHaveLength(0);
+
+    // An admin overturns the first call, and the correction runs through resettleBet.
+    const adminUser = await makeUser({ role: 'ADMIN' });
+    const corrected = await resolveCustomEvent({
+      eventId: events[0].eventId,
+      actorUserId: adminUser.id,
+      actorMembershipId: creator.membership.id,
+      isAdmin: true,
+      note: 'the first call was wrong',
+      winners: allWinners(events[0], 0),
+    });
+    expect(corrected).toMatchObject({ ok: true, attempt: 2, creditsPaid: 16_000n });
+
+    const [bigWin] = await db
+      .select()
+      .from(feedEvents)
+      .where(eq(feedEvents.type, 'MILESTONE_BIG_WIN'));
+    const [parlayHit] = await db
+      .select()
+      .from(feedEvents)
+      .where(eq(feedEvents.type, 'MILESTONE_PARLAY_HIT'));
+
+    expect(bigWin.payload as BigWinPayload).toMatchObject({
+      payoutCents: '16000',
+      currency: 'CREDITS',
+    });
+    expect(parlayHit.payload as ParlayHitPayload).toMatchObject({
+      legCount: 4,
+      currency: 'CREDITS',
+    });
   });
 
   it('posts one CUSTOM_EVENT_RESOLVED card naming each winner', async () => {

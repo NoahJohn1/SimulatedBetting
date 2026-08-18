@@ -100,6 +100,7 @@ describe('settleGame feed emission', () => {
     const payload = milestone.payload as BigWinPayload;
     expect(payload.payoutCents).toBe('130000');
     expect(payload.multipleBasisPoints).toBe(130_000);
+    expect(payload.currency).toBe('CASH');
   });
 
   it('posts no milestone on an ordinary win', async () => {

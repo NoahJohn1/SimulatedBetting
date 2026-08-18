@@ -175,7 +175,7 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
         <p className="text-sm">
           <span className={amount > 0n ? 'text-emerald-600' : 'text-rose-600'}>
             {amount > 0n ? '+' : ''}
-            <Money cents={amount} className="font-semibold" />
+            <Money cents={amount} currency={adjustment.currency} className="font-semibold" />
           </span>{' '}
           by admin {adjustment.adminDisplayName} — “{adjustment.note}”
         </p>
@@ -196,10 +196,14 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
 
     case 'MILESTONE_BIG_WIN': {
       const win = payload as BigWinPayload;
+      // Cards written before credits existed carry no currency, and every one of them was a
+      // cash bet — so the fallback is the truth for old rows, not a guess.
+      const currency = win.currency ?? 'CASH';
       return (
         <p className="text-sm">
           cashed <span className="font-semibold">{(win.multipleBasisPoints / 10_000).toFixed(1)}×</span>{' '}
-          · <Money cents={BigInt(win.stakeCents)} /> → <Money cents={BigInt(win.payoutCents)} />
+          · <Money cents={BigInt(win.stakeCents)} currency={currency} /> →{' '}
+          <Money cents={BigInt(win.payoutCents)} currency={currency} />
         </p>
       );
     }
@@ -209,7 +213,7 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
       return (
         <p className="text-sm">
           hit a <span className="font-semibold">{hit.legCount}-leg parlay</span> ·{' '}
-          <Money cents={BigInt(hit.payoutCents)} />
+          <Money cents={BigInt(hit.payoutCents)} currency={hit.currency ?? 'CASH'} />
         </p>
       );
     }
