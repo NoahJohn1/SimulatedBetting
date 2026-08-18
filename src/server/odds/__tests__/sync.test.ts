@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/db/client';
-import { games, markets, oddsSnapshots, selections, teams } from '@/db/schema';
+import { events, games, markets, oddsSnapshots, selections, teams } from '@/db/schema';
 import { FixtureOddsProvider } from '@/fixtures/providers';
 import { suspendStaleMarkets, syncOdds } from '@/server/odds/sync';
 import { resetDb } from '@/test/db';
@@ -66,6 +66,24 @@ describe('syncOdds', () => {
 
     expect((await db.select().from(teams)).length).toBe(teamCount);
     expect((await db.select().from(games)).length).toBe(gameCount);
+  });
+
+  it('does not leak an orphan event on re-sync', async () => {
+    await syncOdds({ provider: new FixtureOddsProvider() });
+    const eventCount = (await db.select().from(events)).length;
+    const before = await db
+      .select({ eventId: games.eventId })
+      .from(games)
+      .where(eq(games.externalId, SPREAD_GAME));
+
+    await syncOdds({ provider: new FixtureOddsProvider() });
+
+    expect((await db.select().from(events)).length).toBe(eventCount);
+    const after = await db
+      .select({ eventId: games.eventId })
+      .from(games)
+      .where(eq(games.externalId, SPREAD_GAME));
+    expect(after[0].eventId).toBe(before[0].eventId);
   });
 
   it('updates the price and snapshots it when a line moves', async () => {

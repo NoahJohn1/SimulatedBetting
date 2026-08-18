@@ -47,18 +47,26 @@ async function upsertGame(game: ProviderGame): Promise<string> {
   const homeTeamId = await upsertTeam(game.home, game.sport);
   const awayTeamId = await upsertTeam(game.away, game.sport);
 
-  // The event is created fresh on every upsert attempt (not just genuine first-inserts):
-  // `event_id` is NOT NULL, so the values passed to `onConflictDoUpdate` must already carry
-  // one even on the update path, where it is simply discarded in favor of the existing row's.
+  // An event is created once, on a game's genuine first sync, and reused on every
+  // subsequent re-sync of the same game (looked up by the game's natural key).
   return db.transaction(async (tx) => {
-    const [event] = await tx
-      .insert(events)
-      .values({
-        kind: 'GAME',
-        title: `${game.away.abbreviation} @ ${game.home.abbreviation}`,
-        startsAt: game.startsAt,
-      })
-      .returning({ id: events.id });
+    const [existingGame] = await tx
+      .select({ eventId: games.eventId })
+      .from(games)
+      .where(and(eq(games.sport, game.sport), eq(games.externalId, game.externalId)));
+
+    let eventId = existingGame?.eventId;
+    if (!eventId) {
+      const [event] = await tx
+        .insert(events)
+        .values({
+          kind: 'GAME',
+          title: `${game.away.abbreviation} @ ${game.home.abbreviation}`,
+          startsAt: game.startsAt,
+        })
+        .returning({ id: events.id });
+      eventId = event.id;
+    }
 
     const [row] = await tx
       .insert(games)
@@ -71,7 +79,7 @@ async function upsertGame(game: ProviderGame): Promise<string> {
         seasonYear: game.seasonYear,
         week: game.week,
         status: game.status,
-        eventId: event.id,
+        eventId,
       })
       .onConflictDoUpdate({
         target: [games.sport, games.externalId],
