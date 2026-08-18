@@ -11,6 +11,7 @@ import {
 } from '@/db/schema';
 import type { LegStatus } from '@/domain/grading';
 import { gradeCustomLeg } from '@/domain/custom-grading';
+import { resettleBetInTx } from '@/server/bets/resettle';
 import { settleBetsForLegs } from '@/server/bets/grade-legs';
 import { buildCustomLegSnapshot } from '@/server/feed/snapshot';
 import { emitFeedEvent } from '@/server/feed/emit';
@@ -155,49 +156,79 @@ export async function resolveCustomEvent(
 
     const [event] = await tx.select().from(events).where(eq(events.id, input.eventId));
 
-    const summary = await settleBetsForLegs(tx, {
-      betIds: [...new Set(pending.map((leg) => leg.betId))],
-      settledAt: now,
-      snapshotLegs: async (betId) => {
-        const legs = await tx
-          .select({
-            status: betLegs.status,
-            priceAtPlacement: betLegs.priceAtPlacement,
-            label: selections.label,
-            marketTitle: markets.title,
-            eventTitle: events.title,
-            eventStartsAt: events.startsAt,
-            creatorMembershipId: customEvents.creatorMembershipId,
-            membershipId: betLegs.betId,
-          })
-          .from(betLegs)
-          .innerJoin(selections, eq(betLegs.selectionId, selections.id))
-          .innerJoin(markets, eq(selections.marketId, markets.id))
-          .innerJoin(events, eq(markets.eventId, events.id))
-          .innerJoin(customEvents, eq(customEvents.eventId, events.id))
-          .where(eq(betLegs.betId, betId))
-          .orderBy(asc(betLegs.createdAt));
+    let betsSettled = 0;
+    let creditsPaid = 0n;
 
-        return {
-          statuses: legs.map((leg) => leg.status as LegStatus),
-          prices: legs.map((leg) => leg.priceAtPlacement),
-          snapshots: legs.map((leg) =>
-            buildCustomLegSnapshot(
-              {
-                eventTitle: leg.eventTitle,
-                marketTitle: leg.marketTitle ?? '',
-                outcomeLabel: leg.label ?? '',
-                startsAt: leg.eventStartsAt,
-                // Recomputed rather than copied from the placement card: the card is a
-                // frozen render snapshot, and this is a fresh one for a fresh event.
-                byCreator: false,
-              },
-              { priceAmerican: leg.priceAtPlacement },
+    const touchedBetIds = [...new Set(pending.map((leg) => leg.betId))];
+
+    if (attempt === 1) {
+      const summary = await settleBetsForLegs(tx, {
+        betIds: touchedBetIds,
+        settledAt: now,
+        snapshotLegs: async (betId) => {
+          const legs = await tx
+            .select({
+              status: betLegs.status,
+              priceAtPlacement: betLegs.priceAtPlacement,
+              label: selections.label,
+              marketTitle: markets.title,
+              eventTitle: events.title,
+              eventStartsAt: events.startsAt,
+              creatorMembershipId: customEvents.creatorMembershipId,
+              membershipId: betLegs.betId,
+            })
+            .from(betLegs)
+            .innerJoin(selections, eq(betLegs.selectionId, selections.id))
+            .innerJoin(markets, eq(selections.marketId, markets.id))
+            .innerJoin(events, eq(markets.eventId, events.id))
+            .innerJoin(customEvents, eq(customEvents.eventId, events.id))
+            .where(eq(betLegs.betId, betId))
+            .orderBy(asc(betLegs.createdAt));
+
+          return {
+            statuses: legs.map((leg) => leg.status as LegStatus),
+            prices: legs.map((leg) => leg.priceAtPlacement),
+            snapshots: legs.map((leg) =>
+              buildCustomLegSnapshot(
+                {
+                  eventTitle: leg.eventTitle,
+                  marketTitle: leg.marketTitle ?? '',
+                  outcomeLabel: leg.label ?? '',
+                  startsAt: leg.eventStartsAt,
+                  // Recomputed rather than copied from the placement card: the card is a
+                  // frozen render snapshot, and this is a fresh one for a fresh event.
+                  byCreator: false,
+                },
+                { priceAmerican: leg.priceAtPlacement },
+              ),
             ),
-          ),
-        };
-      },
-    });
+          };
+        },
+      });
+      betsSettled = summary.betsSettled;
+      creditsPaid = summary.centsPaid;
+    } else {
+      // Every bet on this event was already settled by the previous attempt, so correcting
+      // it means reversing what that attempt paid — which is precisely resettleBet's job
+      // (D15). resettleBetInTx re-grades from the markets' new winning_selection_id.
+      const affected = await tx
+        .selectDistinct({ betId: betLegs.betId })
+        .from(betLegs)
+        .innerJoin(selections, eq(betLegs.selectionId, selections.id))
+        .where(inArray(selections.marketId, eventMarkets.map((m) => m.id)));
+
+      for (const { betId } of affected) {
+        const result = await resettleBetInTx(tx, {
+          betId,
+          actorUserId: input.actorUserId,
+          note: input.note!.trim(),
+        });
+        if (result.ok) {
+          betsSettled += 1;
+          creditsPaid += result.paidCents;
+        }
+      }
+    }
 
     await tx
       .update(customEvents)
@@ -247,8 +278,8 @@ export async function resolveCustomEvent(
     return {
       ok: true as const,
       attempt,
-      betsSettled: summary.betsSettled,
-      creditsPaid: summary.centsPaid,
+      betsSettled,
+      creditsPaid,
     };
   });
 }
