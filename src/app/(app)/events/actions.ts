@@ -4,7 +4,9 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireApprovedMemberOrThrow } from '@/server/auth/session';
 import { createCustomEvent } from '@/server/events/create';
+import { disputeResolution, type DisputeResolutionResult } from '@/server/events/dispute';
 import { editCustomEvent, setMarketStatus, type ManageError } from '@/server/events/manage';
+import { resolveCustomEvent, type ResolveError } from '@/server/events/resolve';
 import type { CreateEventError } from '@/server/events/types';
 
 export interface CreateEventFormValues {
@@ -87,6 +89,51 @@ export async function editEventAction(input: {
     title: input.title,
     description: input.description,
     markets: input.markets,
+  });
+
+  if (result.ok) revalidatePath(`/events/${input.eventId}`);
+  return result;
+}
+
+/**
+ * Resolve (or, from an admin, correct) an event's markets.
+ *
+ * The actor's identity and role come from the session, never the client — the same reason
+ * `suspendMarketAction` reads `isAdmin` off `member.role` rather than trusting a form field.
+ * The service is the real authority on who may do what; this only reports who is asking.
+ */
+export async function resolveEventAction(input: {
+  eventId: string;
+  winners: { marketId: string; winningSelectionId: string }[];
+  note: string;
+}): Promise<{ ok: false; error: ResolveError } | never> {
+  const member = await requireApprovedMemberOrThrow();
+
+  const result = await resolveCustomEvent({
+    eventId: input.eventId,
+    actorUserId: member.userId,
+    actorMembershipId: member.membershipId,
+    // The service decides what an admin may do; the action only reports who is asking.
+    isAdmin: member.role === 'ADMIN',
+    winners: input.winners,
+    note: input.note,
+  });
+
+  if (!result.ok) return result;
+  redirect(`/events/${input.eventId}`);
+}
+
+/** File a dispute against an event's resolution. Stays on the page — no redirect. */
+export async function disputeEventAction(input: {
+  eventId: string;
+  reason: string;
+}): Promise<DisputeResolutionResult> {
+  const member = await requireApprovedMemberOrThrow();
+
+  const result = await disputeResolution({
+    eventId: input.eventId,
+    membershipId: member.membershipId,
+    reason: input.reason,
   });
 
   if (result.ok) revalidatePath(`/events/${input.eventId}`);

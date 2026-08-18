@@ -1,8 +1,10 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Money } from '@/components/ui/money';
 import { requireApprovedMember } from '@/server/auth/session';
 import { getCustomEventDetail } from '@/server/events/query';
+import { DisputeForm } from './dispute-form';
 import { MarketCard, type MarketCardPosition } from './market-card';
 
 function when(date: Date): string {
@@ -36,6 +38,12 @@ export default async function CustomEventPage({ params }: PageProps<'/events/[ev
     0n,
   );
   const canEdit = detail.status === 'OPEN' && detail.viewerIsCreator && stakedCents === 0n;
+
+  // Only an open (unresolved) dispute counts here — a dispute that was answered by a
+  // correction no longer blocks the viewer from being shown the form again.
+  const viewerDispute = detail.openDisputes.find(
+    (dispute) => dispute.membershipId === member.membershipId,
+  );
 
   const positionsByMarket = new Map<string, MarketCardPosition[]>();
   for (const position of detail.creatorPositions) {
@@ -140,11 +148,22 @@ export default async function CustomEventPage({ params }: PageProps<'/events/[ev
         </section>
       ) : null}
 
-      {/*
-        Resolve (creator or admin, while OPEN) and Dispute (any season member, while
-        RESOLVED) are the state-appropriate controls for this page. They land in Task 19 —
-        deliberately not stubbed here, so nothing renders a button that does nothing.
-      */}
+      {canManage ? (
+        <Link
+          href={`/events/${detail.eventId}/resolve`}
+          className="self-start rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
+        >
+          Resolve event
+        </Link>
+      ) : null}
+
+      {detail.status === 'RESOLVED' ? (
+        <DisputeForm
+          eventId={detail.eventId}
+          alreadyDisputed={viewerDispute !== undefined}
+          existingReason={viewerDispute?.reason ?? null}
+        />
+      ) : null}
     </div>
   );
 }

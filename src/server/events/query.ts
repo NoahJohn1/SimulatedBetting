@@ -141,7 +141,7 @@ export interface CustomEventDetail {
   }[];
   viewerPositions: { marketId: string; selectionId: string; stakeCents: bigint; status: string }[];
   creatorPositions: { marketId: string; selectionId: string; stakeCents: bigint }[];
-  openDisputes: { displayName: string; reason: string; createdAt: Date }[];
+  openDisputes: { membershipId: string; displayName: string; reason: string; createdAt: Date }[];
 }
 
 const resolvedByUsers = alias(users, 'resolved_by_users');
@@ -252,6 +252,7 @@ export async function getCustomEventDetail(
 
   const disputeRows = await db
     .select({
+      membershipId: customEventDisputes.membershipId,
       displayName: users.displayName,
       reason: customEventDisputes.reason,
       createdAt: customEventDisputes.createdAt,
