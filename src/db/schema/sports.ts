@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
   index,
   integer,
@@ -20,7 +21,7 @@ export const gameStatus = pgEnum('game_status', [
   'POSTPONED',
   'CANCELED',
 ]);
-export const marketType = pgEnum('market_type', ['MONEYLINE', 'SPREAD', 'TOTAL']);
+export const marketType = pgEnum('market_type', ['MONEYLINE', 'SPREAD', 'TOTAL', 'CUSTOM_OUTCOME']);
 export const marketStatus = pgEnum('market_status', ['OPEN', 'SUSPENDED', 'SETTLED']);
 export const selectionSide = pgEnum('selection_side', ['HOME', 'AWAY', 'OVER', 'UNDER']);
 
@@ -83,12 +84,21 @@ export const markets = pgTable(
       .notNull()
       .references(() => events.id),
     type: marketType('type').notNull(),
-    sourceBook: text('source_book').notNull(),
+    /** The question, for CUSTOM_OUTCOME markets. Null for sports markets. */
+    title: text('title'),
+    /** Null for a hand-priced member market — there is no book behind it. */
+    sourceBook: text('source_book'),
     status: marketStatus('status').notNull().default('OPEN'),
     lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }).notNull().defaultNow(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Set at resolution. What makes custom grading a pure function of stored values. */
+    winningSelectionId: uuid('winning_selection_id'),
   },
-  (t) => [uniqueIndex('markets_event_type_idx').on(t.eventId, t.type)],
+  (t) => [
+    uniqueIndex('markets_event_type_idx')
+      .on(t.eventId, t.type)
+      .where(sql`${t.type} <> 'CUSTOM_OUTCOME'`),
+  ],
 );
 
 /**
@@ -103,12 +113,22 @@ export const selections = pgTable(
     marketId: uuid('market_id')
       .notNull()
       .references(() => markets.id),
-    side: selectionSide('side').notNull(),
+    side: selectionSide('side'),
     line: numeric('line', { precision: 5, scale: 2 }),
     priceAmerican: integer('price_american').notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    /** The outcome name for a custom market ("Falcons"). Null for sports selections. */
+    label: text('label'),
+    sortOrder: smallint('sort_order').notNull().default(0),
   },
-  (t) => [uniqueIndex('selections_market_side_idx').on(t.marketId, t.side)],
+  (t) => [
+    uniqueIndex('selections_market_side_idx')
+      .on(t.marketId, t.side)
+      .where(sql`${t.side} IS NOT NULL`),
+    uniqueIndex('selections_market_label_idx')
+      .on(t.marketId, t.label)
+      .where(sql`${t.label} IS NOT NULL`),
+  ],
 );
 
 /** Append-only history of what each selection actually offered, and when. */

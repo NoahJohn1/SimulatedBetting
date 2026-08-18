@@ -4,7 +4,7 @@ import { db } from '@/db/client';
 import { betLegs, bets, games, markets, seasonMemberships, selections, teams } from '@/db/schema';
 import type { BetStatus } from '@/db/schema';
 import { gradeLeg, gradeParlay, settledPayoutCents } from '@/domain/grading';
-import type { LegStatus } from '@/domain/grading';
+import type { LegStatus, MarketType, Side } from '@/domain/grading';
 import { lineToNumber } from '@/domain/line';
 import { isBigWin, isParlayHit, multipleBasisPoints, survivingLegCount } from '@/domain/milestones';
 import type { LedgerEntryType } from '@/db/schema';
@@ -20,6 +20,21 @@ import type {
 
 const homeTeams = alias(teams, 'settle_home_teams');
 const awayTeams = alias(teams, 'settle_away_teams');
+
+/**
+ * Game settlement only ever grades legs on sports markets. This query is scoped to a
+ * game's own event id, so a CUSTOM_OUTCOME market or a null side reaching here would mean a
+ * custom-event leg leaked into the sports settlement path — a bug elsewhere, not something
+ * to grade around.
+ */
+function toSportsLeg<T extends { marketType: string; side: string | null }>(
+  leg: T,
+): T & { marketType: MarketType; side: Side } {
+  if (leg.marketType === 'CUSTOM_OUTCOME' || leg.side === null) {
+    throw new Error('settleGame: expected a sports market/selection, not a custom-outcome one');
+  }
+  return leg as T & { marketType: MarketType; side: Side };
+}
 
 export interface SettleGameSummary {
   gameId: string;
@@ -62,18 +77,20 @@ export async function settleGame(gameId: string): Promise<SettleGameSummary> {
       ? null
       : { homeScore: game.homeScore as number, awayScore: game.awayScore as number };
 
-    const pending = await tx
-      .select({
-        legId: betLegs.id,
-        betId: betLegs.betId,
-        line: betLegs.lineAtPlacement,
-        marketType: markets.type,
-        side: selections.side,
-      })
-      .from(betLegs)
-      .innerJoin(selections, eq(betLegs.selectionId, selections.id))
-      .innerJoin(markets, eq(selections.marketId, markets.id))
-      .where(and(eq(markets.eventId, game.eventId), eq(betLegs.status, 'PENDING')));
+    const pending = (
+      await tx
+        .select({
+          legId: betLegs.id,
+          betId: betLegs.betId,
+          line: betLegs.lineAtPlacement,
+          marketType: markets.type,
+          side: selections.side,
+        })
+        .from(betLegs)
+        .innerJoin(selections, eq(betLegs.selectionId, selections.id))
+        .innerJoin(markets, eq(selections.marketId, markets.id))
+        .where(and(eq(markets.eventId, game.eventId), eq(betLegs.status, 'PENDING')))
+    ).map(toSportsLeg);
 
     const settledAt = new Date();
 
@@ -121,26 +138,28 @@ export async function settleGame(gameId: string): Promise<SettleGameSummary> {
             .orderBy(asc(bets.membershipId));
 
     for (const bet of candidates) {
-      const legs = await tx
-        .select({
-          status: betLegs.status,
-          priceAtPlacement: betLegs.priceAtPlacement,
-          lineAtPlacement: betLegs.lineAtPlacement,
-          marketType: markets.type,
-          side: selections.side,
-          sport: games.sport,
-          startsAt: games.startsAt,
-          homeAbbr: homeTeams.abbreviation,
-          awayAbbr: awayTeams.abbreviation,
-        })
-        .from(betLegs)
-        .innerJoin(selections, eq(betLegs.selectionId, selections.id))
-        .innerJoin(markets, eq(selections.marketId, markets.id))
-        .innerJoin(games, eq(markets.eventId, games.eventId))
-        .innerJoin(homeTeams, eq(games.homeTeamId, homeTeams.id))
-        .innerJoin(awayTeams, eq(games.awayTeamId, awayTeams.id))
-        .where(eq(betLegs.betId, bet.id))
-        .orderBy(asc(betLegs.createdAt));
+      const legs = (
+        await tx
+          .select({
+            status: betLegs.status,
+            priceAtPlacement: betLegs.priceAtPlacement,
+            lineAtPlacement: betLegs.lineAtPlacement,
+            marketType: markets.type,
+            side: selections.side,
+            sport: games.sport,
+            startsAt: games.startsAt,
+            homeAbbr: homeTeams.abbreviation,
+            awayAbbr: awayTeams.abbreviation,
+          })
+          .from(betLegs)
+          .innerJoin(selections, eq(betLegs.selectionId, selections.id))
+          .innerJoin(markets, eq(selections.marketId, markets.id))
+          .innerJoin(games, eq(markets.eventId, games.eventId))
+          .innerJoin(homeTeams, eq(games.homeTeamId, homeTeams.id))
+          .innerJoin(awayTeams, eq(games.awayTeamId, awayTeams.id))
+          .where(eq(betLegs.betId, bet.id))
+          .orderBy(asc(betLegs.createdAt))
+      ).map(toSportsLeg);
 
       const statuses = legs.map((leg) => leg.status as LegStatus);
       const parlayOutcome = gradeParlay(statuses);

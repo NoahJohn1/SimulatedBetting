@@ -1,4 +1,4 @@
-import { and, eq, lt } from 'drizzle-orm';
+import { and, eq, lt, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { events, games, markets, oddsSnapshots, selections, teams } from '@/db/schema';
 import type { Sport } from '@/db/schema';
@@ -145,6 +145,9 @@ export async function syncOdds(options: SyncOddsOptions): Promise<SyncOddsSummar
       })
       .onConflictDoUpdate({
         target: [markets.eventId, markets.type],
+        // markets_event_type_idx is partial (WHERE type <> 'CUSTOM_OUTCOME'), so Postgres
+        // can't infer it from a bare column list — the predicate has to match here too.
+        targetWhere: sql`${markets.type} <> 'CUSTOM_OUTCOME'`,
         // Status is deliberately not overwritten: a market suspended for staleness or
         // settled by the settlement job must not be reopened by a routine sync.
         set: { sourceBook: market.sourceBook, lastSyncedAt: syncedAt },
@@ -181,6 +184,9 @@ export async function syncOdds(options: SyncOddsOptions): Promise<SyncOddsSummar
         })
         .onConflictDoUpdate({
           target: [selections.marketId, selections.side],
+          // selections_market_side_idx is partial (WHERE side IS NOT NULL) since custom
+          // outcomes key on label instead — same inference problem as markets above.
+          targetWhere: sql`${selections.side} IS NOT NULL`,
           set: { line, priceAmerican: selection.priceAmerican, updatedAt: syncedAt },
         })
         .returning({ id: selections.id });

@@ -57,6 +57,20 @@
       "when": 1787058444582,
       "tag": "0007_ambiguous_kate_bishop",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787059432734,
+      "tag": "0008_add_custom_outcome_enum",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787059432735,
+      "tag": "0009_custom_event_tables",
+      "breakpoints": true
     }
   ]
 }

@@ -67,7 +67,17 @@ function Section({
 }: {
   title: string;
   bets: (typeof bets.$inferSelect)[];
-  legsByBet: Map<string, { status: string; line: string | null; price: number; side: string; marketType: string; homeAbbr: string }[]>;
+  legsByBet: Map<
+    string,
+    {
+      status: string;
+      line: string | null;
+      price: number;
+      side: string | null;
+      marketType: string;
+      homeAbbr: string;
+    }[]
+  >;
 }) {
   if (list.length === 0) return null;
 

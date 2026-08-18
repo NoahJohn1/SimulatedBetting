@@ -99,6 +99,9 @@ export async function getSlate(now: Date = new Date()): Promise<BoardGame[]> {
 
   const selectionsByMarket = new Map<string, BoardSelection[]>();
   for (const row of selectionRows) {
+    // A game's markets are always sports markets (never CUSTOM_OUTCOME), so `side` is
+    // always set here — the guard exists only to narrow the now-nullable column's type.
+    if (row.side === null) continue;
     const list = selectionsByMarket.get(row.marketId) ?? [];
     list.push({
       id: row.id,

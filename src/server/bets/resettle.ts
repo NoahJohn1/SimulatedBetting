@@ -13,7 +13,7 @@ import {
 } from '@/db/schema';
 import type { BetStatus, LedgerEntryType } from '@/db/schema';
 import { gradeLeg, gradeParlay, settledPayoutCents } from '@/domain/grading';
-import type { LegStatus } from '@/domain/grading';
+import type { LegStatus, MarketType, Side } from '@/domain/grading';
 import { lineToNumber } from '@/domain/line';
 import { isBigWin, isParlayHit, multipleBasisPoints, survivingLegCount } from '@/domain/milestones';
 import { emitFeedEvent } from '@/server/feed/emit';
@@ -28,6 +28,18 @@ import { postEntry } from '@/server/money/ledger';
 
 const homeTeams = alias(teams, 'resettle_home_teams');
 const awayTeams = alias(teams, 'resettle_away_teams');
+
+/**
+ * Re-settlement only ever grades legs on sports markets — see settleGame's identical guard.
+ */
+function toSportsLeg<T extends { marketType: string; side: string | null }>(
+  leg: T,
+): T & { marketType: MarketType; side: Side } {
+  if (leg.marketType === 'CUSTOM_OUTCOME' || leg.side === null) {
+    throw new Error('resettleBet: expected a sports market/selection, not a custom-outcome one');
+  }
+  return leg as T & { marketType: MarketType; side: Side };
+}
 
 export interface ResettleBetInput {
   betId: string;
@@ -106,29 +118,31 @@ export async function resettleBet(input: ResettleBetInput): Promise<ResettleBetR
       .where(eq(seasonMemberships.id, bet.membershipId));
 
     // Re-grade every leg from the games' current scores.
-    const legs = await tx
-      .select({
-        legId: betLegs.id,
-        line: betLegs.lineAtPlacement,
-        priceAtPlacement: betLegs.priceAtPlacement,
-        marketType: markets.type,
-        side: selections.side,
-        gameStatus: games.status,
-        homeScore: games.homeScore,
-        awayScore: games.awayScore,
-        sport: games.sport,
-        startsAt: games.startsAt,
-        homeAbbr: homeTeams.abbreviation,
-        awayAbbr: awayTeams.abbreviation,
-      })
-      .from(betLegs)
-      .innerJoin(selections, eq(betLegs.selectionId, selections.id))
-      .innerJoin(markets, eq(selections.marketId, markets.id))
-      .innerJoin(games, eq(markets.eventId, games.eventId))
-      .innerJoin(homeTeams, eq(games.homeTeamId, homeTeams.id))
-      .innerJoin(awayTeams, eq(games.awayTeamId, awayTeams.id))
-      .where(eq(betLegs.betId, bet.id))
-      .orderBy(asc(betLegs.createdAt));
+    const legs = (
+      await tx
+        .select({
+          legId: betLegs.id,
+          line: betLegs.lineAtPlacement,
+          priceAtPlacement: betLegs.priceAtPlacement,
+          marketType: markets.type,
+          side: selections.side,
+          gameStatus: games.status,
+          homeScore: games.homeScore,
+          awayScore: games.awayScore,
+          sport: games.sport,
+          startsAt: games.startsAt,
+          homeAbbr: homeTeams.abbreviation,
+          awayAbbr: awayTeams.abbreviation,
+        })
+        .from(betLegs)
+        .innerJoin(selections, eq(betLegs.selectionId, selections.id))
+        .innerJoin(markets, eq(selections.marketId, markets.id))
+        .innerJoin(games, eq(markets.eventId, games.eventId))
+        .innerJoin(homeTeams, eq(games.homeTeamId, homeTeams.id))
+        .innerJoin(awayTeams, eq(games.awayTeamId, awayTeams.id))
+        .where(eq(betLegs.betId, bet.id))
+        .orderBy(asc(betLegs.createdAt))
+    ).map(toSportsLeg);
 
     const settledAt = new Date();
     const regraded: { status: LegStatus; priceAmerican: number }[] = [];
