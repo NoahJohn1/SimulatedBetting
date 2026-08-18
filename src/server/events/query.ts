@@ -110,6 +110,113 @@ export async function listSeasonEvents(
   });
 }
 
+export interface AdminEventQueue {
+  overdue: EventBoardRow[];
+  disputed: (EventBoardRow & { disputes: { displayName: string; reason: string }[] })[];
+}
+
+/**
+ * The admin queue: events stuck OPEN past their `resolvesBy` time, and resolved events with
+ * at least one still-unanswered dispute.
+ *
+ * Built off one pass over the season's events using the same row shape and the same overdue
+ * predicate (`status = 'OPEN' AND resolves_by < now`) as `listSeasonEvents` — there is only
+ * one definition of overdue (D37), so it is reused here rather than re-derived. The two
+ * aggregate subqueries are copied from `listSeasonEvents` verbatim, literal identifiers and
+ * all, for the same D30 reason given there.
+ */
+export async function listAdminEventQueue(
+  seasonId: string,
+  now: Date = new Date(),
+): Promise<AdminEventQueue> {
+  const rows = await db
+    .select({
+      eventId: customEvents.eventId,
+      title: events.title,
+      startsAt: events.startsAt,
+      resolvesBy: customEvents.resolvesBy,
+      status: customEvents.status,
+      creatorMembershipId: customEvents.creatorMembershipId,
+      creatorDisplayName: users.displayName,
+      marketCount: sql<string>`(
+        SELECT COUNT(*) FROM markets mk WHERE mk.event_id = custom_events.event_id
+      )`,
+      stakedCreditsCents: sql<string>`COALESCE((
+        SELECT SUM(b.stake_cents)
+        FROM bets b
+        WHERE b.id IN (
+          SELECT bl.bet_id
+          FROM bet_legs bl
+          JOIN selections s ON s.id = bl.selection_id
+          JOIN markets mk ON mk.id = s.market_id
+          WHERE mk.event_id = custom_events.event_id
+        )
+      ), 0)`,
+    })
+    .from(customEvents)
+    .innerJoin(events, eq(events.id, customEvents.eventId))
+    .innerJoin(seasonMemberships, eq(seasonMemberships.id, customEvents.creatorMembershipId))
+    .innerJoin(users, eq(users.id, seasonMemberships.userId))
+    .where(eq(customEvents.seasonId, seasonId))
+    .orderBy(asc(events.startsAt));
+
+  const toBoardRow = (row: (typeof rows)[number]): EventBoardRow => {
+    const open = row.status === 'OPEN';
+    const section: EventSection = !open ? 'SETTLED' : row.startsAt <= now ? 'AWAITING' : 'OPEN';
+
+    return {
+      eventId: row.eventId,
+      title: row.title,
+      startsAt: row.startsAt,
+      resolvesBy: row.resolvesBy,
+      status: row.status,
+      overdue: open && row.resolvesBy < now,
+      creatorMembershipId: row.creatorMembershipId,
+      creatorDisplayName: row.creatorDisplayName,
+      marketCount: Number(row.marketCount),
+      // Money is a string out of Postgres and becomes a bigint here. Never Number() (D17).
+      stakedCreditsCents: BigInt(row.stakedCreditsCents),
+      section,
+    };
+  };
+
+  const overdue = rows
+    .filter((row) => row.status === 'OPEN' && row.resolvesBy < now)
+    .map(toBoardRow);
+
+  const disputeRows = await db
+    .select({
+      eventId: customEventDisputes.eventId,
+      displayName: users.displayName,
+      reason: customEventDisputes.reason,
+    })
+    .from(customEventDisputes)
+    .innerJoin(customEvents, eq(customEvents.eventId, customEventDisputes.eventId))
+    .innerJoin(seasonMemberships, eq(seasonMemberships.id, customEventDisputes.membershipId))
+    .innerJoin(users, eq(users.id, seasonMemberships.userId))
+    .where(
+      and(
+        eq(customEvents.seasonId, seasonId),
+        // Re-resolution and void both stamp resolved_at; only unanswered disputes belong here.
+        isNull(customEventDisputes.resolvedAt),
+      ),
+    )
+    .orderBy(asc(customEventDisputes.createdAt));
+
+  const disputesByEventId = new Map<string, { displayName: string; reason: string }[]>();
+  for (const dispute of disputeRows) {
+    const list = disputesByEventId.get(dispute.eventId) ?? [];
+    list.push({ displayName: dispute.displayName, reason: dispute.reason });
+    disputesByEventId.set(dispute.eventId, list);
+  }
+
+  const disputed = rows
+    .filter((row) => disputesByEventId.has(row.eventId))
+    .map((row) => ({ ...toBoardRow(row), disputes: disputesByEventId.get(row.eventId)! }));
+
+  return { overdue, disputed };
+}
+
 export interface CustomEventDetail {
   eventId: string;
   title: string;
