@@ -5,6 +5,7 @@ import { db } from '@/db/client';
 import { bets, customEvents, feedEvents, ledgerEntries, markets, seasonMemberships } from '@/db/schema';
 import { placeBet } from '@/server/bets/place';
 import { resolveCustomEvent } from '@/server/events/resolve';
+import type { BetSettledPayload, CustomLegSnapshot } from '@/server/feed/payload';
 import { postEntry } from '@/server/money/ledger';
 import { resetDb } from '@/test/db';
 import { makeCustomEvent } from '@/test/factories';
@@ -95,6 +96,57 @@ describe('resolveCustomEvent', () => {
       .where(and(eq(ledgerEntries.betId, placed.bet.id), eq(ledgerEntries.type, 'BET_WON')));
     expect(entry.currency).toBe('CREDITS');
     expect(entry.idempotencyKey).toBe(`bet:${placed.bet.id}:settled:1`);
+  });
+
+  it('labels the creator\'s own bet on the settlement card, but not a non-creator\'s', async () => {
+    const { creator, bettor, event } = await seed();
+
+    const creatorBet = await placeBet({
+      userId: creator.user.id,
+      type: 'SINGLE',
+      stakeCents: 10_000n,
+      clientRequestId: randomUUID(),
+      legs: [
+        { selectionId: event.marketSelections[0].selectionIds[0], line: null, priceAmerican: 100 },
+      ],
+    });
+    if (!creatorBet.ok) throw new Error('expected creator placement to succeed');
+
+    const bettorBet = await placeBet({
+      userId: bettor.user.id,
+      type: 'SINGLE',
+      stakeCents: 10_000n,
+      clientRequestId: randomUUID(),
+      legs: [
+        { selectionId: event.marketSelections[0].selectionIds[0], line: null, priceAmerican: 100 },
+      ],
+    });
+    if (!bettorBet.ok) throw new Error('expected bettor placement to succeed');
+
+    const result = await resolveCustomEvent({
+      eventId: event.eventId,
+      actorUserId: creator.user.id,
+      actorMembershipId: creator.membership.id,
+      isAdmin: false,
+      winners: allWinners(event, 0),
+    });
+    expect(result).toMatchObject({ ok: true, attempt: 1, betsSettled: 2 });
+
+    const cards = await db
+      .select()
+      .from(feedEvents)
+      .where(eq(feedEvents.type, 'BET_SETTLED'));
+
+    const creatorCard = cards.find((c) => c.betId === creatorBet.bet.id);
+    const bettorCard = cards.find((c) => c.betId === bettorBet.bet.id);
+    expect(creatorCard).toBeDefined();
+    expect(bettorCard).toBeDefined();
+
+    const creatorLeg = (creatorCard!.payload as BetSettledPayload).legs[0] as CustomLegSnapshot;
+    const bettorLeg = (bettorCard!.payload as BetSettledPayload).legs[0] as CustomLegSnapshot;
+
+    expect(creatorLeg.byCreator).toBe(true);
+    expect(bettorLeg.byCreator).toBe(false);
   });
 
   it('grades a loser LOST and pays nothing', async () => {

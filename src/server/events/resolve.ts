@@ -2,6 +2,7 @@ import { and, asc, eq, inArray } from 'drizzle-orm';
 import { db, type Tx } from '@/db/client';
 import {
   betLegs,
+  bets,
   customEventDisputes,
   customEvents,
   events,
@@ -58,13 +59,14 @@ function customSnapshotLegs(tx: Tx) {
         eventTitle: events.title,
         eventStartsAt: events.startsAt,
         creatorMembershipId: customEvents.creatorMembershipId,
-        membershipId: betLegs.betId,
+        membershipId: bets.membershipId,
       })
       .from(betLegs)
       .innerJoin(selections, eq(betLegs.selectionId, selections.id))
       .innerJoin(markets, eq(selections.marketId, markets.id))
       .innerJoin(events, eq(markets.eventId, events.id))
       .innerJoin(customEvents, eq(customEvents.eventId, events.id))
+      .innerJoin(bets, eq(betLegs.betId, bets.id))
       .where(eq(betLegs.betId, betId))
       .orderBy(asc(betLegs.createdAt));
 
@@ -80,7 +82,7 @@ function customSnapshotLegs(tx: Tx) {
             startsAt: leg.eventStartsAt,
             // Recomputed rather than copied from the placement card: the card is a
             // frozen render snapshot, and this is a fresh one for a fresh event.
-            byCreator: false,
+            byCreator: leg.creatorMembershipId === leg.membershipId,
           },
           { priceAmerican: leg.priceAtPlacement },
         ),

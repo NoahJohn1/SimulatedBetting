@@ -209,6 +209,7 @@ export async function resettleBetInTx(tx: Tx, input: ResettleBetInput): Promise<
         eventTitle: events.title,
         eventStartsAt: events.startsAt,
         customStatus: customEvents.status,
+        creatorMembershipId: customEvents.creatorMembershipId,
       })
       .from(betLegs)
       .innerJoin(selections, eq(betLegs.selectionId, selections.id))
@@ -239,7 +240,7 @@ export async function resettleBetInTx(tx: Tx, input: ResettleBetInput): Promise<
           marketTitle: leg.marketTitle ?? '',
           outcomeLabel: leg.label ?? '',
           startsAt: leg.eventStartsAt,
-          byCreator: false,
+          byCreator: leg.creatorMembershipId === bet.membershipId,
         },
         { priceAmerican: leg.priceAtPlacement },
       ),
