@@ -1,5 +1,5 @@
 import { and, asc, eq, inArray } from 'drizzle-orm';
-import { db } from '@/db/client';
+import { db, type Tx } from '@/db/client';
 import {
   betLegs,
   customEventDisputes,
@@ -47,8 +47,7 @@ export type ResolveCustomEventResult =
  * Extract a bet's legs for settlement. Used by both resolveCustomEvent and voidCustomEvent
  * to snapshot the leg metadata (status, price, market/event titles) for feed cards.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function customSnapshotLegs(tx: any) {
+function customSnapshotLegs(tx: Tx) {
   return async (betId: string) => {
     const legs = await tx
       .select({
@@ -70,12 +69,9 @@ function customSnapshotLegs(tx: any) {
       .orderBy(asc(betLegs.createdAt));
 
     return {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      statuses: legs.map((leg: any) => leg.status as LegStatus),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      prices: legs.map((leg: any) => leg.priceAtPlacement),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      snapshots: legs.map((leg: any) =>
+      statuses: legs.map((leg) => leg.status as LegStatus),
+      prices: legs.map((leg) => leg.priceAtPlacement),
+      snapshots: legs.map((leg) =>
         buildCustomLegSnapshot(
           {
             eventTitle: leg.eventTitle,
