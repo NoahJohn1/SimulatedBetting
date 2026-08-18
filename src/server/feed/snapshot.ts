@@ -1,5 +1,5 @@
 import type { Sport } from '@/db/schema';
-import type { FeedLegSnapshot } from './payload';
+import type { CustomLegSnapshot, GameLegSnapshot } from './payload';
 
 export interface SnapshotSource {
   sport: Sport;
@@ -21,8 +21,9 @@ export interface SnapshotSource {
 export function buildLegSnapshot(
   source: SnapshotSource,
   frozen: { line: string | null; priceAmerican: number },
-): FeedLegSnapshot {
+): GameLegSnapshot {
   return {
+    kind: 'GAME',
     sport: source.sport,
     marketType: source.marketType,
     side: source.side,
@@ -31,5 +32,33 @@ export function buildLegSnapshot(
     homeAbbr: source.homeAbbr,
     awayAbbr: source.awayAbbr,
     startsAt: source.startsAt.toISOString(),
+  };
+}
+
+export interface CustomSnapshotSource {
+  eventTitle: string;
+  marketTitle: string;
+  outcomeLabel: string;
+  startsAt: Date;
+  byCreator: boolean;
+}
+
+/**
+ * Same split as `buildLegSnapshot`: text comes from the source row, the price comes from
+ * `frozen` — the leg's `price_at_placement`. A creator repricing their market later must
+ * never rewrite an old card (D10).
+ */
+export function buildCustomLegSnapshot(
+  source: CustomSnapshotSource,
+  frozen: { priceAmerican: number },
+): CustomLegSnapshot {
+  return {
+    kind: 'CUSTOM',
+    eventTitle: source.eventTitle,
+    marketTitle: source.marketTitle,
+    outcomeLabel: source.outcomeLabel,
+    priceAmerican: frozen.priceAmerican,
+    startsAt: source.startsAt.toISOString(),
+    byCreator: source.byCreator,
   };
 }

@@ -13,6 +13,11 @@ export const feedEventType = pgEnum('feed_event_type', [
   'MILESTONE_LEAD_CHANGE',
   'MILESTONE_BIG_WIN',
   'MILESTONE_PARLAY_HIT',
+  'CUSTOM_EVENT_CREATED',
+  'CUSTOM_EVENT_RESOLVED',
+  'CUSTOM_EVENT_DISPUTED',
+  'CUSTOM_EVENT_VOIDED',
+  'CUSTOM_EVENT_OVERDUE',
 ]);
 
 export type FeedEventType = (typeof feedEventType.enumValues)[number];

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
 import { Money } from '@/components/ui/money';
 import type { FeedEventType } from '@/db/schema';
 import type {
@@ -14,9 +15,23 @@ import type {
 } from '@/server/feed/payload';
 import type { SerializedFeedCard } from './actions';
 
-/** "KC −3.5 (−110)" — the pick, as a card reads it. */
-function describeLeg(leg: FeedLegSnapshot): string {
+/** "KC −3.5 (−110)" for a sports leg, "{event} · {market} · {outcome} (price)" for a custom one. */
+function describeLeg(leg: FeedLegSnapshot): React.ReactNode {
   const price = leg.priceAmerican > 0 ? `+${leg.priceAmerican}` : `${leg.priceAmerican}`;
+
+  if (leg.kind === 'CUSTOM') {
+    return (
+      <>
+        {leg.eventTitle} · {leg.marketTitle} · {leg.outcomeLabel} ({price})
+        {leg.byCreator ? (
+          <>
+            {' '}
+            <Badge status="CREATOR" />
+          </>
+        ) : null}
+      </>
+    );
+  }
 
   if (leg.marketType === 'TOTAL') {
     const direction = leg.side === 'OVER' ? 'o' : 'u';

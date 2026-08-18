@@ -37,12 +37,15 @@ describe('placeBet feed emission', () => {
 
     const payload = event.payload as BetPlacedPayload;
     expect(payload.betType).toBe('SINGLE');
+    expect(payload.currency).toBe('CASH');
     expect(payload.stakeCents).toBe('10000');
     expect(payload.legs).toHaveLength(1);
-    expect(payload.legs[0].line).toBe('-3.50');
-    expect(payload.legs[0].priceAmerican).toBe(-110);
-    expect(payload.legs[0].marketType).toBe('SPREAD');
-    expect(payload.legs[0].homeAbbr).toEqual(expect.any(String));
+    const [leg] = payload.legs;
+    if (leg.kind !== 'GAME') throw new Error('expected a GAME leg');
+    expect(leg.line).toBe('-3.50');
+    expect(leg.priceAmerican).toBe(-110);
+    expect(leg.marketType).toBe('SPREAD');
+    expect(leg.homeAbbr).toEqual(expect.any(String));
   });
 
   it('writes one event per leg of a parlay inside a single payload', async () => {

@@ -212,6 +212,7 @@ export async function resettleBet(input: ResettleBetInput): Promise<ResettleBetR
 
       const settledPayload: BetSettledPayload = {
         betType: bet.type,
+        currency: 'CASH',
         stakeCents: bet.stakeCents.toString(),
         potentialPayoutCents: bet.potentialPayoutCents.toString(),
         combinedPriceAmerican: bet.combinedPriceAmerican,

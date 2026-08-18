@@ -197,6 +197,7 @@ export async function placeBet(
 
       const payload: BetPlacedPayload = {
         betType: input.type,
+        currency: 'CASH',
         stakeCents: input.stakeCents.toString(),
         potentialPayoutCents: freshQuote.potentialPayoutCents.toString(),
         combinedPriceAmerican: freshQuote.combinedPriceAmerican,

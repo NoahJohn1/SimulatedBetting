@@ -5,7 +5,8 @@
  * a `number` silently loses precision past 2^53. A string round-trips through `BigInt()`
  * exactly, which keeps D17 true inside jsonb as well as in columns (D25).
  */
-export interface FeedLegSnapshot {
+export interface GameLegSnapshot {
+  kind: 'GAME';
   sport: 'NFL' | 'NCAAF';
   marketType: 'MONEYLINE' | 'SPREAD' | 'TOTAL';
   side: 'HOME' | 'AWAY' | 'OVER' | 'UNDER';
@@ -17,11 +18,25 @@ export interface FeedLegSnapshot {
   startsAt: string;
 }
 
+export interface CustomLegSnapshot {
+  kind: 'CUSTOM';
+  eventTitle: string;
+  marketTitle: string;
+  outcomeLabel: string;
+  priceAmerican: number;
+  startsAt: string;
+  /** True when the bettor is the member who created and will resolve this event (D32). */
+  byCreator: boolean;
+}
+
+export type FeedLegSnapshot = GameLegSnapshot | CustomLegSnapshot;
+
 /** A leg's graded outcome — the engine's `BetStatus` values minus `PENDING`. */
 export type LegOutcome = 'WON' | 'LOST' | 'PUSHED' | 'VOIDED';
 
 export interface BetPlacedPayload {
   betType: 'SINGLE' | 'PARLAY';
+  currency: 'CASH' | 'CREDITS';
   stakeCents: string;
   potentialPayoutCents: string;
   combinedPriceAmerican: number;
@@ -78,6 +93,48 @@ export interface ParlayHitPayload {
   combinedPriceAmerican: number;
 }
 
+export interface CustomEventCreatedPayload {
+  eventId: string;
+  title: string;
+  marketCount: number;
+  startsAt: string;
+  resolvesBy: string;
+}
+
+export interface CustomEventResolvedPayload {
+  eventId: string;
+  title: string;
+  /** One entry per market, in the creator's market order. */
+  outcomes: { marketTitle: string; winningLabel: string }[];
+  note: string | null;
+  attempt: number;
+  /** True from the second resolution onward — an admin correcting a disputed call. */
+  correction: boolean;
+  resolvedByDisplayName: string;
+}
+
+export interface CustomEventDisputedPayload {
+  eventId: string;
+  title: string;
+  reason: string;
+}
+
+export interface CustomEventVoidedPayload {
+  eventId: string;
+  title: string;
+  note: string;
+  refundedBetCount: number;
+  refundedCreditsCents: string;
+  adminDisplayName: string;
+}
+
+export interface CustomEventOverduePayload {
+  eventId: string;
+  title: string;
+  resolvesBy: string;
+  openBetCount: number;
+}
+
 /** The union stored in `feed_events.payload`, discriminated by the row's `type` column. */
 export type FeedEventPayload =
   | BetPlacedPayload
@@ -87,4 +144,9 @@ export type FeedEventPayload =
   | AdminAdjustmentPayload
   | LeadChangePayload
   | BigWinPayload
-  | ParlayHitPayload;
+  | ParlayHitPayload
+  | CustomEventCreatedPayload
+  | CustomEventResolvedPayload
+  | CustomEventDisputedPayload
+  | CustomEventVoidedPayload
+  | CustomEventOverduePayload;
