@@ -22,10 +22,12 @@ function message(error: PlaceBetError): string {
       return `Not enough balance. You have ${formatCentsString(error.balanceCents)}.`;
     case 'STAKE_BELOW_MINIMUM':
       return `The minimum stake is ${formatCentsString(error.minimumCents)}.`;
-    case 'DUPLICATE_GAME':
-      return 'A parlay cannot have two legs from the same game.';
-    case 'GAME_NOT_BETTABLE':
-      return 'That game has already started or is no longer open.';
+    case 'DUPLICATE_EVENT':
+      return 'A parlay cannot have two legs from the same game or event.';
+    case 'EVENT_NOT_BETTABLE':
+      return 'That game or event has already started or is no longer open.';
+    case 'MIXED_CURRENCY_PARLAY':
+      return 'A parlay cannot mix game legs with custom-event legs.';
     case 'MARKET_CLOSED':
       return 'That market is suspended.';
     case 'INVALID_LEG_COUNT':
