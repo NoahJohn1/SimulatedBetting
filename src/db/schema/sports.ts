@@ -10,6 +10,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { events } from './events';
 
 export const sport = pgEnum('sport', ['NFL', 'NCAAF']);
 export const gameStatus = pgEnum('game_status', [
@@ -62,11 +63,15 @@ export const games = pgTable(
     homeScore: integer('home_score'),
     awayScore: integer('away_score'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => events.id),
   },
   (t) => [
     uniqueIndex('games_sport_external_idx').on(t.sport, t.externalId),
     // The settlement candidate query filters on exactly this pair.
     index('games_status_starts_at_idx').on(t.status, t.startsAt),
+    uniqueIndex('games_event_idx').on(t.eventId),
   ],
 );
 
@@ -77,6 +82,7 @@ export const markets = pgTable(
     gameId: uuid('game_id')
       .notNull()
       .references(() => games.id),
+    eventId: uuid('event_id').references(() => events.id),
     type: marketType('type').notNull(),
     sourceBook: text('source_book').notNull(),
     status: marketStatus('status').notNull().default('OPEN'),

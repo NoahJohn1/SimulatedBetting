@@ -43,6 +43,13 @@
       "when": 1786996843410,
       "tag": "0005_lumpy_molecule_man",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787056785161,
+      "tag": "0006_abandoned_starbolt",
+      "breakpoints": true
     }
   ]
 }

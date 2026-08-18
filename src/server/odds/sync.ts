@@ -1,6 +1,6 @@
 import { and, eq, lt } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { games, markets, oddsSnapshots, selections, teams } from '@/db/schema';
+import { events, games, markets, oddsSnapshots, selections, teams } from '@/db/schema';
 import type { Sport } from '@/db/schema';
 import { linesEqual, normalizeLine } from '@/domain/line';
 import type { OddsProvider, ProviderGame, ProviderTeam } from './types';
@@ -47,27 +47,42 @@ async function upsertGame(game: ProviderGame): Promise<string> {
   const homeTeamId = await upsertTeam(game.home, game.sport);
   const awayTeamId = await upsertTeam(game.away, game.sport);
 
-  const [row] = await db
-    .insert(games)
-    .values({
-      sport: game.sport,
-      externalId: game.externalId,
-      homeTeamId,
-      awayTeamId,
-      startsAt: game.startsAt,
-      seasonYear: game.seasonYear,
-      week: game.week,
-      status: game.status,
-    })
-    .onConflictDoUpdate({
-      target: [games.sport, games.externalId],
-      // Scores and terminal statuses are the score provider's business, not the odds
-      // feed's — syncOdds only keeps the schedule current.
-      set: { startsAt: game.startsAt, week: game.week },
-    })
-    .returning({ id: games.id });
+  // The event is created fresh on every upsert attempt (not just genuine first-inserts):
+  // `event_id` is NOT NULL, so the values passed to `onConflictDoUpdate` must already carry
+  // one even on the update path, where it is simply discarded in favor of the existing row's.
+  return db.transaction(async (tx) => {
+    const [event] = await tx
+      .insert(events)
+      .values({
+        kind: 'GAME',
+        title: `${game.away.abbreviation} @ ${game.home.abbreviation}`,
+        startsAt: game.startsAt,
+      })
+      .returning({ id: events.id });
 
-  return row.id;
+    const [row] = await tx
+      .insert(games)
+      .values({
+        sport: game.sport,
+        externalId: game.externalId,
+        homeTeamId,
+        awayTeamId,
+        startsAt: game.startsAt,
+        seasonYear: game.seasonYear,
+        week: game.week,
+        status: game.status,
+        eventId: event.id,
+      })
+      .onConflictDoUpdate({
+        target: [games.sport, games.externalId],
+        // Scores and terminal statuses are the score provider's business, not the odds
+        // feed's — syncOdds only keeps the schedule current.
+        set: { startsAt: game.startsAt, week: game.week },
+      })
+      .returning({ id: games.id });
+
+    return row.id;
+  });
 }
 
 /**
