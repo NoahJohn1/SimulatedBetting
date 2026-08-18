@@ -30,7 +30,7 @@ async function selectionId(gameExternalId: string, marketType: string, side: str
     })
     .from(selections)
     .innerJoin(markets, eq(selections.marketId, markets.id))
-    .innerJoin(games, eq(markets.gameId, games.id))
+    .innerJoin(games, eq(markets.eventId, games.eventId))
     .where(eq(games.externalId, gameExternalId));
 
   const found = all.find((s) => s.type === marketType && s.side === side);

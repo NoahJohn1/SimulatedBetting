@@ -35,7 +35,7 @@ export default async function MyBetsPage() {
     .from(betLegs)
     .innerJoin(selections, eq(betLegs.selectionId, selections.id))
     .innerJoin(markets, eq(selections.marketId, markets.id))
-    .innerJoin(games, eq(markets.gameId, games.id))
+    .innerJoin(games, eq(markets.eventId, games.eventId))
     .innerJoin(teams, eq(games.homeTeamId, teams.id))
     .where(
       inArray(

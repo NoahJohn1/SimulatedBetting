@@ -17,7 +17,7 @@ async function selectionFor(gameExternalId: string, side: 'HOME' | 'AWAY' | 'OVE
     })
     .from(selections)
     .innerJoin(markets, eq(selections.marketId, markets.id))
-    .innerJoin(games, eq(markets.gameId, games.id))
+    .innerJoin(games, eq(markets.eventId, games.eventId))
     .where(and(eq(games.externalId, gameExternalId), eq(selections.side, side)));
   return row;
 }
@@ -124,7 +124,7 @@ describe('syncOdds', () => {
     const [suspended] = await db
       .select({ status: markets.status })
       .from(markets)
-      .innerJoin(games, eq(markets.gameId, games.id))
+      .innerJoin(games, eq(markets.eventId, games.eventId))
       .where(eq(games.externalId, 'ncaaf-2026-w2-bama-uga'));
 
     expect(suspended.status).toBe('SUSPENDED');

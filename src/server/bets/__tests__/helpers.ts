@@ -131,7 +131,6 @@ export async function makeMarket(
   const [market] = await db
     .insert(markets)
     .values({
-      gameId,
       eventId: game.eventId,
       type,
       sourceBook: 'draftkings',

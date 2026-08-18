@@ -73,7 +73,7 @@ export async function settleGame(gameId: string): Promise<SettleGameSummary> {
       .from(betLegs)
       .innerJoin(selections, eq(betLegs.selectionId, selections.id))
       .innerJoin(markets, eq(selections.marketId, markets.id))
-      .where(and(eq(markets.gameId, gameId), eq(betLegs.status, 'PENDING')));
+      .where(and(eq(markets.eventId, game.eventId), eq(betLegs.status, 'PENDING')));
 
     const settledAt = new Date();
 
@@ -136,7 +136,7 @@ export async function settleGame(gameId: string): Promise<SettleGameSummary> {
         .from(betLegs)
         .innerJoin(selections, eq(betLegs.selectionId, selections.id))
         .innerJoin(markets, eq(selections.marketId, markets.id))
-        .innerJoin(games, eq(markets.gameId, games.id))
+        .innerJoin(games, eq(markets.eventId, games.eventId))
         .innerJoin(homeTeams, eq(games.homeTeamId, homeTeams.id))
         .innerJoin(awayTeams, eq(games.awayTeamId, awayTeams.id))
         .where(eq(betLegs.betId, bet.id))
@@ -248,7 +248,7 @@ export async function settleGame(gameId: string): Promise<SettleGameSummary> {
       summary.betsSettled += 1;
     }
 
-    await tx.update(markets).set({ status: 'SETTLED' }).where(eq(markets.gameId, gameId));
+    await tx.update(markets).set({ status: 'SETTLED' }).where(eq(markets.eventId, game.eventId));
 
     return summary;
   });
@@ -299,7 +299,7 @@ export async function settleFinalGames(
   const candidates = await db
     .selectDistinct({ id: games.id, startsAt: games.startsAt })
     .from(games)
-    .innerJoin(markets, eq(markets.gameId, games.id))
+    .innerJoin(markets, eq(markets.eventId, games.eventId))
     .innerJoin(selections, eq(selections.marketId, markets.id))
     .innerJoin(betLegs, eq(betLegs.selectionId, selections.id))
     .where(

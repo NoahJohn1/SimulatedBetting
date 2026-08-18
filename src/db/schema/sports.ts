@@ -79,17 +79,16 @@ export const markets = pgTable(
   'markets',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    gameId: uuid('game_id')
+    eventId: uuid('event_id')
       .notNull()
-      .references(() => games.id),
-    eventId: uuid('event_id').references(() => events.id),
+      .references(() => events.id),
     type: marketType('type').notNull(),
     sourceBook: text('source_book').notNull(),
     status: marketStatus('status').notNull().default('OPEN'),
     lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }).notNull().defaultNow(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [uniqueIndex('markets_game_type_idx').on(t.gameId, t.type)],
+  (t) => [uniqueIndex('markets_event_type_idx').on(t.eventId, t.type)],
 );
 
 /**

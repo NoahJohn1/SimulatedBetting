@@ -124,7 +124,7 @@ export async function resettleBet(input: ResettleBetInput): Promise<ResettleBetR
       .from(betLegs)
       .innerJoin(selections, eq(betLegs.selectionId, selections.id))
       .innerJoin(markets, eq(selections.marketId, markets.id))
-      .innerJoin(games, eq(markets.gameId, games.id))
+      .innerJoin(games, eq(markets.eventId, games.eventId))
       .innerJoin(homeTeams, eq(games.homeTeamId, homeTeams.id))
       .innerJoin(awayTeams, eq(games.awayTeamId, awayTeams.id))
       .where(eq(betLegs.betId, bet.id))

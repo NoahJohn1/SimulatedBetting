@@ -238,7 +238,7 @@ describe('settleGame', () => {
     await finalize(seeded.game.id, 27, 20);
     await settleGame(seeded.game.id);
 
-    const rows = await db.select().from(markets).where(eq(markets.gameId, seeded.game.id));
+    const rows = await db.select().from(markets).where(eq(markets.eventId, seeded.game.eventId));
     expect(rows).toHaveLength(3);
     expect(rows.every((m) => m.status === 'SETTLED')).toBe(true);
   });

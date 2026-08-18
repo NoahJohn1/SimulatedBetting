@@ -50,6 +50,13 @@
       "when": 1787056785161,
       "tag": "0006_abandoned_starbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787058444582,
+      "tag": "0007_ambiguous_kate_bishop",
+      "breakpoints": true
     }
   ]
 }

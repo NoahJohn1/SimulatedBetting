@@ -43,7 +43,7 @@ async function upsertTeam(team: ProviderTeam, sport: Sport): Promise<string> {
   return row.id;
 }
 
-async function upsertGame(game: ProviderGame): Promise<string> {
+async function upsertGame(game: ProviderGame): Promise<{ id: string; eventId: string }> {
   const homeTeamId = await upsertTeam(game.home, game.sport);
   const awayTeamId = await upsertTeam(game.away, game.sport);
 
@@ -89,7 +89,7 @@ async function upsertGame(game: ProviderGame): Promise<string> {
       })
       .returning({ id: games.id });
 
-    return row.id;
+    return { id: row.id, eventId };
   });
 }
 
@@ -114,36 +114,37 @@ export async function syncOdds(options: SyncOddsOptions): Promise<SyncOddsSummar
     snapshotsWritten: 0,
   };
 
-  const gameIdByExternalId = new Map<string, string>();
+  const eventIdByExternalId = new Map<string, string>();
 
   for (const sport of sports) {
     const upcoming = await options.provider.getUpcomingGames(sport, withinDays);
     for (const game of upcoming) {
-      gameIdByExternalId.set(game.externalId, await upsertGame(game));
+      const upserted = await upsertGame(game);
+      eventIdByExternalId.set(game.externalId, upserted.eventId);
       summary.gamesUpserted += 1;
     }
   }
 
-  if (gameIdByExternalId.size === 0) return summary;
+  if (eventIdByExternalId.size === 0) return summary;
 
-  const providerMarkets = await options.provider.getMarkets([...gameIdByExternalId.keys()]);
+  const providerMarkets = await options.provider.getMarkets([...eventIdByExternalId.keys()]);
   const syncedAt = new Date();
 
   for (const market of providerMarkets) {
-    const gameId = gameIdByExternalId.get(market.gameExternalId);
-    if (!gameId) continue;
+    const eventId = eventIdByExternalId.get(market.gameExternalId);
+    if (!eventId) continue;
 
     const [marketRow] = await db
       .insert(markets)
       .values({
-        gameId,
+        eventId,
         type: market.type,
         sourceBook: market.sourceBook,
         status: market.status ?? 'OPEN',
         lastSyncedAt: syncedAt,
       })
       .onConflictDoUpdate({
-        target: [markets.gameId, markets.type],
+        target: [markets.eventId, markets.type],
         // Status is deliberately not overwritten: a market suspended for staleness or
         // settled by the settlement job must not be reopened by a routine sync.
         set: { sourceBook: market.sourceBook, lastSyncedAt: syncedAt },

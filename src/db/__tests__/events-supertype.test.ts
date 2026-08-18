@@ -23,7 +23,7 @@ describe('events supertype', () => {
   it('points a market at the same event as its game', async () => {
     // seedBettableGame already creates a MONEYLINE market for this game, so use a game
     // that has no markets yet to avoid colliding with the pre-existing
-    // markets_game_type_idx unique constraint on (game_id, type).
+    // markets_event_type_idx unique constraint on (event_id, type).
     const game = await makeGame();
     const market = await makeMarket(game.id, 'MONEYLINE');
 

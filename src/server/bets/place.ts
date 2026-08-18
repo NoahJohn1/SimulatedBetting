@@ -62,7 +62,7 @@ async function loadSelections(
     })
     .from(selections)
     .innerJoin(markets, eq(selections.marketId, markets.id))
-    .innerJoin(games, eq(markets.gameId, games.id))
+    .innerJoin(games, eq(markets.eventId, games.eventId))
     .innerJoin(homeTeams, eq(games.homeTeamId, homeTeams.id))
     .innerJoin(awayTeams, eq(games.awayTeamId, awayTeams.id))
     .where(inArray(selections.id, ids));
