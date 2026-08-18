@@ -34,10 +34,11 @@ Three properties the design is organized around:
 
 ## Where things stand
 
-Subsystems 1 and 2 are built end-to-end and verified: `npm run verify` (typecheck, lint, 40
-test files / 305 tests) passes clean, and the app runs, seeds a fixture slate, takes a bet
-through placement and settlement (including a push), reconciles the ledger correctly, and
-posts and reads back the feed cards those actions generate.
+Subsystems 1, 2, and 3 are built end-to-end and verified: `npm run verify` (typecheck, lint,
+58 test files / 401 tests) passes clean, and the app runs, seeds a fixture slate, takes a bet
+through placement and settlement (including a push), reconciles the ledger correctly in both
+currencies, and posts and reads back the feed cards those actions generate — including a
+custom event carried from creation through a disputed resolution and an admin correction.
 
 **Subsystem 1 — core betting engine:**
 
@@ -72,15 +73,34 @@ posts and reads back the feed cards those actions generate.
 See [D30](decisions.md#d30--correlated-subqueries-in-drizzle-need-literal-qualified-identifiers)
 for a real correlated-subquery bug the profile stats query's own test caught mid-build.
 
-Not built: a real odds provider adapter (still fixture-only — see [D2](decisions.md)) and
-production deployment/hosted Postgres wiring.
+**Subsystem 3 — custom events:**
 
-**Subsystem 3 — custom events:** [specified](specs/2026-08-17-custom-events-design.md), not
-built. Member-created markets bet in **credits**, a second non-convertible currency
-([D31](decisions.md#d31--custom-events-are-bet-in-credits-a-second-non-convertible-currency)),
-on an `events` supertype above `games`
-([D33](decisions.md#d33--events-is-a-true-supertype-not-a-pair-of-nullable-foreign-keys)).
-Subsystem 4 (peer-to-peer bets) is [roadmap only](roadmap.md).
+- The **credits** currency: a second, non-convertible balance
+  ([D31](decisions.md#d31--custom-events-are-bet-in-credits-a-second-non-convertible-currency)),
+  granted at season join and dripped weekly alongside the cash allowance, with its own cached
+  balance column and its own line in daily reconciliation
+  ([D34](decisions.md#d34--currency-is-a-dimension-on-the-existing-ledger-not-a-second-ledger))
+- An `events` supertype above `games`, with `custom_events` as its sibling subtype and
+  `markets` pointing at the supertype
+  ([D33](decisions.md#d33--events-is-a-true-supertype-not-a-pair-of-nullable-foreign-keys))
+- Event creation: any approved member opens a title, a resolve-by date, and one or more
+  hand-priced N-way markets; a creator may bet their own event, disclosed everywhere that bet
+  appears ([D32](decisions.md#d32--anyone-can-create-events-and-creators-may-bet-their-own-with-disclosure))
+- Resolution that pays immediately in credits, and a dispute-plus-admin-re-resolution path
+  that reverses and re-pays through the same reversal machinery settlement corrections already
+  use ([D35](decisions.md#d35--custom-events-pay-on-resolution-disputes-are-an-admin-re-resolution))
+- Admin voids, refunding every stake on the event, reached from either an open or an already
+  resolved event
+- A derived overdue sweep (`status = 'OPEN' AND resolves_by < now()`), riding the existing
+  `settle` cron route with no new schedule
+  ([D37](decisions.md#d37--events-carry-a-resolve-by-date-overdue-is-derived-and-swept-to-admins))
+- Five new screens — Events, Create, Event detail, Resolve, Admin events — plus a sixth bottom
+  tab, and updates to the bet slip (currency-aware, refuses to mix kinds), Standings (a credits
+  leaderboard), Me, and My Bets
+
+Not built: a real odds provider adapter (still fixture-only — see [D2](decisions.md)) and
+production deployment/hosted Postgres wiring. Subsystem 4 (peer-to-peer bets) is
+[roadmap only](roadmap.md).
 
 ## Conventions
 

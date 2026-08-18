@@ -1,7 +1,7 @@
 # Custom Events — Design Spec
 
 **Date:** 2026-08-17
-**Status:** Specified, not built
+**Status:** Built
 **Scope:** Subsystem 3 of 4 (see [../roadmap.md](../roadmap.md))
 **Depends on:** [Subsystem 1 — core betting engine](2026-08-14-core-betting-engine-design.md), built ·
 [Subsystem 2 — social layer](2026-08-17-social-layer-design.md), built

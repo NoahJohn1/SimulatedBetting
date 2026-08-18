@@ -512,3 +512,23 @@ from cash ([D31](#d31--custom-events-are-bet-in-credits-a-second-non-convertible
 mispriced market can only redistribute credits — which is the point of splitting the currency.
 This follows [D19](#d19--no-maximum-bet-no-cash-out): a cap is a rule that would need tuning,
 and nothing yet says which number it should be.
+
+---
+
+### D39 — Editing an event reuses `CreateEventError`'s `INVALID_PRICE` shape
+
+*Added 2026-08-18 during subsystem 3 implementation.*
+
+`editCustomEvent`'s `ManageError` union, as the plan specified it, had no case for a bad price:
+`EVENT_NOT_FOUND | MARKET_NOT_FOUND | NOT_AUTHORIZED | EVENT_NOT_OPEN | EVENT_HAS_BETS`. But
+editing re-validates every submitted price the same way creation does
+([D36](#d36--one-custom-market-shape-n-way-pick-the-winner)), and an invalid one needs
+somewhere to land. `ManageError` gained `INVALID_PRICE; marketIndex; outcomeIndex`, shaped
+identically to `CreateEventError`'s case of the same name, so the edit form can point at the
+same field either way without a second error-rendering path.
+
+*Rejected:* rejecting the edit generically (`EVENT_NOT_OPEN` or a bare validation failure) and
+letting the client re-derive which outcome was bad. It throws away information the validator
+already has, for no reason beyond the union having been written before this case was found.
+*Rejected:* a distinct `EDIT_INVALID_PRICE` code. Nothing about the failure differs by which
+screen triggered it, and a second name for the same shape is a rename with no meaning attached.
