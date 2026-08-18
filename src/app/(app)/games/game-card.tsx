@@ -52,6 +52,8 @@ function OddsButton({
           priceAmerican: selection.priceAmerican,
           label: `${teamLabel} ${selectionLabel(market, selection)}`,
           marketLabel: MARKET_LABEL[market.type] ?? market.type,
+          // A game is bet in cash, always — credits are the custom-event denomination (D31).
+          currency: 'CASH',
         })
       }
       className={`flex h-12 flex-col items-center justify-center rounded-lg border text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${

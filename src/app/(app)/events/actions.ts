@@ -1,8 +1,10 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { requireApprovedMemberOrThrow } from '@/server/auth/session';
 import { createCustomEvent } from '@/server/events/create';
+import { editCustomEvent, setMarketStatus, type ManageError } from '@/server/events/manage';
 import type { CreateEventError } from '@/server/events/types';
 
 export interface CreateEventFormValues {
@@ -37,4 +39,56 @@ export async function createEventAction(
   if (!result.ok) return { ok: false, error: result.error };
 
   redirect(`/events/${result.eventId}`);
+}
+
+export type ManageActionResult = { ok: true } | { ok: false; error: ManageError };
+
+/**
+ * Suspend or reopen one market on a custom event.
+ *
+ * The actor is the session's membership, never the client's claim, and `isAdmin` comes from
+ * the session's role for the same reason. `setMarketStatus` re-checks that the actor is the
+ * creator or an admin regardless — this is authentication, the query is authorization.
+ */
+export async function suspendMarketAction(input: {
+  eventId: string;
+  marketId: string;
+  status: 'OPEN' | 'SUSPENDED';
+}): Promise<ManageActionResult> {
+  const member = await requireApprovedMemberOrThrow();
+
+  const result = await setMarketStatus({
+    marketId: input.marketId,
+    status: input.status,
+    actorMembershipId: member.membershipId,
+    isAdmin: member.role === 'ADMIN',
+  });
+
+  if (result.ok) revalidatePath(`/events/${input.eventId}`);
+  return result;
+}
+
+/** Retitle and reprice an event's markets, allowed only while nobody has bet it. */
+export async function editEventAction(input: {
+  eventId: string;
+  title?: string;
+  description?: string;
+  markets: {
+    marketId: string;
+    title: string;
+    outcomes: { selectionId: string; priceAmerican: number }[];
+  }[];
+}): Promise<ManageActionResult> {
+  const member = await requireApprovedMemberOrThrow();
+
+  const result = await editCustomEvent({
+    eventId: input.eventId,
+    actorMembershipId: member.membershipId,
+    title: input.title,
+    description: input.description,
+    markets: input.markets,
+  });
+
+  if (result.ok) revalidatePath(`/events/${input.eventId}`);
+  return result;
 }

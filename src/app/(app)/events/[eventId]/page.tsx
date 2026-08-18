@@ -1,0 +1,150 @@
+import { notFound } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
+import { Money } from '@/components/ui/money';
+import { requireApprovedMember } from '@/server/auth/session';
+import { getCustomEventDetail } from '@/server/events/query';
+import { MarketCard, type MarketCardPosition } from './market-card';
+
+function when(date: Date): string {
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'America/New_York',
+  });
+}
+
+export default async function CustomEventPage({ params }: PageProps<'/events/[eventId]'>) {
+  const { eventId } = await params;
+  const member = await requireApprovedMember();
+
+  // The season check lives inside the query, which returns null for another season's event
+  // exactly as it does for one that never existed.
+  const detail = await getCustomEventDetail(eventId, member.membershipId);
+  if (!detail) notFound();
+
+  const now = new Date();
+  const bettable = detail.status === 'OPEN' && detail.startsAt > now;
+  const canManage = detail.status === 'OPEN' && (detail.viewerIsCreator || member.role === 'ADMIN');
+
+  // Every credit staked anywhere on the event, which is exactly what editing requires to be
+  // zero. The server re-checks it inside the transaction; this only decides what to show.
+  const stakedCents = detail.markets.reduce(
+    (total, market) =>
+      total + market.outcomes.reduce((sum, outcome) => sum + outcome.stakedCreditsCents, 0n),
+    0n,
+  );
+  const canEdit = detail.status === 'OPEN' && detail.viewerIsCreator && stakedCents === 0n;
+
+  const positionsByMarket = new Map<string, MarketCardPosition[]>();
+  for (const position of detail.creatorPositions) {
+    positionsByMarket.set(position.marketId, [
+      ...(positionsByMarket.get(position.marketId) ?? []),
+      {
+        selectionId: position.selectionId,
+        stakeCents: position.stakeCents.toString(),
+        status: null,
+        holder: 'creator',
+      },
+    ]);
+  }
+  // A creator looking at their own event sees the disclosure line, not a duplicate of it —
+  // the two lists are the same rows when the viewer is the creator.
+  for (const position of detail.viewerIsCreator ? [] : detail.viewerPositions) {
+    positionsByMarket.set(position.marketId, [
+      ...(positionsByMarket.get(position.marketId) ?? []),
+      {
+        selectionId: position.selectionId,
+        stakeCents: position.stakeCents.toString(),
+        status: position.status,
+        holder: 'you',
+      },
+    ]);
+  }
+
+  return (
+    <div className="flex flex-col gap-4 px-4 py-4">
+      <header className="flex flex-col gap-2">
+        <div className="flex items-start justify-between gap-2">
+          <h1 className="text-lg font-semibold">{detail.title}</h1>
+          <div className="flex shrink-0 items-center gap-2">
+            {detail.overdue ? <Badge status="Overdue" /> : null}
+            <Badge status={detail.status} />
+          </div>
+        </div>
+
+        {detail.description ? (
+          <p className="whitespace-pre-line text-sm text-zinc-600 dark:text-zinc-300">
+            {detail.description}
+          </p>
+        ) : null}
+
+        <p className="text-sm text-zinc-500">Created by {detail.creator.displayName}</p>
+        <p className="text-sm text-zinc-500">
+          Closes {when(detail.startsAt)} ET · Resolves by {when(detail.resolvesBy)} ET
+        </p>
+        <p className="text-sm text-zinc-500">
+          <Money cents={stakedCents} currency="CREDITS" /> staked in credits
+        </p>
+      </header>
+
+      {detail.markets.map((market) => (
+        <MarketCard
+          key={market.marketId}
+          eventId={detail.eventId}
+          marketId={market.marketId}
+          title={market.title}
+          status={market.status}
+          winningSelectionId={market.winningSelectionId}
+          outcomes={market.outcomes.map((outcome) => ({
+            selectionId: outcome.selectionId,
+            label: outcome.label,
+            priceAmerican: outcome.priceAmerican,
+            stakedCreditsCents: outcome.stakedCreditsCents.toString(),
+          }))}
+          positions={positionsByMarket.get(market.marketId) ?? []}
+          bettable={bettable}
+          canManage={canManage}
+          canEdit={canEdit}
+        />
+      ))}
+
+      {detail.resolution.resolvedAt ? (
+        <section className="flex flex-col gap-1 rounded-xl border border-zinc-200 bg-white p-3 text-sm dark:border-zinc-800 dark:bg-zinc-950">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            Resolution
+          </h2>
+          <p className="text-zinc-600 dark:text-zinc-300">
+            {detail.status === 'VOIDED' ? 'Voided' : 'Resolved'} by{' '}
+            {detail.resolution.byDisplayName ?? 'a member'} on {when(detail.resolution.resolvedAt)}{' '}
+            ET
+            {detail.resolution.attempt > 1 ? ` · correction #${detail.resolution.attempt - 1}` : ''}
+          </p>
+          {detail.resolution.note ? (
+            <p className="text-zinc-600 dark:text-zinc-300">“{detail.resolution.note}”</p>
+          ) : null}
+        </section>
+      ) : null}
+
+      {detail.openDisputes.length > 0 ? (
+        <section className="flex flex-col gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-800 dark:bg-amber-950">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+            Open {detail.openDisputes.length === 1 ? 'dispute' : 'disputes'}
+          </h2>
+          {detail.openDisputes.map((dispute, i) => (
+            <p key={i} className="text-amber-800 dark:text-amber-300">
+              <span className="font-medium">{dispute.displayName}</span>: “{dispute.reason}”
+            </p>
+          ))}
+        </section>
+      ) : null}
+
+      {/*
+        Resolve (creator or admin, while OPEN) and Dispute (any season member, while
+        RESOLVED) are the state-appropriate controls for this page. They land in Task 19 —
+        deliberately not stubbed here, so nothing renders a button that does nothing.
+      */}
+    </div>
+  );
+}

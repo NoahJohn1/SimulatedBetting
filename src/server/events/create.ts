@@ -1,10 +1,10 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { customEvents, events, markets, seasonMemberships, selections } from '@/db/schema';
-import { americanToRational } from '@/domain/odds';
 import { emitFeedEvent } from '@/server/feed/emit';
 import type { CustomEventCreatedPayload } from '@/server/feed/payload';
 import {
+  isValidPriceAmerican,
   MAX_DESCRIPTION_LENGTH,
   MAX_MARKETS_PER_EVENT,
   MAX_OUTCOMES_PER_MARKET,
@@ -70,9 +70,7 @@ function validate(input: CreateCustomEventInput, now: Date): CreateEventError | 
       }
       seen.add(key);
 
-      try {
-        americanToRational(market.outcomes[o].priceAmerican);
-      } catch {
+      if (!isValidPriceAmerican(market.outcomes[o].priceAmerican)) {
         return { code: 'INVALID_PRICE', marketIndex: m, outcomeIndex: o };
       }
     }

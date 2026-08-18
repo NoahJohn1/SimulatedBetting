@@ -73,7 +73,7 @@ function Section({ title, rows }: { title: string; rows: EventBoardRow[] }) {
               {row.marketCount} market{row.marketCount === 1 ? '' : 's'}
             </span>
             <span className="text-zinc-500">
-              Staked <Money cents={row.stakedCreditsCents} />
+              Staked <Money cents={row.stakedCreditsCents} currency="CREDITS" />
             </span>
           </div>
         </Link>

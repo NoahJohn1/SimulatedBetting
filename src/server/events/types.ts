@@ -1,3 +1,22 @@
+import { americanToRational } from '@/domain/odds';
+
+/**
+ * The one price check every write path runs — creation (`create.ts`) and editing
+ * (`manage.ts`) alike.
+ *
+ * Parseability only, never sanity: a creator may offer +50000 on a coin flip, and those are
+ * their credits to give away (D38). Kept here rather than inlined in either caller so the
+ * two can never drift into disagreeing about what a valid price is.
+ */
+export function isValidPriceAmerican(priceAmerican: number): boolean {
+  try {
+    americanToRational(priceAmerican);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export interface CreateCustomEventMarketInput {
   title: string;
   outcomes: { label: string; priceAmerican: number }[];
