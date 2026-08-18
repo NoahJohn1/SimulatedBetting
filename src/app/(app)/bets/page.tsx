@@ -113,11 +113,11 @@ function Section({
 
           <div className="flex items-center justify-between border-t border-zinc-100 pt-2 text-sm dark:border-zinc-800">
             <span className="text-zinc-500">
-              Stake <Money cents={bet.stakeCents} />
+              Stake <Money cents={bet.stakeCents} currency={bet.currency} />
             </span>
             <span className="text-zinc-500">
               {bet.status === 'PENDING' ? 'To return ' : 'Quoted '}
-              <Money cents={bet.potentialPayoutCents} />
+              <Money cents={bet.potentialPayoutCents} currency={bet.currency} />
             </span>
           </div>
         </article>

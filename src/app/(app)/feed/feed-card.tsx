@@ -68,8 +68,8 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
       return (
         <div className="flex flex-col gap-1">
           <p className="text-sm">
-            bet <Money cents={BigInt(bet.stakeCents)} className="font-semibold" /> to win{' '}
-            <Money cents={BigInt(bet.potentialPayoutCents)} className="font-semibold" />
+            bet <Money cents={BigInt(bet.stakeCents)} currency={bet.currency} className="font-semibold" /> to win{' '}
+            <Money cents={BigInt(bet.potentialPayoutCents)} currency={bet.currency} className="font-semibold" />
           </p>
           <ul className="flex flex-col gap-0.5 text-sm text-zinc-600 dark:text-zinc-300">
             {bet.legs.map((leg, i) => (
@@ -97,15 +97,15 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
           <p className="text-sm">
             {verb}{' '}
             {bet.outcome === 'LOST' ? (
-              <Money cents={BigInt(bet.stakeCents)} className="font-semibold" />
+              <Money cents={BigInt(bet.stakeCents)} currency={bet.currency} className="font-semibold" />
             ) : (
-              <Money cents={BigInt(bet.payoutCents)} className="font-semibold" />
+              <Money cents={BigInt(bet.payoutCents)} currency={bet.currency} className="font-semibold" />
             )}
             {net !== 0n ? (
               <span className={net > 0n ? 'text-emerald-600' : 'text-rose-600'}>
                 {' '}
                 ({net > 0n ? '+' : ''}
-                <Money cents={net} />)
+                <Money cents={net} currency={bet.currency} />)
               </span>
             ) : null}
             {bet.correction ? (
