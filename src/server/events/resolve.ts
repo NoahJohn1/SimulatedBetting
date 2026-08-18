@@ -15,7 +15,7 @@ import { resettleBetInTx } from '@/server/bets/resettle';
 import { settleBetsForLegs } from '@/server/bets/grade-legs';
 import { buildCustomLegSnapshot } from '@/server/feed/snapshot';
 import { emitFeedEvent } from '@/server/feed/emit';
-import type { CustomEventResolvedPayload } from '@/server/feed/payload';
+import type { CustomEventResolvedPayload, CustomEventVoidedPayload } from '@/server/feed/payload';
 
 export type ResolveError =
   | { code: 'EVENT_NOT_FOUND' }
@@ -42,6 +42,56 @@ export interface ResolveCustomEventInput {
 export type ResolveCustomEventResult =
   | { ok: true; attempt: number; betsSettled: number; creditsPaid: bigint }
   | { ok: false; error: ResolveError };
+
+/**
+ * Extract a bet's legs for settlement. Used by both resolveCustomEvent and voidCustomEvent
+ * to snapshot the leg metadata (status, price, market/event titles) for feed cards.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function customSnapshotLegs(tx: any) {
+  return async (betId: string) => {
+    const legs = await tx
+      .select({
+        status: betLegs.status,
+        priceAtPlacement: betLegs.priceAtPlacement,
+        label: selections.label,
+        marketTitle: markets.title,
+        eventTitle: events.title,
+        eventStartsAt: events.startsAt,
+        creatorMembershipId: customEvents.creatorMembershipId,
+        membershipId: betLegs.betId,
+      })
+      .from(betLegs)
+      .innerJoin(selections, eq(betLegs.selectionId, selections.id))
+      .innerJoin(markets, eq(selections.marketId, markets.id))
+      .innerJoin(events, eq(markets.eventId, events.id))
+      .innerJoin(customEvents, eq(customEvents.eventId, events.id))
+      .where(eq(betLegs.betId, betId))
+      .orderBy(asc(betLegs.createdAt));
+
+    return {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      statuses: legs.map((leg: any) => leg.status as LegStatus),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      prices: legs.map((leg: any) => leg.priceAtPlacement),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      snapshots: legs.map((leg: any) =>
+        buildCustomLegSnapshot(
+          {
+            eventTitle: leg.eventTitle,
+            marketTitle: leg.marketTitle ?? '',
+            outcomeLabel: leg.label ?? '',
+            startsAt: leg.eventStartsAt,
+            // Recomputed rather than copied from the placement card: the card is a
+            // frozen render snapshot, and this is a fresh one for a fresh event.
+            byCreator: false,
+          },
+          { priceAmerican: leg.priceAtPlacement },
+        ),
+      ),
+    };
+  };
+}
 
 export async function resolveCustomEvent(
   input: ResolveCustomEventInput,
@@ -165,45 +215,7 @@ export async function resolveCustomEvent(
       const summary = await settleBetsForLegs(tx, {
         betIds: touchedBetIds,
         settledAt: now,
-        snapshotLegs: async (betId) => {
-          const legs = await tx
-            .select({
-              status: betLegs.status,
-              priceAtPlacement: betLegs.priceAtPlacement,
-              label: selections.label,
-              marketTitle: markets.title,
-              eventTitle: events.title,
-              eventStartsAt: events.startsAt,
-              creatorMembershipId: customEvents.creatorMembershipId,
-              membershipId: betLegs.betId,
-            })
-            .from(betLegs)
-            .innerJoin(selections, eq(betLegs.selectionId, selections.id))
-            .innerJoin(markets, eq(selections.marketId, markets.id))
-            .innerJoin(events, eq(markets.eventId, events.id))
-            .innerJoin(customEvents, eq(customEvents.eventId, events.id))
-            .where(eq(betLegs.betId, betId))
-            .orderBy(asc(betLegs.createdAt));
-
-          return {
-            statuses: legs.map((leg) => leg.status as LegStatus),
-            prices: legs.map((leg) => leg.priceAtPlacement),
-            snapshots: legs.map((leg) =>
-              buildCustomLegSnapshot(
-                {
-                  eventTitle: leg.eventTitle,
-                  marketTitle: leg.marketTitle ?? '',
-                  outcomeLabel: leg.label ?? '',
-                  startsAt: leg.eventStartsAt,
-                  // Recomputed rather than copied from the placement card: the card is a
-                  // frozen render snapshot, and this is a fresh one for a fresh event.
-                  byCreator: false,
-                },
-                { priceAmerican: leg.priceAtPlacement },
-              ),
-            ),
-          };
-        },
+        snapshotLegs: customSnapshotLegs(tx),
       });
       betsSettled = summary.betsSettled;
       creditsPaid = summary.centsPaid;
@@ -281,5 +293,153 @@ export async function resolveCustomEvent(
       betsSettled,
       creditsPaid,
     };
+  });
+}
+
+export type VoidError =
+  | { code: 'EVENT_NOT_FOUND' }
+  | { code: 'ALREADY_VOIDED' }
+  | { code: 'NOTE_REQUIRED' };
+
+export interface VoidCustomEventInput {
+  eventId: string;
+  actorUserId: string;
+  /** Required. A void moves money, so it says who and why (D15). */
+  note: string;
+  now?: Date;
+}
+
+export type VoidCustomEventResult =
+  | { ok: true; refundedBets: number; refundedCents: bigint }
+  | { ok: false; error: VoidError };
+
+/**
+ * Admin-only. Voids every bet on the event and refunds every stake — the same path a
+ * postponed game already runs (D12), reached from a different trigger.
+ *
+ * A resolved event unwinds through `resettleBetInTx`, which reverses whatever the
+ * resolution paid before writing the refund. An open event has nothing to reverse, so its
+ * legs are voided in place and settled normally.
+ */
+export async function voidCustomEvent(
+  input: VoidCustomEventInput,
+): Promise<VoidCustomEventResult> {
+  const note = input.note.trim();
+  if (note.length === 0) return { ok: false, error: { code: 'NOTE_REQUIRED' as const } };
+
+  const now = input.now ?? new Date();
+
+  return db.transaction(async (tx) => {
+    const [custom] = await tx
+      .select()
+      .from(customEvents)
+      .where(eq(customEvents.eventId, input.eventId))
+      .for('update');
+
+    if (!custom) return { ok: false as const, error: { code: 'EVENT_NOT_FOUND' as const } };
+    if (custom.status === 'VOIDED') {
+      return { ok: false as const, error: { code: 'ALREADY_VOIDED' as const } };
+    }
+
+    const wasResolved = custom.status === 'RESOLVED';
+
+    const eventMarkets = await tx
+      .select({ id: markets.id })
+      .from(markets)
+      .where(eq(markets.eventId, input.eventId));
+    const marketIds = eventMarkets.map((m) => m.id);
+
+    // Flip the status first: resettleBetInTx re-grades from it, and a leg on a VOIDED event
+    // grades VOIDED regardless of any winning_selection_id left behind.
+    await tx
+      .update(customEvents)
+      .set({
+        status: 'VOIDED',
+        resolvedAt: now,
+        resolvedByUserId: input.actorUserId,
+        resolutionNote: note,
+        resolutionAttempts: custom.resolutionAttempts + 1,
+      })
+      .where(eq(customEvents.eventId, input.eventId));
+
+    await tx
+      .update(customEventDisputes)
+      .set({ resolvedAt: now })
+      .where(eq(customEventDisputes.eventId, input.eventId));
+
+    const affected = await tx
+      .selectDistinct({ betId: betLegs.betId })
+      .from(betLegs)
+      .innerJoin(selections, eq(betLegs.selectionId, selections.id))
+      .where(inArray(selections.marketId, marketIds));
+
+    let refundedBets = 0;
+    let refundedCents = 0n;
+
+    if (wasResolved) {
+      for (const { betId } of affected) {
+        const result = await resettleBetInTx(tx, {
+          betId,
+          actorUserId: input.actorUserId,
+          note,
+        });
+        if (result.ok) {
+          refundedBets += 1;
+          refundedCents += result.paidCents;
+        }
+      }
+    } else {
+      await tx
+        .update(betLegs)
+        .set({ status: 'VOIDED', settledAt: now })
+        .where(
+          and(
+            inArray(
+              betLegs.selectionId,
+              tx.select({ id: selections.id }).from(selections).where(inArray(selections.marketId, marketIds)),
+            ),
+            eq(betLegs.status, 'PENDING'),
+          ),
+        );
+
+      const summary = await settleBetsForLegs(tx, {
+        betIds: affected.map((a) => a.betId),
+        settledAt: now,
+        snapshotLegs: customSnapshotLegs(tx),
+      });
+      refundedBets = summary.betsSettled;
+      refundedCents = summary.centsPaid;
+    }
+
+    await tx
+      .update(markets)
+      .set({ status: 'SETTLED' })
+      .where(eq(markets.eventId, input.eventId));
+
+    const [event] = await tx.select().from(events).where(eq(events.id, input.eventId));
+    const [admin] = await tx
+      .select({ displayName: users.displayName })
+      .from(users)
+      .where(eq(users.id, input.actorUserId));
+
+    const payload: CustomEventVoidedPayload = {
+      eventId: input.eventId,
+      title: event.title,
+      note,
+      refundedBetCount: refundedBets,
+      refundedCreditsCents: refundedCents.toString(),
+      adminDisplayName: admin?.displayName ?? 'an admin',
+    };
+
+    await emitFeedEvent(tx, {
+      seasonId: custom.seasonId,
+      type: 'CUSTOM_EVENT_VOIDED',
+      // No subject: a void is about the event, not about any one member.
+      dedupeKey: `customevent:${input.eventId}:voided`,
+      payload,
+      occurredAt: now,
+    });
+
+    return { ok: true as const, refundedBets, refundedCents };
   });
 }
