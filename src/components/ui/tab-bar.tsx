@@ -16,8 +16,10 @@ const TABS = [
  * The six-tab bottom bar. Games is still the default landing route (D8); Events sits right
  * next to it since custom events are a first-class currency, not a buried feature.
  *
- * If six tabs read as crowded on a real phone, the documented fallback is a segmented control
- * on the Games screen rather than a seventh tab here — not built yet, just noted.
+ * Peer-to-peer wagers deliberately did not become a seventh tab. This comment previously
+ * named a segmented control as the fallback if six ever read as crowded, and subsystem 4
+ * took it: `/wagers` is reached from a Bets | Wagers control on `/bets`, which is also where
+ * a member would look for them.
  */
 export function TabBar() {
   const pathname = usePathname();
