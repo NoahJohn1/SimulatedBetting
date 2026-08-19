@@ -129,8 +129,12 @@ export async function makeCustomEvent(opts: {
 
 /**
  * A membership in an ACTIVE season with a credits balance, which is what every P2P test
- * needs. The balance is set directly rather than through the ledger — the grant path has its
- * own coverage, and a test that wants ledger-consistent credits should post its own entries.
+ * needs. The credits balance is set directly rather than through the ledger — the grant path
+ * has its own coverage, and a test that wants ledger-consistent credits should post its own
+ * entries. CASH is left at zero (rather than an arbitrary starting bankroll) precisely so it
+ * stays ledger-consistent with no entries at all — a P2P test never touches CASH, and
+ * reconciliation checks that combine this factory with real ledger activity (Task 13) need
+ * that side of the ledger to already agree.
  */
 export async function makeCreditedMembership(creditsCents = 100_000n, seasonId?: string) {
   const user = await makeUser();
@@ -142,7 +146,7 @@ export async function makeCreditedMembership(creditsCents = 100_000n, seasonId?:
     .values({
       userId: user.id,
       seasonId: season.id,
-      balanceCents: 1_000_000n,
+      balanceCents: 0n,
       creditsBalanceCents: creditsCents,
     })
     .returning();
