@@ -4,6 +4,7 @@ import { Money } from '@/components/ui/money';
 import { requireApprovedMember } from '@/server/auth/session';
 import { getSeasonFeed } from '@/server/feed/query';
 import { getMemberProfile } from '@/server/feed/stats';
+import { loadHeadToHead } from '@/server/p2p/query';
 import { FeedCardView } from '../../feed/feed-card';
 
 function Stat({ label, children }: { label: string; children: React.ReactNode }) {
@@ -29,6 +30,11 @@ export default async function MemberProfilePage({ params }: PageProps<'/members/
     subjectMembershipId: membershipId,
     limit: 20,
   });
+
+  const isSelf = membershipId === member.membershipId;
+  const headToHead = isSelf
+    ? null
+    : await loadHeadToHead(member.seasonId, member.membershipId, membershipId);
 
   const { stats } = profile;
   const roi = stats.roiBasisPoints === null ? '—' : `${(stats.roiBasisPoints / 100).toFixed(1)}%`;
@@ -65,6 +71,32 @@ export default async function MemberProfilePage({ params }: PageProps<'/members/
           {stats.pending} · <Money cents={stats.pendingStakeCents} />
         </Stat>
       </div>
+
+      {headToHead && (
+        <section className="flex flex-col gap-2 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            You vs them
+          </h2>
+          {headToHead.settled === 0 && headToHead.voided === 0 ? (
+            <p className="text-sm text-zinc-500">You have never wagered against each other.</p>
+          ) : (
+            <p className="text-sm">
+              <span className="font-medium">
+                {headToHead.aWon}–{headToHead.bWon}
+              </span>
+              {headToHead.voided > 0 && ` (${headToHead.voided} called off)`}, and you are{' '}
+              <span className="font-medium">
+                {headToHead.netCentsForA >= 0n ? 'up' : 'down'}{' '}
+                {(headToHead.netCentsForA < 0n
+                  ? -headToHead.netCentsForA
+                  : headToHead.netCentsForA
+                ).toString()}
+              </span>{' '}
+              credits.
+            </p>
+          )}
+        </section>
+      )}
 
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Recent</h2>

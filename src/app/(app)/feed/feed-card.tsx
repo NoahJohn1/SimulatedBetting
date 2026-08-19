@@ -17,6 +17,11 @@ import type {
   LeadChangePayload,
   MemberJoinedPayload,
   ParlayHitPayload,
+  P2PAcceptedPayload,
+  P2PDisputedPayload,
+  P2POfferedPayload,
+  P2PSettledPayload,
+  P2PVoidedPayload,
 } from '@/server/feed/payload';
 import type { SerializedFeedCard } from './actions';
 
@@ -273,6 +278,79 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
           <EventTitleLink eventId={overdue.eventId} title={overdue.title} /> is past its
           resolve-by date · {overdue.openBetCount} {overdue.openBetCount === 1 ? 'bet' : 'bets'}{' '}
           open
+        </p>
+      );
+    }
+
+    case 'P2P_OFFERED': {
+      const offered = payload as P2POfferedPayload;
+      return (
+        <p className="text-sm">
+          is offering{' '}
+          <Money cents={BigInt(offered.offererStakeCents)} currency="CREDITS" className="font-semibold" />{' '}
+          against{' '}
+          <Money cents={BigInt(offered.acceptorStakeCents)} currency="CREDITS" className="font-semibold" />{' '}
+          credits — {offered.directed ? 'a direct challenge' : 'open to the season'}:{' '}
+          {offered.description ?? offered.subject}
+        </p>
+      );
+    }
+
+    case 'P2P_ACCEPTED': {
+      const accepted = payload as P2PAcceptedPayload;
+      return (
+        <p className="text-sm">
+          took it. <Money cents={BigInt(accepted.potCents)} currency="CREDITS" className="font-semibold" />{' '}
+          credits on the line: {accepted.subject}
+        </p>
+      );
+    }
+
+    case 'P2P_SETTLED': {
+      const settled = payload as P2PSettledPayload;
+      return (
+        <p className="text-sm">
+          {settled.correction ? (
+            <span className="mr-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900">
+              Corrected
+            </span>
+          ) : null}
+          took the <Money cents={BigInt(settled.potCents)} currency="CREDITS" className="font-semibold" />{' '}
+          pot: {settled.subject}
+          {settled.byArbitration ? <span className="italic"> — settled by an admin</span> : null}
+        </p>
+      );
+    }
+
+    case 'P2P_DISPUTED': {
+      const disputed = payload as P2PDisputedPayload;
+      return (
+        <p className="text-sm">
+          and their opponent disagree on {disputed.subject}. An admin will settle it.
+        </p>
+      );
+    }
+
+    case 'P2P_VOIDED': {
+      const voided = payload as P2PVoidedPayload;
+      const reasonText =
+        voided.reason === 'MUTUAL_CANCEL'
+          ? 'they both agreed to call it off'
+          : voided.reason === 'AGREED_VOID'
+            ? 'they agreed nobody won'
+            : voided.reason === 'EVENT_DEAD'
+              ? 'the event never happened'
+              : `${voided.adminDisplayName ?? 'an admin'} refunded both sides — “${voided.note ?? ''}”`;
+      return (
+        <p className="text-sm">
+          {voided.subject} was called off — {reasonText};{' '}
+          <Money cents={BigInt(voided.refundedCents)} currency="CREDITS" className="font-semibold" /> credits
+          went back
+          {voided.attempt > 1 ? (
+            <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900">
+              correction
+            </span>
+          ) : null}
         </p>
       );
     }
