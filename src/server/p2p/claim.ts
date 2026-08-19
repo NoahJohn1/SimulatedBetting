@@ -6,7 +6,12 @@ import { emitFeedEvent } from '@/server/feed/emit';
 import type { P2PDisputedPayload } from '@/server/feed/payload';
 import { settleWagerInTx } from './settle-wager';
 import { loadSelectionSubject } from './subject';
-import type { ClaimWinnerInput, ClaimWinnerResult } from './types';
+import type {
+  ClaimWinnerInput,
+  ClaimWinnerResult,
+  ProposeCancelInput,
+  ProposeCancelResult,
+} from './types';
 
 /**
  * One party names who won.
@@ -120,6 +125,75 @@ export async function claimWinner(input: ClaimWinnerInput): Promise<ClaimWinnerR
       outcome: 'AWAITING_OTHER' as const,
       verdict: null,
       paidCents: 0n,
+    };
+  });
+}
+
+/**
+ * Proposes calling the whole thing off. Both parties must propose before anything happens.
+ *
+ * Unilateral cancellation after acceptance is deliberately not offered — it is just losing
+ * without paying. Two flags rather than one is what makes agreement, not surrender, the
+ * condition for a refund.
+ */
+export async function proposeCancel(input: ProposeCancelInput): Promise<ProposeCancelResult> {
+  const now = input.now ?? new Date();
+
+  return db.transaction(async (tx) => {
+    const [wager] = await tx
+      .select()
+      .from(p2pWagers)
+      .where(eq(p2pWagers.id, input.wagerId))
+      .for('update');
+
+    if (!wager) return { ok: false as const, error: { code: 'WAGER_NOT_FOUND' as const } };
+    if (wager.status !== 'ACCEPTED') {
+      return {
+        ok: false as const,
+        error: { code: 'WAGER_NOT_ACCEPTED' as const, status: wager.status },
+      };
+    }
+
+    const [membership] = await tx
+      .select({ id: seasonMemberships.id })
+      .from(seasonMemberships)
+      .where(
+        and(
+          eq(seasonMemberships.userId, input.actorUserId),
+          eq(seasonMemberships.seasonId, wager.seasonId),
+        ),
+      );
+    if (!membership) return { ok: false as const, error: { code: 'NOT_A_PARTY' as const } };
+
+    const isOfferer = membership.id === wager.offererMembershipId;
+    const isAcceptor = membership.id === wager.acceptorMembershipId;
+    if (!isOfferer && !isAcceptor) {
+      return { ok: false as const, error: { code: 'NOT_A_PARTY' as const } };
+    }
+
+    const flags = {
+      offererCancelProposed: isOfferer ? true : wager.offererCancelProposed,
+      acceptorCancelProposed: isAcceptor ? true : wager.acceptorCancelProposed,
+    };
+
+    await tx.update(p2pWagers).set(flags).where(eq(p2pWagers.id, wager.id));
+
+    if (!flags.offererCancelProposed || !flags.acceptorCancelProposed) {
+      return { ok: true as const, outcome: 'AWAITING_OTHER' as const, refundedCents: 0n };
+    }
+
+    const summary = await settleWagerInTx(tx, {
+      wagerId: wager.id,
+      verdict: 'VOID',
+      settledAt: now,
+      reason: 'MUTUAL_CANCEL',
+      byArbitration: false,
+    });
+
+    return {
+      ok: true as const,
+      outcome: 'VOIDED' as const,
+      refundedCents: summary.paidCents,
     };
   });
 }
