@@ -1,14 +1,14 @@
 # Roadmap
 
 The project is four independent subsystems. Each gets its own spec, plan, and build cycle.
-Subsystems 1–3 are built. Subsystem 4 is designed and planned, not yet built.
+All four are built.
 
 | # | Subsystem | Status |
 |---|---|---|
 | 1 | Core betting engine | [Built](specs/2026-08-14-core-betting-engine-design.md) — fixture odds only, no production deploy yet |
 | 2 | Social layer | [Built](specs/2026-08-17-social-layer-design.md) |
 | 3 | Custom events | [Built](specs/2026-08-17-custom-events-design.md) |
-| 4 | Peer-to-peer bets | [Designed](specs/2026-08-19-peer-to-peer-bets-design.md) — not built |
+| 4 | Peer-to-peer bets | [Built](specs/2026-08-19-peer-to-peer-bets-design.md) |
 
 ---
 

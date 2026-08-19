@@ -16,6 +16,7 @@ import {
   games,
   ledgerEntries,
   markets,
+  p2pWagers,
   seasonMemberships,
   seasons,
   selections,
@@ -27,12 +28,17 @@ import { settleFinalGames } from '@/server/bets/settle';
 import { createCustomEvent } from '@/server/events/create';
 import { disputeResolution } from '@/server/events/dispute';
 import { resolveCustomEvent } from '@/server/events/resolve';
-import { reconcileBalances } from '@/server/money/reconcile';
+import { postEntry } from '@/server/money/ledger';
+import { reconcileBalances, reconcileEscrow } from '@/server/money/reconcile';
 import { syncResults } from '@/server/odds/results';
 import { syncOdds } from '@/server/odds/sync';
+import { acceptWager } from '@/server/p2p/accept';
+import { arbitrateWager } from '@/server/p2p/arbitrate';
+import { claimWinner } from '@/server/p2p/claim';
+import { offerWager } from '@/server/p2p/offer';
 import { createSeason, joinSeason } from '@/server/seasons/service';
 import { resetDb } from '@/test/db';
-import { makeUser } from '@/test/factories';
+import { makeCreditedMembership, makeUser } from '@/test/factories';
 
 async function selectionId(gameExternalId: string, marketType: string, side: string) {
   const all = await db
@@ -389,5 +395,126 @@ describe('end to end', () => {
 
     // 8. And the ledger is intact, in both denominations, for every membership.
     expect(await reconcileBalances()).toEqual([]);
+  });
+});
+
+describe('the peer-to-peer arc', () => {
+  beforeEach(resetDb);
+
+  it('carries a wager from offer through a dispute to an admin correction', async () => {
+    const credits = async (membershipId: string) => {
+      const [row] = await db
+        .select({ credits: seasonMemberships.creditsBalanceCents })
+        .from(seasonMemberships)
+        .where(eq(seasonMemberships.id, membershipId));
+      return row.credits;
+    };
+
+    // The factory sets its starting balance directly rather than through the ledger (its own
+    // comment says so) — fine everywhere except here, where reconcileBalances() must come back
+    // clean. So each membership starts at 0 credits and gets its grant posted for real, as a
+    // CREDITS-only entry, keeping the CASH side of the ledger untouched throughout.
+    const offerer = await makeCreditedMembership(0n);
+    const acceptor = await makeCreditedMembership(0n, offerer.seasonId);
+    const admin = await makeCreditedMembership(0n, offerer.seasonId);
+    for (const { membership } of [offerer, acceptor, admin]) {
+      await db.transaction((tx) =>
+        postEntry(tx, {
+          membershipId: membership.id,
+          amountCents: 100_000n,
+          type: 'SEASON_STARTING_GRANT',
+          currency: 'CREDITS',
+          idempotencyKey: `test-grant:${membership.id}`,
+        }),
+      );
+    }
+
+    // 1. The offer. The offerer's stake is held immediately (D46).
+    const offered = await offerWager({
+      actorUserId: offerer.user.id,
+      kind: 'FREEFORM',
+      offererStakeCents: 50_000n,
+      acceptorStakeCents: 20_000n,
+      description: 'Jake cannot name ten starting quarterbacks',
+      expiresAt: new Date(Date.now() + 3_600_000),
+      resolvesBy: new Date(Date.now() + 7 * 86_400_000),
+    });
+    expect(offered.ok).toBe(true);
+    if (!offered.ok) return;
+    expect(await credits(offerer.membership.id)).toBe(50_000n);
+    expect(await reconcileEscrow()).toEqual([]);
+
+    // 2. Taken. Both stakes are now in the pot.
+    const taken = await acceptWager({
+      wagerId: offered.wagerId,
+      actorUserId: acceptor.user.id,
+    });
+    expect(taken.ok).toBe(true);
+    expect(await credits(acceptor.membership.id)).toBe(80_000n);
+    expect(await reconcileEscrow()).toEqual([]);
+
+    // 3. They agree, and it pays out.
+    await claimWinner({
+      wagerId: offered.wagerId,
+      actorUserId: offerer.user.id,
+      verdict: 'OFFERER',
+    });
+    await claimWinner({
+      wagerId: offered.wagerId,
+      actorUserId: acceptor.user.id,
+      verdict: 'OFFERER',
+    });
+    expect(await credits(offerer.membership.id)).toBe(120_000n);
+    expect(await credits(acceptor.membership.id)).toBe(80_000n);
+    expect(await reconcileEscrow()).toEqual([]);
+
+    // 4. An admin corrects it. Attempt 1 is reversed, attempt 2 is paid (D15).
+    const corrected = await arbitrateWager({
+      wagerId: offered.wagerId,
+      actorUserId: admin.user.id,
+      verdict: 'ACCEPTOR',
+      note: 'he named eleven; there is video',
+    });
+    expect(corrected).toEqual({ ok: true, attempt: 2, paidCents: 70_000n });
+
+    expect(await credits(offerer.membership.id)).toBe(50_000n);
+    expect(await credits(acceptor.membership.id)).toBe(150_000n);
+
+    const [wager] = await db
+      .select()
+      .from(p2pWagers)
+      .where(eq(p2pWagers.id, offered.wagerId));
+    expect(wager.status).toBe('SETTLED');
+    expect(wager.verdict).toBe('ACCEPTOR');
+    expect(wager.settlementAttempts).toBe(2);
+
+    // 5. History was corrected by addition, never by edit: the original P2P_WON is still
+    //    there, alongside the reversal that undid it.
+    const entries = await db
+      .select()
+      .from(ledgerEntries)
+      .where(eq(ledgerEntries.p2pWagerId, offered.wagerId));
+    const byType = entries.reduce<Record<string, number>>((acc, e) => {
+      acc[e.type] = (acc[e.type] ?? 0) + 1;
+      return acc;
+    }, {});
+    expect(byType).toEqual({
+      P2P_ESCROW: 2,
+      P2P_WON: 2,
+      SETTLEMENT_REVERSAL: 1,
+    });
+    // Every credit that left a balance came back to one: the pot nets to zero.
+    expect(entries.reduce((sum, e) => sum + e.amountCents, 0n)).toBe(0n);
+
+    // 6. Nothing anywhere in the system has drifted, on either check.
+    expect(await reconcileBalances()).toEqual([]);
+    expect(await reconcileEscrow()).toEqual([]);
+
+    // 7. No cash moved at any point. P2P cannot touch the bankroll (D40).
+    const cashEntries = await db
+      .select()
+      .from(ledgerEntries)
+      .where(eq(ledgerEntries.currency, 'CASH'));
+    expect(cashEntries).toHaveLength(0);
   });
 });
