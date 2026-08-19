@@ -1,15 +1,14 @@
 # Roadmap
 
 The project is four independent subsystems. Each gets its own spec, plan, and build cycle.
-Subsystems 1–3 are built; subsystem 4 is captured here at the level of detail
-needed to make sure the earlier subsystems don't paint us into a corner.
+Subsystems 1–3 are built. Subsystem 4 is designed and planned, not yet built.
 
 | # | Subsystem | Status |
 |---|---|---|
 | 1 | Core betting engine | [Built](specs/2026-08-14-core-betting-engine-design.md) — fixture odds only, no production deploy yet |
 | 2 | Social layer | [Built](specs/2026-08-17-social-layer-design.md) |
 | 3 | Custom events | [Built](specs/2026-08-17-custom-events-design.md) |
-| 4 | Peer-to-peer bets | Roadmap only |
+| 4 | Peer-to-peer bets | [Designed](specs/2026-08-19-peer-to-peer-bets-design.md) — not built |
 
 ---
 
@@ -94,9 +93,30 @@ feed and there's nothing to argue about. For freeform bets ("I bet you Jake can'
 starting quarterbacks"), someone has to arbitrate. Admin arbitration is the obvious v1
 answer.
 
-**Open questions.** Can a P2P bet reference an arbitrary text description, or must it
-attach to a market the system already knows how to grade? Is there an expiry on unaccepted
-offers? Can a bet be canceled by mutual agreement after acceptance but before the event?
+**Its open questions are now answered** — see [the spec](specs/2026-08-19-peer-to-peer-bets-design.md).
+A wager can be either: it attaches to a selection the engine already grades, or it carries a
+freeform description the two parties settle themselves
+([D47](decisions.md#d47--a-freeform-wager-is-settled-by-both-parties-agreeing-with-admins-as-the-fallback)).
+Unaccepted offers do expire, swept by the existing `settle` cron, and can also be withdrawn —
+both refund the escrow. A wager can be canceled after acceptance, but only by both parties
+agreeing; unilateral cancellation is just losing without paying
+([D45](decisions.md#d45--void-is-an-arbitration-verdict-and-an-automatic-consequence-never-a-standing-admin-power)).
+
+**Two things this framing got wrong.** Escrow does *not* happen at acceptance: once offers can sit
+open to the season, an offerer could post more offers than their balance covers, so the offerer's
+stake escrows at offer instead
+([D46](decisions.md#d46--the-offerers-stake-escrows-at-offer-not-at-acceptance)). And "the existing
+ledger design handles this without modification" understated one thing — escrowed credits have left
+a balance and arrived nowhere, which is the first time in this project that the sum of all balances
+is not the sum of everything granted. `reconcileBalances` cannot see the difference, so escrow gets
+its own reconciliation check
+([D43](decisions.md#d43--escrow-needs-its-own-reconciliation-check-balance-reconciliation-cannot-see-it)).
+
+**Everything peer-to-peer is staked in credits**, including wagers on real games
+([D40](decisions.md#d40--every-peer-to-peer-wager-moves-credits-including-the-market-backed-kind)),
+which is what keeps the cash bankroll untouchable by any P2P path. Head-to-head, deferred here by
+[D27](decisions.md#d27--head-to-head-is-deferred-to-subsystem-4), is now defined as the P2P record
+and nothing else ([D48](decisions.md#d48--head-to-head-is-the-peer-to-peer-record-and-nothing-else)).
 
 ---
 

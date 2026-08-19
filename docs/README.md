@@ -12,6 +12,8 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Social layer plan](plans/2026-08-17-social-layer-implementation-plan.md) | The task-by-task implementation plan for subsystem 2 |
 | [Custom events spec](specs/2026-08-17-custom-events-design.md) | Subsystem 3: member-created markets, the credits currency, human resolution and disputes |
 | [Custom events plan](plans/2026-08-17-custom-events-implementation-plan.md) | The task-by-task implementation plan for subsystem 3 |
+| [Peer-to-peer bets spec](specs/2026-08-19-peer-to-peer-bets-design.md) | Subsystem 4: member-vs-member wagers, escrow, two-party resolution, admin arbitration, head-to-head |
+| [Peer-to-peer bets plan](plans/2026-08-19-peer-to-peer-bets-implementation-plan.md) | The task-by-task implementation plan for subsystem 4 |
 | [Roadmap](roadmap.md) | The four subsystems, what each adds, and build order |
 | [Decision log](decisions.md) | Every design decision, what was rejected, and why |
 
@@ -100,7 +102,7 @@ for a real correlated-subquery bug the profile stats query's own test caught mid
 
 Not built: a real odds provider adapter (still fixture-only — see [D2](decisions.md)) and
 production deployment/hosted Postgres wiring. Subsystem 4 (peer-to-peer bets) is
-[roadmap only](roadmap.md).
+[designed and planned](specs/2026-08-19-peer-to-peer-bets-design.md) but not yet implemented.
 
 ## Conventions
 
