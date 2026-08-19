@@ -205,3 +205,330 @@ single-value enum (`GOOGLE`), migrated with `drizzle/0003_drop-apple-auth-provid
 Identity is still keyed on `(provider, provider_account_id)` rather than email, so adding a
 provider back later is additive — a second enum value and a second `next-auth` provider
 entry, no redesign.
+
+---
+
+### D21 — No social graph; the season is the graph
+
+*Added 2026-08-17 during the subsystem 2 design session.*
+
+Supersedes the "friend or follow graph" sketched in [the roadmap](roadmap.md#2-social-layer).
+Season membership defines who can see whom. There is no follow, no friend request, no accept.
+
+Every member is already admin-approved into a small private league, so a graph would mostly
+reproduce the season roster with extra screens — plus a cold-start problem where a new
+member's feed is empty until they follow someone. If the group ever outgrows one shared feed,
+a graph is additive: a `follows` table and a read-time filter, no redesign.
+
+---
+
+### D22 — Bets are public the moment they are placed
+
+Feed cards appear at placement, not at kickoff and not at settlement.
+
+Standings already publish everyone's exact balance, so stakes were never really private.
+Visible-at-placement is what makes the feed worth opening — live sweating, and no quietly
+burying a bad take. Copying somebody's pick ("tailing") is treated as a feature.
+
+*Rejected:* hidden-until-kickoff, which needs a reveal-time concept (a `visible_at` column and
+either a job or a read filter, with parlays revealing on their earliest kickoff) to solve a
+copying problem this group does not have. *Rejected:* settled-only, which turns the feed into
+a results log.
+
+---
+
+### D23 — `feed_events` is a materialized, append-only table written in the source transaction
+
+Each event is a real row with a real id, emitted by `emitFeedEvent(tx, …)` from inside the
+transaction that caused it, carrying a deterministic unique `dedupe_key`.
+
+A real id is what lets reactions and comments be plain foreign keys. A single table is what
+makes pagination one indexed keyset query and per-viewer type filters a `WHERE type = ANY(…)`.
+
+*Rejected:* deriving the feed at read time from a `UNION` over `bets`, `ledger_entries` and
+`season_memberships`. Drift-proof and needs no backfill, but a synthetic union row has no
+durable id to attach a reaction to, keyset pagination across a five-way union with per-viewer
+filters is unmaintainable, and milestones cannot be expressed at all.
+
+*Rejected:* a cron feed-builder scanning for new rows since a cursor. It keeps the money core
+untouched, but the cheapest interval is minutes, which contradicts [D22](#d22--bets-are-public-the-moment-they-are-placed),
+and it adds a cursor that can get stuck.
+
+*Accepted cost:* a bug in payload construction can now reject a bet. The insert itself is one
+`INSERT … ON CONFLICT DO NOTHING` with no joins and no computation, so the only way it fails
+is a database that is down — in which case the bet should not commit either. This is the same
+argument [D5](#d5--balance-immutable-ledger-plus-a-cached-balance) already makes for the ledger.
+
+---
+
+### D24 — Admin adjustments are published to the season feed
+
+Extends [D16](#d16--every-member-sees-their-own-full-ledger). An `ADMIN_CREDIT` or
+`ADMIN_DEBIT` posts an `ADMIN_ADJUSTMENT` card to the whole season, carrying the amount and
+the mandatory note.
+
+D16's reasoning was that if an admin moves your money, you see it and see why. The same
+reasoning applied to the group is stronger: an admin cannot quietly gift anyone, because the
+league watches every adjustment land. The note field was already mandatory and already visible
+to the affected member; this widens the audience, not the disclosure.
+
+*Consequence to watch:* notes are now written for an audience. That is intended.
+
+---
+
+### D25 — Money inside a feed payload is a decimal string
+
+`stakeCents`, `payoutCents` and every other amount in a `feed_events.payload` is stored as a
+decimal string (`"95450"`), never a JSON number.
+
+`JSON.stringify` throws on a `bigint`, and a `number` silently loses precision past 2^53.
+A string round-trips through `BigInt()` exactly, which keeps
+[D17](#d17--all-money-is-integer-cents) true inside jsonb as well as in columns. Display-only
+ratios (a big win's multiple) are integer basis points for the same reason.
+
+---
+
+### D26 — Allowance posts one aggregated card per week
+
+`payWeeklyAllowance` emits a single `ALLOWANCE_PAID` event per season per ISO week
+(`allowance:<seasonId>:<weekKey>`), carrying the credited member count — not one card per
+member.
+
+Twelve members would otherwise produce twelve identical cards every Tuesday, which buries
+everything anyone actually wants to read. It is the only event type with no subject member.
+
+---
+
+### D27 — Head-to-head is deferred to subsystem 4
+
+Nobody bets *against* anybody until peer-to-peer bets exist, so "head-to-head record" has no
+unambiguous meaning yet. Subsystem 2 ships member profiles with season statistics instead.
+
+*Rejected for now:* scoring opposed positions on the same market (two members on either side
+of one line) as a matchup. It is the only genuine head-to-head available pre-P2P and it is
+appealing, but it is sparse in a small league and subsystem 4 may well redefine the metric.
+Defining it twice is worse than defining it once, late.
+
+---
+
+### D28 — Reactions hard-delete, comments soft-delete
+
+Removing a reaction deletes the row. Deleting a comment sets `deleted_at` and
+`deleted_by_user_id`, keeps the row, and renders as "Comment removed".
+
+A reaction has no history worth keeping. A comment does: the thread keeps its shape, and there
+is a record of whether the author or an admin removed it — the same instinct as
+[D15](#d15--corrections-write-reversing-entries-history-is-never-edited).
+
+*Rejected:* a report queue and a hidden state. In a league where everyone knows each other,
+the admin *is* the moderation system, and a queue is machinery that never runs.
+
+---
+
+### D29 — No real-time transport in v1
+
+The feed loads fresh on navigation and paginates through a server action. No websockets, no
+SSE, no polling interval, no unread badge.
+
+A five-person league checking the app after a game does not need a socket, and every real-time
+option adds either a connection to manage or a request every few seconds forever. Pull-to-refresh
+is the browser's job.
+
+---
+
+### D30 — Correlated subqueries in Drizzle need literal, qualified identifiers
+
+*Added 2026-08-17 during subsystem 2 implementation.*
+
+`src/server/feed/stats.ts` sums a bet's ledger entries with a correlated subquery. The first
+version wrote it the way every other query in this codebase writes SQL — interpolating
+`${table.column}` inside a `sql` template:
+
+```ts
+sql`... WHERE ${ledgerEntries.betId} = ${bets.id} ...`
+```
+
+This is silently wrong. Drizzle renders `${table.column}` as a bare, unqualified column name
+inside a raw `sql` fragment — it does not know the fragment is a subquery correlated against
+an outer table it can't see. Both sides of the comparison resolved against the subquery's own
+`FROM ledger_entries`, so the WHERE clause became `ledger_entries.bet_id =
+ledger_entries.id` — never true — and every settled bet's profile silently read back a $0
+payout. `npm run verify` did not catch it: the query executes without error and returns a
+type-correct empty sum. It surfaced only because `getMemberProfile`'s own test
+(`src/server/feed/__tests__/stats.test.ts`) asserted the actual `netCents` value on a known
+win rather than just checking the query didn't throw.
+
+The fix is to write the subquery with literal, table-qualified identifiers instead of
+drizzle's column helpers:
+
+```ts
+sql`... FROM ledger_entries WHERE ledger_entries.bet_id = bets.id ...`
+```
+
+*Consequence to watch:* any future correlated subquery in this codebase needs the same
+treatment — reach for `${table.column}` only when both sides of a comparison live in the
+query's known `FROM`/`JOIN` graph, never inside a subquery correlating against an outer table.
+
+---
+
+### D31 — Custom events are bet in credits, a second non-convertible currency
+
+*Added 2026-08-17 during the subsystem 3 design session.*
+
+Custom events are bet with **credits**, a second currency granted at season join and dripped
+weekly alongside the cash allowance. Credits never convert to cash and cash never converts to
+credits — there is no exchange rate, no admin override, and no one-way purchase.
+
+Hand-priced markets resolved by a person are a fundamentally different game from real
+sportsbook lines graded by a score feed. Mixing the two economies would mean a mispriced
+Rainbow Six market is a way to print bankroll, and the standings would stop measuring
+handicapping. Sealing credits off is what makes "anyone can create an event"
+([D32](#d32--anyone-can-create-events-and-creators-may-bet-their-own-with-disclosure)) safe
+enough to say yes to.
+
+*Rejected:* buying credits with cash, one-way. It ties the economies together — the cash leader
+dominates custom markets — and permanently drains bankroll out of the standings. *Rejected:*
+full convertibility, which makes credits a relabeled dollar and defeats the entire purpose.
+
+*Falls out for free:* a bet carries one stake in one currency, so a parlay mixing a game leg
+with a custom leg is impossible by construction. No rule needed — the money model enforces it.
+
+---
+
+### D32 — Anyone can create events, and creators may bet their own, with disclosure
+
+Any approved member creates events and resolves their own. A creator may also bet on the event
+they will resolve, and every place that bet appears — feed card, event page, profile — labels
+it as the creator's.
+
+Restricting creation to admins would make an admin the bottleneck on the most social feature in
+the app. The conflict of interest is real, and the answer is visibility rather than prohibition:
+in a league where everyone knows each other, a creator who prices soft and rules for himself is
+doing it in front of an audience, with an admin able to reverse it
+([D35](#d35--custom-events-pay-on-resolution-disputes-are-an-admin-re-resolution)).
+
+*Rejected:* barring creators from their own events — it excludes the person most interested in
+the market. *Rejected:* a creator who bets forfeits resolution rights, which gives one event two
+possible resolution paths and a rule members must learn.
+
+---
+
+### D33 — `events` is a true supertype, not a pair of nullable foreign keys
+
+A new `events` table (`id`, `kind`, `title`, `starts_at`) becomes what `markets` points at.
+`games` becomes a subtype with a unique `event_id`; `custom_events` is its sibling. One
+migration backfills an event row per existing game and drops `markets.game_id`.
+
+`events` carries no status column — each subtype owns its lifecycle, so no polymorphic status
+can be read wrong or drift out of agreement with its subtype.
+
+*Rejected:* nullable `game_id` + `custom_event_id` on `markets` with a CHECK that exactly one is
+set. It needs no backfill, but it puts two LEFT JOINs and a coalesce into every polymorphic
+query and moves an invariant out of the type system into a constraint. [D30](#d30--correlated-subqueries-in-drizzle-need-literal-qualified-identifiers)
+is a live reminder of what a subtly wrong join costs in this codebase.
+
+*Rejected:* parallel `custom_markets` / `custom_selections` tables with their own settlement
+path. Zero risk to subsystem 1, but it abandons [D11](#d11--bets-reference-selections-never-games)
+— whose entire purpose was making this moment cheap — and writes every future feature twice.
+
+---
+
+### D34 — Currency is a dimension on the existing ledger, not a second ledger
+
+`ledger_entries.currency` (`CASH` | `CREDITS`, existing rows backfilled `CASH`), a second cached
+balance column on `season_memberships`, and per-currency reconciliation. `postEntry` takes a
+currency and updates the matching cache.
+
+**No new entry types.** `BET_PLACED`, `BET_WON`, `WEEKLY_ALLOWANCE` and the rest mean exactly
+the same thing in either denomination; doubling the enum would say nothing new.
+[D5](#d5--balance-immutable-ledger-plus-a-cached-balance)'s "the ledger is truth" stays one
+invariant over two denominations.
+
+*Rejected:* a parallel `credit_ledger_entries` table. It proves a credits bug cannot touch cash,
+but it clones `postEntry`, reconciliation, the allowance job and the transaction history screen
+— and the clone is where the drift will be.
+
+---
+
+### D35 — Custom events pay on resolution; disputes are an admin re-resolution
+
+The creator resolves and winners are paid immediately. A member who disagrees files a dispute
+(one per member per event, with a reason); an admin re-resolves with a mandatory note, which
+reverses the previous payout and posts the corrected one.
+
+This is [D15](#d15--corrections-write-reversing-entries-history-is-never-edited) reused whole:
+`resolution_attempts` plays the role `settlement_attempts` already plays, so a correction can
+never collide with the original. No new money concept enters the system.
+
+*Rejected:* a 24-hour challenge window before payout. Nobody is ever paid on a wrong resolution,
+but it adds a held state, a cron sweep to finalize, and a day of delay on every event — to
+prevent something the reversal path already fixes. *Rejected:* mandatory admin confirmation on
+every resolution, which undoes [D32](#d32--anyone-can-create-events-and-creators-may-bet-their-own-with-disclosure).
+
+---
+
+### D36 — One custom market shape: N-way pick-the-winner
+
+A custom market is a question plus two or more labelled, hand-priced outcomes, exactly one of
+which wins. `market_type` gains `CUSTOM_OUTCOME`; `selections.side` becomes nullable and gains a
+`label`.
+
+A stat line is expressible as a two-outcome market in words ("Over 24.5 kills" / "Under 24.5
+kills"), which costs a creator nothing and saves the system a second grading path plus a numeric
+result-entry UI.
+
+*Rejected:* a real numeric total for custom events — creators would enter results as well as
+winners, doubling the resolution surface for a shape the N-way form already covers.
+*Rejected:* full parity with sports markets, which forces a tournament bracket into a two-sided
+home/away frame it is not.
+
+---
+
+### D37 — Events carry a resolve-by date; overdue is derived and swept to admins
+
+Every custom event has a `resolves_by`. The existing `settle` cron sweeps for `OPEN` events past
+it and emits one `CUSTOM_EVENT_OVERDUE` feed card per event. An admin then resolves it or voids
+it, refunding every stake through the path a postponed game already takes.
+
+Overdue is **derived** (`status = 'OPEN' AND resolves_by < now()`), never stored — a stored flag
+is a third state that can disagree with the clock and needs a job to maintain. The sweep rides
+in an existing cron route with no cursor, for the same reason lead-change detection does.
+
+*Rejected:* auto-voiding after a grace period. It guarantees credits are never locked forever,
+but it is a job that moves money because a date passed, and it will eventually void an event
+that needed one more day. *Rejected:* no deadline at all, where nothing surfaces a forgotten
+event and stale credits accumulate quietly.
+
+---
+
+### D38 — No exposure cap on hand-priced markets
+
+There is no limit on how many credits can ride on a member-priced market, and no validation of
+whether a creator's book adds to more than 100%. The create screen shows implied probability as
+information; it does not block.
+
+The roadmap flagged badly priced markets as a risk worth capping. Once credits are sealed off
+from cash ([D31](#d31--custom-events-are-bet-in-credits-a-second-non-convertible-currency)), a
+mispriced market can only redistribute credits — which is the point of splitting the currency.
+This follows [D19](#d19--no-maximum-bet-no-cash-out): a cap is a rule that would need tuning,
+and nothing yet says which number it should be.
+
+---
+
+### D39 — Editing an event reuses `CreateEventError`'s `INVALID_PRICE` shape
+
+*Added 2026-08-18 during subsystem 3 implementation.*
+
+`editCustomEvent`'s `ManageError` union, as the plan specified it, had no case for a bad price:
+`EVENT_NOT_FOUND | MARKET_NOT_FOUND | NOT_AUTHORIZED | EVENT_NOT_OPEN | EVENT_HAS_BETS`. But
+editing re-validates every submitted price the same way creation does
+([D36](#d36--one-custom-market-shape-n-way-pick-the-winner)), and an invalid one needs
+somewhere to land. `ManageError` gained `INVALID_PRICE; marketIndex; outcomeIndex`, shaped
+identically to `CreateEventError`'s case of the same name, so the edit form can point at the
+same field either way without a second error-rendering path.
+
+*Rejected:* rejecting the edit generically (`EVENT_NOT_OPEN` or a bare validation failure) and
+letting the client re-derive which outcome was bad. It throws away information the validator
+already has, for no reason beyond the union having been written before this case was found.
+*Rejected:* a distinct `EDIT_INVALID_PRICE` code. Nothing about the failure differs by which
+screen triggered it, and a second name for the same shape is a rename with no meaning attached.

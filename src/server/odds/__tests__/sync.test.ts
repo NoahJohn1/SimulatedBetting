@@ -1,12 +1,27 @@
 import { and, eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/db/client';
-import { games, markets, oddsSnapshots, selections, teams } from '@/db/schema';
+import { events, games, markets, oddsSnapshots, selections, teams } from '@/db/schema';
 import { FixtureOddsProvider } from '@/fixtures/providers';
 import { suspendStaleMarkets, syncOdds } from '@/server/odds/sync';
+import type { OddsProvider, ProviderGame, ProviderMarket } from '@/server/odds/types';
+import type { Sport } from '@/db/schema';
 import { resetDb } from '@/test/db';
 
 const SPREAD_GAME = 'nfl-2026-w1-sf-sea';
+
+/** One game, no prices — enough to re-sync the same natural key with a moved kickoff. */
+class SingleGameProvider implements OddsProvider {
+  constructor(private readonly game: ProviderGame) {}
+
+  async getUpcomingGames(sport: Sport): Promise<ProviderGame[]> {
+    return sport === this.game.sport ? [this.game] : [];
+  }
+
+  async getMarkets(): Promise<ProviderMarket[]> {
+    return [];
+  }
+}
 
 async function selectionFor(gameExternalId: string, side: 'HOME' | 'AWAY' | 'OVER' | 'UNDER') {
   const [row] = await db
@@ -17,7 +32,7 @@ async function selectionFor(gameExternalId: string, side: 'HOME' | 'AWAY' | 'OVE
     })
     .from(selections)
     .innerJoin(markets, eq(selections.marketId, markets.id))
-    .innerJoin(games, eq(markets.gameId, games.id))
+    .innerJoin(games, eq(markets.eventId, games.eventId))
     .where(and(eq(games.externalId, gameExternalId), eq(selections.side, side)));
   return row;
 }
@@ -68,6 +83,65 @@ describe('syncOdds', () => {
     expect((await db.select().from(games)).length).toBe(gameCount);
   });
 
+  it('does not leak an orphan event on re-sync', async () => {
+    await syncOdds({ provider: new FixtureOddsProvider() });
+    const eventCount = (await db.select().from(events)).length;
+    const before = await db
+      .select({ eventId: games.eventId })
+      .from(games)
+      .where(eq(games.externalId, SPREAD_GAME));
+
+    await syncOdds({ provider: new FixtureOddsProvider() });
+
+    expect((await db.select().from(events)).length).toBe(eventCount);
+    const after = await db
+      .select({ eventId: games.eventId })
+      .from(games)
+      .where(eq(games.externalId, SPREAD_GAME));
+    expect(after[0].eventId).toBe(before[0].eventId);
+  });
+
+  it('moves the event row\'s kickoff when a game is rescheduled', async () => {
+    const original = new Date('2026-09-13T17:00:00.000Z');
+    const moved = new Date('2026-09-13T13:00:00.000Z');
+    const base: ProviderGame = {
+      externalId: 'nfl-2026-w2-rescheduled',
+      sport: 'NFL',
+      home: { externalId: 'resched-home', name: 'Home Town', abbreviation: 'HOM' },
+      away: { externalId: 'resched-away', name: 'Away Town', abbreviation: 'AWY' },
+      startsAt: original,
+      seasonYear: 2026,
+      week: 2,
+      status: 'SCHEDULED',
+    };
+
+    await syncOdds({ provider: new SingleGameProvider(base), sports: ['NFL'] });
+
+    const [first] = await db
+      .select({ eventId: games.eventId, gameStartsAt: games.startsAt, eventStartsAt: events.startsAt })
+      .from(games)
+      .innerJoin(events, eq(games.eventId, events.id))
+      .where(eq(games.externalId, base.externalId));
+    expect(first.eventStartsAt).toEqual(original);
+
+    await syncOdds({
+      provider: new SingleGameProvider({ ...base, startsAt: moved }),
+      sports: ['NFL'],
+    });
+
+    const [second] = await db
+      .select({ eventId: games.eventId, gameStartsAt: games.startsAt, eventStartsAt: events.startsAt })
+      .from(games)
+      .innerJoin(events, eq(games.eventId, events.id))
+      .where(eq(games.externalId, base.externalId));
+
+    // Same event row, and the supertype's kickoff tracks the game's rather than freezing at
+    // whatever the first sync saw — placement validates against events.starts_at.
+    expect(second.eventId).toBe(first.eventId);
+    expect(second.gameStartsAt).toEqual(moved);
+    expect(second.eventStartsAt).toEqual(moved);
+  });
+
   it('updates the price and snapshots it when a line moves', async () => {
     await syncOdds({ provider: new FixtureOddsProvider({ round: 0 }) });
     const before = await selectionFor(SPREAD_GAME, 'HOME');
@@ -106,7 +180,7 @@ describe('syncOdds', () => {
     const [suspended] = await db
       .select({ status: markets.status })
       .from(markets)
-      .innerJoin(games, eq(markets.gameId, games.id))
+      .innerJoin(games, eq(markets.eventId, games.eventId))
       .where(eq(games.externalId, 'ncaaf-2026-w2-bama-uga'));
 
     expect(suspended.status).toBe('SUSPENDED');

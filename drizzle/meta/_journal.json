@@ -29,6 +29,55 @@
       "when": 1786974658966,
       "tag": "0003_drop-apple-auth-provider",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786979789902,
+      "tag": "0004_complex_klaw",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786996843410,
+      "tag": "0005_lumpy_molecule_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787056785161,
+      "tag": "0006_abandoned_starbolt",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787058444582,
+      "tag": "0007_ambiguous_kate_bishop",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787059432734,
+      "tag": "0008_add_custom_outcome_enum",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787059432735,
+      "tag": "0009_custom_event_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1787061025139,
+      "tag": "0010_cheerful_jean_grey",
+      "breakpoints": true
     }
   ]
 }

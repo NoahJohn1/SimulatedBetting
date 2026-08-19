@@ -1,12 +1,16 @@
 import { randomUUID } from 'node:crypto';
-import { eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/db/client';
-import { bets, games, ledgerEntries, seasonMemberships } from '@/db/schema';
+import { bets, feedEvents, games, ledgerEntries, markets, seasonMemberships } from '@/db/schema';
 import { placeBet } from '@/server/bets/place';
 import { resettleBet } from '@/server/bets/resettle';
 import { settleGame } from '@/server/bets/settle';
+import { resolveCustomEvent } from '@/server/events/resolve';
+import { postEntry } from '@/server/money/ledger';
+import type { BetSettledPayload, CustomLegSnapshot } from '@/server/feed/payload';
 import { resetDb } from '@/test/db';
+import { makeCustomEvent } from '@/test/factories';
 import { makeMembership, makeUser, seedBettableGame, type BettableGame } from './helpers';
 
 async function balanceOf(membershipId: string): Promise<bigint> {
@@ -183,6 +187,104 @@ describe('resettleBet', () => {
     expect(result).toEqual({ ok: false, error: { code: 'NOTE_REQUIRED' } });
     expect((await entriesFor(betId)).length).toBe(before);
     expect(await balanceOf(membership.id)).toBe(balanceBefore);
+  });
+
+  it('labels the creator\'s own custom-event bet on the corrected card, but not a non-creator\'s', async () => {
+    const creator = await makeMembership(1_000_000n);
+    const bettor = await makeMembership(1_000_000n, creator.seasonId);
+    const admin = await makeUser({ role: 'ADMIN' });
+
+    for (const m of [creator.membership.id, bettor.membership.id]) {
+      await db.transaction((tx) =>
+        postEntry(tx, {
+          membershipId: m,
+          amountCents: 100_000n,
+          type: 'SEASON_STARTING_GRANT',
+          currency: 'CREDITS',
+          idempotencyKey: `credits:${m}`,
+        }),
+      );
+    }
+
+    const event = await makeCustomEvent({
+      creatorMembershipId: creator.membership.id,
+      seasonId: creator.seasonId,
+    });
+    const market0 = event.marketSelections[0];
+
+    const creatorBet = await placeBet({
+      userId: creator.user.id,
+      type: 'SINGLE',
+      stakeCents: 10_000n,
+      clientRequestId: randomUUID(),
+      legs: [{ selectionId: market0.selectionIds[0], line: null, priceAmerican: 100 }],
+    });
+    if (!creatorBet.ok) throw new Error('expected creator placement to succeed');
+
+    const bettorBet = await placeBet({
+      userId: bettor.user.id,
+      type: 'SINGLE',
+      stakeCents: 10_000n,
+      clientRequestId: randomUUID(),
+      legs: [{ selectionId: market0.selectionIds[0], line: null, priceAmerican: 100 }],
+    });
+    if (!bettorBet.ok) throw new Error('expected bettor placement to succeed');
+
+    // First resolution: selection 0 wins on every market — both bets settle WON.
+    await resolveCustomEvent({
+      eventId: event.eventId,
+      actorUserId: creator.user.id,
+      actorMembershipId: creator.membership.id,
+      isAdmin: false,
+      winners: event.marketSelections.map((m) => ({
+        marketId: m.marketId,
+        winningSelectionId: m.selectionIds[0],
+      })),
+    });
+
+    // A score correction, applied directly to the market — same shape as the CASH-branch
+    // tests above flipping `games.homeScore/awayScore` before calling resettleBet.
+    await db
+      .update(markets)
+      .set({ winningSelectionId: market0.selectionIds[1] })
+      .where(eq(markets.id, market0.marketId));
+
+    const creatorResult = await resettleBet({
+      betId: creatorBet.bet.id,
+      actorUserId: admin.id,
+      note: 'result corrected',
+    });
+    expect(creatorResult.ok).toBe(true);
+    if (!creatorResult.ok) return;
+    expect(creatorResult.newStatus).toBe('LOST');
+
+    const bettorResult = await resettleBet({
+      betId: bettorBet.bet.id,
+      actorUserId: admin.id,
+      note: 'result corrected',
+    });
+    expect(bettorResult.ok).toBe(true);
+    if (!bettorResult.ok) return;
+    expect(bettorResult.newStatus).toBe('LOST');
+
+    const [creatorCard] = await db
+      .select()
+      .from(feedEvents)
+      .where(and(eq(feedEvents.type, 'BET_SETTLED'), eq(feedEvents.betId, creatorBet.bet.id)))
+      .orderBy(desc(feedEvents.createdAt))
+      .limit(1);
+    const [bettorCard] = await db
+      .select()
+      .from(feedEvents)
+      .where(and(eq(feedEvents.type, 'BET_SETTLED'), eq(feedEvents.betId, bettorBet.bet.id)))
+      .orderBy(desc(feedEvents.createdAt))
+      .limit(1);
+
+    const creatorLeg = (creatorCard.payload as BetSettledPayload).legs[0] as CustomLegSnapshot;
+    const bettorLeg = (bettorCard.payload as BetSettledPayload).legs[0] as CustomLegSnapshot;
+
+    expect(creatorLeg.byCreator).toBe(true);
+    expect(bettorLeg.byCreator).toBe(false);
   });
 
   it('reports a missing bet', async () => {

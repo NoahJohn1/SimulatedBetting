@@ -1,15 +1,23 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore } from 'react';
+import type { Currency } from '@/db/schema';
 
 export interface SlipLeg {
   selectionId: string;
+  /**
+   * The dedup group key, not literally a game id: a sports leg carries its game's id, a
+   * custom-event leg carries its event's id. Grouping on it is what makes the courtesy below
+   * agree with the server's real key, `markets.event_id`.
+   */
   gameId: string;
   /** Frozen copy of exactly what the board displayed, which is what placement re-checks. */
   line: string | null;
   priceAmerican: number;
   label: string;
   marketLabel: string;
+  /** CASH for a game, CREDITS for a custom event. One slip, one denomination (D31). */
+  currency: Currency;
 }
 
 const STORAGE_KEY = 'simbet.slip';
@@ -66,44 +74,84 @@ function subscribe(listener: () => void): () => void {
 const getSnapshot = (): SlipLeg[] => legs;
 const getServerSnapshot = (): SlipLeg[] => EMPTY;
 
+/**
+ * A slip written before credits existed has legs with no `currency`. Reading it as CASH is
+ * both what it was and what keeps an in-flight cash slip working across the deploy.
+ */
+function currencyOf(leg: SlipLeg): Currency {
+  return leg.currency ?? 'CASH';
+}
+
 interface SlipContextValue {
   legs: SlipLeg[];
+  /** The slip's denomination, taken from the first leg. CASH while the slip is empty. */
+  currency: Currency;
   toggle: (leg: SlipLeg) => void;
   remove: (selectionId: string) => void;
   clear: () => void;
   has: (selectionId: string) => boolean;
+  /** Why the last tap did nothing, when it did nothing. Null the rest of the time. */
+  notice: string | null;
+  dismissNotice: () => void;
 }
 
 const SlipContext = createContext<SlipContextValue | null>(null);
 
 export function BetSlipProvider({ children }: { children: React.ReactNode }) {
   const current = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const toggle = useCallback((leg: SlipLeg) => {
     if (legs.some((l) => l.selectionId === leg.selectionId)) {
       write(legs.filter((l) => l.selectionId !== leg.selectionId));
+      setNotice(null);
       return;
     }
+
+    // Cash and credits cannot share one stake (D31). The server rejects a mixed slip with
+    // MIXED_CURRENCY_PARLAY regardless; refusing here just means the rejection arrives as a
+    // sentence at the moment of the tap instead of after a submit.
+    const incoming = currencyOf(leg);
+    if (legs.length > 0 && currencyOf(legs[0]) !== incoming) {
+      setNotice(
+        incoming === 'CREDITS'
+          ? 'Clear your slip to bet on an event — events are bet in credits.'
+          : 'Clear your slip to bet on a game — games are bet in cash.',
+      );
+      return;
+    }
+
+    setNotice(null);
     // No two legs from the same game (D13) — picking a second market on a game the slip
     // already holds replaces the first rather than silently building an invalid parlay.
+    // The same key is the event id for a custom-event leg, so it covers events too.
     write([...legs.filter((l) => l.gameId !== leg.gameId), leg]);
   }, []);
 
   const remove = useCallback((selectionId: string) => {
+    setNotice(null);
     write(legs.filter((l) => l.selectionId !== selectionId));
   }, []);
 
-  const clear = useCallback(() => write([]), []);
+  const clear = useCallback(() => {
+    setNotice(null);
+    write([]);
+  }, []);
+
+  const dismissNotice = useCallback(() => setNotice(null), []);
 
   const value = useMemo<SlipContextValue>(
     () => ({
       legs: current,
+      currency: current.length > 0 ? currencyOf(current[0]) : 'CASH',
       toggle,
       remove,
       clear,
       has: (id: string) => current.some((l) => l.selectionId === id),
+      notice,
+      dismissNotice,
     }),
-    [current, toggle, remove, clear],
+    [current, toggle, remove, clear, notice, dismissNotice],
   );
 
   return <SlipContext.Provider value={value}>{children}</SlipContext.Provider>;

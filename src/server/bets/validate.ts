@@ -1,4 +1,6 @@
 import type { MarketType, Side } from '@/domain/grading';
+import type { Currency, Sport } from '@/db/schema';
+import { currencyForKinds } from '@/domain/custom-grading';
 import { americanToRational, combine, payoutCents, rationalToAmerican } from '@/domain/odds';
 import { linesEqual, normalizeLine } from '@/domain/line';
 import type { LineMovement, PlaceBetError, PlaceBetInput } from './types';
@@ -10,7 +12,7 @@ export const MAX_PARLAY_LEGS = 10;
 export interface PlacementContext {
   now: Date;
   user: { status: 'PENDING' | 'APPROVED' | 'DISABLED' };
-  membership: { id: string; balanceCents: bigint } | null;
+  membership: { id: string; balanceCents: bigint; creditsBalanceCents: bigint } | null;
   activeSeasonId: string | null;
   /**
    * One entry per submitted leg, in submission order. null when the selection doesn't
@@ -21,18 +23,38 @@ export interface PlacementContext {
   selections: (LoadedSelection | null)[];
 }
 
-export interface LoadedSelection {
+interface LoadedSelectionBase {
   selectionId: string;
   marketId: string;
-  marketType: MarketType;
   marketStatus: 'OPEN' | 'SUSPENDED' | 'SETTLED';
-  side: Side;
   line: string | null;
   priceAmerican: number;
-  gameId: string;
-  gameStatus: string;
-  gameStartsAt: Date;
+  eventId: string;
+  eventStartsAt: Date;
+  /** The subtype's own lifecycle value — `games.status` or `custom_events.status`. */
+  eventStatus: string;
 }
+
+export interface LoadedGameSelection extends LoadedSelectionBase {
+  kind: 'GAME';
+  marketType: MarketType;
+  side: Side;
+  // Carried for the feed card's frozen snapshot, not for validation.
+  sport: Sport;
+  homeAbbr: string;
+  awayAbbr: string;
+}
+
+export interface LoadedCustomSelection extends LoadedSelectionBase {
+  kind: 'CUSTOM';
+  marketType: 'CUSTOM_OUTCOME';
+  eventTitle: string;
+  marketTitle: string;
+  outcomeLabel: string;
+  creatorMembershipId: string;
+}
+
+export type LoadedSelection = LoadedGameSelection | LoadedCustomSelection;
 
 /** Shared arithmetic for both the submitted-price quote and the current-price re-quote. */
 function quoteFromPrices(
@@ -60,8 +82,10 @@ export function quotePlacement(
   );
 }
 
-function isGameBettable(selection: LoadedSelection, now: Date): boolean {
-  return selection.gameStatus === 'SCHEDULED' && selection.gameStartsAt > now;
+function isBettable(selection: LoadedSelection, now: Date): boolean {
+  const open =
+    selection.kind === 'GAME' ? selection.eventStatus === 'SCHEDULED' : selection.eventStatus === 'OPEN';
+  return open && selection.eventStartsAt > now;
 }
 
 export function validatePlacement(
@@ -134,36 +158,47 @@ export function validatePlacement(
   // At this point every selection is known (non-null), so we can safely assert.
   const selections = ctx.selections as LoadedSelection[];
 
-  // Scan in leg order; the first gameId seen a second time is "the first duplicated
-  // gameId found, in leg order" — not necessarily the game with the earliest first
-  // appearance (another game's repeat could be confirmed earlier in leg order).
-  const firstIndexByGameId = new Map<string, number>();
-  let duplicateGameId: string | null = null;
+  // Same-event legs are correlated for exactly the reason same-game legs are: "who wins the
+  // cup" and "who wins the final" are not independent, and paying them at independent odds
+  // is free money (D13, extended to events).
+  const firstIndexByEventId = new Map<string, number>();
+  let duplicateEventId: string | null = null;
   for (let i = 0; i < selections.length; i++) {
-    const gameId = selections[i].gameId;
-    if (firstIndexByGameId.has(gameId)) {
-      duplicateGameId = gameId;
+    const eventId = selections[i].eventId;
+    if (firstIndexByEventId.has(eventId)) {
+      duplicateEventId = eventId;
       break;
     }
-    firstIndexByGameId.set(gameId, i);
+    firstIndexByEventId.set(eventId, i);
   }
-  if (duplicateGameId !== null) {
+  if (duplicateEventId !== null) {
     const legIndexes = selections
-      .map((selection, i) => (selection.gameId === duplicateGameId ? i : -1))
+      .map((selection, i) => (selection.eventId === duplicateEventId ? i : -1))
       .filter((i) => i !== -1);
-    return { code: 'DUPLICATE_GAME', gameId: duplicateGameId, legIndexes };
+    return { code: 'DUPLICATE_EVENT', eventId: duplicateEventId, legIndexes };
   }
 
-  // 3. Bettability — for each leg, check game-bettable then market-status before
+  // Currency is derived from the legs, and a mixed slip is a shape one stake cannot
+  // represent (D31). Checked before bettability so the clearest error wins.
+  const derived = currencyForKinds(selections.map((s) => s.kind));
+  if (!derived.ok) {
+    return {
+      code: 'MIXED_CURRENCY_PARLAY',
+      gameLegIndexes: derived.gameIndexes,
+      customLegIndexes: derived.customIndexes,
+    };
+  }
+
+  // 3. Bettability — for each leg, check event-bettable then market-status before
   // advancing to the next leg.
   for (let i = 0; i < selections.length; i++) {
     const selection = selections[i];
-    if (!isGameBettable(selection, ctx.now)) {
+    if (!isBettable(selection, ctx.now)) {
       return {
-        code: 'GAME_NOT_BETTABLE',
+        code: 'EVENT_NOT_BETTABLE',
         legIndex: i,
-        gameStatus: selection.gameStatus,
-        startsAt: selection.gameStartsAt.toISOString(),
+        eventStatus: selection.eventStatus,
+        startsAt: selection.eventStartsAt.toISOString(),
       };
     }
     if (selection.marketStatus !== 'OPEN') {
@@ -175,12 +210,10 @@ export function validatePlacement(
   if (input.stakeCents < MIN_STAKE_CENTS) {
     return { code: 'STAKE_BELOW_MINIMUM', stakeCents: input.stakeCents, minimumCents: MIN_STAKE_CENTS };
   }
-  if (input.stakeCents > ctx.membership.balanceCents) {
-    return {
-      code: 'INSUFFICIENT_FUNDS',
-      stakeCents: input.stakeCents,
-      balanceCents: ctx.membership.balanceCents,
-    };
+  const available =
+    derived.currency === 'CASH' ? ctx.membership.balanceCents : ctx.membership.creditsBalanceCents;
+  if (input.stakeCents > available) {
+    return { code: 'INSUFFICIENT_FUNDS', stakeCents: input.stakeCents, balanceCents: available };
   }
 
   // 5. Lines — check every leg, accumulating movements instead of stopping at the first.
@@ -211,4 +244,10 @@ export function validatePlacement(
 
   // 6. All rules passed.
   return null;
+}
+
+export function currencyForSelections(selections: LoadedSelection[]): Currency {
+  const derived = currencyForKinds(selections.map((s) => s.kind));
+  if (!derived.ok) throw new Error('mixed-currency slip reached currencyForSelections');
+  return derived.currency;
 }

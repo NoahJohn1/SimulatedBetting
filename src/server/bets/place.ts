@@ -1,18 +1,34 @@
 import { and, eq, inArray } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { db, type Tx } from '@/db/client';
 import {
   betLegs,
   bets,
+  customEvents,
+  events,
   games,
   markets,
   seasonMemberships,
   seasons,
   selections,
+  teams,
   users,
+  type CustomEventStatus,
+  type EventKind,
+  type GameStatus,
+  type MarketStatusValue,
+  type MarketTypeValue,
+  type SelectionSide,
+  type Sport,
 } from '@/db/schema';
+import type { MarketType, Side } from '@/domain/grading';
 import { postEntry } from '@/server/money/ledger';
+import { emitFeedEvent } from '@/server/feed/emit';
+import { buildCustomLegSnapshot, buildLegSnapshot } from '@/server/feed/snapshot';
+import type { BetPlacedPayload } from '@/server/feed/payload';
 import type { PlaceBetError, PlaceBetInput, PlaceBetResult } from './types';
 import {
+  currencyForSelections,
   quotePlacement,
   validatePlacement,
   type LoadedSelection,
@@ -29,6 +45,9 @@ class PlacementRejected extends Error {
 
 type Reader = Tx | typeof db;
 
+const homeTeams = alias(teams, 'home_teams');
+const awayTeams = alias(teams, 'away_teams');
+
 async function loadSelections(
   reader: Reader,
   input: PlaceBetInput,
@@ -42,22 +61,99 @@ async function loadSelections(
       marketId: markets.id,
       marketType: markets.type,
       marketStatus: markets.status,
+      marketTitle: markets.title,
       side: selections.side,
+      label: selections.label,
       line: selections.line,
       priceAmerican: selections.priceAmerican,
-      gameId: games.id,
+      eventId: events.id,
+      eventKind: events.kind,
+      eventTitle: events.title,
+      eventStartsAt: events.startsAt,
       gameStatus: games.status,
-      gameStartsAt: games.startsAt,
+      sport: games.sport,
+      homeAbbr: homeTeams.abbreviation,
+      awayAbbr: awayTeams.abbreviation,
+      customStatus: customEvents.status,
+      creatorMembershipId: customEvents.creatorMembershipId,
     })
     .from(selections)
     .innerJoin(markets, eq(selections.marketId, markets.id))
-    .innerJoin(games, eq(markets.gameId, games.id))
+    .innerJoin(events, eq(markets.eventId, events.id))
+    .leftJoin(games, eq(games.eventId, events.id))
+    .leftJoin(homeTeams, eq(games.homeTeamId, homeTeams.id))
+    .leftJoin(awayTeams, eq(games.awayTeamId, awayTeams.id))
+    .leftJoin(customEvents, eq(customEvents.eventId, events.id))
     .where(inArray(selections.id, ids));
 
-  const bySelectionId = new Map(rows.map((row) => [row.selectionId, row as LoadedSelection]));
+  const bySelectionId = new Map(rows.map((row) => [row.selectionId, toLoadedSelection(row)]));
 
   // Aligned 1:1 with input.legs in submission order — validatePlacement asserts this.
   return input.legs.map((leg) => bySelectionId.get(leg.selectionId) ?? null);
+}
+
+/**
+ * Non-null assertions below are load-bearing and safe: a `GAME` event always has a `games`
+ * row (the unique FK from Task 5) and a `CUSTOM` event always has a `custom_events` row (the
+ * PK FK from Task 7). If either is ever null, the schema is broken and a crash is the
+ * correct outcome — do not silently default them.
+ */
+function toLoadedSelection(row: {
+  selectionId: string;
+  marketId: string;
+  marketType: MarketTypeValue;
+  marketStatus: MarketStatusValue;
+  marketTitle: string | null;
+  side: SelectionSide | null;
+  label: string | null;
+  line: string | null;
+  priceAmerican: number;
+  eventId: string;
+  eventKind: EventKind;
+  eventTitle: string;
+  eventStartsAt: Date;
+  gameStatus: GameStatus | null;
+  sport: Sport | null;
+  homeAbbr: string | null;
+  awayAbbr: string | null;
+  customStatus: CustomEventStatus | null;
+  creatorMembershipId: string | null;
+}): LoadedSelection {
+  if (row.eventKind === 'GAME') {
+    return {
+      kind: 'GAME',
+      selectionId: row.selectionId,
+      marketId: row.marketId,
+      marketType: row.marketType as MarketType,
+      marketStatus: row.marketStatus,
+      side: row.side as Side,
+      line: row.line,
+      priceAmerican: row.priceAmerican,
+      eventId: row.eventId,
+      eventStartsAt: row.eventStartsAt,
+      eventStatus: row.gameStatus!,
+      sport: row.sport!,
+      homeAbbr: row.homeAbbr!,
+      awayAbbr: row.awayAbbr!,
+    };
+  }
+
+  return {
+    kind: 'CUSTOM',
+    selectionId: row.selectionId,
+    marketId: row.marketId,
+    marketType: 'CUSTOM_OUTCOME',
+    marketStatus: row.marketStatus,
+    line: null,
+    priceAmerican: row.priceAmerican,
+    eventId: row.eventId,
+    eventStartsAt: row.eventStartsAt,
+    eventStatus: row.customStatus!,
+    eventTitle: row.eventTitle,
+    marketTitle: row.marketTitle!,
+    outcomeLabel: row.label!,
+    creatorMembershipId: row.creatorMembershipId!,
+  };
 }
 
 /**
@@ -81,10 +177,14 @@ export async function loadPlacementContext(
     .from(seasons)
     .where(eq(seasons.status, 'ACTIVE'));
 
-  let membership: { id: string; balanceCents: bigint } | null = null;
+  let membership: { id: string; balanceCents: bigint; creditsBalanceCents: bigint } | null = null;
   if (activeSeason) {
     const base = reader
-      .select({ id: seasonMemberships.id, balanceCents: seasonMemberships.balanceCents })
+      .select({
+        id: seasonMemberships.id,
+        balanceCents: seasonMemberships.balanceCents,
+        creditsBalanceCents: seasonMemberships.creditsBalanceCents,
+      })
       .from(seasonMemberships)
       .where(
         and(
@@ -128,20 +228,26 @@ export async function placeBet(
   try {
     return await db.transaction(async (tx) => {
       // Insert first: the unique client_request_id is the retry guard, and the returned id
-      // is what the ledger idempotency key is built from.
+      // is what the ledger idempotency key is built from. The fresh, lock-held selections
+      // aren't loaded yet at this point, so currency is derived from the early context's
+      // selections instead — already proven well-formed by the validation that just ran.
+      // The re-validation below re-derives it from `fresh` and would reject any slip whose
+      // kinds somehow changed between the two reads.
+      const currency = currencyForSelections(context.selections as LoadedSelection[]);
       const quote = quotePlacement(input, context);
       const inserted = await tx
         .insert(bets)
         .values({
           membershipId: context.membership!.id,
           type: input.type,
+          currency,
           stakeCents: input.stakeCents,
           potentialPayoutCents: quote.potentialPayoutCents,
           combinedPriceAmerican: quote.combinedPriceAmerican,
           clientRequestId: input.clientRequestId,
         })
         .onConflictDoNothing({ target: bets.clientRequestId })
-        .returning({ id: bets.id });
+        .returning({ id: bets.id, placedAt: bets.placedAt });
 
       if (inserted.length === 0) {
         const [existing] = await tx
@@ -152,6 +258,7 @@ export async function placeBet(
       }
 
       const betId = inserted[0].id;
+      const placedAt = inserted[0].placedAt;
 
       const fresh = await loadPlacementContext(input, tx, true);
       const error = validatePlacement(input, fresh);
@@ -177,8 +284,44 @@ export async function placeBet(
         membershipId: fresh.membership!.id,
         amountCents: -input.stakeCents,
         type: 'BET_PLACED',
+        currency,
         idempotencyKey: `bet:${betId}:placed`,
         betId,
+      });
+
+      const payload: BetPlacedPayload = {
+        betType: input.type,
+        currency,
+        stakeCents: input.stakeCents.toString(),
+        potentialPayoutCents: freshQuote.potentialPayoutCents.toString(),
+        combinedPriceAmerican: freshQuote.combinedPriceAmerican,
+        legs: freshSelections.map((selection) =>
+          selection.kind === 'GAME'
+            ? buildLegSnapshot(
+                { ...selection, startsAt: selection.eventStartsAt },
+                { line: selection.line, priceAmerican: selection.priceAmerican },
+              )
+            : buildCustomLegSnapshot(
+                {
+                  eventTitle: selection.eventTitle,
+                  marketTitle: selection.marketTitle,
+                  outcomeLabel: selection.outcomeLabel,
+                  startsAt: selection.eventStartsAt,
+                  byCreator: selection.creatorMembershipId === fresh.membership!.id,
+                },
+                { priceAmerican: selection.priceAmerican },
+              ),
+        ),
+      };
+
+      await emitFeedEvent(tx, {
+        seasonId: fresh.activeSeasonId!,
+        type: 'BET_PLACED',
+        subjectMembershipId: fresh.membership!.id,
+        betId,
+        dedupeKey: `bet:${betId}:placed`,
+        payload,
+        occurredAt: placedAt,
       });
 
       return {

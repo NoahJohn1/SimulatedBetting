@@ -40,6 +40,7 @@ export async function getSlate(now: Date = new Date()): Promise<BoardGame[]> {
   const gameRows = await db
     .select({
       id: games.id,
+      eventId: games.eventId,
       sport: games.sport,
       startsAt: games.startsAt,
       status: games.status,
@@ -63,16 +64,20 @@ export async function getSlate(now: Date = new Date()): Promise<BoardGame[]> {
     .where(inArray(teams.id, teamIds));
   const teamById = new Map(teamRows.map((t) => [t.id, t]));
 
-  const gameIds = gameRows.map((g) => g.id);
+  // Markets no longer carry a game id — they carry the event id, which is 1:1 with a game
+  // (`games.eventId` is unique). Look markets up by event, then map each row back to its
+  // game through that same 1:1 relationship.
+  const gameIdByEventId = new Map(gameRows.map((g) => [g.eventId, g.id]));
+  const eventIds = gameRows.map((g) => g.eventId);
   const marketRows = await db
     .select({
       id: markets.id,
-      gameId: markets.gameId,
+      eventId: markets.eventId,
       type: markets.type,
       status: markets.status,
     })
     .from(markets)
-    .where(inArray(markets.gameId, gameIds));
+    .where(inArray(markets.eventId, eventIds));
 
   const selectionRows = marketRows.length
     ? await db
@@ -94,6 +99,9 @@ export async function getSlate(now: Date = new Date()): Promise<BoardGame[]> {
 
   const selectionsByMarket = new Map<string, BoardSelection[]>();
   for (const row of selectionRows) {
+    // A game's markets are always sports markets (never CUSTOM_OUTCOME), so `side` is
+    // always set here — the guard exists only to narrow the now-nullable column's type.
+    if (row.side === null) continue;
     const list = selectionsByMarket.get(row.marketId) ?? [];
     list.push({
       id: row.id,
@@ -106,14 +114,17 @@ export async function getSlate(now: Date = new Date()): Promise<BoardGame[]> {
 
   const marketsByGame = new Map<string, BoardMarket[]>();
   for (const row of marketRows) {
-    const list = marketsByGame.get(row.gameId) ?? [];
+    if (!row.eventId) continue;
+    const gameId = gameIdByEventId.get(row.eventId);
+    if (!gameId) continue;
+    const list = marketsByGame.get(gameId) ?? [];
     list.push({
       id: row.id,
       type: row.type,
       status: row.status,
       selections: selectionsByMarket.get(row.id) ?? [],
     });
-    marketsByGame.set(row.gameId, list);
+    marketsByGame.set(gameId, list);
   }
 
   return gameRows.map((game) => ({

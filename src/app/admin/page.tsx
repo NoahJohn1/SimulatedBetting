@@ -43,6 +43,10 @@ export default async function AdminPage() {
         </Link>
       </div>
 
+      <Link href="/admin/events" className="text-sm text-zinc-500 underline">
+        Overdue &amp; disputed events
+      </Link>
+
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
           Waiting for approval

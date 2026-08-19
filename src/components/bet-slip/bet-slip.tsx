@@ -3,29 +3,30 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { placeBetAction } from '@/app/(app)/bets/actions';
+import { Money } from '@/components/ui/money';
+import type { Currency } from '@/db/schema';
+import { formatAmount } from '@/domain/money';
 import type { PlaceBetError } from '@/server/bets/types';
 import { useSlip } from './slip-context';
 
-/** Mirrors the domain formatter for the small amounts the slip quotes. */
-function formatCentsString(cents: bigint): string {
-  const negative = cents < 0n;
-  const abs = negative ? -cents : cents;
-  const whole = (abs / 100n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  return `${negative ? '-' : ''}$${whole}.${(abs % 100n).toString().padStart(2, '0')}`;
-}
-
-function message(error: PlaceBetError): string {
+/**
+ * Every amount the slip quotes is in the slip's own denomination — the stake, the balance it
+ * is checked against, and the payout. A cash slip reads exactly as it always did.
+ */
+function message(error: PlaceBetError, currency: Currency): string {
   switch (error.code) {
     case 'LINE_MOVED':
       return 'The line moved while the slip was open. Review the new price and try again.';
     case 'INSUFFICIENT_FUNDS':
-      return `Not enough balance. You have ${formatCentsString(error.balanceCents)}.`;
+      return `Not enough balance. You have ${formatAmount(error.balanceCents, currency)}.`;
     case 'STAKE_BELOW_MINIMUM':
-      return `The minimum stake is ${formatCentsString(error.minimumCents)}.`;
-    case 'DUPLICATE_GAME':
-      return 'A parlay cannot have two legs from the same game.';
-    case 'GAME_NOT_BETTABLE':
-      return 'That game has already started or is no longer open.';
+      return `The minimum stake is ${formatAmount(error.minimumCents, currency)}.`;
+    case 'DUPLICATE_EVENT':
+      return 'A parlay cannot have two legs from the same game or event.';
+    case 'EVENT_NOT_BETTABLE':
+      return 'That game or event has already started or is no longer open.';
+    case 'MIXED_CURRENCY_PARLAY':
+      return 'A parlay cannot mix game legs with custom-event legs.';
     case 'MARKET_CLOSED':
       return 'That market is suspended.';
     case 'INVALID_LEG_COUNT':
@@ -43,7 +44,17 @@ function message(error: PlaceBetError): string {
   }
 }
 
-export function BetSlip() {
+/**
+ * Balances arrive as decimal strings and become bigints here, the same way every money value
+ * that crosses into a client component does. Never `Number` (D17).
+ */
+export function BetSlip({
+  balanceCents,
+  creditsBalanceCents,
+}: {
+  balanceCents: string;
+  creditsBalanceCents: string;
+}) {
   const slip = useSlip();
   const router = useRouter();
   const [stake, setStake] = useState('10.00');
@@ -55,6 +66,8 @@ export function BetSlip() {
   if (slip.legs.length === 0) return null;
 
   const isParlay = slip.legs.length > 1;
+  const currency = slip.currency;
+  const available = BigInt(currency === 'CASH' ? balanceCents : creditsBalanceCents);
 
   function submit() {
     setError(null);
@@ -85,11 +98,13 @@ export function BetSlip() {
       });
 
       if (result.ok) {
-        setPlaced(`Bet placed to return ${formatCentsString(result.bet.potentialPayoutCents)}`);
+        setPlaced(
+          `Bet placed to return ${formatAmount(result.bet.potentialPayoutCents, currency)}`,
+        );
         slip.clear();
         router.refresh();
       } else {
-        setError(message(result.error));
+        setError(message(result.error, currency));
       }
     });
   }
@@ -103,9 +118,26 @@ export function BetSlip() {
       >
         <span className="text-sm font-semibold">
           {isParlay ? `${slip.legs.length}-leg parlay` : '1 selection'}
+          <span className="ml-2 text-xs font-normal text-zinc-500">
+            {currency === 'CASH' ? 'Cash' : 'Credits'}
+          </span>
         </span>
         <span className="text-xs text-zinc-500">{open ? 'Hide' : 'Show'}</span>
       </button>
+
+      {/* Shown collapsed too: the tap that produced it happened somewhere else on the page. */}
+      {slip.notice ? (
+        <p className="flex items-start justify-between gap-3 px-4 pb-3 text-xs text-amber-700 dark:text-amber-400">
+          <span>{slip.notice}</span>
+          <button
+            type="button"
+            onClick={slip.dismissNotice}
+            className="shrink-0 text-zinc-400 hover:text-zinc-600"
+          >
+            Dismiss
+          </button>
+        </p>
+      ) : null}
 
       {open ? (
         <div className="flex flex-col gap-3 px-4 pb-4">
@@ -133,12 +165,16 @@ export function BetSlip() {
 
           <label className="flex items-center gap-3">
             <span className="text-sm text-zinc-500">Stake</span>
+            <span className="text-sm text-zinc-500">{currency === 'CASH' ? '$' : '©'}</span>
             <input
               inputMode="decimal"
               value={stake}
               onChange={(e) => setStake(e.target.value)}
               className="w-28 rounded-lg border border-zinc-300 px-3 py-2 text-sm tabular-nums dark:border-zinc-700 dark:bg-zinc-900"
             />
+            <span className="ml-auto text-xs text-zinc-500">
+              Balance <Money cents={available} currency={currency} />
+            </span>
           </label>
 
           {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}

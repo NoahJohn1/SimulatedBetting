@@ -132,7 +132,7 @@ describe('voiding a game', () => {
     await setStatus(seeded.game.id, 'POSTPONED');
     await settleGame(seeded.game.id);
 
-    const rows = await db.select().from(markets).where(eq(markets.gameId, seeded.game.id));
+    const rows = await db.select().from(markets).where(eq(markets.eventId, seeded.game.eventId));
     expect(rows.every((m) => m.status === 'SETTLED')).toBe(true);
   });
 

@@ -41,8 +41,9 @@ export type PlaceBetError =
   | { code: 'UNKNOWN_SELECTION'; legIndex: number; selectionId: string }
   | { code: 'INVALID_LEG_VALUE'; legIndex: number; field: 'line' | 'priceAmerican' }
   | { code: 'INVALID_LEG_COUNT'; legCount: number; min: number; max: number }
-  | { code: 'DUPLICATE_GAME'; gameId: string; legIndexes: number[] }
-  | { code: 'GAME_NOT_BETTABLE'; legIndex: number; gameStatus: string; startsAt: string }
+  | { code: 'DUPLICATE_EVENT'; eventId: string; legIndexes: number[] }
+  | { code: 'EVENT_NOT_BETTABLE'; legIndex: number; eventStatus: string; startsAt: string }
+  | { code: 'MIXED_CURRENCY_PARLAY'; gameLegIndexes: number[]; customLegIndexes: number[] }
   | { code: 'MARKET_CLOSED'; legIndex: number; marketStatus: string }
   | { code: 'STAKE_BELOW_MINIMUM'; stakeCents: bigint; minimumCents: bigint }
   | { code: 'INSUFFICIENT_FUNDS'; stakeCents: bigint; balanceCents: bigint }

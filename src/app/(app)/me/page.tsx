@@ -1,6 +1,7 @@
 import { desc, eq } from 'drizzle-orm';
+import Link from 'next/link';
 import { db } from '@/db/client';
-import { ledgerEntries } from '@/db/schema';
+import { ledgerEntries, seasonMemberships } from '@/db/schema';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Money } from '@/components/ui/money';
 import { signOut } from '@/server/auth/config';
@@ -23,6 +24,11 @@ export default async function MePage() {
   const member = await requireApprovedMember();
   const user = await getSessionUser();
 
+  const [membership] = await db
+    .select({ creditsBalanceCents: seasonMemberships.creditsBalanceCents })
+    .from(seasonMemberships)
+    .where(eq(seasonMemberships.id, member.membershipId));
+
   const entries = await db
     .select()
     .from(ledgerEntries)
@@ -34,10 +40,21 @@ export default async function MePage() {
     <div className="flex flex-col gap-4 px-4 py-4">
       <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
         <p className="text-sm text-zinc-500">{user?.email}</p>
-        <p className="mt-1 text-2xl font-semibold">
-          <Money cents={member.balanceCents} />
-        </p>
+        <div className="mt-1 flex items-baseline gap-4">
+          <p className="text-2xl font-semibold">
+            <Money cents={member.balanceCents} />
+          </p>
+          {membership ? (
+            <p className="text-sm font-medium text-zinc-500">
+              <Money cents={membership.creditsBalanceCents} currency="CREDITS" /> credits
+            </p>
+          ) : null}
+        </div>
       </section>
+
+      <Link href="/me/feed-preferences" className="text-xs text-zinc-500 hover:underline">
+        Feed filters
+      </Link>
 
       {entries.length === 0 ? (
         <EmptyState title="No activity yet" />
@@ -64,9 +81,9 @@ export default async function MePage() {
                 </span>
               </span>
               <span className="shrink-0 text-right">
-                <Money cents={entry.amountCents} className="block text-sm font-semibold" />
+                <Money cents={entry.amountCents} currency={entry.currency} className="block text-sm font-semibold" />
                 <span className="block text-xs text-zinc-400">
-                  <Money cents={entry.balanceAfterCents} />
+                  <Money cents={entry.balanceAfterCents} currency={entry.currency} />
                 </span>
               </span>
             </li>

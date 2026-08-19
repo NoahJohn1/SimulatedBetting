@@ -39,9 +39,11 @@ describe('season service', () => {
       .from(ledgerEntries)
       .where(eq(ledgerEntries.membershipId, membership.membershipId));
 
-    expect(entries).toHaveLength(1);
-    expect(entries[0].type).toBe('SEASON_STARTING_GRANT');
-    expect(entries[0].amountCents).toBe(1_000_000n);
+    // Two entries: the cash grant and the default credits grant (defaults are non-zero).
+    expect(entries).toHaveLength(2);
+    const cashEntry = entries.find((e) => e.currency === 'CASH')!;
+    expect(cashEntry.type).toBe('SEASON_STARTING_GRANT');
+    expect(cashEntry.amountCents).toBe(1_000_000n);
   });
 
   it('does not mint a second bankroll when a join is retried', async () => {
@@ -57,8 +59,9 @@ describe('season service', () => {
 
     expect(second.membershipId).toBe(first.membershipId);
     expect(second.balanceCents).toBe(1_000_000n);
+    // Two entries (cash + default credits), still not four — the retry grants nothing extra.
     expect(
       await db.select().from(ledgerEntries).where(eq(ledgerEntries.membershipId, first.membershipId)),
-    ).toHaveLength(1);
+    ).toHaveLength(2);
   });
 });

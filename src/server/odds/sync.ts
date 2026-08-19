@@ -1,6 +1,6 @@
-import { and, eq, lt } from 'drizzle-orm';
+import { and, eq, lt, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { games, markets, oddsSnapshots, selections, teams } from '@/db/schema';
+import { events, games, markets, oddsSnapshots, selections, teams } from '@/db/schema';
 import type { Sport } from '@/db/schema';
 import { linesEqual, normalizeLine } from '@/domain/line';
 import type { OddsProvider, ProviderGame, ProviderTeam } from './types';
@@ -43,31 +43,60 @@ async function upsertTeam(team: ProviderTeam, sport: Sport): Promise<string> {
   return row.id;
 }
 
-async function upsertGame(game: ProviderGame): Promise<string> {
+async function upsertGame(game: ProviderGame): Promise<{ id: string; eventId: string }> {
   const homeTeamId = await upsertTeam(game.home, game.sport);
   const awayTeamId = await upsertTeam(game.away, game.sport);
 
-  const [row] = await db
-    .insert(games)
-    .values({
-      sport: game.sport,
-      externalId: game.externalId,
-      homeTeamId,
-      awayTeamId,
-      startsAt: game.startsAt,
-      seasonYear: game.seasonYear,
-      week: game.week,
-      status: game.status,
-    })
-    .onConflictDoUpdate({
-      target: [games.sport, games.externalId],
-      // Scores and terminal statuses are the score provider's business, not the odds
-      // feed's — syncOdds only keeps the schedule current.
-      set: { startsAt: game.startsAt, week: game.week },
-    })
-    .returning({ id: games.id });
+  // An event is created once, on a game's genuine first sync, and reused on every
+  // subsequent re-sync of the same game (looked up by the game's natural key).
+  return db.transaction(async (tx) => {
+    const [existingGame] = await tx
+      .select({ eventId: games.eventId })
+      .from(games)
+      .where(and(eq(games.sport, game.sport), eq(games.externalId, game.externalId)));
 
-  return row.id;
+    let eventId = existingGame?.eventId;
+    if (!eventId) {
+      const [event] = await tx
+        .insert(events)
+        .values({
+          kind: 'GAME',
+          title: `${game.away.abbreviation} @ ${game.home.abbreviation}`,
+          startsAt: game.startsAt,
+        })
+        .returning({ id: events.id });
+      eventId = event.id;
+    }
+
+    // The supertype's kickoff has to track the feed's, not freeze at first sync: placement
+    // validates against `events.starts_at`, so a rescheduled game whose event row went stale
+    // would keep accepting bets after it had actually kicked off. Idempotent either way — a
+    // freshly inserted event is simply rewritten with the value it already has.
+    await tx.update(events).set({ startsAt: game.startsAt }).where(eq(events.id, eventId));
+
+    const [row] = await tx
+      .insert(games)
+      .values({
+        sport: game.sport,
+        externalId: game.externalId,
+        homeTeamId,
+        awayTeamId,
+        startsAt: game.startsAt,
+        seasonYear: game.seasonYear,
+        week: game.week,
+        status: game.status,
+        eventId,
+      })
+      .onConflictDoUpdate({
+        target: [games.sport, games.externalId],
+        // Scores and terminal statuses are the score provider's business, not the odds
+        // feed's — syncOdds only keeps the schedule current.
+        set: { startsAt: game.startsAt, week: game.week },
+      })
+      .returning({ id: games.id });
+
+    return { id: row.id, eventId };
+  });
 }
 
 /**
@@ -91,36 +120,40 @@ export async function syncOdds(options: SyncOddsOptions): Promise<SyncOddsSummar
     snapshotsWritten: 0,
   };
 
-  const gameIdByExternalId = new Map<string, string>();
+  const eventIdByExternalId = new Map<string, string>();
 
   for (const sport of sports) {
     const upcoming = await options.provider.getUpcomingGames(sport, withinDays);
     for (const game of upcoming) {
-      gameIdByExternalId.set(game.externalId, await upsertGame(game));
+      const upserted = await upsertGame(game);
+      eventIdByExternalId.set(game.externalId, upserted.eventId);
       summary.gamesUpserted += 1;
     }
   }
 
-  if (gameIdByExternalId.size === 0) return summary;
+  if (eventIdByExternalId.size === 0) return summary;
 
-  const providerMarkets = await options.provider.getMarkets([...gameIdByExternalId.keys()]);
+  const providerMarkets = await options.provider.getMarkets([...eventIdByExternalId.keys()]);
   const syncedAt = new Date();
 
   for (const market of providerMarkets) {
-    const gameId = gameIdByExternalId.get(market.gameExternalId);
-    if (!gameId) continue;
+    const eventId = eventIdByExternalId.get(market.gameExternalId);
+    if (!eventId) continue;
 
     const [marketRow] = await db
       .insert(markets)
       .values({
-        gameId,
+        eventId,
         type: market.type,
         sourceBook: market.sourceBook,
         status: market.status ?? 'OPEN',
         lastSyncedAt: syncedAt,
       })
       .onConflictDoUpdate({
-        target: [markets.gameId, markets.type],
+        target: [markets.eventId, markets.type],
+        // markets_event_type_idx is partial (WHERE type <> 'CUSTOM_OUTCOME'), so Postgres
+        // can't infer it from a bare column list — the predicate has to match here too.
+        targetWhere: sql`${markets.type} <> 'CUSTOM_OUTCOME'`,
         // Status is deliberately not overwritten: a market suspended for staleness or
         // settled by the settlement job must not be reopened by a routine sync.
         set: { sourceBook: market.sourceBook, lastSyncedAt: syncedAt },
@@ -157,6 +190,9 @@ export async function syncOdds(options: SyncOddsOptions): Promise<SyncOddsSummar
         })
         .onConflictDoUpdate({
           target: [selections.marketId, selections.side],
+          // selections_market_side_idx is partial (WHERE side IS NOT NULL) since custom
+          // outcomes key on label instead — same inference problem as markets above.
+          targetWhere: sql`${selections.side} IS NOT NULL`,
           set: { line, priceAmerican: selection.priceAmerican, updatedAt: syncedAt },
         })
         .returning({ id: selections.id });

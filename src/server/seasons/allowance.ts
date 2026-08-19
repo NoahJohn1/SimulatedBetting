@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { seasonMemberships, seasons } from '@/db/schema';
 import { postEntry } from '@/server/money/ledger';
+import { emitFeedEvent } from '@/server/feed/emit';
 
 const LEAGUE_TIMEZONE = 'America/New_York';
 
@@ -49,17 +50,46 @@ export async function payWeeklyAllowance(now: Date = new Date()): Promise<Allowa
   let skipped = 0;
 
   for (const membership of memberships) {
-    const result = await db.transaction((tx) =>
-      postEntry(tx, {
+    const result = await db.transaction(async (tx) => {
+      const cash = await postEntry(tx, {
         membershipId: membership.id,
         amountCents: season.weeklyAllowanceCents,
         type: 'WEEKLY_ALLOWANCE',
         idempotencyKey: `allowance:${membership.id}:${weekKey}`,
-      }),
-    );
+      });
+      // A zero-credit season drips no credit row at all — same guard as the join grant.
+      if (season.weeklyCreditAllowanceCents > 0n) {
+        await postEntry(tx, {
+          membershipId: membership.id,
+          amountCents: season.weeklyCreditAllowanceCents,
+          type: 'WEEKLY_ALLOWANCE',
+          currency: 'CREDITS',
+          idempotencyKey: `allowance:${membership.id}:${weekKey}:credits`,
+        });
+      }
+      return cash;
+    });
     if (result.applied) credited += 1;
     else skipped += 1;
   }
+
+  // One card for the whole run (D26). Twelve members would otherwise post twelve identical
+  // cards every Tuesday, which is how a feed dies. Emitted unconditionally — the week-scoped
+  // dedupe key already makes a repeat run a no-op, so there is nothing to branch on.
+  await db.transaction((tx) =>
+    emitFeedEvent(tx, {
+      seasonId: season.id,
+      type: 'ALLOWANCE_PAID',
+      dedupeKey: `allowance:${season.id}:${weekKey}`,
+      payload: {
+        weekKey,
+        memberCount: memberships.length,
+        amountCents: season.weeklyAllowanceCents.toString(),
+        creditAmountCents: season.weeklyCreditAllowanceCents.toString(),
+      },
+      occurredAt: now,
+    }),
+  );
 
   return { credited, skipped };
 }

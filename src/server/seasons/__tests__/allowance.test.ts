@@ -44,7 +44,11 @@ describe('weekly allowance', () => {
       .from(ledgerEntries)
       .where(eq(ledgerEntries.membershipId, membership.membershipId));
 
-    const allowances = entries.filter((e) => e.type === 'WEEKLY_ALLOWANCE');
+    // Cash and credits allowances share the WEEKLY_ALLOWANCE type; filter by currency too
+    // since the default season now also drips credits.
+    const allowances = entries.filter(
+      (e) => e.type === 'WEEKLY_ALLOWANCE' && e.currency === 'CASH',
+    );
     expect(allowances).toHaveLength(1);
     expect(allowances[0].amountCents).toBe(50_000n);
   });
@@ -60,6 +64,8 @@ describe('weekly allowance', () => {
       .from(ledgerEntries)
       .where(eq(ledgerEntries.membershipId, membership.membershipId));
 
-    expect(entries.filter((e) => e.type === 'WEEKLY_ALLOWANCE')).toHaveLength(2);
+    expect(
+      entries.filter((e) => e.type === 'WEEKLY_ALLOWANCE' && e.currency === 'CASH'),
+    ).toHaveLength(2);
   });
 });

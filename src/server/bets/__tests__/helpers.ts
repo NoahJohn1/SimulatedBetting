@@ -7,6 +7,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import {
+  events,
   games,
   markets,
   seasonMemberships,
@@ -92,6 +93,17 @@ export async function makeGame(overrides: Partial<typeof games.$inferInsert> = {
   const n = next();
   const home = await makeTeam();
   const away = await makeTeam();
+  const startsAt = overrides.startsAt ?? new Date(Date.now() + 86_400_000);
+
+  const [event] = await db
+    .insert(events)
+    .values({
+      kind: 'GAME',
+      title: `${away.abbreviation} @ ${home.abbreviation}`,
+      startsAt,
+    })
+    .returning();
+
   const [game] = await db
     .insert(games)
     .values({
@@ -99,11 +111,12 @@ export async function makeGame(overrides: Partial<typeof games.$inferInsert> = {
       externalId: `game-${n}`,
       homeTeamId: home.id,
       awayTeamId: away.id,
-      startsAt: new Date(Date.now() + 86_400_000),
       seasonYear: 2026,
       week: 1,
       status: 'SCHEDULED',
       ...overrides,
+      startsAt,
+      eventId: event.id,
     })
     .returning();
   return game;
@@ -114,10 +127,11 @@ export async function makeMarket(
   type: MarketTypeValue = 'MONEYLINE',
   overrides: Partial<typeof markets.$inferInsert> = {},
 ) {
+  const [game] = await db.select({ eventId: games.eventId }).from(games).where(eq(games.id, gameId));
   const [market] = await db
     .insert(markets)
     .values({
-      gameId,
+      eventId: game.eventId,
       type,
       sourceBook: 'draftkings',
       status: 'OPEN',

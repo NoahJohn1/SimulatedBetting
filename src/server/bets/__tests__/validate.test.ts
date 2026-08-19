@@ -6,7 +6,7 @@ import {
   MIN_STAKE_CENTS,
   quotePlacement,
   validatePlacement,
-  type LoadedSelection,
+  type LoadedGameSelection,
   type PlacementContext,
 } from '@/server/bets/validate';
 import type { PlaceBetInput, PlaceBetLegInput } from '@/server/bets/types';
@@ -14,8 +14,9 @@ import type { PlaceBetInput, PlaceBetLegInput } from '@/server/bets/types';
 const NOW = new Date('2026-01-01T00:00:00Z');
 const FUTURE = new Date('2026-01-02T00:00:00Z');
 
-function makeSelection(overrides: Partial<LoadedSelection> = {}): LoadedSelection {
+function makeSelection(overrides: Partial<LoadedGameSelection> = {}): LoadedGameSelection {
   return {
+    kind: 'GAME',
     selectionId: 'sel-1',
     marketId: 'mkt-1',
     marketType: 'MONEYLINE',
@@ -23,9 +24,12 @@ function makeSelection(overrides: Partial<LoadedSelection> = {}): LoadedSelectio
     side: 'HOME',
     line: null,
     priceAmerican: -110,
-    gameId: 'game-1',
-    gameStatus: 'SCHEDULED',
-    gameStartsAt: FUTURE,
+    eventId: 'game-1',
+    eventStatus: 'SCHEDULED',
+    eventStartsAt: FUTURE,
+    sport: 'NFL',
+    homeAbbr: 'HOME',
+    awayAbbr: 'AWAY',
     ...overrides,
   };
 }
@@ -54,7 +58,7 @@ function makeCtx(overrides: Partial<PlacementContext> = {}): PlacementContext {
   return {
     now: NOW,
     user: { status: 'APPROVED' },
-    membership: { id: 'mem-1', balanceCents: 10_000n },
+    membership: { id: 'mem-1', balanceCents: 10_000n, creditsBalanceCents: 0n },
     activeSeasonId: 'season-1',
     selections: [makeSelection()],
     ...overrides,
@@ -106,7 +110,7 @@ describe('validatePlacement: shape', () => {
     });
     const ctx = makeCtx({
       selections: [
-        makeSelection({ selectionId: 'sel-a', gameId: 'game-a' }),
+        makeSelection({ selectionId: 'sel-a', eventId: 'game-a' }),
         null,
       ],
     });
@@ -120,7 +124,7 @@ describe('validatePlacement: shape', () => {
       legs: [makeLeg({ selectionId: 'sel-a' }), makeLeg({ selectionId: 'sel-b' })],
     });
     const ctx = makeCtx({
-      selections: [makeSelection({ selectionId: 'sel-a', gameId: 'game-a' })],
+      selections: [makeSelection({ selectionId: 'sel-a', eventId: 'game-a' })],
     });
     const result = validatePlacement(input, ctx);
     expect(result).toEqual({ code: 'UNKNOWN_SELECTION', legIndex: 1, selectionId: 'sel-b' });
@@ -133,8 +137,8 @@ describe('validatePlacement: shape', () => {
     });
     const ctx = makeCtx({
       selections: [
-        makeSelection({ selectionId: 'sel-b', gameId: 'game-b' }),
-        makeSelection({ selectionId: 'sel-a', gameId: 'game-a' }),
+        makeSelection({ selectionId: 'sel-b', eventId: 'game-b' }),
+        makeSelection({ selectionId: 'sel-a', eventId: 'game-a' }),
       ],
     });
     expect(() => validatePlacement(input, ctx)).toThrow();
@@ -150,8 +154,8 @@ describe('validatePlacement: shape', () => {
     });
     const ctx = makeCtx({
       selections: [
-        makeSelection({ selectionId: 'sel-a', gameId: 'game-a' }),
-        makeSelection({ selectionId: 'sel-b', gameId: 'game-b' }),
+        makeSelection({ selectionId: 'sel-a', eventId: 'game-a' }),
+        makeSelection({ selectionId: 'sel-b', eventId: 'game-b' }),
       ],
     });
     const result = validatePlacement(input, ctx);
@@ -167,7 +171,7 @@ describe('validatePlacement: shape', () => {
   it('rejects a PARLAY with eleven legs', () => {
     const legs = Array.from({ length: 11 }, (_, i) => makeLeg({ selectionId: `sel-${i}` }));
     const selections = legs.map((leg, i) =>
-      makeSelection({ selectionId: leg.selectionId, gameId: `game-${i}` }),
+      makeSelection({ selectionId: leg.selectionId, eventId: `game-${i}` }),
     );
     const result = validatePlacement(
       makeInput({ type: 'PARLAY', legs }),
@@ -186,12 +190,12 @@ describe('validatePlacement: shape', () => {
     });
     const ctx = makeCtx({
       selections: [
-        makeSelection({ selectionId: 'sel-a', gameId: 'game-1' }),
-        makeSelection({ selectionId: 'sel-b', gameId: 'game-1' }),
+        makeSelection({ selectionId: 'sel-a', eventId: 'game-1' }),
+        makeSelection({ selectionId: 'sel-b', eventId: 'game-1' }),
       ],
     });
     const result = validatePlacement(input, ctx);
-    expect(result).toEqual({ code: 'DUPLICATE_GAME', gameId: 'game-1', legIndexes: [0, 1] });
+    expect(result).toEqual({ code: 'DUPLICATE_EVENT', eventId: 'game-1', legIndexes: [0, 1] });
   });
 
   it('reports the first duplicated game when duplicates appear later in the legs', () => {
@@ -205,13 +209,13 @@ describe('validatePlacement: shape', () => {
     });
     const ctx = makeCtx({
       selections: [
-        makeSelection({ selectionId: 'sel-a', gameId: 'game-1' }),
-        makeSelection({ selectionId: 'sel-b', gameId: 'game-2' }),
-        makeSelection({ selectionId: 'sel-c', gameId: 'game-2' }),
+        makeSelection({ selectionId: 'sel-a', eventId: 'game-1' }),
+        makeSelection({ selectionId: 'sel-b', eventId: 'game-2' }),
+        makeSelection({ selectionId: 'sel-c', eventId: 'game-2' }),
       ],
     });
     const result = validatePlacement(input, ctx);
-    expect(result).toEqual({ code: 'DUPLICATE_GAME', gameId: 'game-2', legIndexes: [1, 2] });
+    expect(result).toEqual({ code: 'DUPLICATE_EVENT', eventId: 'game-2', legIndexes: [1, 2] });
   });
 
   it('finds the gameId confirmed as a duplicate earliest in leg order, not the one that appeared first', () => {
@@ -228,14 +232,14 @@ describe('validatePlacement: shape', () => {
     });
     const ctx = makeCtx({
       selections: [
-        makeSelection({ selectionId: 'sel-w', gameId: 'game-A' }),
-        makeSelection({ selectionId: 'sel-x', gameId: 'game-B' }),
-        makeSelection({ selectionId: 'sel-y', gameId: 'game-B' }),
-        makeSelection({ selectionId: 'sel-z', gameId: 'game-A' }),
+        makeSelection({ selectionId: 'sel-w', eventId: 'game-A' }),
+        makeSelection({ selectionId: 'sel-x', eventId: 'game-B' }),
+        makeSelection({ selectionId: 'sel-y', eventId: 'game-B' }),
+        makeSelection({ selectionId: 'sel-z', eventId: 'game-A' }),
       ],
     });
     const result = validatePlacement(input, ctx);
-    expect(result).toEqual({ code: 'DUPLICATE_GAME', gameId: 'game-B', legIndexes: [1, 2] });
+    expect(result).toEqual({ code: 'DUPLICATE_EVENT', eventId: 'game-B', legIndexes: [1, 2] });
   });
 
   it('checks leg count before duplicate games', () => {
@@ -248,8 +252,8 @@ describe('validatePlacement: shape', () => {
     });
     const ctx = makeCtx({
       selections: [
-        makeSelection({ selectionId: 'sel-a', gameId: 'game-1' }),
-        makeSelection({ selectionId: 'sel-b', gameId: 'game-1' }),
+        makeSelection({ selectionId: 'sel-a', eventId: 'game-1' }),
+        makeSelection({ selectionId: 'sel-b', eventId: 'game-1' }),
       ],
     });
     const result = validatePlacement(input, ctx);
@@ -297,42 +301,42 @@ describe('validatePlacement: malformed leg values', () => {
 
 describe('validatePlacement: bettability', () => {
   it('rejects a game that is IN_PROGRESS', () => {
-    const ctx = makeCtx({ selections: [makeSelection({ gameStatus: 'IN_PROGRESS' })] });
+    const ctx = makeCtx({ selections: [makeSelection({ eventStatus: 'IN_PROGRESS' })] });
     const result = validatePlacement(makeInput(), ctx);
     expect(result).toEqual({
-      code: 'GAME_NOT_BETTABLE',
+      code: 'EVENT_NOT_BETTABLE',
       legIndex: 0,
-      gameStatus: 'IN_PROGRESS',
+      eventStatus: 'IN_PROGRESS',
       startsAt: FUTURE.toISOString(),
     });
   });
 
   it('rejects a game that is FINAL', () => {
-    const ctx = makeCtx({ selections: [makeSelection({ gameStatus: 'FINAL' })] });
+    const ctx = makeCtx({ selections: [makeSelection({ eventStatus: 'FINAL' })] });
     const result = validatePlacement(makeInput(), ctx);
     expect(result).toEqual({
-      code: 'GAME_NOT_BETTABLE',
+      code: 'EVENT_NOT_BETTABLE',
       legIndex: 0,
-      gameStatus: 'FINAL',
+      eventStatus: 'FINAL',
       startsAt: FUTURE.toISOString(),
     });
   });
 
   it('rejects a game whose kickoff is one second in the past', () => {
     const startsAt = new Date(NOW.getTime() - 1000);
-    const ctx = makeCtx({ selections: [makeSelection({ gameStatus: 'SCHEDULED', gameStartsAt: startsAt })] });
+    const ctx = makeCtx({ selections: [makeSelection({ eventStatus: 'SCHEDULED', eventStartsAt: startsAt })] });
     const result = validatePlacement(makeInput(), ctx);
     expect(result).toEqual({
-      code: 'GAME_NOT_BETTABLE',
+      code: 'EVENT_NOT_BETTABLE',
       legIndex: 0,
-      gameStatus: 'SCHEDULED',
+      eventStatus: 'SCHEDULED',
       startsAt: startsAt.toISOString(),
     });
   });
 
   it('allows a game whose kickoff is one second in the future', () => {
     const startsAt = new Date(NOW.getTime() + 1000);
-    const ctx = makeCtx({ selections: [makeSelection({ gameStatus: 'SCHEDULED', gameStartsAt: startsAt })] });
+    const ctx = makeCtx({ selections: [makeSelection({ eventStatus: 'SCHEDULED', eventStartsAt: startsAt })] });
     const result = validatePlacement(makeInput(), ctx);
     expect(result).toBeNull();
   });
@@ -359,15 +363,15 @@ describe('validatePlacement: bettability', () => {
     });
     const ctx = makeCtx({
       selections: [
-        makeSelection({ selectionId: 'sel-a', gameId: 'game-a' }),
-        makeSelection({ selectionId: 'sel-b', gameId: 'game-b', gameStatus: 'IN_PROGRESS' }),
+        makeSelection({ selectionId: 'sel-a', eventId: 'game-a' }),
+        makeSelection({ selectionId: 'sel-b', eventId: 'game-b', eventStatus: 'IN_PROGRESS' }),
       ],
     });
     const result = validatePlacement(input, ctx);
     expect(result).toEqual({
-      code: 'GAME_NOT_BETTABLE',
+      code: 'EVENT_NOT_BETTABLE',
       legIndex: 1,
-      gameStatus: 'IN_PROGRESS',
+      eventStatus: 'IN_PROGRESS',
       startsAt: FUTURE.toISOString(),
     });
   });
@@ -385,8 +389,8 @@ describe('validatePlacement: bettability', () => {
     });
     const ctx = makeCtx({
       selections: [
-        makeSelection({ selectionId: 'sel-a', gameId: 'game-a', marketStatus: 'SUSPENDED' }),
-        makeSelection({ selectionId: 'sel-b', gameId: 'game-b', gameStatus: 'IN_PROGRESS' }),
+        makeSelection({ selectionId: 'sel-a', eventId: 'game-a', marketStatus: 'SUSPENDED' }),
+        makeSelection({ selectionId: 'sel-b', eventId: 'game-b', eventStatus: 'IN_PROGRESS' }),
       ],
     });
     const result = validatePlacement(input, ctx);
@@ -403,7 +407,7 @@ describe('validatePlacement: stake', () => {
   it('allows a stake exactly at the minimum', () => {
     const result = validatePlacement(
       makeInput({ stakeCents: 100n }),
-      makeCtx({ membership: { id: 'mem-1', balanceCents: 100n } }),
+      makeCtx({ membership: { id: 'mem-1', balanceCents: 100n, creditsBalanceCents: 0n } }),
     );
     expect(result).toBeNull();
   });
@@ -411,7 +415,7 @@ describe('validatePlacement: stake', () => {
   it('rejects a stake one cent over the balance', () => {
     const result = validatePlacement(
       makeInput({ stakeCents: 101n }),
-      makeCtx({ membership: { id: 'mem-1', balanceCents: 100n } }),
+      makeCtx({ membership: { id: 'mem-1', balanceCents: 100n, creditsBalanceCents: 0n } }),
     );
     expect(result).toEqual({ code: 'INSUFFICIENT_FUNDS', stakeCents: 101n, balanceCents: 100n });
   });
@@ -419,7 +423,7 @@ describe('validatePlacement: stake', () => {
   it('allows a stake exactly equal to the balance', () => {
     const result = validatePlacement(
       makeInput({ stakeCents: 100n }),
-      makeCtx({ membership: { id: 'mem-1', balanceCents: 100n } }),
+      makeCtx({ membership: { id: 'mem-1', balanceCents: 100n, creditsBalanceCents: 0n } }),
     );
     expect(result).toBeNull();
   });
@@ -517,8 +521,8 @@ describe('validatePlacement: lines', () => {
     });
     const ctx = makeCtx({
       selections: [
-        makeSelection({ selectionId: 'sel-a', gameId: 'game-a', priceAmerican: -130 }),
-        makeSelection({ selectionId: 'sel-b', gameId: 'game-b', priceAmerican: -140 }),
+        makeSelection({ selectionId: 'sel-a', eventId: 'game-a', priceAmerican: -130 }),
+        makeSelection({ selectionId: 'sel-b', eventId: 'game-b', priceAmerican: -140 }),
       ],
     });
     const result = validatePlacement(input, ctx);
@@ -556,7 +560,7 @@ describe('validatePlacement: ordering', () => {
     const input = makeInput({ stakeCents: 50n });
     const ctx = makeCtx({
       user: { status: 'DISABLED' },
-      selections: [makeSelection({ gameStatus: 'FINAL' })],
+      selections: [makeSelection({ eventStatus: 'FINAL' })],
     });
     const result = validatePlacement(input, ctx);
     expect(result).toEqual({ code: 'NOT_APPROVED' });
@@ -572,22 +576,22 @@ describe('validatePlacement: ordering', () => {
     });
     const ctx = makeCtx({
       selections: [
-        makeSelection({ selectionId: 'sel-a', gameId: 'game-1', gameStatus: 'FINAL' }),
-        makeSelection({ selectionId: 'sel-b', gameId: 'game-1', gameStatus: 'FINAL' }),
+        makeSelection({ selectionId: 'sel-a', eventId: 'game-1', eventStatus: 'FINAL' }),
+        makeSelection({ selectionId: 'sel-b', eventId: 'game-1', eventStatus: 'FINAL' }),
       ],
     });
     const result = validatePlacement(input, ctx);
-    expect(result).toEqual({ code: 'DUPLICATE_GAME', gameId: 'game-1', legIndexes: [0, 1] });
+    expect(result).toEqual({ code: 'DUPLICATE_EVENT', eventId: 'game-1', legIndexes: [0, 1] });
   });
 
   it('prefers bettability errors over stake errors', () => {
     const input = makeInput({ stakeCents: 1n });
-    const ctx = makeCtx({ selections: [makeSelection({ gameStatus: 'FINAL' })] });
+    const ctx = makeCtx({ selections: [makeSelection({ eventStatus: 'FINAL' })] });
     const result = validatePlacement(input, ctx);
     expect(result).toEqual({
-      code: 'GAME_NOT_BETTABLE',
+      code: 'EVENT_NOT_BETTABLE',
       legIndex: 0,
-      gameStatus: 'FINAL',
+      eventStatus: 'FINAL',
       startsAt: FUTURE.toISOString(),
     });
   });
@@ -616,9 +620,9 @@ describe('validatePlacement: ordering', () => {
     });
     const ctx = makeCtx({
       selections: [
-        makeSelection({ selectionId: 'sel-a', gameId: 'game-a', priceAmerican: -110 }),
-        makeSelection({ selectionId: 'sel-b', gameId: 'game-b', priceAmerican: -110 }),
-        makeSelection({ selectionId: 'sel-c', gameId: 'game-c', priceAmerican: 150 }),
+        makeSelection({ selectionId: 'sel-a', eventId: 'game-a', priceAmerican: -110 }),
+        makeSelection({ selectionId: 'sel-b', eventId: 'game-b', priceAmerican: -110 }),
+        makeSelection({ selectionId: 'sel-c', eventId: 'game-c', priceAmerican: 150 }),
       ],
     });
     const result = validatePlacement(input, ctx);
@@ -639,9 +643,9 @@ describe('quotePlacement', () => {
     });
     const ctx = makeCtx({
       selections: [
-        makeSelection({ selectionId: 'sel-a', gameId: 'game-a', priceAmerican: -110 }),
-        makeSelection({ selectionId: 'sel-b', gameId: 'game-b', priceAmerican: -110 }),
-        makeSelection({ selectionId: 'sel-c', gameId: 'game-c', priceAmerican: 150 }),
+        makeSelection({ selectionId: 'sel-a', eventId: 'game-a', priceAmerican: -110 }),
+        makeSelection({ selectionId: 'sel-b', eventId: 'game-b', priceAmerican: -110 }),
+        makeSelection({ selectionId: 'sel-c', eventId: 'game-c', priceAmerican: 150 }),
       ],
     });
     const quote = quotePlacement(input, ctx);

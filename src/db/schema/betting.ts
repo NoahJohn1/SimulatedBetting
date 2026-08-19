@@ -12,6 +12,7 @@ import {
 import { sql } from 'drizzle-orm';
 import { seasonMemberships } from './identity';
 import { selections } from './sports';
+import { currency } from './currency';
 
 export const betType = pgEnum('bet_type', ['SINGLE', 'PARLAY']);
 export const betStatus = pgEnum('bet_status', ['PENDING', 'WON', 'LOST', 'PUSHED', 'VOIDED']);
@@ -35,6 +36,7 @@ export const bets = pgTable(
       .notNull()
       .references(() => seasonMemberships.id),
     type: betType('type').notNull(),
+    currency: currency('currency').notNull().default('CASH'),
     stakeCents: bigint('stake_cents', { mode: 'bigint' }).notNull(),
     potentialPayoutCents: bigint('potential_payout_cents', { mode: 'bigint' }).notNull(),
     combinedPriceAmerican: integer('combined_price_american').notNull(),

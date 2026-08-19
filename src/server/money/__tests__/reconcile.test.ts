@@ -38,6 +38,7 @@ describe('reconcileBalances', () => {
     expect(discrepancies).toHaveLength(1);
     expect(discrepancies[0]).toMatchObject({
       membershipId: membership.membershipId,
+      currency: 'CASH',
       cachedCents: 999n,
       ledgerCents: 1_000_000n,
     });

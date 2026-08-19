@@ -8,6 +8,10 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | Document | What's in it |
 |---|---|
 | [Core betting engine spec](specs/2026-08-14-core-betting-engine-design.md) | The v1 build: architecture, data model, odds math, grading rules, jobs, failure handling, screens, testing |
+| [Social layer spec](specs/2026-08-17-social-layer-design.md) | Subsystem 2: the season activity feed, reactions and comments, member profiles, per-viewer feed filters |
+| [Social layer plan](plans/2026-08-17-social-layer-implementation-plan.md) | The task-by-task implementation plan for subsystem 2 |
+| [Custom events spec](specs/2026-08-17-custom-events-design.md) | Subsystem 3: member-created markets, the credits currency, human resolution and disputes |
+| [Custom events plan](plans/2026-08-17-custom-events-implementation-plan.md) | The task-by-task implementation plan for subsystem 3 |
 | [Roadmap](roadmap.md) | The four subsystems, what each adds, and build order |
 | [Decision log](decisions.md) | Every design decision, what was rejected, and why |
 
@@ -30,10 +34,13 @@ Three properties the design is organized around:
 
 ## Where things stand
 
-Subsystem 1 (the core betting engine) is built end-to-end and verified: `npm run verify`
-(typecheck, lint, 26 test files / 222 tests) passes clean, and the app runs, seeds a
-fixture slate, takes a bet through placement and settlement (including a push), and
-reconciles the ledger correctly. Covered:
+Subsystems 1, 2, and 3 are built end-to-end and verified: `npm run verify` (typecheck, lint,
+58 test files / 401 tests) passes clean, and the app runs, seeds a fixture slate, takes a bet
+through placement and settlement (including a push), reconciles the ledger correctly in both
+currencies, and posts and reads back the feed cards those actions generate — including a
+custom event carried from creation through a disputed resolution and an admin correction.
+
+**Subsystem 1 — core betting engine:**
 
 - Postgres schema (Drizzle), the append-only ledger, seasons, weekly allowance, admin
   balance adjustments, and daily reconciliation
@@ -42,12 +49,58 @@ reconciles the ledger correctly. Covered:
 - Bet placement (with line/price re-validation at commit) and idempotent settlement,
   including resumable batching and admin-triggered re-settlement
 - Google sign-in with admin-approval gating, seeded admins via `ADMIN_EMAILS`
-- All four member screens (Games, My Bets, Standings, Me) and the admin area
 - The four cron routes: `sync-odds`, `settle`, `allowance`, `reconcile`
 
+**Subsystem 2 — social layer:**
+
+- `feed_events`, an append-only, dedupe-keyed table mirroring the ledger's idempotency
+  pattern, emitted inline from `placeBet`, `settleGame`, `resettleBet`, `joinSeason`,
+  `payWeeklyAllowance`, and `adjustBalance`
+- Eight event types: bets placed and settled, members joining, the weekly allowance
+  (aggregated to one card, not one per member), admin adjustments (now season-visible — see
+  [D24](decisions.md#d24--admin-adjustments-are-published-to-the-season-feed)), lead changes,
+  big wins (10×+), and parlay hits (4+ surviving legs)
+- Lead-change detection riding along in the `settle` cron route and after admin adjustments,
+  with no new schedule and no cursor to get stuck
+- A keyset-paginated feed read, reactions (six fixed emoji, toggle on/off), and comments
+  (flat, author or admin soft-delete)
+- Member profiles with season record, ROI, net, streak, and biggest win, computed by a pure
+  `computeMemberStats` function
+- Per-member feed filters, applied at read time so nothing muted is ever deleted
+- Five member screens (Games, Feed, My Bets, Standings, Me) plus event detail and member
+  profile pages
+
+See [D30](decisions.md#d30--correlated-subqueries-in-drizzle-need-literal-qualified-identifiers)
+for a real correlated-subquery bug the profile stats query's own test caught mid-build.
+
+**Subsystem 3 — custom events:**
+
+- The **credits** currency: a second, non-convertible balance
+  ([D31](decisions.md#d31--custom-events-are-bet-in-credits-a-second-non-convertible-currency)),
+  granted at season join and dripped weekly alongside the cash allowance, with its own cached
+  balance column and its own line in daily reconciliation
+  ([D34](decisions.md#d34--currency-is-a-dimension-on-the-existing-ledger-not-a-second-ledger))
+- An `events` supertype above `games`, with `custom_events` as its sibling subtype and
+  `markets` pointing at the supertype
+  ([D33](decisions.md#d33--events-is-a-true-supertype-not-a-pair-of-nullable-foreign-keys))
+- Event creation: any approved member opens a title, a resolve-by date, and one or more
+  hand-priced N-way markets; a creator may bet their own event, disclosed everywhere that bet
+  appears ([D32](decisions.md#d32--anyone-can-create-events-and-creators-may-bet-their-own-with-disclosure))
+- Resolution that pays immediately in credits, and a dispute-plus-admin-re-resolution path
+  that reverses and re-pays through the same reversal machinery settlement corrections already
+  use ([D35](decisions.md#d35--custom-events-pay-on-resolution-disputes-are-an-admin-re-resolution))
+- Admin voids, refunding every stake on the event, reached from either an open or an already
+  resolved event
+- A derived overdue sweep (`status = 'OPEN' AND resolves_by < now()`), riding the existing
+  `settle` cron route with no new schedule
+  ([D37](decisions.md#d37--events-carry-a-resolve-by-date-overdue-is-derived-and-swept-to-admins))
+- Five new screens — Events, Create, Event detail, Resolve, Admin events — plus a sixth bottom
+  tab, and updates to the bet slip (currency-aware, refuses to mix kinds), Standings (a credits
+  leaderboard), Me, and My Bets
+
 Not built: a real odds provider adapter (still fixture-only — see [D2](decisions.md)) and
-production deployment/hosted Postgres wiring. Subsystems 2–4 (social layer, custom events,
-peer-to-peer bets) are [roadmap only](roadmap.md).
+production deployment/hosted Postgres wiring. Subsystem 4 (peer-to-peer bets) is
+[roadmap only](roadmap.md).
 
 ## Conventions
 

@@ -6,18 +6,33 @@
  * only appear when the layers are wired together.
  */
 import { randomUUID } from 'node:crypto';
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/db/client';
-import { bets, games, markets, seasonMemberships, seasons, selections, users } from '@/db/schema';
+import {
+  bets,
+  customEvents,
+  feedEvents,
+  games,
+  ledgerEntries,
+  markets,
+  seasonMemberships,
+  seasons,
+  selections,
+  users,
+} from '@/db/schema';
 import { FixtureOddsProvider, FixtureScoreProvider } from '@/fixtures/providers';
 import { placeBet } from '@/server/bets/place';
 import { settleFinalGames } from '@/server/bets/settle';
+import { createCustomEvent } from '@/server/events/create';
+import { disputeResolution } from '@/server/events/dispute';
+import { resolveCustomEvent } from '@/server/events/resolve';
 import { reconcileBalances } from '@/server/money/reconcile';
 import { syncResults } from '@/server/odds/results';
 import { syncOdds } from '@/server/odds/sync';
 import { createSeason, joinSeason } from '@/server/seasons/service';
 import { resetDb } from '@/test/db';
+import { makeUser } from '@/test/factories';
 
 async function selectionId(gameExternalId: string, marketType: string, side: string) {
   const all = await db
@@ -30,7 +45,7 @@ async function selectionId(gameExternalId: string, marketType: string, side: str
     })
     .from(selections)
     .innerJoin(markets, eq(selections.marketId, markets.id))
-    .innerJoin(games, eq(markets.gameId, games.id))
+    .innerJoin(games, eq(markets.eventId, games.eventId))
     .where(eq(games.externalId, gameExternalId));
 
   const found = all.find((s) => s.type === marketType && s.side === side);
@@ -119,6 +134,27 @@ describe('end to end', () => {
 
     // 6. The cached balance still equals the ledger.
     expect(await reconcileBalances()).toEqual([]);
+
+    // 7. The feed is a read model over the same events the ledger recorded. If these two
+    // ever disagree, one of them is lying.
+    const events = await db
+      .select({ type: feedEvents.type, betId: feedEvents.betId })
+      .from(feedEvents)
+      .orderBy(asc(feedEvents.occurredAt), asc(feedEvents.id));
+
+    const types = events.map((event) => event.type);
+    expect(types).toContain('MEMBER_JOINED');
+    expect(types).toContain('BET_PLACED');
+    expect(types).toContain('BET_SETTLED');
+
+    // Four bets placed, four settled — one card of each type per bet, no more, no less.
+    expect(types.filter((t) => t === 'BET_PLACED')).toHaveLength(4);
+    expect(types.filter((t) => t === 'BET_SETTLED')).toHaveLength(4);
+
+    // Every placement card points at a real, distinct bet.
+    const placedCards = events.filter((event) => event.type === 'BET_PLACED');
+    expect(new Set(placedCards.map((card) => card.betId)).size).toBe(placedCards.length);
+    expect(placedCards.every((card) => card.betId !== null)).toBe(true);
   });
 
   it('voids bets on a canceled game and still reconciles', async () => {
@@ -162,6 +198,196 @@ describe('end to end', () => {
     expect(bet.status).toBe('VOIDED');
     // Refunded in full, as if it had never been placed.
     expect(await balanceOf(membership.membershipId)).toBe(1_000_000n);
+    expect(await reconcileBalances()).toEqual([]);
+  });
+
+  it('runs a custom event from creation through dispute and correction', async () => {
+    // 1. An active season that grants both currencies.
+    const season = await createSeason({
+      name: 'Custom events season',
+      startsAt: new Date('2026-09-01T00:00:00Z'),
+      endsAt: new Date('2027-01-31T00:00:00Z'),
+      startingBankrollCents: 1_000_000n,
+      weeklyAllowanceCents: 50_000n,
+      startingCreditsCents: 100_000n,
+      weeklyCreditAllowanceCents: 10_000n,
+    });
+    await db.update(seasons).set({ status: 'ACTIVE' }).where(eq(seasons.id, season.id));
+
+    const creatorUser = await makeUser();
+    const bettorUser = await makeUser();
+    const adminUser = await makeUser({ role: 'ADMIN' });
+
+    const creator = await joinSeason(creatorUser.id, season.id);
+    const bettor = await joinSeason(bettorUser.id, season.id);
+
+    expect(creator.balanceCents).toBe(1_000_000n);
+    expect(creator.creditsBalanceCents).toBe(100_000n);
+
+    // 2. The creator opens a two-market event.
+    const created = await createCustomEvent({
+      creatorMembershipId: creator.membershipId,
+      title: 'Jyxnzi Cup',
+      startsAt: new Date(Date.now() + 3_600_000),
+      resolvesBy: new Date(Date.now() + 7 * 86_400_000),
+      markets: [
+        {
+          title: 'Who wins the cup?',
+          outcomes: [
+            { label: 'Falcons', priceAmerican: 100 },
+            { label: 'Ravens', priceAmerican: 100 },
+          ],
+        },
+        {
+          title: 'Who wins map 1?',
+          outcomes: [
+            { label: 'Falcons', priceAmerican: 100 },
+            { label: 'Ravens', priceAmerican: 100 },
+          ],
+        },
+      ],
+    });
+    if (!created.ok) throw new Error('expected the event to be created');
+
+    const eventMarkets = await db
+      .select({ id: markets.id, title: markets.title })
+      .from(markets)
+      .where(eq(markets.eventId, created.eventId))
+      .orderBy(asc(markets.createdAt));
+
+    const outcomesFor = async (marketId: string) =>
+      db
+        .select({ id: selections.id, label: selections.label })
+        .from(selections)
+        .where(eq(selections.marketId, marketId))
+        .orderBy(asc(selections.sortOrder));
+
+    const cupOutcomes = await outcomesFor(eventMarkets[0].id);
+    const mapOutcomes = await outcomesFor(eventMarkets[1].id);
+
+    // 3. The bettor takes Ravens in the cup; the creator takes Falcons on map 1.
+    const bettorBet = await placeBet({
+      userId: bettorUser.id,
+      type: 'SINGLE',
+      stakeCents: 20_000n,
+      clientRequestId: randomUUID(),
+      legs: [{ selectionId: cupOutcomes[1].id, line: null, priceAmerican: 100 }],
+    });
+    const creatorBet = await placeBet({
+      userId: creatorUser.id,
+      type: 'SINGLE',
+      stakeCents: 10_000n,
+      clientRequestId: randomUUID(),
+      legs: [{ selectionId: mapOutcomes[0].id, line: null, priceAmerican: 100 }],
+    });
+    if (!bettorBet.ok || !creatorBet.ok) throw new Error('expected both placements to succeed');
+
+    const balances = async (membershipId: string) => {
+      const [row] = await db
+        .select({
+          cash: seasonMemberships.balanceCents,
+          credits: seasonMemberships.creditsBalanceCents,
+        })
+        .from(seasonMemberships)
+        .where(eq(seasonMemberships.id, membershipId));
+      return row;
+    };
+
+    // Credits moved; cash did not budge for anyone.
+    expect(await balances(bettor.membershipId)).toEqual({ cash: 1_000_000n, credits: 80_000n });
+    expect(await balances(creator.membershipId)).toEqual({ cash: 1_000_000n, credits: 90_000n });
+
+    // 4. The creator resolves both markets for Falcons — the bettor loses, the creator wins.
+    const first = await resolveCustomEvent({
+      eventId: created.eventId,
+      actorUserId: creatorUser.id,
+      actorMembershipId: creator.membershipId,
+      isAdmin: false,
+      winners: [
+        { marketId: eventMarkets[0].id, winningSelectionId: cupOutcomes[0].id },
+        { marketId: eventMarkets[1].id, winningSelectionId: mapOutcomes[0].id },
+      ],
+    });
+    expect(first).toMatchObject({ ok: true, attempt: 1, betsSettled: 2 });
+
+    expect(await balances(bettor.membershipId)).toEqual({ cash: 1_000_000n, credits: 80_000n });
+    // Even money on 10,000 staked pays 20,000 back: 90,000 + 20,000.
+    expect(await balances(creator.membershipId)).toEqual({ cash: 1_000_000n, credits: 110_000n });
+
+    // 5. The bettor disputes.
+    const disputed = await disputeResolution({
+      eventId: created.eventId,
+      membershipId: bettor.membershipId,
+      reason: 'the cup final was awarded to Ravens on a forfeit',
+    });
+    expect(disputed).toMatchObject({ ok: true, created: true });
+
+    // 6. An admin corrects the cup market and leaves map 1 alone.
+    const second = await resolveCustomEvent({
+      eventId: created.eventId,
+      actorUserId: adminUser.id,
+      actorMembershipId: creator.membershipId,
+      isAdmin: true,
+      note: 'confirmed the forfeit on the tournament page',
+      winners: [
+        { marketId: eventMarkets[0].id, winningSelectionId: cupOutcomes[1].id },
+        { marketId: eventMarkets[1].id, winningSelectionId: mapOutcomes[0].id },
+      ],
+    });
+    expect(second).toMatchObject({ ok: true, attempt: 2 });
+
+    // The bettor is paid 40,000 on a 20,000 stake; the creator's win is re-graded and stands,
+    // so its payout is reversed and re-paid at the same amount.
+    expect(await balances(bettor.membershipId)).toEqual({ cash: 1_000_000n, credits: 120_000n });
+    expect(await balances(creator.membershipId)).toEqual({ cash: 1_000_000n, credits: 110_000n });
+
+    const [bettorRow] = await db.select().from(bets).where(eq(bets.id, bettorBet.bet.id));
+    expect(bettorRow.status).toBe('WON');
+    expect(bettorRow.settlementAttempts).toBe(2);
+    expect(bettorRow.currency).toBe('CREDITS');
+
+    const [customRow] = await db
+      .select()
+      .from(customEvents)
+      .where(eq(customEvents.eventId, created.eventId));
+    expect(customRow.resolutionAttempts).toBe(2);
+    expect(customRow.status).toBe('RESOLVED');
+
+    // The creator's reversal is the proof history was appended to, never edited.
+    const creatorEntryTypes = (
+      await db
+        .select({ type: ledgerEntries.type, key: ledgerEntries.idempotencyKey })
+        .from(ledgerEntries)
+        .where(eq(ledgerEntries.betId, creatorBet.bet.id))
+        .orderBy(asc(ledgerEntries.createdAt))
+    ).map((r) => r.type);
+    expect(creatorEntryTypes).toEqual([
+      'BET_PLACED',
+      'BET_WON',
+      'SETTLEMENT_REVERSAL',
+      'BET_WON',
+    ]);
+
+    // 7. The feed tells the same story, in order.
+    const feedTypes = (
+      await db
+        .select({ type: feedEvents.type })
+        .from(feedEvents)
+        .where(eq(feedEvents.seasonId, season.id))
+        .orderBy(asc(feedEvents.occurredAt), asc(feedEvents.id))
+    ).map((r) => r.type);
+
+    expect(feedTypes.filter((t) => t.startsWith('CUSTOM_EVENT_'))).toEqual([
+      'CUSTOM_EVENT_CREATED',
+      'CUSTOM_EVENT_RESOLVED',
+      'CUSTOM_EVENT_DISPUTED',
+      'CUSTOM_EVENT_RESOLVED',
+    ]);
+    expect(feedTypes.filter((t) => t === 'BET_PLACED')).toHaveLength(2);
+    // Two bets settled on attempt 1, two corrected on attempt 2.
+    expect(feedTypes.filter((t) => t === 'BET_SETTLED')).toHaveLength(4);
+
+    // 8. And the ledger is intact, in both denominations, for every membership.
     expect(await reconcileBalances()).toEqual([]);
   });
 });
