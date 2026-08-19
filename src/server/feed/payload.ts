@@ -142,6 +142,70 @@ export interface CustomEventOverduePayload {
   openBetCount: number;
 }
 
+/**
+ * A wager's one-line subject: the freeform description, or a rendering of the selection for
+ * a market-backed wager ("KC -3.5 vs BUF"). Frozen at write time like every other payload
+ * fact, so a later line move cannot rewrite what the card said.
+ */
+export interface P2POfferedPayload {
+  wagerId: string;
+  kind: 'MARKET' | 'FREEFORM';
+  offererStakeCents: string;
+  acceptorStakeCents: string;
+  potCents: string;
+  /** The freeform text, for a FREEFORM wager. Null for MARKET. */
+  description: string | null;
+  /** The rendered selection, for a MARKET wager. Null for FREEFORM. */
+  subject: string | null;
+  /** True when the offer names an opponent rather than being open to the season. */
+  directed: boolean;
+  expiresAt: string;
+}
+
+export interface P2PAcceptedPayload {
+  wagerId: string;
+  kind: 'MARKET' | 'FREEFORM';
+  potCents: string;
+  offererStakeCents: string;
+  acceptorStakeCents: string;
+  /** The description or the rendered selection, whichever this wager has. */
+  subject: string;
+}
+
+export interface P2PSettledPayload {
+  wagerId: string;
+  kind: 'MARKET' | 'FREEFORM';
+  verdict: 'OFFERER' | 'ACCEPTOR' | 'VOID';
+  potCents: string;
+  subject: string;
+  attempt: number;
+  /** True from the second attempt onward — an admin correcting an earlier settlement. */
+  correction: boolean;
+  /** True when an admin decided it rather than the two parties agreeing. */
+  byArbitration: boolean;
+}
+
+export interface P2PDisputedPayload {
+  wagerId: string;
+  subject: string;
+  attempt: number;
+}
+
+/** Why both stakes came back. Determines the card's wording and nothing else. */
+export type P2PVoidReason = 'MUTUAL_CANCEL' | 'EVENT_DEAD' | 'ARBITRATED' | 'AGREED_VOID';
+
+export interface P2PVoidedPayload {
+  wagerId: string;
+  subject: string;
+  reason: P2PVoidReason;
+  refundedCents: string;
+  attempt: number;
+  /** The arbitration note, when an admin decided it. Null otherwise. */
+  note: string | null;
+  /** Set only for ARBITRATED, matching how CustomEventVoidedPayload names the admin. */
+  adminDisplayName: string | null;
+}
+
 /** The union stored in `feed_events.payload`, discriminated by the row's `type` column. */
 export type FeedEventPayload =
   | BetPlacedPayload
@@ -156,4 +220,9 @@ export type FeedEventPayload =
   | CustomEventResolvedPayload
   | CustomEventDisputedPayload
   | CustomEventVoidedPayload
-  | CustomEventOverduePayload;
+  | CustomEventOverduePayload
+  | P2POfferedPayload
+  | P2PAcceptedPayload
+  | P2PSettledPayload
+  | P2PDisputedPayload
+  | P2PVoidedPayload;
