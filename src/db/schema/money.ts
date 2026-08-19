@@ -2,6 +2,7 @@ import { bigint, index, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } fr
 import { seasonMemberships, users } from './identity';
 import { bets } from './betting';
 import { currency } from './currency';
+import { p2pWagers } from './p2p';
 
 export const ledgerEntryType = pgEnum('ledger_entry_type', [
   'SEASON_STARTING_GRANT',
@@ -13,6 +14,9 @@ export const ledgerEntryType = pgEnum('ledger_entry_type', [
   'ADMIN_CREDIT',
   'ADMIN_DEBIT',
   'SETTLEMENT_REVERSAL',
+  'P2P_ESCROW',
+  'P2P_WON',
+  'P2P_REFUND',
 ]);
 
 export type LedgerEntryType = (typeof ledgerEntryType.enumValues)[number];
@@ -30,6 +34,12 @@ export const ledgerEntries = pgTable(
     balanceAfterCents: bigint('balance_after_cents', { mode: 'bigint' }).notNull(),
     actorUserId: uuid('actor_user_id').references(() => users.id),
     betId: uuid('bet_id').references(() => bets.id),
+    /**
+     * The wager this movement belongs to, for escrow, payout and refund entries. Sits
+     * beside `betId` rather than replacing it: a wager is not a bet (D42), and an entry
+     * carries at most one of the two.
+     */
+    p2pWagerId: uuid('p2p_wager_id').references(() => p2pWagers.id),
     note: text('note'),
     idempotencyKey: text('idempotency_key').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

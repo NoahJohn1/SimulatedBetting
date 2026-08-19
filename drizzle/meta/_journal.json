@@ -85,6 +85,13 @@
       "when": 1787151052357,
       "tag": "0011_harsh_phantom_reporter",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1787151592125,
+      "tag": "0012_perfect_dragon_lord",
+      "breakpoints": true
     }
   ]
 }

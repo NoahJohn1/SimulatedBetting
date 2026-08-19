@@ -20,6 +20,8 @@ export interface PostEntryInput {
   actorUserId?: string;
   /** The bet this movement belongs to, for BET_PLACED and every settlement entry. */
   betId?: string;
+  /** The wager this movement belongs to, for P2P escrow, payout and refund entries. */
+  p2pWagerId?: string;
   note?: string;
 }
 
@@ -73,6 +75,7 @@ export async function postEntry(tx: Tx, input: PostEntryInput): Promise<PostEntr
       balanceAfterCents: nextBalance,
       actorUserId: input.actorUserId,
       betId: input.betId,
+      p2pWagerId: input.p2pWagerId,
       note: input.note,
       idempotencyKey: input.idempotencyKey,
     })
