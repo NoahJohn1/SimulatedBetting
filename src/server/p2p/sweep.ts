@@ -118,10 +118,10 @@ async function settlePass(now: Date, summary: SweepP2PSummary): Promise<void> {
     .where(and(eq(p2pWagers.status, 'ACCEPTED'), eq(p2pWagers.kind, 'MARKET')));
 
   for (const row of live) {
-    const decision = decideMarketVerdict(row);
-    if (decision === null) continue;
-
     try {
+      const decision = decideMarketVerdict(row);
+      if (decision === null) continue;
+
       await db.transaction(async (tx) => {
         const [wager] = await tx
           .select({ status: p2pWagers.status })
