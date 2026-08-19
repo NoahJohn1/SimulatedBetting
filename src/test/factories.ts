@@ -1,5 +1,15 @@
 import { db } from '@/db/client';
-import { customEvents, events, markets, seasonMemberships, seasons, selections, users } from '@/db/schema';
+import {
+  customEvents,
+  events,
+  markets,
+  p2pWagers,
+  seasonMemberships,
+  seasons,
+  selections,
+  users,
+} from '@/db/schema';
+import type { P2PWagerKind, P2PWagerStatus } from '@/db/schema';
 
 let counter = 0;
 
@@ -115,4 +125,63 @@ export async function makeCustomEvent(opts: {
     creatorMembershipId: opts.creatorMembershipId,
     marketSelections,
   };
+}
+
+/**
+ * A membership in an ACTIVE season with a credits balance, which is what every P2P test
+ * needs. The balance is set directly rather than through the ledger — the grant path has its
+ * own coverage, and a test that wants ledger-consistent credits should post its own entries.
+ */
+export async function makeCreditedMembership(creditsCents = 100_000n, seasonId?: string) {
+  const user = await makeUser();
+  const season = seasonId
+    ? { id: seasonId }
+    : await makeSeason({ status: 'ACTIVE', startingCreditsCents: creditsCents });
+  const [membership] = await db
+    .insert(seasonMemberships)
+    .values({
+      userId: user.id,
+      seasonId: season.id,
+      balanceCents: 1_000_000n,
+      creditsBalanceCents: creditsCents,
+    })
+    .returning();
+  return { membership, user, seasonId: season.id };
+}
+
+export async function makeWager(opts: {
+  seasonId: string;
+  offererMembershipId: string;
+  acceptorMembershipId?: string;
+  opponentMembershipId?: string;
+  kind?: P2PWagerKind;
+  status?: P2PWagerStatus;
+  offererStakeCents?: bigint;
+  acceptorStakeCents?: bigint;
+  selectionId?: string;
+  lineAtOffer?: string | null;
+  description?: string;
+  expiresAt?: Date;
+  resolvesBy?: Date;
+}) {
+  const kind = opts.kind ?? 'FREEFORM';
+  const [wager] = await db
+    .insert(p2pWagers)
+    .values({
+      seasonId: opts.seasonId,
+      kind,
+      status: opts.status ?? 'OFFERED',
+      offererMembershipId: opts.offererMembershipId,
+      acceptorMembershipId: opts.acceptorMembershipId,
+      opponentMembershipId: opts.opponentMembershipId,
+      offererStakeCents: opts.offererStakeCents ?? 10_000n,
+      acceptorStakeCents: opts.acceptorStakeCents ?? 10_000n,
+      selectionId: kind === 'MARKET' ? opts.selectionId : undefined,
+      lineAtOffer: kind === 'MARKET' ? (opts.lineAtOffer ?? null) : null,
+      description: kind === 'FREEFORM' ? (opts.description ?? 'a test wager') : undefined,
+      expiresAt: opts.expiresAt ?? new Date(Date.now() + 86_400_000),
+      resolvesBy: opts.resolvesBy ?? new Date(Date.now() + 7 * 86_400_000),
+    })
+    .returning();
+  return wager;
 }
