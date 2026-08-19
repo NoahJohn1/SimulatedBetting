@@ -6,7 +6,13 @@ import { emitFeedEvent } from '@/server/feed/emit';
 import type { P2POfferedPayload } from '@/server/feed/payload';
 import { postEntry } from '@/server/money/ledger';
 import { loadSelectionSubject } from './subject';
-import type { OfferWagerError, OfferWagerInput, OfferWagerResult } from './types';
+import type {
+  CancelOfferInput,
+  CancelOfferResult,
+  OfferWagerError,
+  OfferWagerInput,
+  OfferWagerResult,
+} from './types';
 
 /** Thrown to unwind the transaction; carries the validation error back out. */
 class OfferRejected extends Error {
@@ -167,4 +173,81 @@ export async function offerWager(input: OfferWagerInput): Promise<OfferWagerResu
     if (err instanceof OfferRejected) return { ok: false, error: err.error };
     throw err;
   }
+}
+
+/**
+ * Ends an unaccepted offer and refunds the escrow.
+ *
+ * `who` decides who is allowed: the offerer withdrawing, or the named opponent refusing.
+ * Both do exactly the same thing to the row and to the ledger, so they share one body — the
+ * only difference worth having is the authorization check.
+ */
+async function closeOffer(
+  input: CancelOfferInput,
+  who: 'OFFERER' | 'OPPONENT',
+): Promise<CancelOfferResult> {
+  const now = input.now ?? new Date();
+
+  return db.transaction(async (tx) => {
+    const [wager] = await tx
+      .select()
+      .from(p2pWagers)
+      .where(eq(p2pWagers.id, input.wagerId))
+      .for('update');
+
+    if (!wager) return { ok: false as const, error: { code: 'WAGER_NOT_FOUND' as const } };
+    if (wager.status !== 'OFFERED') {
+      return {
+        ok: false as const,
+        error: { code: 'WAGER_NOT_OPEN' as const, status: wager.status },
+      };
+    }
+
+    const [membership] = await tx
+      .select({ id: seasonMemberships.id })
+      .from(seasonMemberships)
+      .where(
+        and(
+          eq(seasonMemberships.userId, input.actorUserId),
+          eq(seasonMemberships.seasonId, wager.seasonId),
+        ),
+      );
+    if (!membership) return { ok: false as const, error: { code: 'NOT_AUTHORIZED' as const } };
+
+    const permitted =
+      who === 'OFFERER'
+        ? membership.id === wager.offererMembershipId
+        : // Only a directed offer can be declined: an open offer has no one with standing,
+          // and ignoring it is what expiry is for.
+          wager.opponentMembershipId !== null && membership.id === wager.opponentMembershipId;
+    if (!permitted) return { ok: false as const, error: { code: 'NOT_AUTHORIZED' as const } };
+
+    await tx
+      .update(p2pWagers)
+      .set({ status: 'CANCELED', settledAt: now })
+      .where(eq(p2pWagers.id, wager.id));
+
+    await postEntry(tx, {
+      membershipId: wager.offererMembershipId,
+      amountCents: wager.offererStakeCents,
+      type: 'P2P_REFUND',
+      currency: 'CREDITS',
+      idempotencyKey: `p2p:${wager.id}:refund:canceled:${wager.offererMembershipId}`,
+      p2pWagerId: wager.id,
+    });
+
+    // No feed card. A withdrawn or refused offer is a non-event (D26's instinct); it stays
+    // visible on the wager itself and in the offerer's ledger.
+    return { ok: true as const, refundedCents: wager.offererStakeCents };
+  });
+}
+
+/** The offerer withdraws their own unaccepted offer. */
+export function cancelOffer(input: CancelOfferInput): Promise<CancelOfferResult> {
+  return closeOffer(input, 'OFFERER');
+}
+
+/** The challenged member refuses a directed offer. */
+export function declineWager(input: CancelOfferInput): Promise<CancelOfferResult> {
+  return closeOffer(input, 'OPPONENT');
 }
