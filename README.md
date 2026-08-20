@@ -10,6 +10,10 @@ All four subsystems are built end-to-end and verified: `npm run verify` passes c
 files / 546 tests, 0 lint errors), and `npm run build` compiles every route. See
 [where things stand](docs/README.md#where-things-stand) for the detailed rundown.
 
+The odds board is still fixture data and nothing is deployed yet. The work between here and a
+production deployment — a real data source, hosting, UI polish, notifications, and hardening —
+is [part two of the roadmap](docs/roadmap.md#part-two--production-readiness).
+
 ## What it does
 
 **1. Core betting engine.** Members sign in with Google, an admin approves them, and they
