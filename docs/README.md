@@ -14,7 +14,7 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Custom events plan](plans/2026-08-17-custom-events-implementation-plan.md) | The task-by-task implementation plan for subsystem 3 |
 | [Peer-to-peer bets spec](specs/2026-08-19-peer-to-peer-bets-design.md) | Subsystem 4: member-vs-member wagers, escrow, two-party resolution, admin arbitration, head-to-head |
 | [Peer-to-peer bets plan](plans/2026-08-19-peer-to-peer-bets-implementation-plan.md) | The task-by-task implementation plan for subsystem 4 |
-| [Roadmap](roadmap.md) | The four subsystems, what each adds, and build order |
+| [Roadmap](roadmap.md) | Part one: the four subsystems, what each adds, and build order. Part two: the phases between working code and a production deployment |
 | [Decision log](decisions.md) | Every design decision, what was rejected, and why |
 
 ## The short version
@@ -126,8 +126,25 @@ for a real correlated-subquery bug the profile stats query's own test caught mid
 - Four screens — the wagers board, the offer form, wager detail, and the admin arbitration
   queue — reached from a Bets \| Wagers control on `/bets` rather than a seventh bottom tab
 
-Not built: a real odds provider adapter (still fixture-only — see [D2](decisions.md)) and
-production deployment/hosted Postgres wiring. All four subsystems are otherwise complete.
+### What is left
+
+All four subsystems are feature-complete against fixture data. What stands between that and an
+app you can hand to someone is laid out as phases 5 through 9 in
+[part two of the roadmap](roadmap.md#part-two--production-readiness):
+
+1. **Real data** — an ESPN adapter behind the existing provider interfaces, replacing fixtures
+   ([D49](decisions.md#d49--espns-public-json-is-the-odds-and-score-source-superseding-d2))
+2. **Production deployment** — hosted Postgres, Vercel wiring, and alerting on the cron jobs
+   that move money
+3. **The UI ladder** — four rungs from error boundaries and app identity through to a full
+   redesign, shippable at each one
+4. **Email notifications** — opt-out, per-type
+   ([D50](decisions.md#d50--notifications-are-opt-out-email-with-per-type-switches))
+5. **Hardening** — a smoke checklist, rate limits, house rules, and the new-member path
+
+Gating all of it: a human test pass. The suite is green and the flows have been exercised
+programmatically, but nobody has yet clicked through placing a parlay, disputing an event, or
+arbitrating a wager.
 
 ## Conventions
 

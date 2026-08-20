@@ -1,7 +1,10 @@
 # Roadmap
 
-The project is four independent subsystems. Each gets its own spec, plan, and build cycle.
-All four are built.
+The project has two parts. **Part one** is four independent subsystems, each with its own
+spec, plan, and build cycle — all four are built. **Part two** is everything between "the code
+works" and "hand the URL to your friends."
+
+## Part one — the four subsystems
 
 | # | Subsystem | Status |
 |---|---|---|
@@ -9,6 +12,9 @@ All four are built.
 | 2 | Social layer | [Built](specs/2026-08-17-social-layer-design.md) |
 | 3 | Custom events | [Built](specs/2026-08-17-custom-events-design.md) |
 | 4 | Peer-to-peer bets | [Built](specs/2026-08-19-peer-to-peer-bets-design.md) |
+
+Every subsystem passes `npm run verify` and has been exercised end to end against fixture data.
+None of it has been through a human test pass yet — that is the gate on phase 5 starting.
 
 ---
 
@@ -122,7 +128,229 @@ and nothing else ([D48](decisions.md#d48--head-to-head-is-the-peer-to-peer-recor
 
 ## Sequencing
 
-Build order is 1 → 2 → 3 → 4, with one qualifier: subsystems 3 and 4 are independent of
-each other, so whichever sounds more fun at the time can go first. Subsystem 2 should come
-second regardless — a leaderboard with no feed gets boring quickly, and it is the cheapest
+Build order was 1 → 2 → 3 → 4, with one qualifier: subsystems 3 and 4 are independent of
+each other, so whichever sounded more fun at the time could go first. Subsystem 2 came
+second regardless — a leaderboard with no feed gets boring quickly, and it was the cheapest
 of the three to build.
+
+---
+
+# Part two — production readiness
+
+The four subsystems are feature-complete and green, but the app cannot be handed to anyone
+yet. The odds board is fixtures. Nothing is deployed. Every route renders a white screen if it
+throws. Phases 5 through 9 close that gap.
+
+| # | Phase | Why it is here |
+|---|---|---|
+| 5 | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | Everything downstream is theater while the board is fixtures |
+| 6 | [Production deployment](#6--production-deployment) | Somewhere to run, and a way to know when it breaks |
+| 7 | [The UI ladder](#7--the-ui-ladder) | Graduated 7a → 7d; ship-able at every rung |
+| 8 | [Email notifications](#8--email-notifications) | An offer nobody sees expires; a dispute nobody sees stalls |
+| 9 | [Hardening](#9--hardening) | The last mile before the URL goes out |
+
+**Order matters for 5 and 6 only.** The adapter comes first because deploying a fixture
+sportsbook proves nothing, and because it is the phase most likely to surface a schema
+surprise. 7, 8, and 9 are independent of each other and can be taken in any order or in
+parallel — though 9 wants 7a done first, since half of what a smoke test checks is that the
+error states exist.
+
+Prerequisite for all of it: **the human test pass**. The suite is green, but no person has
+clicked through placing a parlay, disputing an event, or arbitrating a wager. Bugs found
+there change what these phases contain.
+
+---
+
+## 5 — Real data: the ESPN adapter
+
+**What it adds.** `EspnOddsProvider` and `EspnScoreProvider`, replacing the fixtures behind
+the two provider interfaces — real NFL and CFB slates, real lines, real final scores.
+
+**Why this is cheap.** `src/server/odds/types.ts` already declares `OddsProvider` and
+`ScoreProvider` as separate interfaces over provider-shaped data, and
+`src/app/api/cron/sync-odds/route.ts` constructs both implementations inline. The swap is
+those two constructor calls. Nothing in `syncOdds`, `syncResults`, grading, or settlement
+knows a provider changed. This is the payoff for [D2](decisions.md#d2--odds-build-against-fixtures-integrate-a-real-provider-later)
+having been made two years' worth of design decisions ago.
+
+**Why ESPN and not The Odds API.** Free, unmetered, no key
+([D49](decisions.md#d49--espns-public-json-is-the-odds-and-score-source-superseding-d2)). The
+Odds API's free tier is 500 credits a month; a `*/15` sync across two sports and three markets
+burns roughly 17,000. Going free through them would have meant building a credit budgeter and
+a variable sync cadence — real work, in service of a worse feed.
+
+**The tasks.**
+
+1. **Spike the payload first.** Confirm the shape for NFL *and* CFB, on both
+   `site.api.espn.com/.../scoreboard` and the per-book
+   `sports.core.api.espn.com/.../odds/{providerId}` endpoints. This is genuinely unverified —
+   community documentation says `competitions[].odds[]` carries spread, over/under, and
+   moneyline, but no one on this project has seen the response. Everything below assumes an
+   answer this task has not produced yet.
+2. **`EspnScoreProvider`** — the simpler half, and the one settlement depends on. ESPN's event
+   id becomes `externalId` for games, which keeps odds and scores keyed identically.
+3. **`EspnOddsProvider`** — team upserts from ESPN team ids, market and selection mapping, and
+   American price normalization.
+4. **CFB paging.** NFL is one request per week. College football is ~130 FBS teams across
+   conference groups, and the scoreboard endpoint pages by week and group — the one place the
+   two sports genuinely differ.
+5. **Defensive parsing.** A field that is missing or reshaped skips that market; it never
+   throws out of the cron. The existing `STALE_AFTER_MS` suspension then does the right thing
+   on its own: a feed that goes dark closes markets rather than leaving stale lines bettable.
+   That behavior already exists and is the reason an unofficial upstream is survivable.
+6. **A kill switch.** An env flag that falls back to the fixture providers, so a bad ESPN
+   deploy is a config change rather than a rollback.
+7. **First real slate.** An admin-run backfill that pulls a genuine week into a real season,
+   plus reconciliation over it.
+
+**The honest risk.** This is an undocumented endpoint with no SLA and no contract. It can
+change shape without notice. The mitigations are tasks 5 and 6 and the fact that this is a
+private group of friends, not a business — a broken Saturday is an annoyance, not an incident.
+
+---
+
+## 6 — Production deployment
+
+**What it adds.** Somewhere for the app to actually run, and a way to find out when it stops.
+
+**The tasks.**
+
+- **Hosted Postgres** with automated backups and a documented restore path. Connection pooling
+  matters here: serverless functions plus a per-request Postgres client is the classic way to
+  exhaust a connection limit.
+- **Vercel project wiring** — environment variables, `AUTH_URL` and the Google OAuth redirect
+  for the real domain, and migrations applied as part of deploy rather than by hand.
+- **`CRON_SECRET` on the real invocations.** The routes already require it
+  ([`src/server/cron/auth.ts`](../src/server/cron/auth.ts)); production has to supply it.
+- **Error monitoring** — Sentry's free tier, wired to server actions and route handlers.
+- **Alerting on cron failure and reconciliation drift.** This is the item that earns the phase.
+  Four jobs move money on a schedule, and today a `settle` run that throws is invisible: no bet
+  settles, no one is told, and the first signal is a member asking why Sunday never graded.
+  `reconcileBalances` and `reconcileEscrow` already compute the answer — they just have nowhere
+  to shout.
+- **An admin health page.** Last successful run per cron, last reconcile result and drift, count
+  of suspended-stale markets, total credits sitting in escrow. One screen that answers "is it
+  working."
+- **An admin season-creation screen.** `createSeason` exists in
+  [`src/server/seasons/service.ts`](../src/server/seasons/service.ts) but is only ever called
+  from `seed.ts`. In production that means starting next season requires shell access to the
+  database, which is not a thing you want to discover in September.
+
+**Deliberately skipped.** A staging environment. For a private group, a kill switch plus fast
+rollback covers what staging would, at a fraction of the setup.
+
+---
+
+## 7 — The UI ladder
+
+Four rungs, ordered so the app is shippable after each one. Climb until it looks good enough
+and stop there — nothing later in the ladder is a prerequisite for anything outside it.
+
+### 7a — Foundations
+
+Not optional, and small. The app currently has **zero** `error.tsx`, `loading.tsx`, or
+`not-found.tsx` files, so any thrown error in any route is a white screen with no way back.
+The root layout still reports itself as "Create Next App," and `public/` is the five stock
+Next.js SVGs.
+
+- Error, loading, and not-found boundaries on every route segment
+- Real metadata, favicon, app icons, and a PWA manifest so it installs to a phone home screen
+- Pending states on every form — bets, offers, resolutions, admin actions
+- A mobile viewport audit; this is a phone app that happens to run in a browser
+
+### 7b — Design system
+
+There are four shared components today ([`src/components/ui/`](../src/components/ui/)); every
+other screen is inline Tailwind, which is why the app looks like four different apps.
+
+- Design tokens: color, type scale, spacing, radii
+- Dark mode, defined once at the token layer
+- The shared set: button, card, sheet, dialog, table, tabs, toast, form field
+- Odds and money display consolidated into components rather than repeated formatting
+
+### 7c — Screen-by-screen rebuild
+
+Every screen rebuilt against 7b, hot path first, so the rungs pay off in the order people
+actually feel them:
+
+Games and the bet slip → Feed → Standings → Bets and Wagers → Events → Me → Admin.
+
+### 7d — Craft
+
+- Motion and transitions; skeleton loaders in place of spinners
+- Accessibility: keyboard paths, focus management, contrast, screen reader labels
+- Error and empty-state copy that reads like a person wrote it
+- **A density pass on the odds board.** A 60-game CFB Saturday is the layout stress case, and
+  [D8](decisions.md#d8--layout-sportsbook-first) already rejected one-game-at-a-time cards on
+  exactly these grounds. What replaces them still has to be designed.
+
+---
+
+## 8 — Email notifications
+
+**What it adds.** Email for the handful of events that are time-sensitive, every type
+individually switchable and the whole thing switchable off
+([D50](decisions.md#d50--notifications-are-opt-out-email-with-per-type-switches)).
+
+**Why it is worth a phase.** Subsystems 3 and 4 introduced things that go stale when unseen: a
+peer-to-peer offer expires, a disputed event waits on an admin who does not know they are
+needed, a wager sits unclaimed while the game it references kicks off. Everything else here is
+a nicety; those three are the feature not working.
+
+**What sends.**
+
+| Event | Urgency |
+|---|---|
+| A wager was offered to you | Immediate |
+| Your offer expires soon | Immediate |
+| A dispute needs your ruling (admin) | Immediate |
+| Your account was approved | Immediate |
+| Your bets settled | Digest |
+| The weekly allowance landed | Digest |
+
+**The design constraint that matters.** Sends have to be idempotency-keyed exactly the way
+`feed_events` are ([D34](decisions.md#d34--currency-is-a-dimension-on-the-existing-ledger-not-a-second-ledger)
+and the ledger pattern generally). `settle` is resumable and re-runnable by design — if the
+mail send is not keyed, a re-run emails everyone twice, and unlike a duplicate ledger write
+there is no reversing entry for an email. The natural move is to emit from the same points
+that already emit feed events, reusing their dedupe key.
+
+**The tasks.** A transactional email provider on its free tier; a `notification_preferences`
+table extending the pattern [`/me/feed-preferences`](<../src/app/(app)/me/feed-preferences/page.tsx>)
+already established; per-type toggles plus a global off; a one-click unsubscribe link that works
+without signing in; and a dev mode that logs instead of sending.
+
+---
+
+## 9 — Hardening
+
+The last mile. Wants 7a finished first — half of a smoke test is checking that error states
+exist.
+
+- **A written smoke checklist**, derived from the human test pass this whole part is gated on.
+  Place a parlay, settle it, dispute an event, arbitrate a wager, run reconciliation, confirm
+  every balance. Repeatable before every deploy.
+- **Rate limiting on mutations.** Bet placement, offers, comments, reactions. Small group, low
+  risk, but every one of these writes to the ledger or the feed.
+- **Load sanity.** A full CFB Saturday board and a season's worth of feed events, checked for
+  the queries that only get slow with real row counts.
+- **A house rules page.** Plain language: no real money, how the allowance works, what credits
+  are and why they cannot become cash, who arbitrates and how.
+- **The new-member path.** What someone sees before an admin approves them, after approval, and
+  when there is no active season to join. Three screens that exist
+  ([`/pending`](../src/app/pending/page.tsx), [`/join`](../src/app/join/page.tsx),
+  [`/no-season`](../src/app/no-season/page.tsx)) and have never been looked at as a sequence.
+
+---
+
+## What is deliberately not on this roadmap
+
+Kept here so it stays decided rather than getting re-litigated:
+
+- **Player props and live betting** — [D6](decisions.md#d6--bet-types-singles-and-parlays)
+  rejected both; props need a second stats integration, live needs continuous polling
+- **Line shopping across books** — [D9](decisions.md#d9--lines-one-house-line-per-market) picks
+  one house line per market. ESPN as the only source in phase 5 makes this moot anyway.
+- **More sports** — the schema is sport-dimensioned and the fixtures are not, so this is real
+  work with no demand behind it yet
+- **Real money, in any form** — not a feature gap, a category the project stays out of

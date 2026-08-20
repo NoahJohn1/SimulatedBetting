@@ -752,3 +752,70 @@ once, late.
 *Rejected:* a materialized record table. It is a counter that can drift from the rows it
 summarizes, for a query over a table that will hold hundreds of rows, not millions — the same
 reasoning subsystem 2 applied to `computeMemberStats`.
+
+---
+
+### D49 — ESPN's public JSON is the odds and score source, superseding D2
+
+*Added 2026-08-20 during the production-readiness roadmap session.*
+
+Both providers read ESPN's public JSON endpoints: the scoreboard for slates and final scores,
+and the per-book odds endpoint for lines. Free, unmetered, no API key, no account.
+
+This supersedes the second half of [D2](#d2--odds-build-against-fixtures-integrate-a-real-provider-later),
+which named The Odds API as the first real adapter. The interface half of D2 stands and is
+exactly why this costs so little — `OddsProvider` and `ScoreProvider` never encoded a vendor.
+
+*Rejected:* The Odds API on its free tier. 500 credits a month against a `*/15` sync across two
+sports and three markets, which costs roughly 17,000. Staying inside the free tier would have
+meant a credit budgeter and a kickoff-weighted sync cadence — a real subsystem, built to make a
+feed worse.
+
+*Rejected:* The Odds API at $30/month for 20,000 credits. It works and it is contractual, but a
+private game among friends should not carry a subscription, and the coverage advantage —
+forty-odd books — is worthless under [D9](#d9--lines-one-house-line-per-market), which uses one
+house line per market anyway. ESPN being a single book is not a limitation here; it is the
+design.
+
+*Rejected:* an admin entering lines by hand each week. Zero dependencies, and it makes the
+person running the league do data entry every Thursday until they stop.
+
+*What this accepts:* an undocumented endpoint with no SLA that can change shape without notice.
+Two things make that survivable. Parsing is defensive — an unrecognized field skips its market
+instead of throwing — and `suspendStaleMarkets` already closes markets whose data has aged past
+`STALE_AFTER_MS`, so a feed that goes dark degrades into "no betting" rather than "betting
+against stale lines." A fixture-provider kill switch stays wired for the case where it breaks
+outright.
+
+*Note on D2's other rejection:* D2 also rejected scraping ESPN Bet, on the grounds that scraping
+markup violates terms and breaks constantly. That reasoning is untouched — this reads a public
+JSON API that ESPN's own site consumes, and no HTML is parsed. It remains unofficial, and the
+project is non-commercial and private, which is the whole basis for finding that acceptable.
+
+---
+
+### D50 — Notifications are opt-out email with per-type switches
+
+*Added 2026-08-20 during the production-readiness roadmap session.*
+
+Transactional email, on by default, with a toggle per notification type and one global off
+switch. Time-sensitive events send immediately; settlements and the weekly allowance are
+batched into a digest.
+
+Notifications exist for one reason: subsystems 3 and 4 created states that rot when unseen. An
+unaccepted peer-to-peer offer expires, and a disputed event stalls on an admin who has no idea
+they are the bottleneck. Everything else on the list is decoration.
+
+*Rejected:* web push via the PWA. Better urgency, but it needs an installed app, a service
+worker, permission prompts, and subscription lifecycle management — meaningful infrastructure
+for a group small enough that everyone reads email.
+
+*Rejected:* opt-in. In a group this size, defaulting off means nobody turns it on and the
+expiring-offer problem stays unsolved. Per-type switches plus a global off make opting out
+one click, which is the part that actually matters.
+
+*Constraint this carries into the build:* every send is idempotency-keyed the way `feed_events`
+are. `settle` is deliberately resumable and safe to re-run
+([D3](#d3--stack-single-nextjs-app-on-postgres) forced the batching; idempotency made it safe),
+and an unkeyed send turns a harmless re-run into a second email to everyone. A duplicate ledger
+write has a reversing entry. A duplicate email does not.
