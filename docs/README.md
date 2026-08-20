@@ -16,6 +16,8 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Peer-to-peer bets plan](plans/2026-08-19-peer-to-peer-bets-implementation-plan.md) | The task-by-task implementation plan for subsystem 4 |
 | [Roadmap](roadmap.md) | Part one: the four subsystems, what each adds, and build order. Part two: the phases between working code and a production deployment |
 | [Decision log](decisions.md) | Every design decision, what was rejected, and why |
+| [Repo health plan](plans/2026-08-20-repo-health-implementation-plan.md) | The task-by-task plan for the repo health work, written for parallel execution |
+| [Repo health](repo-health.md) | The CI gate, repo hygiene, Claude Code tooling, and issue tracking — with what is deliberately skipped at this project's size |
 
 ## The short version
 
