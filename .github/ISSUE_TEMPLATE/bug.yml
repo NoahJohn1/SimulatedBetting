@@ -1,0 +1,54 @@
+name: Bug
+description: Something behaved wrong in the app
+labels: ['bug']
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, and what the app did in response.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should have happened
+    validations:
+      required: true
+
+  - type: input
+    id: screen
+    attributes:
+      label: Screen or URL
+      placeholder: /wagers/abc123
+    validations:
+      required: false
+
+  - type: dropdown
+    id: money
+    attributes:
+      label: Does money look wrong?
+      description: >-
+        Balances, credits, escrow, a settlement that paid the wrong amount, or a bet that
+        settled the wrong way. This is what separates annoying from drop-everything.
+      options:
+        - 'No — display or flow only'
+        - 'Yes — a balance, payout, or escrow amount looks wrong'
+        - 'Not sure'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: reconciles
+    attributes:
+      label: Does reconciliation still pass?
+      description: >-
+        Run the reconcile cron or check the admin health page if it exists yet. Leave as
+        "not checked" if you have not looked — a wrong answer here is worse than no answer.
+      options:
+        - 'Not checked'
+        - 'Yes — reconciliation is clean'
+        - 'No — reconciliation reports a discrepancy'
+    validations:
+      required: true
