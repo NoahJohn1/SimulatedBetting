@@ -19,6 +19,20 @@ export default async function MyBetsPage({ searchParams }: PageProps<'/bets'>) {
     .where(and(eq(bets.membershipId, member.membershipId), eq(bets.currency, filterCurrency)))
     .orderBy(desc(bets.placedAt));
 
+  const sectionLinks = (
+    <div className="flex gap-2 px-1">
+      <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
+        Bets
+      </span>
+      <Link
+        href="/wagers"
+        className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+      >
+        Wagers
+      </Link>
+    </div>
+  );
+
   const filterLinks = (
     <div className="flex gap-2 px-1">
       {(['CASH', 'CREDITS'] as const).map((c) => (
@@ -40,6 +54,7 @@ export default async function MyBetsPage({ searchParams }: PageProps<'/bets'>) {
   if (rows.length === 0) {
     return (
       <div className="flex flex-col gap-4 px-4 py-4">
+        {sectionLinks}
         {filterLinks}
         <EmptyState title="No bets yet" body="Pick something off the board to get started." />
       </div>
@@ -84,6 +99,7 @@ export default async function MyBetsPage({ searchParams }: PageProps<'/bets'>) {
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4">
+      {sectionLinks}
       {filterLinks}
       <Section title="Pending" bets={pending} legsByBet={legsByBet} />
       <Section title="Settled" bets={settled} legsByBet={legsByBet} />

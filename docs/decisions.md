@@ -532,3 +532,223 @@ letting the client re-derive which outcome was bad. It throws away information t
 already has, for no reason beyond the union having been written before this case was found.
 *Rejected:* a distinct `EDIT_INVALID_PRICE` code. Nothing about the failure differs by which
 screen triggered it, and a second name for the same shape is a rename with no meaning attached.
+
+---
+
+### D40 — Every peer-to-peer wager moves credits, including the market-backed kind
+
+*Added 2026-08-19 during the subsystem 4 design session.*
+
+All peer-to-peer wagers are staked in **credits**, never cash — a wager on Sunday's Chiefs game
+just as much as a wager on whether Jake can name ten quarterbacks.
+
+[D31](#d31--custom-events-are-bet-in-credits-a-second-non-convertible-currency) split the
+currency so that a market priced or resolved by a person could never move the bankroll the
+standings rank. A two-person wager is that same situation with a smaller audience: its terms are
+set by hand, and most of its resolution paths end in a human being deciding. Putting all of it
+on the credits side of the wall means subsystem 4 cannot touch cash through *any* path, which
+makes the whole subsystem safe to reason about by construction rather than by audit.
+
+*Rejected:* deriving the currency from what settles the wager — cash for a game-backed wager
+graded by the score feed, credits for anything a person calls. It is the more principled reading
+of D31 and it would put head-to-head into the cash standings, where it would mean more. But it
+makes an escrow path that touches cash, and then the guarantee is only as good as the branch
+that chose the currency. The version with no cash branch at all is the one that cannot be got
+wrong.
+
+*Rejected:* cash for everything, which drives a hole straight through D31 — two members agree, one
+arbitrates, and cash moves on human say-so.
+
+*Consequence accepted:* a wager on a real game settles from the same score feed as the house bet
+beside it, in a different denomination. That is genuinely arbitrary from a member's point of
+view, and it is the price of the guarantee.
+
+---
+
+### D41 — A wager is two explicit stakes, not a stake and a price
+
+*Added 2026-08-19 during the subsystem 4 design session.*
+
+The offerer names both numbers: "500 credits against your 200." The pot is the sum and the
+winner takes all of it. There is no price, no odds, and nothing to freeze but the line.
+
+A handshake bet *is* two integers. Storing it as one stake plus an American price would borrow a
+book's vocabulary for something with no book behind it, and would introduce rounding on a
+two-party pot where [D17](#d17--all-money-is-integer-cents) demands every cent be accounted for.
+Implied odds are still shown — they are derivable from the two numbers and never stored.
+
+*Rejected:* even money only. Simplest of all, but "I'll give you 3-to-1 that he can't" is half of
+why anyone makes a bet like this, and it would be inexpressible.
+
+---
+
+### D42 — A wager is its own table, not two bets and not a two-person custom event
+
+*Added 2026-08-19 during the subsystem 4 design session.*
+
+`p2p_wagers` owns its own lifecycle. It reuses `postEntry`, `emitFeedEvent`, `gradeLeg` and
+`gradeCustomLeg` — the *machinery* — while sharing no table with `bets`.
+
+This is the distinction [D33](#d33--events-is-a-true-supertype-not-a-pair-of-nullable-foreign-keys)
+already drew: share the mechanism, not the shape. The practical payoff is that `bets`,
+`bet_legs`, `placeBet`, `settleGame` and `resettleBet` are untouched by this subsystem, so it
+cannot regress the money paths subsystems 1 and 3 stand on.
+
+*Rejected:* two rows in `bets` joined by a link table. It appears to buy My Bets, settlement and
+grading for free, but `bets` carries `potential_payout_cents` and `combined_price_american` and
+there is no price here ([D41](#d41--a-wager-is-two-explicit-stakes-not-a-stake-and-a-price)) —
+those columns would hold lies. Worse, `settleGame`'s pending-leg sweep would find these legs and
+try to pay them from the house's side, so every existing money query would need a "and not a P2P
+leg" clause forever.
+
+*Rejected:* a wager as a two-outcome custom event with exactly two bets. Maximum reuse of
+subsystem 3, but a custom event has a creator who resolves it, N markets and open betting by
+anyone — a 1v1 wager has none of the three, and creator-resolution is precisely the model
+[D47](#d47--a-freeform-wager-is-settled-by-both-parties-agreeing-with-admins-as-the-fallback)
+rejects for P2P. Every custom-events query would then need to filter these out.
+
+---
+
+### D43 — Escrow needs its own reconciliation check; balance reconciliation cannot see it
+
+*Added 2026-08-19 during the subsystem 4 design session.*
+
+A second check, `reconcileEscrow`, runs beside `reconcileBalances` in the existing `reconcile`
+cron. For every wager it asserts that the credits the ledger has locked against it match what its
+status says should be locked: one stake while `OFFERED`, both while `ACCEPTED`, none once it has
+ended.
+
+Until this subsystem, every credit sat in exactly one member's balance at every instant, and
+[D5](#d5--balance-immutable-ledger-plus-a-cached-balance)'s reconciliation proved it. Escrow
+breaks that: credits in a live pot have left a balance and arrived nowhere. `reconcileBalances`
+stays correct — each member's cache and ledger sum still agree, both net of escrow — but it can
+no longer see whether the system total is conserved. A wager that escrowed and never paid out is
+invisible to it, and that is the exact bug most worth catching.
+
+*Rejected:* leaving reconciliation as-is. It would still pass every day while credits leaked, which
+is worse than having no check, because the green result would be read as proof.
+
+*Rejected:* a stored `escrow_balance_cents` cache on `season_memberships`. It is a third number to
+keep in agreement with two others, and the thing it would be reconciled against is the sum this
+check already computes directly.
+
+---
+
+### D44 — Dispute and overdue are derived predicates, not stored statuses
+
+*Added 2026-08-19 during the subsystem 4 design session.*
+
+`p2p_wager_status` has six values — `OFFERED`, `ACCEPTED`, `SETTLED`, `VOIDED`, `CANCELED`,
+`EXPIRED` — and neither `DISPUTED` nor `OVERDUE` is among them. Both are predicates over an
+`ACCEPTED` row: disputed is *both claims set and unequal*, overdue is *past `resolves_by` with no
+agreed verdict*. The admin queue queries them; nothing writes them.
+
+This generalizes [D37](#d37--events-carry-a-resolve-by-date-overdue-is-derived-and-swept-to-admins)
+from one case to a rule. A stored flag is a third state that can disagree with the columns it
+summarizes, and it needs a job to maintain. Here it would be worse than in D37's case: a stored
+`DISPUTED` could survive a party revising their claim, leaving a wager permanently in an admin
+queue it no longer belongs in.
+
+*Rejected:* a `DISPUTED` status set by `claimWinner`. It reads more explicitly at the call site and
+makes the queue a trivial equality filter — at the cost of a state that can lie about the two
+columns sitting next to it.
+
+---
+
+### D45 — Void is an arbitration verdict and an automatic consequence, never a standing admin power
+
+*Added 2026-08-19 during the subsystem 4 design session.*
+
+Credits are returned to both parties in exactly three situations: an admin who is *already
+arbitrating* a disputed or overdue wager returns `VOID` as one of three verdicts; the underlying
+game is canceled or postponed, or the underlying custom event is voided; or both parties agree to
+cancel. There is no admin control that voids a healthy wager.
+
+A void is unwinding an agreement between two consenting members, so it should exist only where a
+winner genuinely does not — not as a general override. The automatic cases need no judgment at
+all: they are the path a postponed game already takes for a house bet
+([D12](#d12--pushed-and-voided-parlay-legs-are-removed-not-fatal)), reached from a different
+trigger.
+
+*Rejected:* a broad admin void at any stage, mirroring `voidCustomEvent`. A custom event is a
+market the whole season is exposed to, which is why an admin holds a standing power over it; a
+wager is a private agreement between two people who can already cancel it by agreeing.
+
+*Rejected:* no void verdict at all, forcing every arbitration to name a winner. It is the tightest
+rule, but "we genuinely both misremember what we said" is a real outcome, and refunding is the
+fair call for it.
+
+---
+
+### D46 — The offerer's stake escrows at offer, not at acceptance
+
+*Added 2026-08-19 during the subsystem 4 design session.*
+
+Posting an offer escrows the offerer's stake immediately. Accepting escrows the acceptor's. An
+unaccepted offer refunds on cancellation or expiry.
+
+[The roadmap](roadmap.md#4-peer-to-peer-bets) assumed both stakes escrow at acceptance, and that
+was right for the model it had in mind — a directed challenge, accepted or not. It stops being
+right once an offer can sit open to the season: an offerer with 1,000 credits could post five
+1,000-credit offers, four of which are promises they cannot keep. Escrowing at offer makes a live
+offer *always good* — acceptance can never fail on the offerer's balance — and it makes the
+refund path a first-class part of the design rather than an edge case, which it has to be anyway
+for expiry.
+
+*Rejected:* both at acceptance, per the roadmap. Offers cost nothing to make and nothing to
+abandon, but a member can tap Accept on a live offer and be told no. With open offers, that will
+happen.
+
+*Rejected:* no escrow, settling from balances at the end. The loser can be broke by then, and a
+wager the ledger cannot honor is the failure escrow exists to prevent.
+
+---
+
+### D47 — A freeform wager is settled by both parties agreeing, with admins as the fallback
+
+*Added 2026-08-19 during the subsystem 4 design session.*
+
+Each party names who won. Agreement settles the wager immediately. Disagreement makes it disputed;
+silence past the resolve-by date makes it overdue; both land in the admin queue, where an admin
+returns a verdict with a mandatory note.
+
+A wager is symmetric, so its resolution should be. This is the one place subsystem 4 deliberately
+does *not* copy subsystem 3: a custom-event creator resolves unilaterally
+([D35](#d35--custom-events-pay-on-resolution-disputes-are-an-admin-re-resolution)) because they
+are a market-maker acting in front of an audience, and
+[D32](#d32--anyone-can-create-events-and-creators-may-bet-their-own-with-disclosure) accepted that
+conflict of interest in exchange for visibility. A P2P offerer is not a market-maker — they are one
+of the two people whose credits are at stake — and letting one side of a two-person bet call the
+result is a different proposition entirely.
+
+`VOID` is a legitimate claim, so two members who agree the bet was unresolvable can settle it as a
+mutual refund without ever involving an admin.
+
+*Rejected:* the offerer resolves and the counterparty disputes, mirroring D35 exactly. Maximum
+reuse, wrong incentives.
+
+*Rejected:* an admin resolves every freeform wager. Impossible to game, and it makes an admin the
+bottleneck on every casual bet in a league where most of them are ones both parties already agree
+about.
+
+---
+
+### D48 — Head-to-head is the peer-to-peer record, and nothing else
+
+*Added 2026-08-19 during the subsystem 4 design session.*
+
+Between any two members: wagers settled, won, lost, voided, and net credits. Derived at read time
+from `p2p_wagers` by a pure `computeHeadToHead`, with no stored counter.
+
+This closes [D27](#d27--head-to-head-is-deferred-to-subsystem-4), which deferred the metric here
+on the grounds that it had no unambiguous meaning until members could bet against each other.
+They now can, and the meaning is the obvious one.
+
+*Rejected:* also scoring opposed positions on the same house line, which D27 had floated. It would
+produce a record even between members who have never wagered directly — but it makes one number
+out of two unrelated things, and D27 anticipated exactly this by preferring to define the metric
+once, late.
+
+*Rejected:* a materialized record table. It is a counter that can drift from the rows it
+summarizes, for a query over a table that will hold hundreds of rows, not millions — the same
+reasoning subsystem 2 applied to `computeMemberStats`.

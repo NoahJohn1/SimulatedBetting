@@ -12,6 +12,8 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Social layer plan](plans/2026-08-17-social-layer-implementation-plan.md) | The task-by-task implementation plan for subsystem 2 |
 | [Custom events spec](specs/2026-08-17-custom-events-design.md) | Subsystem 3: member-created markets, the credits currency, human resolution and disputes |
 | [Custom events plan](plans/2026-08-17-custom-events-implementation-plan.md) | The task-by-task implementation plan for subsystem 3 |
+| [Peer-to-peer bets spec](specs/2026-08-19-peer-to-peer-bets-design.md) | Subsystem 4: member-vs-member wagers, escrow, two-party resolution, admin arbitration, head-to-head |
+| [Peer-to-peer bets plan](plans/2026-08-19-peer-to-peer-bets-implementation-plan.md) | The task-by-task implementation plan for subsystem 4 |
 | [Roadmap](roadmap.md) | The four subsystems, what each adds, and build order |
 | [Decision log](decisions.md) | Every design decision, what was rejected, and why |
 
@@ -34,11 +36,13 @@ Three properties the design is organized around:
 
 ## Where things stand
 
-Subsystems 1, 2, and 3 are built end-to-end and verified: `npm run verify` (typecheck, lint,
-58 test files / 401 tests) passes clean, and the app runs, seeds a fixture slate, takes a bet
+All four subsystems are built end-to-end and verified: `npm run verify` (typecheck, lint,
+73 test files / 546 tests) passes clean, and the app runs, seeds a fixture slate, takes a bet
 through placement and settlement (including a push), reconciles the ledger correctly in both
 currencies, and posts and reads back the feed cards those actions generate — including a
-custom event carried from creation through a disputed resolution and an admin correction.
+custom event carried from creation through a disputed resolution and an admin correction, and
+a peer-to-peer wager carried from offer through a dispute to an admin correction, with both
+balance and escrow reconciliation clean throughout.
 
 **Subsystem 1 — core betting engine:**
 
@@ -98,9 +102,32 @@ for a real correlated-subquery bug the profile stats query's own test caught mid
   tab, and updates to the bet slip (currency-aware, refuses to mix kinds), Standings (a credits
   leaderboard), Me, and My Bets
 
+**Subsystem 4 — peer-to-peer bets:**
+
+- `p2p_wagers`, a table owning its own lifecycle — six statuses, with **disputed and overdue
+  derived** from the claim columns and the clock rather than stored
+  ([D44](decisions.md#d44--dispute-and-overdue-are-derived-predicates-not-stored-statuses))
+- Wagers staked in credits only, market-backed or freeform, with two explicit stakes and no
+  price ([D40](decisions.md#d40--every-peer-to-peer-wager-moves-credits-including-the-market-backed-kind),
+  [D41](decisions.md#d41--a-wager-is-two-explicit-stakes-not-a-stake-and-a-price))
+- Escrow at offer rather than at acceptance, so a live offer is always good
+  ([D46](decisions.md#d46--the-offerers-stake-escrows-at-offer-not-at-acceptance)), with three
+  new ledger entry types and one nullable column — `bets` and `settleGame` untouched
+  ([D42](decisions.md#d42--a-wager-is-its-own-table-not-two-bets-and-not-a-two-person-custom-event))
+- Market-backed settlement from the existing pure graders, riding the `settle` cron beside the
+  overdue-event sweep; freeform settlement when both parties agree, with admin arbitration when
+  they do not ([D47](decisions.md#d47--a-freeform-wager-is-settled-by-both-parties-agreeing-with-admins-as-the-fallback))
+- `reconcileEscrow`, a second daily check: balance reconciliation is blind to credits sitting
+  in a pot, and a wager that escrowed and never paid out is exactly the bug it cannot see
+  ([D43](decisions.md#d43--escrow-needs-its-own-reconciliation-check-balance-reconciliation-cannot-see-it))
+- Head-to-head records, defined at last as the peer-to-peer record and nothing else
+  ([D48](decisions.md#d48--head-to-head-is-the-peer-to-peer-record-and-nothing-else)), derived
+  at read time with no stored counter
+- Four screens — the wagers board, the offer form, wager detail, and the admin arbitration
+  queue — reached from a Bets \| Wagers control on `/bets` rather than a seventh bottom tab
+
 Not built: a real odds provider adapter (still fixture-only — see [D2](decisions.md)) and
-production deployment/hosted Postgres wiring. Subsystem 4 (peer-to-peer bets) is
-[roadmap only](roadmap.md).
+production deployment/hosted Postgres wiring. All four subsystems are otherwise complete.
 
 ## Conventions
 
