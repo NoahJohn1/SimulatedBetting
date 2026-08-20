@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Money } from '@/components/ui/money';
 import { requireAdmin } from '@/server/auth/session';
 import { loadArbitrationQueue } from '@/server/p2p/query';
 import { ArbitrationForm } from './arbitration-form';
@@ -42,9 +43,11 @@ export default async function AdminWagersPage() {
                   {wager.subject}
                 </Link>
                 <span className="text-xs text-zinc-500">
-                  {wager.offererDisplayName} ({wager.offererStakeCents.toString()}) vs{' '}
-                  {wager.acceptorDisplayName ?? 'the other side'} ({wager.acceptorStakeCents.toString()})
-                  — pot {wager.potCents.toString()}
+                  {wager.offererDisplayName} (
+                  <Money cents={wager.offererStakeCents} currency="CREDITS" />) vs{' '}
+                  {wager.acceptorDisplayName ?? 'the other side'} (
+                  <Money cents={wager.acceptorStakeCents} currency="CREDITS" />) — pot{' '}
+                  <Money cents={wager.potCents} currency="CREDITS" />
                 </span>
                 <span className="text-xs text-amber-600 dark:text-amber-400">
                   {wager.disputed

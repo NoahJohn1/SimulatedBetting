@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { dollarsToCents, formatAmount } from '@/domain/money';
 import type { OfferWagerError } from '@/server/p2p/types';
 import { offerWagerAction } from '../actions';
 
@@ -10,11 +11,18 @@ export interface MemberOption {
   displayName: string;
 }
 
-/** Cents in, cents out — the form speaks the same integer language the ledger does. */
+/**
+ * Dollars/credits in, cents out — matches `bet-slip.tsx`'s stake parsing (D31): the digits a
+ * member types are a credits amount, not raw cents, so `25` must become `2500`.
+ */
 function toCents(input: string): string {
   const trimmed = input.trim();
-  if (!/^\d+$/.test(trimmed)) return '';
-  return trimmed;
+  if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) return '';
+  try {
+    return dollarsToCents(trimmed).toString();
+  } catch {
+    return '';
+  }
 }
 
 function describe(error: OfferWagerError): string {
@@ -22,7 +30,7 @@ function describe(error: OfferWagerError): string {
     case 'NOT_A_MEMBER':
       return 'You are not a member of the active season.';
     case 'INSUFFICIENT_CREDITS':
-      return `You only have ${error.availableCents.toString()} credits.`;
+      return `You only have ${formatAmount(error.availableCents, 'CREDITS')}.`;
     case 'INVALID_STAKE':
       return 'Both stakes must be more than zero.';
     case 'INVALID_WINDOW':
@@ -67,7 +75,7 @@ export function WagerForm({ members }: { members: MemberOption[] }) {
     const offererCents = toCents(offererStake);
     const acceptorCents = toCents(acceptorStake);
     if (!offererCents || !acceptorCents) {
-      setError('Both stakes must be whole numbers of credits.');
+      setError('Enter a stake like 25 or 25.50.');
       return;
     }
     if (!expiresAt || !resolvesBy) {
@@ -161,7 +169,7 @@ export function WagerForm({ members }: { members: MemberOption[] }) {
           <input
             value={offererStake}
             onChange={(e) => setOffererStake(e.target.value)}
-            inputMode="numeric"
+            inputMode="decimal"
             className={fieldClass}
             placeholder="credits"
           />
@@ -171,7 +179,7 @@ export function WagerForm({ members }: { members: MemberOption[] }) {
           <input
             value={acceptorStake}
             onChange={(e) => setAcceptorStake(e.target.value)}
-            inputMode="numeric"
+            inputMode="decimal"
             className={fieldClass}
             placeholder="credits"
           />

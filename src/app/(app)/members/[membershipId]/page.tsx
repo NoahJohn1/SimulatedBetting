@@ -87,12 +87,12 @@ export default async function MemberProfilePage({ params }: PageProps<'/members/
               {headToHead.voided > 0 && ` (${headToHead.voided} called off)`}, and you are{' '}
               <span className="font-medium">
                 {headToHead.netCentsForA >= 0n ? 'up' : 'down'}{' '}
-                {(headToHead.netCentsForA < 0n
-                  ? -headToHead.netCentsForA
-                  : headToHead.netCentsForA
-                ).toString()}
-              </span>{' '}
-              credits.
+                <Money
+                  cents={headToHead.netCentsForA < 0n ? -headToHead.netCentsForA : headToHead.netCentsForA}
+                  currency="CREDITS"
+                />
+              </span>
+              .
             </p>
           )}
         </section>

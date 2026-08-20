@@ -47,6 +47,10 @@ export default async function AdminPage() {
         Overdue &amp; disputed events
       </Link>
 
+      <Link href="/admin/wagers" className="text-sm text-zinc-500 underline">
+        Wagers needing a ruling
+      </Link>
+
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
           Waiting for approval
