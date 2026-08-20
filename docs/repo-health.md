@@ -10,8 +10,18 @@ itself against "we could just tell each other," and the ones that fail are liste
 [what is deliberately skipped](#what-is-deliberately-skipped) with the reason, so they do
 not get re-proposed later.
 
-Nothing here is implemented. This is the writeup; each section is small enough to land on
-its own.
+**Status (2026-08-20).** Landed: branch protection on `main` requiring the `verify` check
+([1.4](#14-cheap-improvements)); the five milestones and the `bug`, `money`, `ui`,
+`from-test-pass`, and `phase-5`–`phase-9` labels ([4](#4-issues-and-milestones)) — all done
+directly in GitHub settings, not as files in this repo; the `decision-log` skill
+([3.4](#34-decision-log--a-skill)); the `money-invariants` skill
+([3.3](#33-money-invariants--all-three-layers)); and the bug issue template ([2](#2-hygiene)).
+
+Not yet landed: the ledger-funnel guard test ([3.3](#33-money-invariants--all-three-layers)),
+the `session-start` hook ([3.6](#36-session-start--a-hook)), the CI build/concurrency/timeout/
+Node-pinning/Dependabot changes ([1](#1-the-ci-gate)), and the `db-migration` skill
+([3.5](#35-db-migration--a-skill)) — still marginal per that section; add it if a migration goes
+wrong, not before.
 
 ---
 
