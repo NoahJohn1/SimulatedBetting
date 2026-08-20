@@ -17,6 +17,40 @@
 - **Never commit a real secret.** `.env*` is gitignored except `.env.example`; keep it that way.
 - **Commit messages** follow the existing style: lowercase `type: summary`, then a body explaining *why*. No model identifiers anywhere in a commit message, file, or comment.
 
+## Where each task can run
+
+Measured on 2026-08-20 in a Claude Code cloud session. **There is no Docker daemon there** —
+the client is installed but `/var/run/docker.sock` does not exist — so Postgres cannot start
+and the 546-test suite cannot run. It fails fast with `DATABASE_URL is not set` rather than
+hanging, which at least makes the blockage obvious.
+
+What does work in a cloud session: `npm run typecheck` (exit 0), `npm run lint` (exit 0, 3
+warnings), `npm run build` (10.7s — needs `DATABASE_URL` set but not reachable), and any test
+that never opens a connection. Task 1's guard test is one of those: it reads source files, so
+it runs in 324ms with no database.
+
+| Task | Cloud session | Notes |
+|---|---|---|
+| 1 — guard test | **Partial** | The test itself runs and passes. Step 2's failure probe works. Step 4's `npm run verify` is blocked — substitute `npm run typecheck && npm run lint` and run the full suite locally before merging. |
+| 2 — SessionStart hook | **Partial** | The script can be written and its graceful-degradation path is actually testable here: `docker` resolves but the daemon is absent, so `docker compose up` fails and the hook must still exit 0. Step 4 (prove the suite runs) needs a local machine. |
+| 3 — decision-log skill | **Yes** | A markdown file. No database, no build. |
+| 4 — money-invariants skill | **Yes** | A markdown file. |
+| 5 — issue template | **Yes** | YAML files. |
+| 6 — CI and Node pinning | **Partial** | All files can be written; `npm run build` verifies here. Step 5's `npm run verify` is blocked. |
+| 7 — documentation | **Partial** | Edits and the link checker run fine. The closing `npm run verify` is blocked. |
+| 8 — GitHub settings | **Yes** | A browser task, not a local one — doable right now from any browser, phone included. |
+
+**The rule:** anything whose deliverable is a file can be done in a cloud session. Anything
+whose *verification* is the test suite has to be confirmed on a machine with Docker. So a cloud
+session can write all seven tasks; it just cannot honestly close the ones whose gate is
+`npm run verify`.
+
+If you implement in the cloud, leave the suite unrun rather than claiming it passed, and run
+`npm run verify` locally before merging. A green typecheck and lint is not the gate — CI runs
+the full suite and will catch what you could not.
+
+---
+
 ## Parallel Execution Map
 
 Tasks 1–6 touch no file in common and may be dispatched simultaneously:
