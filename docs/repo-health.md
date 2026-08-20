@@ -21,11 +21,20 @@ its own.
 and runs `npm run verify` (typecheck, lint, 546 tests). That is a good gate with one real
 hole and several cheap improvements.
 
-### 1.1 It never builds — the only real hole
+### 1.1 It never builds — worth adding, but narrower than it looks
 
-`npm run verify` does not include `npm run build`, so **a broken route merges green today**.
-The root README already names build as "the fastest way to catch a broken route"; the gate
-just does not do it.
+`npm run verify` does not include `npm run build`, so nothing in CI compiles the routes.
+
+**Measure the gain honestly before spending effort here.** Two attempts on 2026-08-20 to make
+the build catch something `verify` misses — a client component importing the server-side db
+client, then an invalid `export const revalidate` — both compiled clean. The build output shows
+why: only `/_not-found` prerenders, and all 26 application routes are `ƒ` (dynamic). `next
+build` therefore never executes page code; it compiles, and `tsc --noEmit` (with `next typegen`
+supplying route types) already type-checks the same source.
+
+What is left is real but narrow: bundler-level module resolution can differ from TypeScript's,
+and a build failure there would otherwise reach production. At 10.7 seconds it is cheap
+insurance. It is not, as an earlier draft of this document claimed, the gate's one great hole.
 
 Adding it is free. Verified 2026-08-20 by running the build with every auth variable
 explicitly unset:
@@ -171,12 +180,15 @@ touched. Keep it cheap — a flag, not a review. A hook that spawns a full agent
 save of a money file is slow and interrupts mid-edit, and the reliable outcome of that is that
 someone disables it.
 
-**Layer 3 — a `money-invariants` subagent.** Read-only, runs once before commit against the
-accumulated diff. It handles what a test cannot read: *is this idempotency key actually
+**Layer 3 — a `money-invariants` skill.** Deliberately a skill rather than a dedicated
+subagent: the built-in `/code-review` and `/security-review` already supply the reviewing
+machinery, and what they lack is this project's specific knowledge. Packaging that knowledge as
+a skill those reviews can pull in gets the value without maintaining a parallel review path. It
+covers what a test cannot read: *is this idempotency key actually
 deterministic, or does it close over a timestamp?* *Does this new balance write share the
 entry's transaction?* *Does this credits path stay non-convertible under
 [D31](decisions.md#d31--custom-events-are-bet-in-credits-a-second-non-convertible-currency)?*
-Its own context window keeps a long review from crowding out the work in progress.
+Run it before committing money-path work, or invoke it directly as `/money-invariants`.
 
 ### 3.4 `decision-log` — a skill
 
@@ -257,11 +269,19 @@ Recorded so these do not get re-proposed in six months:
 
 ## Suggested order
 
-1. **CI: add `build`, `concurrency`, `timeout-minutes`** — closes the only real hole, minutes of work
-2. **Branch protection on `main`** — makes the gate mean something
-3. **`session-start` hook** — everything else is easier once a session can run the suite
-4. **The money guard test** — locks in a property that holds today, before it stops holding
-5. **Milestones, labels, and the bug issue template** — before the human test pass, not during
-6. **`decision-log` and `db-migration` skills** — while the conventions are fresh
-7. **`money-invariants` hook and agent** — most work, and wants the guard test underneath it first
-8. **`.nvmrc`, `engines`, Dependabot, Prettier** — whenever
+1. **Branch protection on `main`** — CI is advisory until this exists; a red pull request can be
+   merged today. Two minutes, and it is what makes every other CI improvement matter.
+2. **`session-start` hook** — everything else is easier once a session can run the suite
+3. **Milestones, labels, and the bug issue template** — before the human test pass, not during.
+   Findings arrive faster than somewhere to put them can be set up.
+4. **The money guard test** — locks in a property that holds today, before phase 5 starts
+   touching settlement paths
+5. **`decision-log` skill** — while the conventions are fresh
+6. **CI: `build`, `concurrency`, `timeout-minutes`, `.nvmrc`, `engines`, Dependabot** — one
+   chore commit; individually small, collectively tidy
+7. **`money-invariants` skill** — wants the guard test underneath it first
+8. **`db-migration` skill** — marginal; the README already documents the sequence
+
+**Prettier is dropped.** Adopting it means one reformat commit touching nearly every file, and
+doing that mid-roadmap immediately before the phase 7 UI rewrite trades real diff churn for a
+cosmetic gain. Revisit after phase 7, if at all.
