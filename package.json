@@ -2,6 +2,9 @@
   "name": "simulated-betting",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -19,6 +22,7 @@
     "db:migrate": "tsx src/db/migrate.ts",
     "db:migrate:test": "ENV_FILE=.env.test tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
+    "db:bootstrap:season": "tsx src/db/bootstrap-season.ts",
     "admin:promote": "tsx src/db/promote-admin.ts"
   },
   "dependencies": {
