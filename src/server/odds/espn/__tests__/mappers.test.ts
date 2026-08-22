@@ -139,4 +139,27 @@ describe('mapMarkets', () => {
     expect(skipped).toBe(1);
     expect(markets.map((m) => m.type).sort()).toEqual(['MONEYLINE', 'TOTAL']);
   });
+
+  it('skips markets ESPN reports as "OFF" (a pulled book) and keeps the clean one', () => {
+    const marketOff = loadFixture('event-market-off.json').events[0];
+
+    const { markets, skipped } = mapMarkets(marketOff);
+
+    expect(() => mapMarkets(marketOff)).not.toThrow();
+    expect(markets).toEqual([
+      {
+        gameExternalId: '401856767',
+        type: 'SPREAD',
+        sourceBook: 'DraftKings',
+        selections: [
+          { side: 'HOME', line: '-41.5', priceAmerican: -110 },
+          { side: 'AWAY', line: '41.5', priceAmerican: -110 },
+        ],
+      },
+    ]);
+    expect(markets.map((m) => m.type)).not.toContain('TOTAL');
+    expect(markets.map((m) => m.type)).not.toContain('MONEYLINE');
+    expect(skipped).toBe(2);
+    expect(markets[0].sourceBook).toBe('DraftKings');
+  });
 });

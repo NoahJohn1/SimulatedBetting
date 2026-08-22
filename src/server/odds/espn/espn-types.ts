@@ -27,7 +27,7 @@ export interface EspnOddsSideClose {
 }
 
 export interface EspnOdds {
-  provider: { displayName: string };
+  provider: { displayName?: string; name: string };
   pointSpread?: { home: EspnOddsSideClose; away: EspnOddsSideClose };
   total?: { over: EspnOddsSideClose; under: EspnOddsSideClose };
   moneyline?: { home: EspnOddsSideClose; away: EspnOddsSideClose };

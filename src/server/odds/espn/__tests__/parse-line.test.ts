@@ -21,4 +21,8 @@ describe('parseLine', () => {
   it('leaves a whole-number line untouched', () => {
     expect(parseLine('-3')).toBe('-3');
   });
+
+  it('throws on ESPN\'s "OFF" (a pulled market, not a line)', () => {
+    expect(() => parseLine('OFF')).toThrow();
+  });
 });

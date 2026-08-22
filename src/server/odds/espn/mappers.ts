@@ -84,17 +84,31 @@ export function mapResult(event: EspnEvent): ProviderResult {
   };
 }
 
+/**
+ * ESPN reports the literal string "OFF" (not a number) when a book has pulled a market's
+ * price — common on lopsided games. `Number("OFF")` is NaN but does NOT throw, so without
+ * this check a pulled market's price would silently reach the database as NaN instead of
+ * being caught by the per-market try/catch below.
+ */
+function parseAmericanPrice(raw: string): number {
+  const value = Number(raw);
+  if (!Number.isFinite(value)) {
+    throw new Error(`Unparseable ESPN price: ${JSON.stringify(raw)}`);
+  }
+  return value;
+}
+
 function spreadMarket(gameExternalId: string, sourceBook: string, odds: EspnOdds): ProviderMarket {
   const selections: ProviderSelection[] = [
     {
       side: 'HOME',
       line: parseLine(odds.pointSpread!.home.close.line!),
-      priceAmerican: Number(odds.pointSpread!.home.close.odds),
+      priceAmerican: parseAmericanPrice(odds.pointSpread!.home.close.odds),
     },
     {
       side: 'AWAY',
       line: parseLine(odds.pointSpread!.away.close.line!),
-      priceAmerican: Number(odds.pointSpread!.away.close.odds),
+      priceAmerican: parseAmericanPrice(odds.pointSpread!.away.close.odds),
     },
   ];
   return { gameExternalId, type: 'SPREAD', sourceBook, selections };
@@ -105,12 +119,12 @@ function totalMarket(gameExternalId: string, sourceBook: string, odds: EspnOdds)
     {
       side: 'OVER',
       line: parseLine(odds.total!.over.close.line!),
-      priceAmerican: Number(odds.total!.over.close.odds),
+      priceAmerican: parseAmericanPrice(odds.total!.over.close.odds),
     },
     {
       side: 'UNDER',
       line: parseLine(odds.total!.under.close.line!),
-      priceAmerican: Number(odds.total!.under.close.odds),
+      priceAmerican: parseAmericanPrice(odds.total!.under.close.odds),
     },
   ];
   return { gameExternalId, type: 'TOTAL', sourceBook, selections };
@@ -118,8 +132,8 @@ function totalMarket(gameExternalId: string, sourceBook: string, odds: EspnOdds)
 
 function moneylineMarket(gameExternalId: string, sourceBook: string, odds: EspnOdds): ProviderMarket {
   const selections: ProviderSelection[] = [
-    { side: 'HOME', line: null, priceAmerican: Number(odds.moneyline!.home.close.odds) },
-    { side: 'AWAY', line: null, priceAmerican: Number(odds.moneyline!.away.close.odds) },
+    { side: 'HOME', line: null, priceAmerican: parseAmericanPrice(odds.moneyline!.home.close.odds) },
+    { side: 'AWAY', line: null, priceAmerican: parseAmericanPrice(odds.moneyline!.away.close.odds) },
   ];
   return { gameExternalId, type: 'MONEYLINE', sourceBook, selections };
 }
@@ -136,7 +150,7 @@ export function mapMarkets(event: EspnEvent): { markets: ProviderMarket[]; skipp
   if (!odds) return { markets: [], skipped: 0 };
 
   const gameExternalId = competition.id;
-  const sourceBook = odds.provider.displayName;
+  const sourceBook = odds.provider.displayName ?? odds.provider.name;
   const markets: ProviderMarket[] = [];
   let skipped = 0;
 
