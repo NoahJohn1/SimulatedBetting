@@ -202,6 +202,34 @@ describe('syncOdds', () => {
   });
 });
 
+class SkippingProvider implements OddsProvider {
+  async getUpcomingGames(): Promise<ProviderGame[]> {
+    return [];
+  }
+  async getMarkets(): Promise<ProviderMarket[]> {
+    return [];
+  }
+  getSkipped(): { games: number; markets: number } {
+    return { games: 2, markets: 5 };
+  }
+}
+
+describe('syncOdds skip counters', () => {
+  beforeEach(resetDb);
+
+  it('surfaces getSkipped() on the summary when the provider implements it', async () => {
+    const summary = await syncOdds({ provider: new SkippingProvider() });
+    expect(summary.gamesSkipped).toBe(2);
+    expect(summary.marketsSkipped).toBe(5);
+  });
+
+  it('defaults skip counts to zero for a provider that does not implement getSkipped', async () => {
+    const summary = await syncOdds({ provider: new FixtureOddsProvider() });
+    expect(summary.gamesSkipped).toBe(0);
+    expect(summary.marketsSkipped).toBe(0);
+  });
+});
+
 describe('suspendStaleMarkets', () => {
   beforeEach(resetDb);
 

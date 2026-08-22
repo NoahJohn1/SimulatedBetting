@@ -59,6 +59,11 @@ export interface ProviderResult {
 export interface OddsProvider {
   getUpcomingGames(sport: Sport, withinDays: number): Promise<ProviderGame[]>;
   getMarkets(gameExternalIds: string[]): Promise<ProviderMarket[]>;
+  /**
+   * Games/markets skipped due to malformed provider data since this instance was
+   * constructed. Optional — the fixture provider never skips, so it doesn't implement this.
+   */
+  getSkipped?(): { games: number; markets: number };
 }
 
 export interface ScoreProvider {
