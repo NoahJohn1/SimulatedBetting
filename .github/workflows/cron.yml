@@ -1,0 +1,36 @@
+name: Sportsbook cron jobs
+
+# Vercel Hobby only allows crons that run once a day or less, so sync-odds (every 15
+# minutes) and settle (every 10 minutes) run from here instead, hitting the same route
+# handlers over HTTP with the same bearer-token auth Vercel Cron would have used. allowance
+# and reconcile stay as native Vercel crons in vercel.json since both are daily-or-less.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+    - cron: '*/10 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  sync-odds:
+    if: github.event.schedule == '*/15 * * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call /api/cron/sync-odds
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -sf -X GET "$APP_URL/api/cron/sync-odds" \
+            -H "Authorization: Bearer $CRON_SECRET"
+
+  settle:
+    if: github.event.schedule == '*/10 * * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call /api/cron/settle
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -sf -X GET "$APP_URL/api/cron/settle" \
+            -H "Authorization: Bearer $CRON_SECRET"
