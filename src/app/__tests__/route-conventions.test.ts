@@ -93,3 +93,39 @@ describe('error and not-found boundaries', () => {
     }
   });
 });
+
+/**
+ * A loading.tsx covers its segment and everything nested below it, so these eight cover all
+ * eighteen pages. Adding one per segment instead would produce a dozen identical files that
+ * no navigation ever crosses.
+ */
+const FEATURE_SEGMENTS = [
+  join('(app)', 'games'),
+  join('(app)', 'events'),
+  join('(app)', 'feed'),
+  join('(app)', 'bets'),
+  join('(app)', 'wagers'),
+  join('(app)', 'standings'),
+  join('(app)', 'me'),
+  'admin',
+];
+
+describe('loading boundaries', () => {
+  it.each(FEATURE_SEGMENTS)('%s has one', (segment) => {
+    expect(existsSync(join(APP, segment, 'loading.tsx'))).toBe(true);
+  });
+
+  it('covers every page in the app', () => {
+    const uncovered = walk(APP)
+      .filter((f) => f.endsWith('page.tsx'))
+      .filter((page) => !FEATURE_SEGMENTS.some((s) => page.startsWith(join(APP, s) + '/')))
+      // Routes outside the two sections are standalone states with no shell and no
+      // meaningful load: /, /sign-in, /join, /pending, /disabled, /no-season, and the
+      // one member-profile route that has no feature segment of its own.
+      .filter((page) => page.startsWith(join(APP, '(app)') + '/'));
+
+    expect(uncovered.map((f) => f.replace(APP, ''))).toEqual([
+      join('/(app)', 'members', '[membershipId]', 'page.tsx'),
+    ]);
+  });
+});
