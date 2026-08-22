@@ -43,20 +43,22 @@ are untouched completely.
 7a is done when all of the following are true:
 
 1. A throw in any member-facing page renders an error boundary **inside** the app shell: the
-   header, the tab bar, and the bet slip are still there, and the member can retry or navigate
-   away without a full reload.
+   header, the tab bar, and the bet slip are still there, and the member can navigate away
+   without a full reload.
 2. A throw in any admin page renders an error boundary rather than the root one.
-3. Every `notFound()` call in the app lands on a not-found boundary that keeps the shell.
-4. Every top-level feature segment shows a loading state on navigation instead of a blank
+3. "Try again" actually tries again — every boundary calls `retry()`, which re-fetches, rather
+   than `reset()`, which does not.
+4. Every `notFound()` call in the app lands on a not-found boundary that keeps the shell.
+5. Every top-level feature segment shows a loading state on navigation instead of a blank
    pause.
-5. Error boundaries display the error's `digest`, so a member can read eight characters aloud
+6. Error boundaries display the error's `digest`, so a member can read eight characters aloud
    and have them grep the server log.
-6. The browser tab, the app switcher, and an installed home-screen icon all identify the app as
+7. The browser tab, the app switcher, and an installed home-screen icon all identify the app as
    SimulatedBetting. The app installs to a phone home screen and opens standalone.
-7. Search engines are told not to index it.
-8. `docs/mobile-audit.md` records every screen viewed at 375×812, with each finding assigned to
+8. Search engines are told not to index it.
+9. `docs/mobile-audit.md` records every screen viewed at 375×812, with each finding assigned to
    the ladder rung that owns its fix.
-9. `npm run verify` passes, including new tests that fail if a boundary is deleted or a form
+10. `npm run verify` passes, including new tests that fail if a boundary is deleted or a form
    loses its pending state.
 
 ## Non-goals
@@ -135,6 +137,18 @@ file.
 
 There is no `admin/not-found.tsx`: no admin page calls `notFound()`. The structural test in
 [Testing](#testing) is what keeps that honest — the day one does, the test fails.
+
+### The two existing boundaries have a bug
+
+Next 16 hands an error boundary both `retry` and `reset`. `retry()` re-fetches and re-renders
+the boundary's children; `reset()` only clears the error state. The bundled docs are explicit
+that `retry()` is the one you want in almost every case.
+
+Both boundaries currently in the repo were written against `reset`, so a member who hits a
+transient database failure and clicks "Try again" is re-shown the same failed render. That is
+a behavior bug, not a naming preference, and it is in this phase's lane — 7a exists to make
+"something broke" recoverable, and the recovery button does not currently recover. All four
+boundaries end this phase on `retry`.
 
 ### Two behaviors that look like gaps and are not
 
