@@ -5,10 +5,10 @@ import { StatusScreen } from '@/components/ui/status-screen';
 
 export default function Error({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   return (
     <StatusScreen
@@ -18,7 +18,7 @@ export default function Error({
     >
       <button
         type="button"
-        onClick={() => reset()}
+        onClick={() => retry()}
         className="text-sm font-medium text-zinc-500 underline"
       >
         Try again

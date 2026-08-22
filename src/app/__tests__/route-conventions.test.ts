@@ -231,3 +231,18 @@ describe('form pending states', () => {
     expect(withTransition.length).toBeGreaterThanOrEqual(12);
   });
 });
+
+describe('error boundary recovery', () => {
+  it('uses retry(), which re-fetches, rather than reset(), which does not', () => {
+    const boundaries = walk(APP).filter((f) => /(?:^|\/)(global-)?error\.tsx$/.test(f));
+    expect(boundaries.length).toBe(4);
+
+    for (const file of boundaries) {
+      const source = readFileSync(file, 'utf8');
+      expect(source, `${file} should offer retry()`).toContain('retry');
+      expect(source, `${file} still uses reset(), which does not re-fetch`).not.toContain(
+        'reset',
+      );
+    }
+  });
+});
