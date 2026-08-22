@@ -179,7 +179,8 @@ export function MarketCard(props: MarketCardProps) {
                         [outcome.selectionId]: e.target.value,
                       }))
                     }
-                    inputMode="numeric"
+                    // "numeric" hides the minus key on iOS/Android; American odds need it.
+                    inputMode="text"
                     className="w-24 rounded-lg border border-zinc-300 px-2 py-1 text-sm tabular-nums dark:border-zinc-700 dark:bg-zinc-900"
                   />
                 </div>

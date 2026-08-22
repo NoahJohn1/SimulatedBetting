@@ -110,7 +110,10 @@ export function BetSlip({
   }
 
   return (
-    <div className="sticky bottom-0 z-20 border-t border-zinc-200 bg-white shadow-[0_-8px_24px_rgba(0,0,0,0.06)] dark:border-zinc-800 dark:bg-zinc-950">
+    // bottom-[41px] clears the fixed TabBar (its rendered height) sitting below this sibling —
+    // two independent `sticky bottom-0` elements both stick to the viewport's own bottom edge
+    // and overlap rather than stack, since sticky doesn't reserve space for other sticky siblings.
+    <div className="sticky bottom-[41px] z-20 border-t border-zinc-200 bg-white shadow-[0_-8px_24px_rgba(0,0,0,0.06)] dark:border-zinc-800 dark:bg-zinc-950">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}

@@ -292,7 +292,8 @@ export function EventForm() {
                           onChange={(e) =>
                             updateOutcome(market.id, outcome.id, { priceAmerican: e.target.value })
                           }
-                          inputMode="numeric"
+                          // "numeric" hides the minus key on iOS/Android; American odds need it.
+                          inputMode="text"
                           placeholder="-110"
                           className={`w-24 tabular-nums ${priceError ? fieldErrorClass : fieldClass}`}
                         />
