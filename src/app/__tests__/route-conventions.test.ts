@@ -168,3 +168,30 @@ describe('metadata', () => {
     expect(source).toMatch(/export const metadata: Metadata = \{\s*title:/);
   });
 });
+
+describe('icons and manifest', () => {
+  it('generates its icons in code', () => {
+    expect(existsSync(join(APP, 'icon.tsx'))).toBe(true);
+    expect(existsSync(join(APP, 'apple-icon.tsx'))).toBe(true);
+  });
+
+  it('has no favicon.ico, which would outrank the generated icon', () => {
+    expect(existsSync(join(APP, 'favicon.ico'))).toBe(false);
+  });
+
+  it('ships a web manifest so the app installs to a home screen', () => {
+    const manifest = join(APP, 'manifest.ts');
+    expect(existsSync(manifest)).toBe(true);
+    const source = readFileSync(manifest, 'utf8');
+    expect(source).toContain("display: 'standalone'");
+    // "/" only redirects; /games is the real front door.
+    expect(source).toContain("start_url: '/games'");
+  });
+
+  it('has none of the create-next-app scaffold assets left', () => {
+    const publicDir = join(process.cwd(), 'public');
+    const stock = ['file.svg', 'globe.svg', 'next.svg', 'vercel.svg', 'window.svg'];
+    const remaining = stock.filter((f) => existsSync(join(publicDir, f)));
+    expect(remaining).toEqual([]);
+  });
+});
