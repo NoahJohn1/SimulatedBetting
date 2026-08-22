@@ -248,19 +248,24 @@ and stop there — nothing later in the ladder is a prerequisite for anything ou
 
 ### 7a — Foundations
 
-**Specified** — see [the spec](specs/2026-08-22-ui-foundations-design.md), which supersedes the
-description below on two points: root-level `error.tsx`, `global-error.tsx`, and `not-found.tsx`
-landed with the deploy groundwork, and pending states are already on all twelve forms. What is
-left is boundaries *inside* the shell, `loading.tsx` (still genuinely zero), metadata, and the
-audit.
+**Built** — see [the spec](specs/2026-08-22-ui-foundations-design.md) for the full design and
+[the mobile audit](mobile-audit.md) for what 7b inherits. The original description below got two
+things wrong, recorded in the spec rather than silently re-scoped: root-level `error.tsx`,
+`global-error.tsx`, and `not-found.tsx` had already landed with the deploy groundwork, and
+pending states were already on all twelve forms — both needed a regression test, not a rebuild.
 
-Not optional, and small. The root layout still reports itself as "Create Next App," and
-`public/` is the five stock Next.js SVGs.
-
-- Error, loading, and not-found boundaries on every route segment
-- Real metadata, favicon, app icons, and a PWA manifest so it installs to a phone home screen
-- Pending states on every form — bets, offers, resolutions, admin actions
-- A mobile viewport audit; this is a phone app that happens to run in a browser
+- Error and not-found boundaries inside the `(app)` shell and `admin`, so a throw or a bad id
+  keeps the header, tab bar, and bet slip instead of replacing them; the two root boundaries
+  now call `retry()` instead of `reset()`, so "Try again" actually re-fetches
+- `loading.tsx` on every top-level feature segment (eight files cover all eighteen pages)
+- Real metadata, a title template, generated app icons, and a web manifest, so the browser tab,
+  the app switcher, and an installed home-screen icon all say SimulatedBetting; search engines
+  are told not to index it
+- A regression test asserting all twelve forms' pending states, and a structural test that fails
+  the day a route ships without a boundary
+- A mobile audit at 375×812 across all eighteen routes, which caught and fixed two genuine
+  blocks-use bugs in passing: the bet slip's collapsed bar occluding the entire tab bar, and a
+  mobile keyboard with no minus key blocking negative odds entry on custom events
 
 ### 7b — Design system
 
