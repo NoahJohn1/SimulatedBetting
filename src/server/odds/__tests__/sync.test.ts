@@ -230,6 +230,46 @@ describe('syncOdds skip counters', () => {
   });
 });
 
+/** Mimics EspnOddsProvider's real accumulation shape: skippedMarkets is only known after
+ *  getMarkets() has actually been called, not right after getUpcomingGames(). A getSkipped()
+ *  read taken too early would see 0 markets skipped even though real skips happened. */
+class IncrementallySkippingProvider implements OddsProvider {
+  private marketsSkippedSoFar = 0;
+
+  async getUpcomingGames(): Promise<ProviderGame[]> {
+    return [
+      {
+        externalId: 'incremental-skip-game',
+        sport: 'NFL',
+        home: { externalId: 'home-team', name: 'Home', abbreviation: 'HOM' },
+        away: { externalId: 'away-team', name: 'Away', abbreviation: 'AWY' },
+        startsAt: new Date('2026-09-01T17:00:00Z'),
+        seasonYear: 2026,
+        week: 1,
+        status: 'SCHEDULED',
+      },
+    ];
+  }
+
+  async getMarkets(): Promise<ProviderMarket[]> {
+    this.marketsSkippedSoFar = 3;
+    return [];
+  }
+
+  getSkipped(): { games: number; markets: number } {
+    return { games: 0, markets: this.marketsSkippedSoFar };
+  }
+}
+
+describe('syncOdds skip counters (incremental provider)', () => {
+  beforeEach(resetDb);
+
+  it('reflects marketsSkipped that only becomes known after getMarkets runs', async () => {
+    const summary = await syncOdds({ provider: new IncrementallySkippingProvider() });
+    expect(summary.marketsSkipped).toBe(3);
+  });
+});
+
 describe('suspendStaleMarkets', () => {
   beforeEach(resetDb);
 

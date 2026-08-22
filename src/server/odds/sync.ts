@@ -221,6 +221,12 @@ export async function syncOdds(options: SyncOddsOptions): Promise<SyncOddsSummar
     }
   }
 
+  const skippedAfterMarkets = options.provider.getSkipped?.();
+  if (skippedAfterMarkets) {
+    summary.gamesSkipped = skippedAfterMarkets.games;
+    summary.marketsSkipped = skippedAfterMarkets.markets;
+  }
+
   return summary;
 }
 
