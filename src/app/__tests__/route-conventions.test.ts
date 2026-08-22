@@ -195,3 +195,39 @@ describe('icons and manifest', () => {
     expect(remaining).toEqual([]);
   });
 });
+
+describe('form pending states', () => {
+  /**
+   * A source-text assertion, and a coarse one — it can be defeated by a form that names its
+   * flag something else. Its job is to fail when a form is added with no pending state at
+   * all, which is the failure that actually happens. The twelve that exist were read
+   * individually during the 7a design session.
+   */
+  it('every form that submits through a transition disables a control while it runs', () => {
+    const roots = [APP, COMPONENTS];
+    const offenders: string[] = [];
+
+    for (const root of roots) {
+      for (const file of walk(root)) {
+        if (!file.endsWith('.tsx')) continue;
+        const source = readFileSync(file, 'utf8');
+        if (!source.includes('useTransition')) continue;
+        if (!/disabled=\{[^}]*pending/.test(source)) {
+          offenders.push(file.replace(process.cwd(), ''));
+        }
+      }
+    }
+
+    expect(offenders).toEqual([]);
+  });
+
+  it('covers the forms it is supposed to cover', () => {
+    const withTransition = [APP, COMPONENTS]
+      .flatMap((root) => walk(root))
+      .filter((f) => f.endsWith('.tsx'))
+      .filter((f) => readFileSync(f, 'utf8').includes('useTransition'));
+
+    // Guards against the check silently passing because it stopped finding any forms.
+    expect(withTransition.length).toBeGreaterThanOrEqual(12);
+  });
+});
