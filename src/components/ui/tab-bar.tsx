@@ -25,7 +25,10 @@ export function TabBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky bottom-0 z-10 grid grid-cols-6 border-t border-zinc-200 bg-white/90 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
+    // src/components/bet-slip/bet-slip.tsx sticks itself just above this nav using a hardcoded
+    // `bottom` offset derived from this nav's rendered height — changing this nav's padding,
+    // font size, or border requires updating that offset too.
+    <nav className="sticky bottom-0 z-10 grid grid-cols-6 border-t border-zinc-200 bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
       {TABS.map((tab) => {
         const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
         return (

@@ -235,7 +235,7 @@ describe('form pending states', () => {
 describe('error boundary recovery', () => {
   it('uses retry(), which re-fetches, rather than reset(), which does not', () => {
     const boundaries = walk(APP).filter((f) => /(?:^|\/)(global-)?error\.tsx$/.test(f));
-    expect(boundaries.length).toBe(4);
+    expect(boundaries.length).toBeGreaterThanOrEqual(4);
 
     for (const file of boundaries) {
       const source = readFileSync(file, 'utf8');

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 // Set on the deployment; localhost is the local fallback. Phase 6 supplies the real value.
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

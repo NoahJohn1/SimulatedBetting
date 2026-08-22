@@ -39,7 +39,7 @@ Three properties the design is organized around:
 ## Where things stand
 
 All four subsystems are built end-to-end and verified: `npm run verify` (typecheck, lint,
-73 test files / 546 tests) passes clean, and the app runs, seeds a fixture slate, takes a bet
+74 test files / 578 tests) passes clean, and the app runs, seeds a fixture slate, takes a bet
 through placement and settlement (including a push), reconciles the ledger correctly in both
 currencies, and posts and reads back the feed cards those actions generate — including a
 custom event carried from creation through a disputed resolution and an admin correction, and
