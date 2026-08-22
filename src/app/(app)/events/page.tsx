@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -10,6 +11,8 @@ const SECTION_TITLES: Record<EventSection, string> = {
   AWAITING: 'Awaiting resolution',
   SETTLED: 'Recently settled',
 };
+
+export const metadata: Metadata = { title: 'Events' };
 
 export default async function EventsPage() {
   const member = await requireApprovedMember();

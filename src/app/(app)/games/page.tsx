@@ -1,7 +1,10 @@
+import type { Metadata } from 'next';
 import { EmptyState } from '@/components/ui/empty-state';
 import { getSlate } from '@/server/odds/board';
 import { requireApprovedMember } from '@/server/auth/session';
 import { GameCard } from './game-card';
+
+export const metadata: Metadata = { title: 'Games' };
 
 export default async function GamesPage() {
   await requireApprovedMember();

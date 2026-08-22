@@ -1,8 +1,11 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { EmptyState } from '@/components/ui/empty-state';
 import { requireApprovedMember } from '@/server/auth/session';
 import { getSeasonFeed } from '@/server/feed/query';
 import { FeedList } from './feed-list';
+
+export const metadata: Metadata = { title: 'Feed' };
 
 export default async function FeedPage() {
   const member = await requireApprovedMember();

@@ -1,10 +1,13 @@
 import { revalidatePath } from 'next/cache';
 import { asc, eq } from 'drizzle-orm';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { db } from '@/db/client';
 import { users } from '@/db/schema';
 import { EmptyState } from '@/components/ui/empty-state';
 import { requireAdmin } from '@/server/auth/session';
+
+export const metadata: Metadata = { title: 'Admin' };
 
 /**
  * The approval queue. New sign-ins land PENDING (D7) and cannot bet until an admin acts,

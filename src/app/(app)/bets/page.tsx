@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray } from 'drizzle-orm';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { db } from '@/db/client';
 import { betLegs, bets, events, markets, selections } from '@/db/schema';
@@ -7,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Money, Price } from '@/components/ui/money';
 import { requireApprovedMember } from '@/server/auth/session';
+
+export const metadata: Metadata = { title: 'My Bets' };
 
 export default async function MyBetsPage({ searchParams }: PageProps<'/bets'>) {
   const member = await requireApprovedMember();

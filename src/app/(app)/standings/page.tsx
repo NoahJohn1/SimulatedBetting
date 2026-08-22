@@ -1,10 +1,13 @@
 import { desc, eq } from 'drizzle-orm';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { db } from '@/db/client';
 import { seasonMemberships, users } from '@/db/schema';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Money } from '@/components/ui/money';
 import { requireApprovedMember } from '@/server/auth/session';
+
+export const metadata: Metadata = { title: 'Standings' };
 
 export default async function StandingsPage() {
   const member = await requireApprovedMember();

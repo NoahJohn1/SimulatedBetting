@@ -1,8 +1,11 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Money } from '@/components/ui/money';
 import { requireApprovedMember } from '@/server/auth/session';
 import { loadWagerBoard, type WagerSummary } from '@/server/p2p/query';
+
+export const metadata: Metadata = { title: 'Wagers' };
 
 function WagerRow({ wager }: { wager: WagerSummary }) {
   const parties = wager.acceptorDisplayName

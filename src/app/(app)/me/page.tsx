@@ -1,4 +1,5 @@
 import { desc, eq } from 'drizzle-orm';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { db } from '@/db/client';
 import { ledgerEntries, seasonMemberships } from '@/db/schema';
@@ -6,6 +7,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Money } from '@/components/ui/money';
 import { signOut } from '@/server/auth/config';
 import { getSessionUser, requireApprovedMember } from '@/server/auth/session';
+
+export const metadata: Metadata = { title: 'Me' };
 
 const LABELS: Record<string, string> = {
   SEASON_STARTING_GRANT: 'Starting bankroll',
