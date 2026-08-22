@@ -248,10 +248,14 @@ and stop there — nothing later in the ladder is a prerequisite for anything ou
 
 ### 7a — Foundations
 
-Not optional, and small. The app currently has **zero** `error.tsx`, `loading.tsx`, or
-`not-found.tsx` files, so any thrown error in any route is a white screen with no way back.
-The root layout still reports itself as "Create Next App," and `public/` is the five stock
-Next.js SVGs.
+**Specified** — see [the spec](specs/2026-08-22-ui-foundations-design.md), which supersedes the
+description below on two points: root-level `error.tsx`, `global-error.tsx`, and `not-found.tsx`
+landed with the deploy groundwork, and pending states are already on all twelve forms. What is
+left is boundaries *inside* the shell, `loading.tsx` (still genuinely zero), metadata, and the
+audit.
+
+Not optional, and small. The root layout still reports itself as "Create Next App," and
+`public/` is the five stock Next.js SVGs.
 
 - Error, loading, and not-found boundaries on every route segment
 - Real metadata, favicon, app icons, and a PWA manifest so it installs to a phone home screen

@@ -819,3 +819,40 @@ are. `settle` is deliberately resumable and safe to re-run
 ([D3](#d3--stack-single-nextjs-app-on-postgres) forced the batching; idempotency made it safe),
 and an unkeyed send turns a harmless re-run into a second email to everyone. A duplicate ledger
 write has a reversing entry. A duplicate email does not.
+
+---
+
+### D51 — UI conventions are tested structurally, not with a component-test harness
+
+*Added 2026-08-22 during the phase 7a design session.*
+
+Phase 7a is the first work in this project that produces files under `src/app` worth testing.
+It tests them by walking the filesystem from a plain node test — asserting that the required
+`error.tsx`, `loading.tsx`, and `not-found.tsx` files exist, that every page calling
+`notFound()` has a not-found boundary above it, and that every form using `useTransition`
+disables a control on the result. No jsdom, no React Testing Library, no second vitest
+environment.
+
+The assertion that carries this is the `notFound()` one. The rest describe the tree as it
+stands today and would be satisfied by a developer who simply did not delete anything; that one
+constrains routes not yet written, which is the only kind of structural test worth keeping.
+
+*Rejected:* jsdom plus React Testing Library, and a vitest projects config splitting node from
+browser environments. It buys real coverage of the boundary components — but those components
+are a heading, a paragraph, and two links, and they are scheduled to be rewritten in 7b against
+a token layer that does not exist yet. Paying for a harness now means paying to keep its tests
+green through a rewrite that is already planned.
+
+*Rejected:* browser verification alone. The one-time browser pass is what proves the boundaries
+actually render, and it is genuinely necessary — a filesystem test cannot see a blank screen.
+But it leaves nothing behind. A refactor that deletes `(app)/error.tsx` would restore exactly
+the white-screen failure this phase exists to remove, and nothing would catch it.
+
+*What this accepts:* the pending-state check is a source-text assertion, and source-text
+assertions are coarse. It can be defeated by a form that disables its button through a variable
+named something else. Its job is to fail loudly when a form is added with no pending state at
+all, which is the failure that actually happens.
+
+*Revisit when:* 7b builds the shared component set. A button, dialog, and form-field component
+with real behavior is the first thing in this repo that a component test would genuinely earn,
+and that is the moment to reconsider — not before.
