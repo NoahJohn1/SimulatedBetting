@@ -14,7 +14,12 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Custom events plan](plans/2026-08-17-custom-events-implementation-plan.md) | The task-by-task implementation plan for subsystem 3 |
 | [Peer-to-peer bets spec](specs/2026-08-19-peer-to-peer-bets-design.md) | Subsystem 4: member-vs-member wagers, escrow, two-party resolution, admin arbitration, head-to-head |
 | [Peer-to-peer bets plan](plans/2026-08-19-peer-to-peer-bets-implementation-plan.md) | The task-by-task implementation plan for subsystem 4 |
-| [Roadmap](roadmap.md) | Part one: the four subsystems, what each adds, and build order. Part two: the phases between working code and a production deployment |
+| [UI foundations spec](specs/2026-08-22-ui-foundations-design.md) | Phase 7a: error, not-found, and loading boundaries inside the app shell; metadata, icons, and the web manifest |
+| [UI foundations plan](plans/2026-08-22-ui-foundations-implementation-plan.md) | The task-by-task implementation plan for phase 7a |
+| [Mobile audit](mobile-audit.md) | Every screen at 375×812, with each finding assigned to the ladder rung that owns its fix |
+| [Design system spec](specs/2026-08-24-design-system-design.md) | Phase 7b: the two-tier token layer, dark mode as a remap, the shared component set, and the sweep |
+| [Design system plan](plans/2026-08-24-design-system-implementation-plan.md) | The task-by-task implementation plan for phase 7b |
+| [Roadmap](roadmap.md) | Part one: the four subsystems, what each adds, and build order. Part two: the phases between working code and a production deployment. Phase 7's rung-by-rung status and inherited backlogs |
 | [Decision log](decisions.md) | Every design decision, what was rejected, and why |
 | [Repo health plan](plans/2026-08-20-repo-health-implementation-plan.md) | The task-by-task plan for the repo health work, written for parallel execution |
 | [Repo health](repo-health.md) | The CI gate, repo hygiene, Claude Code tooling, and issue tracking — with what is deliberately skipped at this project's size |
@@ -139,7 +144,9 @@ app you can hand to someone is laid out as phases 5 through 9 in
 2. **Production deployment** — hosted Postgres, Vercel wiring, and alerting on the cron jobs
    that move money
 3. **The UI ladder** — four rungs from error boundaries and app identity through to a full
-   redesign, shippable at each one
+   redesign, shippable at each one. [7a is built](specs/2026-08-22-ui-foundations-design.md);
+   [7b is specified](specs/2026-08-24-design-system-design.md). What each rung declined and who
+   picked it up is tracked in [the roadmap](roadmap.md#7--the-ui-ladder)
 4. **Email notifications** — opt-out, per-type
    ([D50](decisions.md#d50--notifications-are-opt-out-email-with-per-type-switches))
 5. **Hardening** — a smoke checklist, rate limits, house rules, and the new-member path
@@ -154,3 +161,7 @@ arbitrating a wager.
 - Decisions get an entry in `decisions.md`. When one turns out to be wrong, add a new entry
   rather than editing the old one.
 - Roadmap items graduate into their own spec when their turn comes.
+- Every document here appears in the table above. A spec, plan, or audit that exists but is not
+  listed is invisible — 7a's three were, until 7b's session noticed.
+- **A phase that declines work records where the work went.** The roadmap carries the owning
+  rung's backlog; the spec carries the reasoning. Nothing is dropped by omission.
