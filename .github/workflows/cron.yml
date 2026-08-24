@@ -4,7 +4,7 @@ name: Sportsbook cron jobs
 # minutes) and settle (every 10 minutes) run from here instead, hitting the same route
 # handlers over HTTP with the same bearer-token auth Vercel Cron would have used. allowance
 # and reconcile stay as native Vercel crons in vercel.json since both are daily-or-less.
-on:
+#on:
   schedule:
     - cron: '*/15 * * * *'
     - cron: '*/10 * * * *'
