@@ -292,7 +292,7 @@ silently corrupt the result if missed: `bg-zinc-50` maps to `--surface` when its
 partner is `dark:bg-zinc-900` (an inset row). The light class alone does not determine the
 token.
 
-**Declared visible changes.** Three, and only three, are permitted to differ:
+**Declared visible changes.** Four, and only four, are permitted to differ:
 
 1. `dark:bg-zinc-100` (15×) and `dark:bg-zinc-50` (3×) both become `--accent`. The three
    lighter ones darken by one stop.
@@ -300,6 +300,13 @@ token.
    text-amber-900` with **no dark variant at all**, so today they burn bright amber on a black
    card. They gain a dark treatment.
 3. The bet slip's shadow becomes visible in dark mode, having previously rendered as nothing.
+4. **A control adopted into `Button` takes `Button`'s radius.** Today's buttons are a mix of
+   `rounded-full` and `rounded-lg`; the component settles on `rounded-control`. This is the one
+   declared change that is not a colour, and it is a consequence of having a component at all —
+   a `Button` that inherits each call site's radius is a class-name helper wearing a component's
+   name. It is bounded by being opt-in: adoption happens at the call sites the plan names, and
+   the odds cells in `game-card.tsx` are explicitly not among them, being a selection grid that
+   happens to use `<button>`.
 
 Anything else the audit finds is a bug to fix, not a change to justify.
 
