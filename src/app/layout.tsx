@@ -36,11 +36,11 @@ export const viewport: Viewport = {
   initialScale: 1,
   // The tab bar is fixed to the bottom; a notched phone needs the whole screen.
   viewportFit: 'cover',
-  // The two values already defined in globals.css, so browser chrome stops fighting
-  // the app's background.
+  // The two --surface values from globals.css, as literal hex: browser chrome is painted
+  // before any stylesheet is parsed, so it cannot read a CSS variable.
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
+    { media: '(prefers-color-scheme: light)', color: '#fafafa' },
+    { media: '(prefers-color-scheme: dark)', color: '#000000' },
   ],
 };
 
