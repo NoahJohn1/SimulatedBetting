@@ -1591,6 +1591,7 @@ if a pair is not here, stop and check whether you have misread the partner class
 | `bg-red-50` + `dark:bg-red-950/30` | `bg-negative-surface-soft` |
 | `border-red-200/300/400` + `dark:border-red-600/800/900` | `border-negative-line` |
 | `text-red-700` *or* `text-red-800` | `text-negative-on-surface` |
+| `text-red-700` + `dark:text-red-400` | `text-negative-on-surface` (not `text-negative` — 700/400 is the exact on-surface pair, same pattern as the amber-700 fix above) |
 | `text-amber-600` + `dark:text-amber-400` | `text-caution` |
 | `text-amber-600` (bare) | `text-caution` |
 | `bg-amber-100` + `dark:bg-amber-950` | `bg-caution-surface` |
@@ -1605,6 +1606,31 @@ if a pair is not here, stop and check whether you have misread the partner class
 **One class deliberately absent from the table:** `bg-zinc-800`, which appears twice. Read both
 call sites — each is a dark-mode-only fill whose light partner is `bg-zinc-100`, so both are
 `bg-surface-muted`.
+
+**Task 13 additions, for the historical record (the baseline is empty after this task, so
+nothing downstream needs these, but the reasoning stays useful):**
+
+- Two plain `<input>`/`<textarea>` fields in admin (`void-form.tsx`, `arbitration-form.tsx`) had
+  `dark:bg-zinc-900` with no light-mode fill at all (the field was transparent in light mode).
+  `bg-surface-raised` was used for both: its dark value is exactly `zinc-900` (the
+  `bg-white`+`dark:bg-zinc-900` row above), and giving the field an explicit light fill matches
+  the `fieldClass` convention already established in `event-form.tsx`
+  (`border-line-strong`/`border-negative-line` + `bg-surface-raised`) rather than leaving light
+  mode's transparency as a one-off.
+- `void-form.tsx`'s "Confirm void" button was a solid fill (`bg-red-700` light /
+  `bg-red-800` dark) with unconditional `text-white`. No existing negative token reproduces
+  that safely: `bg-negative`/`bg-negative-on-surface`'s dark value (`neg-400`, ~70% L) gives
+  white text only ~2.9:1 contrast, failing WCAG AA, and `bg-negative-line`'s light value
+  (`neg-300`, ~81% L) fails the same way in light mode. `bg-negative-surface` +
+  `text-negative-on-surface` — the exact pairing `Badge`'s negative tone already uses — measures
+  ~5.3:1 (light) and ~5.6:1 (dark) and was used instead, trading the original's bold solid-red
+  weight for a softer tinted fill that stays legible in both themes.
+- The `admin/events/page.tsx` disputed-queue `<Link>` became `<Link className="block"><Callout
+  tone="caution">…</Callout></Link>` — Callout renders a `<div>`, so the anchor keeps the click
+  target and `className="block"` keeps it laid out as one. The original's
+  `hover:border-amber-300`/`dark:hover:border-amber-700` hover feedback has no semantic
+  `-caution-line-hover` token and was dropped rather than invented, matching the brief's
+  instruction to adopt `Callout` as-is.
 
 **Finding what is left in a file:**
 
