@@ -1563,6 +1563,7 @@ if a pair is not here, stop and check whether you have misread the partner class
 | `bg-white/90` + `dark:bg-zinc-950/90` | `bg-surface-raised/90` |
 | `bg-zinc-50` + `dark:bg-zinc-900` | `bg-surface-sunken` |
 | `bg-zinc-100` + `dark:bg-zinc-800` | `bg-surface-muted` |
+| `bg-zinc-100` + `dark:bg-zinc-900` | `bg-surface-muted` (not `bg-surface-sunken` — sunken's light value is identical to the page background and would make the box invisible) |
 | `bg-zinc-200` + `dark:bg-zinc-800` | `bg-surface-skeleton` |
 | `bg-zinc-900` + `dark:bg-zinc-100` *or* `dark:bg-zinc-50` | `bg-accent` |
 | `text-white` + `dark:text-zinc-900` | `text-accent-ink` |
@@ -1574,6 +1575,7 @@ if a pair is not here, stop and check whether you have misread the partner class
 | `border-zinc-900` + `dark:border-zinc-100` | `border-accent` |
 | `text-zinc-900` + `dark:text-zinc-50` | `text-ink` |
 | `text-zinc-600` + `dark:text-zinc-300` | `text-ink-secondary` |
+| `text-zinc-600` + `dark:text-zinc-400` | `text-ink-secondary` |
 | `text-zinc-700` + `dark:text-zinc-300` | `text-ink-secondary` |
 | `text-zinc-500` + `dark:text-zinc-400` *or* bare `text-zinc-500` | `text-ink-muted` |
 | `text-zinc-400` + `dark:text-zinc-600` *or* bare `text-zinc-400` | `text-ink-subtle` |
@@ -1588,6 +1590,7 @@ if a pair is not here, stop and check whether you have misread the partner class
 | `border-red-200/300/400` + `dark:border-red-600/800/900` | `border-negative-line` |
 | `text-red-700` *or* `text-red-800` | `text-negative-on-surface` |
 | `text-amber-600` + `dark:text-amber-400` | `text-caution` |
+| `text-amber-600` (bare) | `text-caution` |
 | `bg-amber-100` + `dark:bg-amber-950` | `bg-caution-surface` |
 | `bg-amber-50` + `dark:bg-amber-950/20` | `bg-caution-surface-soft` |
 | `border-amber-200/300/700` + `dark:border-amber-800/900` | `border-caution-line` |
