@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 import { signIn } from '@/server/auth/config';
 import { getSessionUser } from '@/server/auth/session';
 
@@ -10,7 +11,7 @@ export default async function SignInPage() {
     <main className="flex min-h-dvh flex-col items-center justify-center gap-10 px-6">
       <div className="text-center">
         <h1 className="text-3xl font-semibold tracking-tight">SimulatedBetting</h1>
-        <p className="mt-3 max-w-xs text-balance text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-3 max-w-xs text-balance text-sm text-ink-muted">
           Play-money sportsbook. No real money is involved at any point.
         </p>
       </div>
@@ -21,10 +22,7 @@ export default async function SignInPage() {
           await signIn('google', { redirectTo: '/' });
         }}
       >
-        <button
-          type="submit"
-          className="flex h-12 items-center gap-3 rounded-full border border-zinc-300 bg-white px-6 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:hover:bg-zinc-800"
-        >
+        <Button type="submit">
           <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5">
             <path
               fill="#4285F4"
@@ -44,7 +42,7 @@ export default async function SignInPage() {
             />
           </svg>
           Continue with Google
-        </button>
+        </Button>
       </form>
     </main>
   );
