@@ -86,7 +86,6 @@ const BASELINE: string[] = [
   'src/app/(app)/feed/page.tsx',
   'src/app/(app)/games/game-card.tsx',
   'src/app/(app)/games/page.tsx',
-  'src/app/(app)/layout.tsx',
   'src/app/(app)/me/page.tsx',
   'src/app/(app)/members/[membershipId]/page.tsx',
   'src/app/(app)/wagers/[wagerId]/page.tsx',
@@ -98,8 +97,6 @@ const BASELINE: string[] = [
   'src/app/admin/page.tsx',
   'src/app/admin/wagers/arbitration-form.tsx',
   'src/app/admin/wagers/page.tsx',
-  'src/components/bet-slip/bet-slip.tsx',
-  'src/components/ui/tab-bar.tsx',
 ];
 
 /** Every .tsx file beneath `dir`, as repo-relative POSIX paths. */

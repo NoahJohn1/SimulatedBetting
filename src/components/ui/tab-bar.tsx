@@ -28,7 +28,7 @@ export function TabBar() {
     // src/components/bet-slip/bet-slip.tsx sticks itself just above this nav using a hardcoded
     // `bottom` offset derived from this nav's rendered height — changing this nav's padding,
     // font size, or border requires updating that offset too.
-    <nav className="sticky bottom-0 z-10 grid grid-cols-6 border-t border-zinc-200 bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
+    <nav className="sticky bottom-0 z-10 grid grid-cols-6 border-t border-line bg-surface-raised/90 pb-[env(safe-area-inset-bottom)] backdrop-blur">
       {TABS.map((tab) => {
         const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
         return (
@@ -38,8 +38,8 @@ export function TabBar() {
             aria-current={active ? 'page' : undefined}
             className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
               active
-                ? 'text-zinc-900 dark:text-zinc-50'
-                : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
+                ? 'text-ink'
+                : 'text-ink-subtle hover:text-ink-secondary'
             }`}
           >
             {tab.label}
