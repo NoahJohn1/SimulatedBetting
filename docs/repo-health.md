@@ -209,6 +209,23 @@ to run far more often than that. So they moved to GitHub Actions, calling the sa
 handlers over HTTP with the same bearer token Vercel Cron would have sent. `allowance` and
 `reconcile` stayed native in [`vercel.json`](../vercel.json). That design is sound.
 
+**What the two jobs actually do**, since it is not written down anywhere else:
+
+| Job | Cadence | What it does |
+|---|---|---|
+| `sync-odds` | every 15 min | `syncOdds` pulls the slate and prices; `syncResults` applies reported scores and marks games `FINAL`; `suspendStaleMarkets` suspends anything whose price has gone stale so nobody can bet into a dead line. Both providers are still the **fixture** ones, so on the deployed app this moves fixture data, not real games — that is phase 5's job. |
+| `settle` | every 10 min | `settleFinalGames` grades every pending leg on a finished game from the line and price frozen at placement, settles the bets those legs belong to, and pays out — batched to fit the invocation limit, with the remainder picked up next run. Then `detectLeadChange` emits a feed event if the standings lead changed, `sweepOverdueEvents` flags custom events past their resolve-by time, and `sweepP2PWagers` makes three passes: expire unaccepted offers and refund their escrow, settle market-backed wagers whose game has finished, flag overdue ones for arbitration. Returns 207 rather than 200 if an individual game or wager errored, so one bad row is reported without failing the rest. |
+
+`allowance` (weekly) and `reconcile` (daily) are unaffected by any of this — they are native Vercel
+crons and run from [`vercel.json`](../vercel.json). But if `CRON_SECRET` is missing from the Vercel
+environment rather than just from Actions, those two are failing as well, silently, for the same
+fail-closed reason.
+
+**Nothing is lost while the schedule is off, only late.** Both routes are resumable and every
+ledger write is idempotent, so turning the schedule back on works through the backlog: pending
+bets grade, expired offers refund, overdue wagers get flagged. What you cannot get back is the
+timing — a bet that should have settled Sunday settles whenever the first successful run happens.
+
 **It has never once succeeded.** Every scheduled fire from the merge on 2026-08-22 until it was
 switched off on 2026-08-24 failed — roughly 130 runs over two days. The cause is not the app and
 not the routes:
