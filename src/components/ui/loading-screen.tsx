@@ -13,11 +13,11 @@ export function LoadingScreen({ label = 'Loading' }: { label?: string }) {
       <span className="sr-only">{label}</span>
       <div
         aria-hidden
-        className="h-2 w-24 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-800"
+        className="h-2 w-24 animate-pulse rounded-pill bg-surface-skeleton"
       />
       <div
         aria-hidden
-        className="h-2 w-16 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-800"
+        className="h-2 w-16 animate-pulse rounded-pill bg-surface-skeleton"
       />
     </div>
   );

@@ -21,7 +21,7 @@ export function StatusScreen({
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <p className="mt-3 max-w-sm text-balance text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-3 max-w-sm text-balance text-sm text-ink-muted">
           {body}
         </p>
       </div>
@@ -29,7 +29,7 @@ export function StatusScreen({
       {/* The digest is the only thread between a member saying "it broke" and a server log
           line. Phase 6 will attach real error reporting; until then this is the whole of it. */}
       {digest ? (
-        <p className="font-mono text-xs text-zinc-400 dark:text-zinc-600">Reference {digest}</p>
+        <p className="font-mono text-xs text-ink-subtle">Reference {digest}</p>
       ) : null}
     </div>
   );

@@ -19,11 +19,11 @@ export default function AdminError({
       <button
         type="button"
         onClick={() => retry()}
-        className="text-sm font-medium text-zinc-500 underline"
+        className="text-sm font-medium text-ink-muted underline"
       >
         Try again
       </button>
-      <Link href="/admin" className="text-sm font-medium text-zinc-500 underline">
+      <Link href="/admin" className="text-sm font-medium text-ink-muted underline">
         Back to admin
       </Link>
     </StatusScreen>

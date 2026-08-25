@@ -13,7 +13,7 @@ export default function AppNotFound() {
       title="Not found"
       body="That game, event, wager, or member isn't here — it may not exist, or may not be part of your season."
     >
-      <Link href="/games" className="text-sm font-medium text-zinc-500 underline">
+      <Link href="/games" className="text-sm font-medium text-ink-muted underline">
         Back to games
       </Link>
     </StatusScreen>

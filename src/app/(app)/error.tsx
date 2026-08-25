@@ -24,11 +24,11 @@ export default function AppError({
       <button
         type="button"
         onClick={() => retry()}
-        className="text-sm font-medium text-zinc-500 underline"
+        className="text-sm font-medium text-ink-muted underline"
       >
         Try again
       </button>
-      <Link href="/games" className="text-sm font-medium text-zinc-500 underline">
+      <Link href="/games" className="text-sm font-medium text-ink-muted underline">
         Back to games
       </Link>
     </StatusScreen>
