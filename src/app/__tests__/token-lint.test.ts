@@ -91,7 +91,6 @@ const BASELINE: string[] = [
   'src/app/(app)/me/feed-preferences/preferences-form.tsx',
   'src/app/(app)/me/page.tsx',
   'src/app/(app)/members/[membershipId]/page.tsx',
-  'src/app/(app)/standings/page.tsx',
   'src/app/(app)/wagers/[wagerId]/page.tsx',
   'src/app/(app)/wagers/[wagerId]/wager-actions.tsx',
   'src/app/(app)/wagers/new/wager-form.tsx',
