@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { db } from '@/db/client';
 import { betLegs, bets, events, markets, selections } from '@/db/schema';
 import type { Currency } from '@/db/schema';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Money, Price } from '@/components/ui/money';
 import { requireApprovedMember } from '@/server/auth/session';
@@ -146,7 +146,7 @@ function Section({
             <span className="text-sm font-semibold">
               {bet.type === 'PARLAY' ? `${legsByBet.get(bet.id)?.length ?? 0}-leg parlay` : 'Single'}
             </span>
-            <Badge status={bet.status} />
+            <StatusBadge status={bet.status} />
           </div>
 
           <ul className="flex flex-col gap-1">
@@ -159,7 +159,7 @@ function Section({
                 </span>
                 <span className="flex items-center gap-2">
                   <Price american={leg.price} />
-                  <Badge status={leg.status} />
+                  <StatusBadge status={leg.status} />
                 </span>
               </li>
             ))}

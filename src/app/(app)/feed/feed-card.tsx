@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/badge';
 import { Money } from '@/components/ui/money';
 import type { FeedEventType } from '@/db/schema';
 import type {
@@ -54,7 +54,7 @@ function describeLeg(leg: FeedLegSnapshot): React.ReactNode {
         {leg.byCreator ? (
           <>
             {' '}
-            <Badge status="CREATOR" />
+            <StatusBadge status="CREATOR" />
           </>
         ) : null}
       </>

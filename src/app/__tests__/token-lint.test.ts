@@ -99,8 +99,6 @@ const BASELINE: string[] = [
   'src/app/admin/wagers/arbitration-form.tsx',
   'src/app/admin/wagers/page.tsx',
   'src/components/bet-slip/bet-slip.tsx',
-  'src/components/ui/badge.tsx',
-  'src/components/ui/money.tsx',
   'src/components/ui/tab-bar.tsx',
 ];
 

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Money } from '@/components/ui/money';
 import { requireApprovedMember } from '@/server/auth/session';
@@ -57,7 +57,7 @@ function Section({ title, rows }: { title: string; rows: EventBoardRow[] }) {
         >
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm font-semibold">{row.title}</span>
-            {row.overdue ? <Badge status="Overdue" /> : null}
+            {row.overdue ? <StatusBadge status="Overdue" /> : null}
           </div>
 
           <div className="text-sm text-zinc-500">

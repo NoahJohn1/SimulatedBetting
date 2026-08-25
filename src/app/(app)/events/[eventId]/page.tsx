@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/badge';
 import { Money } from '@/components/ui/money';
 import { requireApprovedMember } from '@/server/auth/session';
 import { getCustomEventDetail } from '@/server/events/query';
@@ -77,8 +77,8 @@ export default async function CustomEventPage({ params }: PageProps<'/events/[ev
         <div className="flex items-start justify-between gap-2">
           <h1 className="text-lg font-semibold">{detail.title}</h1>
           <div className="flex shrink-0 items-center gap-2">
-            {detail.overdue ? <Badge status="Overdue" /> : null}
-            <Badge status={detail.status} />
+            {detail.overdue ? <StatusBadge status="Overdue" /> : null}
+            <StatusBadge status={detail.status} />
           </div>
         </div>
 

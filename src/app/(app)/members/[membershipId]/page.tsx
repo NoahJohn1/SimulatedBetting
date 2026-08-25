@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/badge';
 import { Money } from '@/components/ui/money';
 import { requireApprovedMember } from '@/server/auth/session';
 import { getSeasonFeed } from '@/server/feed/query';
@@ -49,7 +49,7 @@ export default async function MemberProfilePage({ params }: PageProps<'/members/
           <span className="text-xs text-zinc-500">Rank #{profile.rank}</span>
         </div>
         <div className="flex items-center gap-2">
-          {profile.status === 'DISABLED' ? <Badge status="DISABLED" /> : null}
+          {profile.status === 'DISABLED' ? <StatusBadge status="DISABLED" /> : null}
           <Money cents={profile.balanceCents} className="text-base font-semibold" />
         </div>
       </header>

@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/badge';
 import { Money } from '@/components/ui/money';
 import { requireApprovedMember } from '@/server/auth/session';
 import { loadWagerDetail } from '@/server/p2p/query';
@@ -29,9 +29,9 @@ export default async function WagerDetailPage({ params }: PageProps<'/wagers/[wa
     <div className="flex flex-col gap-4 px-4 py-4">
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <Badge status={wager.status} />
-          {wager.disputed && <Badge status="Disputed" />}
-          {wager.overdue && <Badge status="Overdue" />}
+          <StatusBadge status={wager.status} />
+          {wager.disputed && <StatusBadge status="Disputed" />}
+          {wager.overdue && <StatusBadge status="Overdue" />}
         </div>
         <h1 className="text-lg font-semibold">{wager.subject}</h1>
       </div>
