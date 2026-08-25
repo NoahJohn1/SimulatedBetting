@@ -1593,6 +1593,8 @@ if a pair is not here, stop and check whether you have misread the partner class
 | `border-amber-200/300/700` + `dark:border-amber-800/900` | `border-caution-line` |
 | `text-amber-700` *or* `text-amber-800` *or* `text-amber-900` | `text-caution-on-surface` |
 | `hover:text-red-600` | `hover:text-negative` |
+| `text-emerald-600` (bare) | `text-positive` |
+| `text-rose-600` (bare) *or* `hover:text-rose-600` | `text-negative` *or* `hover:text-negative` |
 | `shadow-[0_-8px_24px_rgba(0,0,0,0.06)]` | `shadow-slip` |
 
 **One class deliberately absent from the table:** `bg-zinc-800`, which appears twice. Read both
