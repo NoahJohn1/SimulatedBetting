@@ -54,18 +54,18 @@ export function ArbitrationForm({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           required
-          className="rounded-lg border border-zinc-300 p-2 dark:border-zinc-700 dark:bg-zinc-900"
+          className="rounded-lg border border-line-strong bg-surface-raised p-2"
         />
       </label>
 
-      {error ? <p className="text-xs text-red-700 dark:text-red-400">{errorMessage(error)}</p> : null}
+      {error ? <p className="text-xs text-negative-on-surface">{errorMessage(error)}</p> : null}
 
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
           disabled={pending || note.trim().length === 0}
           onClick={() => submit('OFFERER')}
-          className="rounded-lg border border-zinc-300 px-3 py-2 text-sm disabled:opacity-40 dark:border-zinc-700"
+          className="rounded-lg border border-line-strong px-3 py-2 text-sm disabled:opacity-40"
         >
           {offererDisplayName} wins
         </button>
@@ -73,7 +73,7 @@ export function ArbitrationForm({
           type="button"
           disabled={pending || note.trim().length === 0}
           onClick={() => submit('ACCEPTOR')}
-          className="rounded-lg border border-zinc-300 px-3 py-2 text-sm disabled:opacity-40 dark:border-zinc-700"
+          className="rounded-lg border border-line-strong px-3 py-2 text-sm disabled:opacity-40"
         >
           {acceptorDisplayName} wins
         </button>
@@ -81,7 +81,7 @@ export function ArbitrationForm({
           type="button"
           disabled={pending || note.trim().length === 0}
           onClick={() => submit('VOID')}
-          className="rounded-lg border border-zinc-300 px-3 py-2 text-sm disabled:opacity-40 dark:border-zinc-700"
+          className="rounded-lg border border-line-strong px-3 py-2 text-sm disabled:opacity-40"
         >
           Refund both
         </button>

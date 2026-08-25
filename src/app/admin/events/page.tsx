@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { betLegs, markets, selections } from '@/db/schema';
+import { Callout } from '@/components/ui/callout';
+import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Money } from '@/components/ui/money';
 import { requireAdmin } from '@/server/auth/session';
@@ -50,13 +52,13 @@ export default async function AdminEventsPage() {
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-6 px-4 py-6">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold tracking-tight">Event queue</h1>
-        <Link href="/admin" className="text-sm text-zinc-500 underline">
+        <Link href="/admin" className="text-sm text-ink-muted underline">
           Back to admin
         </Link>
       </div>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Overdue</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Overdue</h2>
 
         {queue.overdue.length === 0 ? (
           <EmptyState title="Nothing is overdue" />
@@ -64,10 +66,7 @@ export default async function AdminEventsPage() {
           queue.overdue.map((row) => {
             const openBets = openBetCountByEventId.get(row.eventId) ?? 0;
             return (
-              <div
-                key={row.eventId}
-                className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950"
-              >
+              <Card key={row.eventId} className="flex flex-col gap-2 p-3">
                 <div className="flex items-center justify-between gap-2">
                   <Link
                     href={`/events/${row.eventId}`}
@@ -75,42 +74,40 @@ export default async function AdminEventsPage() {
                   >
                     {row.title}
                   </Link>
-                  <span className="text-xs font-medium text-red-700 dark:text-red-400">
+                  <span className="text-xs font-medium text-negative-on-surface">
                     {formatLate(row.resolvesBy, now)}
                   </span>
                 </div>
-                <div className="text-sm text-zinc-500">
+                <div className="text-sm text-ink-muted">
                   Created by {row.creatorDisplayName} · {openBets} open bet{openBets === 1 ? '' : 's'}{' '}
                   · Staked <Money cents={row.stakedCreditsCents} currency="CREDITS" />
                 </div>
                 <VoidForm eventId={row.eventId} />
-              </div>
+              </Card>
             );
           })
         )}
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Disputed</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Disputed</h2>
 
         {queue.disputed.length === 0 ? (
           <EmptyState title="No open disputes" />
         ) : (
           queue.disputed.map((row) => (
-            <Link
-              key={row.eventId}
-              href={`/events/${row.eventId}/resolve`}
-              className="flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 hover:border-amber-300 dark:border-amber-900 dark:bg-amber-950/20 dark:hover:border-amber-700"
-            >
-              <span className="text-sm font-semibold">{row.title}</span>
-              <span className="text-sm text-zinc-500">Created by {row.creatorDisplayName}</span>
-              <ul className="flex flex-col gap-1">
-                {row.disputes.map((dispute, i) => (
-                  <li key={i} className="text-sm text-zinc-700 dark:text-zinc-300">
-                    <span className="font-medium">{dispute.displayName}:</span> “{dispute.reason}”
-                  </li>
-                ))}
-              </ul>
+            <Link key={row.eventId} href={`/events/${row.eventId}/resolve`} className="block">
+              <Callout tone="caution">
+                <span className="text-sm font-semibold">{row.title}</span>
+                <span className="text-sm">Created by {row.creatorDisplayName}</span>
+                <ul className="flex flex-col gap-1">
+                  {row.disputes.map((dispute, i) => (
+                    <li key={i} className="text-sm">
+                      <span className="font-medium">{dispute.displayName}:</span> “{dispute.reason}”
+                    </li>
+                  ))}
+                </ul>
+              </Callout>
             </Link>
           ))
         )}

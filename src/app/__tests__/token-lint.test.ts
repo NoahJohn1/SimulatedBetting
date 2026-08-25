@@ -71,13 +71,7 @@ const ALLOWLIST = new Set([
  * The 7b sweep's remaining work. Entries are deleted as each screen group is converted, and
  * the list is empty when the sweep is done. Do not add to it.
  */
-const BASELINE: string[] = [
-  'src/app/admin/events/page.tsx',
-  'src/app/admin/events/void-form.tsx',
-  'src/app/admin/page.tsx',
-  'src/app/admin/wagers/arbitration-form.tsx',
-  'src/app/admin/wagers/page.tsx',
-];
+const BASELINE: string[] = [];
 
 /** Every .tsx file beneath `dir`, as repo-relative POSIX paths. */
 function tsxFiles(dir: string): string[] {
