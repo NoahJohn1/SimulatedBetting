@@ -101,7 +101,7 @@ export function GameCard({ game }: { game: BoardGame }) {
 
   return (
     <article className="overflow-hidden rounded-xl border border-line bg-surface-raised">
-      <div className="flex items-center justify-between border-b border-line px-3 py-2">
+      <div className="flex items-center justify-between border-b border-line-subtle px-3 py-2">
         <span className="text-xs font-medium text-ink-muted">{game.sport}</span>
         <span className="text-xs text-ink-muted">{kickoff} ET</span>
       </div>

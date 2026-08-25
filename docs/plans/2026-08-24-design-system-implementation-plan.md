@@ -1570,6 +1570,7 @@ if a pair is not here, stop and check whether you have misread the partner class
 | `border-zinc-300` + `dark:border-zinc-700` | `border-line-strong` |
 | `border-zinc-400` (hover) | `border-line-hover` |
 | `border-zinc-100` | `border-line-subtle` |
+| `border-zinc-100` + `dark:border-zinc-800` | `border-line-subtle` |
 | `border-zinc-900` + `dark:border-zinc-100` | `border-accent` |
 | `text-zinc-900` + `dark:text-zinc-50` | `text-ink` |
 | `text-zinc-600` + `dark:text-zinc-300` | `text-ink-secondary` |
