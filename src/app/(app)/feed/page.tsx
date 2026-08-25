@@ -26,7 +26,7 @@ export default async function FeedPage() {
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-end px-4 pt-3">
-        <Link href="/me/feed-preferences" className="text-xs text-zinc-500 hover:underline">
+        <Link href="/me/feed-preferences" className="text-xs text-ink-muted hover:underline">
           Filters
         </Link>
       </div>
