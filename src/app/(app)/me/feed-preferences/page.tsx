@@ -28,7 +28,7 @@ export default async function FeedPreferencesPage() {
     <div className="flex flex-col gap-4 px-4 py-4">
       <header className="flex flex-col gap-1">
         <h1 className="text-lg font-semibold">Feed filters</h1>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-ink-muted">
           Turn anything off to hide it from your feed. Nothing is deleted — turning it back on
           brings the history with it.
         </p>

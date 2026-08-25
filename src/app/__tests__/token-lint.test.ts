@@ -87,8 +87,6 @@ const BASELINE: string[] = [
   'src/app/(app)/games/game-card.tsx',
   'src/app/(app)/games/page.tsx',
   'src/app/(app)/layout.tsx',
-  'src/app/(app)/me/feed-preferences/page.tsx',
-  'src/app/(app)/me/feed-preferences/preferences-form.tsx',
   'src/app/(app)/me/page.tsx',
   'src/app/(app)/members/[membershipId]/page.tsx',
   'src/app/(app)/wagers/[wagerId]/page.tsx',

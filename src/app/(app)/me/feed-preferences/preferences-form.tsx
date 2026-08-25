@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from 'react';
 import type { FeedEventType } from '@/db/schema';
+import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
 import { saveFeedPreferencesAction } from '../../feed/actions';
 
 export interface PreferenceOption {
@@ -43,34 +45,27 @@ export function PreferencesForm({
       {options.map((option) => {
         const shown = !mutedSet.has(option.type);
         return (
-          <label
+          <div
             key={option.type}
-            className="flex items-start gap-3 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950"
+            className="rounded-xl border border-line bg-surface-raised p-3"
           >
-            <input
-              type="checkbox"
-              checked={shown}
-              onChange={() => toggle(option.type)}
-              className="mt-0.5"
-            />
-            <span className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium">{option.label}</span>
-              <span className="text-xs text-zinc-500">{option.description}</span>
-            </span>
-          </label>
+            <FormField label={option.label} htmlFor={option.type} hint={option.description}>
+              <input
+                id={option.type}
+                type="checkbox"
+                checked={shown}
+                onChange={() => toggle(option.type)}
+              />
+            </FormField>
+          </div>
         );
       })}
 
       <div className="flex items-center justify-end gap-3 pt-2">
-        {saved ? <span className="text-xs text-emerald-600">Saved</span> : null}
-        <button
-          type="button"
-          onClick={save}
-          disabled={pending}
-          className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-        >
+        {saved ? <span className="text-xs text-positive">Saved</span> : null}
+        <Button type="submit" onClick={save} disabled={pending}>
           {pending ? 'Saving…' : 'Save'}
-        </button>
+        </Button>
       </div>
     </div>
   );
