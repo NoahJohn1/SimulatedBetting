@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { db } from '@/db/client';
 import { ledgerEntries, seasonMemberships } from '@/db/schema';
+import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Money } from '@/components/ui/money';
 import { signOut } from '@/server/auth/config';
@@ -41,21 +42,21 @@ export default async function MePage() {
 
   return (
     <div className="flex flex-col gap-4 px-4 py-4">
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-        <p className="text-sm text-zinc-500">{user?.email}</p>
+      <Card className="p-4">
+        <p className="text-sm text-ink-muted">{user?.email}</p>
         <div className="mt-1 flex items-baseline gap-4">
           <p className="text-2xl font-semibold">
             <Money cents={member.balanceCents} />
           </p>
           {membership ? (
-            <p className="text-sm font-medium text-zinc-500">
+            <p className="text-sm font-medium text-ink-muted">
               <Money cents={membership.creditsBalanceCents} currency="CREDITS" /> credits
             </p>
           ) : null}
         </div>
-      </section>
+      </Card>
 
-      <Link href="/me/feed-preferences" className="text-xs text-zinc-500 hover:underline">
+      <Link href="/me/feed-preferences" className="text-xs text-ink-muted hover:underline">
         Feed filters
       </Link>
 
@@ -64,31 +65,30 @@ export default async function MePage() {
       ) : (
         <ul className="flex flex-col gap-1">
           {entries.map((entry) => (
-            <li
-              key={entry.id}
-              className="flex items-start justify-between gap-3 rounded-lg bg-white px-3 py-2 dark:bg-zinc-950"
-            >
-              <span className="min-w-0">
-                <span className="block text-sm font-medium">
-                  {LABELS[entry.type] ?? entry.type}
+            <li key={entry.id}>
+              <Card className="flex items-start justify-between gap-3 px-3 py-2">
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium">
+                    {LABELS[entry.type] ?? entry.type}
+                  </span>
+                  {entry.note ? (
+                    <span className="block truncate text-xs text-ink-muted">{entry.note}</span>
+                  ) : null}
+                  <span className="block text-xs text-ink-subtle">
+                    {entry.createdAt.toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      timeZone: 'America/New_York',
+                    })}
+                  </span>
                 </span>
-                {entry.note ? (
-                  <span className="block truncate text-xs text-zinc-500">{entry.note}</span>
-                ) : null}
-                <span className="block text-xs text-zinc-400">
-                  {entry.createdAt.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    timeZone: 'America/New_York',
-                  })}
+                <span className="shrink-0 text-right">
+                  <Money cents={entry.amountCents} currency={entry.currency} className="block text-sm font-semibold" />
+                  <span className="block text-xs text-ink-subtle">
+                    <Money cents={entry.balanceAfterCents} currency={entry.currency} />
+                  </span>
                 </span>
-              </span>
-              <span className="shrink-0 text-right">
-                <Money cents={entry.amountCents} currency={entry.currency} className="block text-sm font-semibold" />
-                <span className="block text-xs text-zinc-400">
-                  <Money cents={entry.balanceAfterCents} currency={entry.currency} />
-                </span>
-              </span>
+              </Card>
             </li>
           ))}
         </ul>
@@ -100,7 +100,7 @@ export default async function MePage() {
           await signOut({ redirectTo: '/sign-in' });
         }}
       >
-        <button type="submit" className="text-sm font-medium text-zinc-500 underline">
+        <button type="submit" className="text-sm font-medium text-ink-muted underline">
           Sign out
         </button>
       </form>

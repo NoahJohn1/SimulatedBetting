@@ -34,7 +34,7 @@ export default async function GamesPage() {
     <div className="flex flex-col gap-6 px-4 py-4">
       {[...byDay.entries()].map(([day, games]) => (
         <section key={day} className="flex flex-col gap-2">
-          <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">
             {day}
           </h2>
           {games.map((game) => (

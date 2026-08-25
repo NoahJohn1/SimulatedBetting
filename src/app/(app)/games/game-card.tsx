@@ -1,6 +1,7 @@
 'use client';
 
 import { useSlip } from '@/components/bet-slip/slip-context';
+import { Line, Price } from '@/components/ui/money';
 import type { BoardGame, BoardMarket, BoardSelection } from '@/server/odds/board';
 
 const MARKET_ORDER = ['SPREAD', 'MONEYLINE', 'TOTAL'] as const;
@@ -10,19 +11,23 @@ const MARKET_LABEL: Record<string, string> = {
   TOTAL: 'Total',
 };
 
-function signed(price: number): string {
-  return price > 0 ? `+${price}` : String(price);
+/** `O `/`U ` ahead of a TOTAL selection's line — Line itself only knows the number. */
+function sidePrefix(market: BoardMarket, selection: BoardSelection): string {
+  return market.type === 'TOTAL' ? (selection.side === 'OVER' ? 'O ' : 'U ') : '';
 }
 
-/** The number shown on the button: the line where there is one, otherwise just the price. */
+/**
+ * The plain-text description a slip leg carries (@/components/bet-slip/slip-context.tsx):
+ * persisted to localStorage and later shown as ordinary text in the slip, so it has to be a
+ * string, not the `Price`/`Line` components below — those are what the board itself renders.
+ */
 function selectionLabel(market: BoardMarket, selection: BoardSelection): string {
-  if (market.type === 'MONEYLINE') return signed(selection.priceAmerican);
-  if (selection.line === null) return signed(selection.priceAmerican);
-
+  if (market.type === 'MONEYLINE' || selection.line === null) {
+    return selection.priceAmerican > 0 ? `+${selection.priceAmerican}` : String(selection.priceAmerican);
+  }
   const value = Number(selection.line);
-  const prefix = market.type === 'TOTAL' ? (selection.side === 'OVER' ? 'O ' : 'U ') : '';
   const line = market.type === 'TOTAL' ? value : value > 0 ? `+${value}` : value;
-  return `${prefix}${line}`;
+  return `${sidePrefix(market, selection)}${line}`;
 }
 
 function OddsButton({
@@ -58,13 +63,24 @@ function OddsButton({
       }
       className={`flex h-12 flex-col items-center justify-center rounded-lg border text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
         active
-          ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-          : 'border-zinc-200 bg-white hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900'
+          ? 'border-accent bg-accent text-accent-ink'
+          : 'border-line bg-surface-raised hover:border-line-hover'
       }`}
     >
-      <span className="font-semibold tabular-nums">{selectionLabel(market, selection)}</span>
+      <span className="font-semibold tabular-nums">
+        {market.type === 'MONEYLINE' || selection.line === null ? (
+          <Price american={selection.priceAmerican} />
+        ) : (
+          <>
+            {sidePrefix(market, selection)}
+            <Line value={selection.line} market={market.type === 'TOTAL' ? 'TOTAL' : 'SPREAD'} />
+          </>
+        )}
+      </span>
       {market.type !== 'MONEYLINE' ? (
-        <span className="tabular-nums opacity-60">{signed(selection.priceAmerican)}</span>
+        <span className="tabular-nums opacity-60">
+          <Price american={selection.priceAmerican} />
+        </span>
       ) : null}
     </button>
   );
@@ -84,16 +100,16 @@ export function GameCard({ game }: { game: BoardGame }) {
   ];
 
   return (
-    <article className="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-      <div className="flex items-center justify-between border-b border-zinc-100 px-3 py-2 dark:border-zinc-800">
-        <span className="text-xs font-medium text-zinc-500">{game.sport}</span>
-        <span className="text-xs text-zinc-500">{kickoff} ET</span>
+    <article className="overflow-hidden rounded-xl border border-line bg-surface-raised">
+      <div className="flex items-center justify-between border-b border-line px-3 py-2">
+        <span className="text-xs font-medium text-ink-muted">{game.sport}</span>
+        <span className="text-xs text-ink-muted">{kickoff} ET</span>
       </div>
 
       <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2 px-3 py-2">
         <span />
         {MARKET_ORDER.map((type) => (
-          <span key={type} className="w-16 text-center text-[10px] font-medium uppercase text-zinc-400">
+          <span key={type} className="w-16 text-center text-[10px] font-medium uppercase text-ink-subtle">
             {MARKET_LABEL[type]}
           </span>
         ))}
@@ -133,7 +149,7 @@ function FragmentRow({
                 teamLabel={row.label}
               />
             ) : (
-              <div className="flex h-12 items-center justify-center rounded-lg border border-dashed border-zinc-200 text-xs text-zinc-300 dark:border-zinc-800">
+              <div className="flex h-12 items-center justify-center rounded-lg border border-dashed border-line text-xs text-ink-subtle">
                 —
               </div>
             )}
