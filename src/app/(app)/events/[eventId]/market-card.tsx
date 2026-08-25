@@ -194,7 +194,7 @@ export function MarketCard(props: MarketCardProps) {
               ) : (
                 <div
                   className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm ${
-                    won ? 'border-positive-line bg-positive-surface-soft' : 'border-dashed border-line'
+                    won ? 'border-positive-line bg-positive-surface' : 'border-dashed border-line'
                   }`}
                 >
                   <span className="min-w-0 truncate">

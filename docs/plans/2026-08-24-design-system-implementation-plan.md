@@ -1561,6 +1561,7 @@ if a pair is not here, stop and check whether you have misread the partner class
 | `bg-zinc-50` + `dark:bg-black` | `bg-surface` |
 | `bg-white` + `dark:bg-zinc-950` | `bg-surface-raised` |
 | `bg-white/90` + `dark:bg-zinc-950/90` | `bg-surface-raised/90` |
+| `bg-white` + `dark:bg-zinc-900` | `bg-surface-raised` |
 | `bg-zinc-50` + `dark:bg-zinc-900` | `bg-surface-sunken` |
 | `bg-zinc-100` + `dark:bg-zinc-800` | `bg-surface-muted` |
 | `bg-zinc-100` + `dark:bg-zinc-900` | `bg-surface-muted` (not `bg-surface-sunken` — sunken's light value is identical to the page background and would make the box invisible) |
@@ -1574,6 +1575,7 @@ if a pair is not here, stop and check whether you have misread the partner class
 | `border-zinc-100` + `dark:border-zinc-800` | `border-line-subtle` |
 | `border-zinc-900` + `dark:border-zinc-100` | `border-accent` |
 | `text-zinc-900` + `dark:text-zinc-50` | `text-ink` |
+| `text-zinc-900` + `dark:text-zinc-100` | `text-ink` |
 | `text-zinc-600` + `dark:text-zinc-300` | `text-ink-secondary` |
 | `text-zinc-600` + `dark:text-zinc-400` | `text-ink-secondary` |
 | `text-zinc-700` + `dark:text-zinc-300` | `text-ink-secondary` |
