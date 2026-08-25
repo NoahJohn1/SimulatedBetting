@@ -36,15 +36,15 @@ export default async function WagerDetailPage({ params }: PageProps<'/wagers/[wa
         <h1 className="text-lg font-semibold">{wager.subject}</h1>
       </div>
 
-      <dl className="flex flex-col gap-2 rounded-lg border border-zinc-200 p-3 text-sm dark:border-zinc-800">
+      <dl className="flex flex-col gap-2 rounded-lg border border-line p-3 text-sm">
         <div className="flex justify-between">
-          <dt className="text-zinc-500">{wager.offererDisplayName} puts up</dt>
+          <dt className="text-ink-muted">{wager.offererDisplayName} puts up</dt>
           <dd>
             <Money cents={wager.offererStakeCents} currency="CREDITS" />
           </dd>
         </div>
         <div className="flex justify-between">
-          <dt className="text-zinc-500">
+          <dt className="text-ink-muted">
             {wager.acceptorDisplayName ?? 'Whoever takes it'} puts up
           </dt>
           <dd>
@@ -59,12 +59,12 @@ export default async function WagerDetailPage({ params }: PageProps<'/wagers/[wa
         </div>
         {wager.lineAtOffer && (
           <div className="flex justify-between">
-            <dt className="text-zinc-500">Line when offered</dt>
+            <dt className="text-ink-muted">Line when offered</dt>
             <dd>{wager.lineAtOffer}</dd>
           </div>
         )}
         <div className="flex justify-between">
-          <dt className="text-zinc-500">Settled by</dt>
+          <dt className="text-ink-muted">Settled by</dt>
           <dd>{wager.resolvesBy.toLocaleString()}</dd>
         </div>
       </dl>
@@ -78,7 +78,7 @@ export default async function WagerDetailPage({ params }: PageProps<'/wagers/[wa
         <p className="text-sm">Called off — both stakes went back.</p>
       )}
       {wager.resolutionNote && (
-        <p className="rounded-lg bg-zinc-100 p-3 text-sm dark:bg-zinc-900">
+        <p className="rounded-lg bg-surface-muted p-3 text-sm">
           <span className="font-medium">Admin: </span>
           {wager.resolutionNote}
         </p>

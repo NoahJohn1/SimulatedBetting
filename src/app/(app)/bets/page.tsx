@@ -1,12 +1,12 @@
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { db } from '@/db/client';
 import { betLegs, bets, events, markets, selections } from '@/db/schema';
 import type { Currency } from '@/db/schema';
 import { StatusBadge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Money, Price } from '@/components/ui/money';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import { requireApprovedMember } from '@/server/auth/session';
 
 export const metadata: Metadata = { title: 'My Bets' };
@@ -23,35 +23,23 @@ export default async function MyBetsPage({ searchParams }: PageProps<'/bets'>) {
     .orderBy(desc(bets.placedAt));
 
   const sectionLinks = (
-    <div className="flex gap-2 px-1">
-      <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
-        Bets
-      </span>
-      <Link
-        href="/wagers"
-        className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
-      >
-        Wagers
-      </Link>
-    </div>
+    <SegmentedControl
+      label="Bets or wagers"
+      segments={[
+        { href: '/bets', label: 'Bets', active: true },
+        { href: '/wagers', label: 'Wagers', active: false },
+      ]}
+    />
   );
 
   const filterLinks = (
-    <div className="flex gap-2 px-1">
-      {(['CASH', 'CREDITS'] as const).map((c) => (
-        <Link
-          key={c}
-          href={c === 'CASH' ? '/bets' : '/bets?currency=CREDITS'}
-          className={`rounded-full px-3 py-1 text-xs font-medium ${
-            filterCurrency === c
-              ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-              : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'
-          }`}
-        >
-          {c === 'CASH' ? 'Cash' : 'Credits'}
-        </Link>
-      ))}
-    </div>
+    <SegmentedControl
+      label="Currency"
+      segments={[
+        { href: '/bets', label: 'Cash', active: filterCurrency === 'CASH' },
+        { href: '/bets?currency=CREDITS', label: 'Credits', active: filterCurrency === 'CREDITS' },
+      ]}
+    />
   );
 
   if (rows.length === 0) {
@@ -136,11 +124,11 @@ function Section({
 
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">{title}</h2>
+      <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">{title}</h2>
       {list.map((bet) => (
         <article
           key={bet.id}
-          className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950"
+          className="flex flex-col gap-2 rounded-xl border border-line bg-surface-raised p-3"
         >
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold">
@@ -152,7 +140,7 @@ function Section({
           <ul className="flex flex-col gap-1">
             {(legsByBet.get(bet.id) ?? []).map((leg, i) => (
               <li key={i} className="flex items-center justify-between text-sm">
-                <span className="text-zinc-600 dark:text-zinc-400">
+                <span className="text-ink-secondary">
                   {leg.eventKind === 'CUSTOM'
                     ? `${leg.eventTitle} · ${leg.marketTitle ?? ''} · ${leg.outcomeLabel ?? ''}`
                     : `${leg.marketType} · ${leg.side}${leg.line !== null ? ` ${Number(leg.line)}` : ''}`}
@@ -165,11 +153,11 @@ function Section({
             ))}
           </ul>
 
-          <div className="flex items-center justify-between border-t border-zinc-100 pt-2 text-sm dark:border-zinc-800">
-            <span className="text-zinc-500">
+          <div className="flex items-center justify-between border-t border-line-subtle pt-2 text-sm">
+            <span className="text-ink-muted">
               Stake <Money cents={bet.stakeCents} currency={bet.currency} />
             </span>
-            <span className="text-zinc-500">
+            <span className="text-ink-muted">
               {bet.status === 'PENDING' ? 'To return ' : 'Quoted '}
               <Money cents={bet.potentialPayoutCents} currency={bet.currency} />
             </span>

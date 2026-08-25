@@ -72,7 +72,6 @@ const ALLOWLIST = new Set([
  * the list is empty when the sweep is done. Do not add to it.
  */
 const BASELINE: string[] = [
-  'src/app/(app)/bets/page.tsx',
   'src/app/(app)/events/[eventId]/dispute-form.tsx',
   'src/app/(app)/events/[eventId]/market-card.tsx',
   'src/app/(app)/events/[eventId]/page.tsx',
@@ -80,10 +79,6 @@ const BASELINE: string[] = [
   'src/app/(app)/events/[eventId]/resolve/resolve-form.tsx',
   'src/app/(app)/events/new/event-form.tsx',
   'src/app/(app)/events/page.tsx',
-  'src/app/(app)/wagers/[wagerId]/page.tsx',
-  'src/app/(app)/wagers/[wagerId]/wager-actions.tsx',
-  'src/app/(app)/wagers/new/wager-form.tsx',
-  'src/app/(app)/wagers/page.tsx',
   'src/app/admin/events/page.tsx',
   'src/app/admin/events/void-form.tsx',
   'src/app/admin/page.tsx',
