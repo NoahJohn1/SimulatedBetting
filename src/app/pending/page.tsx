@@ -29,7 +29,7 @@ export default async function PendingPage() {
           await signOut({ redirectTo: '/sign-in' });
         }}
       >
-        <Button type="submit" variant="ghost" size="sm">
+        <Button type="submit" variant="ghost" size="sm" className="underline">
           Sign out
         </Button>
       </form>
