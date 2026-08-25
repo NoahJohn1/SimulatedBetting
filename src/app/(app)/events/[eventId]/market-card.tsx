@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSlip } from '@/components/bet-slip/slip-context';
+import { Badge } from '@/components/ui/badge';
 import { formatAmount } from '@/domain/money';
 import { editEventAction, suspendMarketAction } from '../actions';
 
@@ -81,8 +82,8 @@ function OutcomeButton({
       }
       className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm transition-colors ${
         active
-          ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-          : 'border-zinc-200 bg-white hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900'
+          ? 'border-accent bg-accent text-accent-ink'
+          : 'border-line bg-surface-raised hover:border-line-hover'
       }`}
     >
       <span className="min-w-0 truncate font-medium">{outcome.label}</span>
@@ -144,21 +145,21 @@ export function MarketCard(props: MarketCardProps) {
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
+    <section className="flex flex-col gap-3 rounded-xl border border-line bg-surface-raised p-3">
       <div className="flex items-start justify-between gap-2">
         {editing ? (
           <input
             value={draftTitle}
             onChange={(e) => setDraftTitle(e.target.value)}
-            className="min-w-0 flex-1 rounded-lg border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            className="min-w-0 flex-1 rounded-lg border border-line-strong bg-surface-raised px-2 py-1 text-sm"
           />
         ) : (
           <h2 className="text-sm font-semibold">{props.title}</h2>
         )}
         {props.status === 'SUSPENDED' ? (
-          <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+          <Badge tone="caution" className="shrink-0">
             Suspended
-          </span>
+          </Badge>
         ) : null}
       </div>
 
@@ -181,7 +182,7 @@ export function MarketCard(props: MarketCardProps) {
                     }
                     // "numeric" hides the minus key on iOS/Android; American odds need it.
                     inputMode="text"
-                    className="w-24 rounded-lg border border-zinc-300 px-2 py-1 text-sm tabular-nums dark:border-zinc-700 dark:bg-zinc-900"
+                    className="w-24 rounded-lg border border-line-strong bg-surface-raised px-2 py-1 text-sm tabular-nums"
                   />
                 </div>
               ) : tappable ? (
@@ -193,15 +194,13 @@ export function MarketCard(props: MarketCardProps) {
               ) : (
                 <div
                   className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm ${
-                    won
-                      ? 'border-emerald-500 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950'
-                      : 'border-dashed border-zinc-200 dark:border-zinc-800'
+                    won ? 'border-positive-line bg-positive-surface-soft' : 'border-dashed border-line'
                   }`}
                 >
                   <span className="min-w-0 truncate">
                     {outcome.label}
                     {won ? (
-                      <span className="ml-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                      <span className="ml-2 text-xs font-semibold text-positive-on-surface">
                         Winner
                       </span>
                     ) : null}
@@ -211,7 +210,7 @@ export function MarketCard(props: MarketCardProps) {
               )}
 
               <div className="flex flex-col gap-0.5 px-1">
-                <span className="text-xs text-zinc-500">
+                <span className="text-xs text-ink-muted">
                   {credits(outcome.stakedCreditsCents)} staked
                 </span>
                 {props.positions
@@ -220,9 +219,7 @@ export function MarketCard(props: MarketCardProps) {
                     <span
                       key={`${position.holder}-${i}`}
                       className={`text-xs ${
-                        position.holder === 'creator'
-                          ? 'text-amber-700 dark:text-amber-400'
-                          : 'text-zinc-600 dark:text-zinc-300'
+                        position.holder === 'creator' ? 'text-caution-on-surface' : 'text-ink-secondary'
                       }`}
                     >
                       {position.holder === 'creator' ? 'creator' : 'you'} ·{' '}
@@ -238,16 +235,16 @@ export function MarketCard(props: MarketCardProps) {
         })}
       </div>
 
-      {error ? <p className="text-xs text-red-600 dark:text-red-400">{error}</p> : null}
+      {error ? <p className="text-xs text-negative">{error}</p> : null}
 
       {props.canManage || props.canEdit ? (
-        <div className="flex items-center gap-3 border-t border-zinc-100 pt-2 dark:border-zinc-800">
+        <div className="flex items-center gap-3 border-t border-line-subtle pt-2">
           {props.canManage && props.status !== 'SETTLED' ? (
             <button
               type="button"
               disabled={pending || editing}
               onClick={() => setStatus(props.status === 'OPEN' ? 'SUSPENDED' : 'OPEN')}
-              className="text-xs font-medium text-zinc-600 hover:underline disabled:opacity-40 dark:text-zinc-300"
+              className="text-xs font-medium text-ink-secondary hover:underline disabled:opacity-40"
             >
               {props.status === 'OPEN' ? 'Suspend' : 'Reopen'}
             </button>
@@ -260,7 +257,7 @@ export function MarketCard(props: MarketCardProps) {
                   type="button"
                   disabled={pending}
                   onClick={save}
-                  className="text-xs font-medium text-zinc-900 hover:underline disabled:opacity-40 dark:text-zinc-100"
+                  className="text-xs font-medium text-ink hover:underline disabled:opacity-40"
                 >
                   {pending ? 'Saving…' : 'Save'}
                 </button>
@@ -277,7 +274,7 @@ export function MarketCard(props: MarketCardProps) {
                       ),
                     );
                   }}
-                  className="text-xs text-zinc-400 hover:text-zinc-600"
+                  className="text-xs text-ink-subtle hover:text-ink-secondary"
                 >
                   Cancel
                 </button>
@@ -287,7 +284,7 @@ export function MarketCard(props: MarketCardProps) {
                 type="button"
                 disabled={pending}
                 onClick={() => setEditing(true)}
-                className="text-xs font-medium text-zinc-600 hover:underline disabled:opacity-40 dark:text-zinc-300"
+                className="text-xs font-medium text-ink-secondary hover:underline disabled:opacity-40"
               >
                 Edit
               </button>

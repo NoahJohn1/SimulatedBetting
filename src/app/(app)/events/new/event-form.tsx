@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { Button } from '@/components/ui/button';
+import { Callout } from '@/components/ui/callout';
 import { americanToRational } from '@/domain/odds';
 import {
   MAX_DESCRIPTION_LENGTH,
@@ -94,9 +96,9 @@ function marketErrorMessage(reason: Extract<CreateEventError, { code: 'INVALID_M
 }
 
 const fieldClass =
-  'rounded-xl border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900';
+  'rounded-card border border-line-strong bg-surface-raised px-3 py-2 text-sm';
 const fieldErrorClass =
-  'rounded-xl border border-red-400 px-3 py-2 text-sm dark:border-red-600 dark:bg-zinc-900';
+  'rounded-card border border-negative-line bg-surface-raised px-3 py-2 text-sm';
 
 export function EventForm() {
   const [title, setTitle] = useState('');
@@ -235,20 +237,18 @@ export function EventForm() {
             <div
               key={market.id}
               className={`flex flex-col gap-3 rounded-xl border p-3 ${
-                marketError
-                  ? 'border-red-400 dark:border-red-600'
-                  : 'border-zinc-200 dark:border-zinc-800'
+                marketError ? 'border-negative-line' : 'border-line'
               }`}
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                <span className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
                   Market {marketIndex + 1}
                 </span>
                 <button
                   type="button"
                   onClick={() => removeMarket(market.id)}
                   disabled={markets.length <= 1}
-                  className="text-xs text-zinc-400 hover:text-red-600 disabled:opacity-30"
+                  className="text-xs text-ink-subtle hover:text-negative disabled:opacity-30"
                 >
                   Remove market
                 </button>
@@ -264,9 +264,7 @@ export function EventForm() {
               </label>
 
               {marketError ? (
-                <p className="text-xs text-red-600 dark:text-red-400">
-                  {marketErrorMessage(marketError.reason)}
-                </p>
+                <p className="text-xs text-negative">{marketErrorMessage(marketError.reason)}</p>
               ) : null}
 
               <div className="flex flex-col gap-2">
@@ -301,14 +299,14 @@ export function EventForm() {
                           type="button"
                           onClick={() => removeOutcome(market.id, outcome.id)}
                           disabled={market.outcomes.length <= MIN_OUTCOMES_PER_MARKET}
-                          className="shrink-0 text-xs text-zinc-400 hover:text-red-600 disabled:opacity-30"
+                          className="shrink-0 text-xs text-ink-subtle hover:text-negative disabled:opacity-30"
                           aria-label={`Remove outcome ${outcomeIndex + 1}`}
                         >
                           Remove
                         </button>
                       </div>
                       {priceError ? (
-                        <p className="text-xs text-red-600 dark:text-red-400">
+                        <p className="text-xs text-negative">
                           Price must be -100 or lower, or 100 or higher.
                         </p>
                       ) : null}
@@ -322,11 +320,11 @@ export function EventForm() {
                   type="button"
                   onClick={() => addOutcome(market.id)}
                   disabled={market.outcomes.length >= MAX_OUTCOMES_PER_MARKET}
-                  className="text-xs font-medium text-zinc-600 hover:underline disabled:opacity-30 dark:text-zinc-300"
+                  className="text-xs font-medium text-ink-secondary hover:underline disabled:opacity-30"
                 >
                   + Add outcome
                 </button>
-                <span className="text-xs text-zinc-500">
+                <span className="text-xs text-ink-muted">
                   Book: {pct === null ? '—' : `${Math.round(pct)}%`}
                 </span>
               </div>
@@ -339,20 +337,16 @@ export function EventForm() {
         type="button"
         onClick={addMarket}
         disabled={markets.length >= MAX_MARKETS_PER_EVENT}
-        className="self-start rounded-xl border border-zinc-300 px-3 py-2 text-sm font-medium disabled:opacity-30 dark:border-zinc-700"
+        className="self-start rounded-xl border border-line-strong px-3 py-2 text-sm font-medium disabled:opacity-30"
       >
         + Add market
       </button>
 
-      {banner ? <p className="text-sm text-red-600 dark:text-red-400">{banner}</p> : null}
+      {banner ? <Callout>{banner}</Callout> : null}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-full bg-zinc-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-      >
+      <Button type="submit" disabled={pending}>
         {pending ? 'Creating…' : 'Create event'}
-      </button>
+      </Button>
     </form>
   );
 }

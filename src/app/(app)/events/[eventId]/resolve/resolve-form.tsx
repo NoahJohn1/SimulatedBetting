@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { Button } from '@/components/ui/button';
 import type { ResolveError } from '@/server/events/resolve';
 import { resolveEventAction } from '../../actions';
 
@@ -88,9 +89,7 @@ export function ResolveForm({ eventId, attempt, markets }: ResolveFormProps) {
         <fieldset
           key={market.marketId}
           className={`flex flex-col gap-2 rounded-xl border p-3 ${
-            missingMarketIds?.has(market.marketId)
-              ? 'border-red-400 dark:border-red-600'
-              : 'border-zinc-200 dark:border-zinc-800'
+            missingMarketIds?.has(market.marketId) ? 'border-negative-line' : 'border-line'
           }`}
         >
           <legend className="px-1 text-sm font-semibold">{market.title}</legend>
@@ -120,25 +119,21 @@ export function ResolveForm({ eventId, attempt, markets }: ResolveFormProps) {
           onChange={(e) => setNote(e.target.value)}
           required={noteRequired}
           rows={3}
-          className="rounded-xl border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className="rounded-xl border border-line-strong bg-surface-raised px-3 py-2 text-sm"
         />
       </label>
 
-      <p className="text-sm text-zinc-500">
+      <p className="text-sm text-ink-muted">
         {complete
           ? 'Confirming will grade every pending bet on this event against the winners selected above and pay out credits accordingly.'
           : 'Pick a winner for every market to see what will be paid.'}
       </p>
 
-      {error ? <p className="text-sm text-red-600 dark:text-red-400">{errorMessage(error)}</p> : null}
+      {error ? <p className="text-sm text-negative">{errorMessage(error)}</p> : null}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="self-start rounded-full bg-zinc-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-      >
+      <Button type="submit" disabled={pending} className="self-start">
         {pending ? 'Resolving…' : 'Confirm resolution'}
-      </button>
+      </Button>
     </form>
   );
 }

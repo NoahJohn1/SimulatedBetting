@@ -26,7 +26,7 @@ export default async function ResolveEventPage({
       <header className="flex flex-col gap-1">
         <h1 className="text-lg font-semibold">Resolve “{detail.title}”</h1>
         {detail.resolution.attempt > 0 ? (
-          <p className="text-sm text-amber-700 dark:text-amber-400">
+          <p className="text-sm text-caution">
             This event was already resolved
             {detail.resolution.byDisplayName ? ` by ${detail.resolution.byDisplayName}` : ''}.
             Submitting here corrects it, and a note is required.
