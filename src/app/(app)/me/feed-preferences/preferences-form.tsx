@@ -3,7 +3,6 @@
 import { useState, useTransition } from 'react';
 import type { FeedEventType } from '@/db/schema';
 import { Button } from '@/components/ui/button';
-import { FormField } from '@/components/ui/form-field';
 import { saveFeedPreferencesAction } from '../../feed/actions';
 
 export interface PreferenceOption {
@@ -45,19 +44,21 @@ export function PreferencesForm({
       {options.map((option) => {
         const shown = !mutedSet.has(option.type);
         return (
-          <div
+          <label
             key={option.type}
-            className="rounded-xl border border-line bg-surface-raised p-3"
+            className="flex items-start gap-3 rounded-xl border border-line bg-surface-raised p-3"
           >
-            <FormField label={option.label} htmlFor={option.type} hint={option.description}>
-              <input
-                id={option.type}
-                type="checkbox"
-                checked={shown}
-                onChange={() => toggle(option.type)}
-              />
-            </FormField>
-          </div>
+            <input
+              type="checkbox"
+              checked={shown}
+              onChange={() => toggle(option.type)}
+              className="mt-0.5"
+            />
+            <span className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium">{option.label}</span>
+              <span className="text-xs text-ink-muted">{option.description}</span>
+            </span>
+          </label>
         );
       })}
 
