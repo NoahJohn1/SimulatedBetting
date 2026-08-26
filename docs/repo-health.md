@@ -10,18 +10,92 @@ itself against "we could just tell each other," and the ones that fail are liste
 [what is deliberately skipped](#what-is-deliberately-skipped) with the reason, so they do
 not get re-proposed later.
 
-**Status (2026-08-20).** Landed: branch protection on `main` requiring the `verify` check
-([1.4](#14-cheap-improvements)); the five milestones and the `bug`, `money`, `ui`,
-`from-test-pass`, and `phase-5`–`phase-9` labels ([4](#4-issues-and-milestones)) — all done
-directly in GitHub settings, not as files in this repo; the `decision-log` skill
-([3.4](#34-decision-log--a-skill)); the `money-invariants` skill
-([3.3](#33-money-invariants--all-three-layers)); and the bug issue template ([2](#2-hygiene)).
+## Status at a glance (2026-08-25)
 
-Not yet landed: the ledger-funnel guard test ([3.3](#33-money-invariants--all-three-layers)),
-the `session-start` hook ([3.6](#36-session-start--a-hook)), the CI build/concurrency/timeout/
-Node-pinning/Dependabot changes ([1](#1-the-ci-gate)), and the `db-migration` skill
-([3.5](#35-db-migration--a-skill)) — still marginal per that section; add it if a migration goes
-wrong, not before.
+Every item below carries a **lane** — who or what can actually finish it. The lane is decided by
+what the work needs, not by who can type the file:
+
+| Lane | Means | Why |
+|---|---|---|
+| **[MANUAL]** | You, in a browser | GitHub settings, Actions secrets, the Vercel dashboard. No agent has these credentials, and none should. |
+| **[CLOUD AI]** | A Claude Code web session, start to finish | Measured 2026-08-25: `npm ci` (21s), `npm run typecheck`, `npm run lint`, `npx next build` and any test that only reads source all run clean in a cloud session. |
+| **[LOCAL AI]** | Claude on your desktop | Needs Postgres. A cloud session has the `docker` binary but no daemon — `/var/run/docker.sock` does not exist — so anything gated on `npm test` as a whole must run where Docker does. |
+
+One thing that softens the [LOCAL AI] lane: **CI has Postgres.** A cloud session that opens a pull
+request gets the full suite run against a real database by the `verify` job. So "cloud writes it,
+CI proves it" covers most of what used to need a laptop; the local lane is for work that has to be
+*exercised* locally, like a session hook.
+
+These map onto the H / C / L lanes in the
+[implementation plan](plans/2026-08-20-repo-health-implementation-plan.md) — H is [MANUAL], C is
+[CLOUD AI], L was [LOCAL AI] — with one correction. The plan put the guard test in lane L on the
+assumption that every test needs a database. It does not, and the table above moves it to
+[CLOUD AI]; see [3.3](#33-money-invariants--all-three-layers) for the measurement.
+
+### Done
+
+| # | Item | Lane | Landed |
+|---|---|---|---|
+| 1 | Branch protection on `main` requiring `verify` ([1.4](#14-cheap-improvements)) | [MANUAL] | Re-verified 2026-08-25 — `main` is protected |
+| 2 | Five milestones, and the `bug` / `money` / `ui` / `from-test-pass` / `phase-5`–`phase-9` labels ([4](#4-issues-and-milestones)) | [MANUAL] | Spot-checked present; GitHub settings, not files |
+| 3 | Bug issue template ([2](#2-hygiene)) | [CLOUD AI] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
+| 4 | `decision-log` skill ([3.4](#34-decision-log--a-skill)) | [CLOUD AI] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
+| 5 | `money-invariants` skill ([3.3](#33-money-invariants--all-three-layers)) | [CLOUD AI] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
+| 6 | `engines.node: ">=22"` — half the Node-pinning item ([1.4](#14-cheap-improvements)) | [CLOUD AI] | [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8), incidentally, not from this plan |
+| 7 | `cron.yml` restored to valid YAML, schedule off ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken)) | [CLOUD AI] | This branch — a holding position, not the fix |
+
+### Outstanding
+
+Ordered by what should happen first. Rows 1–3 are one job: the cron workflow.
+
+| # | Item | Lane | Notes |
+|---|---|---|---|
+| 1 | **Add `APP_URL` and `CRON_SECRET` as Actions secrets** | **[MANUAL]** | The only production item on this list. [Step by step](#what-you-must-do--the-cron-fix-step-by-step) |
+| 2 | **Dispatch both cron jobs by hand and confirm 200** | **[MANUAL]** | Proves the secrets before a timer depends on them, with a [symptom table](#what-you-must-do--the-cron-fix-step-by-step) for when it is red |
+| 3 | **Uncomment the `schedule:` block, add the empty-secret guard** | [CLOUD AI] | Three commented lines in `cron.yml` plus one `test -n` per job |
+| 4 | Ledger-funnel guard test ([3.3](#33-money-invariants--all-three-layers)) | [CLOUD AI] | Proven runnable in a cloud session — see that section |
+| 5 | `session-start` hook ([3.6](#36-session-start--a-hook)) | **[LOCAL AI]** | Cloud can draft it; only a desktop can prove the Docker path |
+| 6 | `.nvmrc` — the other half of Node pinning ([1.4](#14-cheap-improvements)) | [CLOUD AI] | One file, one line |
+| 7 | CI: `build` step, `concurrency`, `timeout-minutes` ([1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), [1.4](#14-cheap-improvements)) | [CLOUD AI] | The build was re-measured in a cloud session today |
+| 8 | Dependabot, monthly, grouped ([1.4](#14-cheap-improvements)) | [CLOUD AI] | Writing the file is cloud work; merging its PRs is [MANUAL] |
+| 9 | `.env.test` note in the README ([3.6](#36-session-start--a-hook)) | [CLOUD AI] | One paragraph; makes item 5 land properly |
+| 10 | `db-migration` skill ([3.5](#35-db-migration--a-skill)) | [CLOUD AI] | Still marginal — add it if a migration goes wrong, not before |
+| 11 | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | The gate on phase 5. Nothing else here substitutes for it. |
+
+### What changed underneath all of this
+
+**New since this document was first written**, and the reason for this revision:
+
+- **The app is deployed.** [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8) added
+  error and not-found boundaries, a season bootstrap script, and a second workflow,
+  [`cron.yml`](../.github/workflows/cron.yml), and the app now runs on Vercel. That raises the
+  stakes on everything below: a bad commit now reaches a live app rather than a laptop, and a
+  scheduled job that fails is an incident rather than a red X in a tab nobody opens.
+- **That second workflow is the one thing in this repo that is actually broken.** It failed
+  every scheduled fire for two days, and the fix applied on 2026-08-24 replaced that failure
+  with a different one. Written up in [1.5](#15-the-cron-workflow--the-only-thing-actually-broken).
+- **`main` is not where the current UI work lives.** Fifteen commits on `roadmap-7` and
+  `claude/roadmap-7b-plan-il1opu` carry all of phase 7a plus the 7b spec and plan, including
+  `docs: mark phase 7a built`. This is deliberate — the branch is the working surface for the UI
+  ladder — but it means anything in this document measured against `main` (the route count in
+  [1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), the 546 tests in
+  [1](#1-the-ci-gate)) is measuring the pre-7a app. Every recommendation here is about repo
+  mechanics rather than app code, so none of them change; the numbers do. `roadmap-7` already
+  carries the corrected counts — 578 tests across 74 files — so those two lines update
+  themselves when it merges and should not be edited here in the meantime. That branch also adds
+  D51, *UI conventions are tested structurally, not with a component-test harness* — not linked
+  here because the entry does not exist on `main` yet — which is
+  [3.2](#32-the-layering-rule) being applied without being asked: a convention that could have
+  been a code-review habit was made a test instead.
+
+**Where the outstanding work can land.** Every remaining item in this document is repo mechanics
+— `.github/workflows/`, `.claude/`, `.nvmrc`, `package.json`, a test under
+`src/server/money/__tests__/`, and a README paragraph. `roadmap-7` touches none of those except
+`package-lock.json` and the docs. So the list below can be worked on `main` in parallel with the
+UI ladder without either branch fighting the other, and nothing here is a reason to hold up phase
+7b. The one item that is genuinely urgent —
+[the cron secrets](#15-the-cron-workflow--the-only-thing-actually-broken) — is a GitHub settings
+change plus one uncommented block, and is independent of both branches.
 
 ---
 
@@ -67,6 +141,23 @@ So the change is one line in the workflow, or adding `build` to the `verify` scr
 in the workflow rather than in `verify` — `verify` is what a developer runs in a loop, and a
 10-second build on every local run is a tax for no local benefit.
 
+**Re-measured 2026-08-25, in a Claude Code cloud session, and two things moved.** The build runs
+there — `npm ci` in 21 seconds, then `next build` green with `DATABASE_URL` pointed at a host
+that is not listening — which makes this item [CLOUD AI] rather than something that has to wait
+for a laptop:
+
+```
+DATABASE_URL=postgres://x npx next build
+→ EXIT=0 · 30 routes · 28 ƒ (dynamic) · 2 ○ (prerendered)
+```
+
+The route count is 30, not 26, and `/` now prerenders alongside `/_not-found` — the error and
+not-found boundaries from [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8) changed
+what the compiler can settle at build time. That slightly widens the case above: with `/` static,
+`next build` does execute page code for one route, so a prerender-time throw there is a failure
+CI would catch and `verify` would not. Still narrow, still cheap, still worth adding — and now
+there is no lane argument against doing it.
+
 ### 1.2 Do not put real OAuth credentials in CI
 
 CI never signs anyone in. Real Google credentials in Actions secrets buy zero capability and
@@ -76,6 +167,15 @@ Nothing in the gate needs them, as 1.1 proves.
 Related, because it is easy to conflate: **Claude Code cloud-session environment variables are
 not GitHub Actions secrets.** They are separate systems. Setting `AUTH_GOOGLE_ID` in a Claude
 session does nothing for CI, and vice versa.
+
+**This rule is about the `verify` job, and it did not survive contact with production
+unchanged.** The repo now has a second workflow that legitimately needs two Actions secrets —
+`APP_URL` and `CRON_SECRET` — because it calls the deployed app over HTTP. That is an
+operational credential, not a build credential: it lets Actions invoke a route that is already
+public, guarded by a token the app itself checks. The distinction worth keeping is that nothing
+in the *gate* needs a secret, so nothing in the gate should have one. See
+[1.5](#15-the-cron-workflow--the-only-thing-actually-broken) for what happens when those two
+secrets do not exist.
 
 ### 1.3 What CI structurally cannot cover
 
@@ -90,13 +190,130 @@ later tries to automate it into CI and burns a weekend on it.
   superseded runs currently run to completion for nothing.
 - **`timeout-minutes: 15`.** The default is six hours. A Postgres service container that never
   reports healthy otherwise hangs that long.
-- **Pin Node everywhere.** CI pins 22 via `setup-node`; nothing else does. Add `.nvmrc` and an
-  `engines.node` field so a local machine on Node 20 fails loudly instead of mysteriously.
+- **Pin Node everywhere.** ~~CI pins 22 via `setup-node`; nothing else does.~~ Half done:
+  `engines.node: ">=22"` landed with [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8).
+  `.nvmrc` is still missing, and it is the half that actually switches a version manager, so a
+  laptop sitting on Node 20 still gets no warning until something behaves oddly.
 - **Dependabot, monthly, grouped.** Weekly, ungrouped, on a two-person project is noise you
   will train yourself to ignore, which is worse than not having it. Monthly with minor and
   patch grouped into one PR is roughly one PR a month that CI can prove safe.
-- **Branch protection on `main`** requiring CI to pass. A settings change rather than a file:
-  Settings → Branches → require status checks. This is what makes the gate a gate.
+- ~~**Branch protection on `main`** requiring CI to pass.~~ **Done.** A settings change rather
+  than a file: Settings → Branches → require status checks. This is what makes the gate a gate.
+
+### 1.5 The cron workflow — the only thing actually broken
+
+[#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8) added a second workflow,
+[`cron.yml`](../.github/workflows/cron.yml), for a good reason: Vercel Hobby only allows crons
+that run daily or less, and `sync-odds` (every 15 minutes) and `settle` (every 10 minutes) need
+to run far more often than that. So they moved to GitHub Actions, calling the same route
+handlers over HTTP with the same bearer token Vercel Cron would have sent. `allowance` and
+`reconcile` stayed native in [`vercel.json`](../vercel.json). That design is sound.
+
+**What the two jobs actually do**, since it is not written down anywhere else:
+
+| Job | Cadence | What it does |
+|---|---|---|
+| `sync-odds` | every 15 min | `syncOdds` pulls the slate and prices; `syncResults` applies reported scores and marks games `FINAL`; `suspendStaleMarkets` suspends anything whose price has gone stale so nobody can bet into a dead line. Both providers are still the **fixture** ones, so on the deployed app this moves fixture data, not real games — that is phase 5's job. |
+| `settle` | every 10 min | `settleFinalGames` grades every pending leg on a finished game from the line and price frozen at placement, settles the bets those legs belong to, and pays out — batched to fit the invocation limit, with the remainder picked up next run. Then `detectLeadChange` emits a feed event if the standings lead changed, `sweepOverdueEvents` flags custom events past their resolve-by time, and `sweepP2PWagers` makes three passes: expire unaccepted offers and refund their escrow, settle market-backed wagers whose game has finished, flag overdue ones for arbitration. Returns 207 rather than 200 if an individual game or wager errored, so one bad row is reported without failing the rest. |
+
+`allowance` (weekly) and `reconcile` (daily) are unaffected by any of this — they are native Vercel
+crons and run from [`vercel.json`](../vercel.json). But if `CRON_SECRET` is missing from the Vercel
+environment rather than just from Actions, those two are failing as well, silently, for the same
+fail-closed reason.
+
+**Nothing is lost while the schedule is off, only late.** Both routes are resumable and every
+ledger write is idempotent, so turning the schedule back on works through the backlog: pending
+bets grade, expired offers refund, overdue wagers get flagged. What you cannot get back is the
+timing — a bet that should have settled Sunday settles whenever the first successful run happens.
+
+**It has never once succeeded.** Every scheduled fire from the merge on 2026-08-22 until it was
+switched off on 2026-08-24 failed — roughly 130 runs over two days. The cause is not the app and
+not the routes:
+
+```
+env:
+  APP_URL:
+  CRON_SECRET:
+##[error]Process completed with exit code 3.
+```
+
+Both secrets resolve to empty, so `curl` is handed a bare `/api/cron/settle` with no host and
+exits 3 — a malformed-URL failure, before any request leaves the runner. The two Actions
+repository secrets the workflow reads simply do not exist. Nothing was ever called; nothing has
+been syncing odds or settling bets on the deployed app through this path.
+
+**The 2026-08-24 response traded one red X for another.** Commenting out the `on:` key stops the
+schedule, but it leaves a file whose first mapping key is indented under a comment, which is not
+valid YAML. GitHub now rejects the workflow at parse time and records a failed run on every push
+to `main` instead — the run that followed that commit failed in the same second it was created,
+with no jobs. Same red X in the Actions tab, new reason.
+
+**What this branch changes.** `on:` is restored as valid YAML with `workflow_dispatch` only, and
+the `schedule:` block sits directly under it as three commented lines. The file parses, nothing
+fires on a timer, both jobs stay runnable by hand from the Actions tab, and pushes to `main` stop
+going red. This is a holding position, not a fix.
+
+**What the holding position costs.** `settleFinalGames`, `sweepOverdueEvents` and
+`sweepP2PWagers` are called from exactly one place in the codebase —
+[`src/app/api/cron/settle/route.ts`](../src/app/api/cron/settle/route.ts) — and nothing else
+invokes them. With the schedule off, nothing on the deployed app grades a bet, sweeps an expired
+offer, or flags an overdue wager. `allowance` and `reconcile` still run natively from
+[`vercel.json`](../vercel.json), so the weekly allowance and the daily reconciliation are
+unaffected.
+
+### What you must do — the cron fix, step by step
+
+Steps 1 through 4 are **[MANUAL]**: they need the Vercel dashboard and GitHub settings, which no
+agent here has or should have. Step 5 is **[CLOUD AI]** — hand it to a Claude session once the
+secrets exist. Step 6 is **[MANUAL]** again, and it is just looking.
+
+1. **[MANUAL] Get the `CRON_SECRET` value out of Vercel.** Vercel → the project → Settings →
+   Environment Variables → `CRON_SECRET`. If it is not there, the deployed app is currently
+   rejecting *every* cron call with `500 CRON_SECRET is not configured`
+   ([`src/server/cron/auth.ts`](../src/server/cron/auth.ts) fails closed on purpose), including
+   the two native Vercel crons. In that case generate one — `openssl rand -hex 32` — add it to
+   all environments, and redeploy so the running app picks it up.
+2. **[MANUAL] Write down `APP_URL`.** The production origin, no trailing slash and no path:
+   `https://<project>.vercel.app`, or the custom domain if one is attached. A trailing slash
+   produces `//api/cron/settle`, which will 404.
+3. **[MANUAL] Add both as Actions secrets.** GitHub → the repo → Settings → Secrets and variables
+   → Actions → *New repository secret*. Add `APP_URL`, then `CRON_SECRET` with the **same value**
+   Vercel holds. Repository secrets, not environment secrets — the workflow reads them as
+   `secrets.APP_URL` and `secrets.CRON_SECRET` with no environment declared.
+4. **[MANUAL] Run both jobs by hand.** Actions → *Sportsbook cron jobs* → Run workflow. Both
+   `sync-odds` and `settle` fire on a manual dispatch. Green means the whole path works. If it is
+   red, the exit code says which side is wrong:
+
+   | Symptom | What it means |
+   |---|---|
+   | exit 3, `APP_URL:` blank in the log | The Actions secret is missing or misnamed — step 3 |
+   | HTTP 500, `CRON_SECRET is not configured` | Vercel does not have the variable — step 1 |
+   | HTTP 401, `unauthorized` | Both sides have a secret and they do not match |
+   | HTTP 404 | `APP_URL` has a trailing slash or the wrong domain — step 2 |
+
+5. **[CLOUD AI] Turn the schedule back on.** Uncomment the three `schedule:` lines in
+   [`cron.yml`](../.github/workflows/cron.yml) and add a guard before each `curl` —
+   `[ -n "$APP_URL" ] || { echo "APP_URL secret is not set"; exit 1; }` — so the next missing
+   secret produces one legible failure instead of 130 illegible ones.
+6. **[MANUAL] Watch one cycle.** `sync-odds` fires within 15 minutes, `settle` within 10. Two
+   green runs and this is closed.
+
+**Do not skip step 4 by uncommenting the schedule first.** That is how the last two days went:
+the failure was real from the first fire, and nothing about a five-minute wait made it more
+visible than a manual run would have.
+
+One thing not to expect from re-enabling it:
+[`sync-odds`](../src/app/api/cron/sync-odds/route.ts) still constructs `FixtureOddsProvider` and
+`FixtureScoreProvider`, so a working schedule syncs fixture data on a timer, not real games. That
+is phase 5's job, and the route comment is right that it is a two-line swap — but until then a
+green cron run does not mean live odds.
+
+**And the part that is not a workflow problem at all.** Two days of failing jobs produced no
+signal anyone acted on until the noise itself became annoying. That is precisely the gap phase 6
+names — *"a `settle` run that throws is invisible: no bet settles, no one is told, and the first
+signal is a member asking why Sunday never graded"*
+([roadmap](roadmap.md#6--production-deployment)). This incident is the argument for that item,
+already paid for once.
 
 ---
 
@@ -170,9 +387,10 @@ and the idempotency property in the root README:
 
 **Layer 1 — a guard test.** The codebase already has the property that makes this easy:
 **every ledger write funnels through `postEntry`** in
-[`src/server/money/ledger.ts`](../src/server/money/ledger.ts). Verified 2026-08-20 — eleven
-production call sites, zero direct inserts into `ledgerEntries` outside that file, zero updates
-or deletes anywhere in the repo. The schema tests in `src/db/__tests__/` insert directly, which
+[`src/server/money/ledger.ts`](../src/server/money/ledger.ts). Re-verified 2026-08-25 and the
+property still holds: sixteen production call sites across ten files, exactly one
+`.insert(ledgerEntries)` in the repo outside tests — the one inside `postEntry` — and zero
+updates or deletes anywhere. The schema tests in `src/db/__tests__/` insert directly, which
 is legitimate: they exist to test the constraint itself.
 
 So a test can assert, by scanning source:
@@ -180,8 +398,17 @@ So a test can assert, by scanning source:
 - No file outside `src/server/money/ledger.ts` and `__tests__/` calls `.insert(ledgerEntries)`
 - No file anywhere calls `.update(ledgerEntries)` or `.delete(ledgerEntries)`
 
+**This is [CLOUD AI] work, which the original plan got wrong.** It was filed under the lane that
+needs Docker, on the assumption that every test needs Postgres. It does not: a test that only
+reads files touches no database, and `src/test/setup.ts` just loads `.env.test` — it opens no
+connection. Proven 2026-08-25 by running a throwaway version of exactly this test in a cloud
+session with no Postgres anywhere: `1 passed`, 381ms. Only the surrounding `npm run verify` needs
+a database, and CI supplies one on the pull request.
+
 That is invariant 1 plus the funnel, enforced deterministically, in CI, forever. It passes
-today, so it locks in a property rather than asking anyone to fix anything.
+today, so it locks in a property rather than asking anyone to fix anything. Two rounds of
+verification five days apart is not the same as a test: the property held both times because
+nobody happened to write a direct insert, not because anything stopped them.
 
 **Layer 2 — a `PostToolUse` hook.** Fires on `Edit`/`Write`, reads the path from stdin, and if
 it falls under `src/server/money/`, `src/server/bets/`, `src/server/p2p/`,
@@ -222,17 +449,30 @@ a code bug and is not.
 
 ### 3.6 `session-start` — a hook
 
+**Lane: [LOCAL AI].** A cloud session can write the script, but only a desktop can prove the
+part that matters — see the correction below.
+
 A Claude Code web session starts with no `node_modules` and no Postgres, so it cannot run the
-suite. Confirmed in the session that produced this document: `node_modules` absent, port 5433
-closed, `docker` available. Every web session is currently read-only with respect to the tests,
-which is a bad position from which to trust any change.
+suite. Re-confirmed 2026-08-25: `node_modules` absent, port 5433 closed. Every web session is
+still read-only with respect to the tests, which is a bad position from which to trust any
+change.
+
+**One correction to the original writeup.** It recorded `docker` as "available" in a web session.
+The binary is on `PATH`, but there is no daemon: `/var/run/docker.sock` does not exist, and
+`docker info` fails against it. So a `SessionStart` hook cannot bring Postgres up in a cloud
+session at all — the hook's value there is `npm ci` plus a clear message about what is missing,
+and the full path only works on a laptop. This is also why the [three-lane
+plan](plans/2026-08-20-repo-health-implementation-plan.md) splits the way it does, and that split
+is still correct.
 
 A `SessionStart` hook fixes it: `npm ci` when `node_modules` is missing, `docker compose up -d
---wait`, create and migrate the test database. Three requirements:
+--wait`, create and migrate the test database. Four requirements:
 
 - **Idempotent** — re-running must be a no-op when everything is already up.
 - **Never fails the session** — if Docker is unavailable it prints what to run by hand and
   exits zero. A hook that blocks a session start is worse than no hook.
+- **Tests the daemon, not the binary** — `command -v docker` succeeds in a cloud session where
+  `docker compose up` cannot work. The check that matters is `docker info`.
 - **Honest about cost** — a cold `npm ci` is not instant, and the hook should say what it is
   doing rather than appearing to hang.
 
@@ -255,6 +495,14 @@ moment both people tick a box.
   starts. The roadmap stays the plan; issues are the working set.
 - **The human test pass gets its own burst**, tagged `from-test-pass`. That is the immediate
   reason to have issues at all — it will produce more findings than a conversation can hold.
+
+**Status 2026-08-25: the containers exist and are empty.** Milestones and labels are in place;
+the repo has zero issues, open or closed. That is the expected state — the human test pass has
+not happened, and "do not pre-create issues from the roadmap" is working as intended. Worth
+recording only so that an empty issue list is not later read as evidence that this section never
+landed. The one thing that has changed is that the app is deployed, so the first issues may well
+arrive from production behavior rather than from the test pass; `from-test-pass` should stay
+reserved for the pass itself.
 
 ---
 
@@ -279,19 +527,28 @@ Recorded so these do not get re-proposed in six months:
 
 ## Suggested order
 
-1. **Branch protection on `main`** — CI is advisory until this exists; a red pull request can be
-   merged today. Two minutes, and it is what makes every other CI improvement matter.
-2. **`session-start` hook** — everything else is easier once a session can run the suite
-3. **Milestones, labels, and the bug issue template** — before the human test pass, not during.
-   Findings arrive faster than somewhere to put them can be set up.
-4. **The money guard test** — locks in a property that holds today, before phase 5 starts
-   touching settlement paths
-5. **`decision-log` skill** — while the conventions are fresh
-6. **CI: `build`, `concurrency`, `timeout-minutes`, `.nvmrc`, `engines`, Dependabot** — one
-   chore commit; individually small, collectively tidy
-7. **`money-invariants` skill** — wants the guard test underneath it first
-8. **`db-migration` skill** — marginal; the README already documents the sequence
+The ordered list is the [outstanding table](#outstanding) at the top; this is the reasoning
+behind the order, kept because the reasoning is the part that goes stale slowly.
 
-**Prettier is dropped.** Adopting it means one reformat commit touching nearly every file, and
-doing that mid-roadmap immediately before the phase 7 UI rewrite trades real diff churn for a
-cosmetic gain. Revisit after phase 7, if at all.
+1. **The cron workflow first, because it is the only item that is costing anything right now.**
+   Everything else on the list makes future work safer. This one is a deployed app that does not
+   grade bets. It is also the cheapest: two secrets and a manual run.
+2. **Then the `session-start` hook**, because it is the item that makes every *other* item easier
+   to finish — and it is the one thing on the list that a cloud session cannot close for you, so
+   it is worth spending desktop time on rather than saving desktop time for things a cloud
+   session could have done.
+3. **Then the guard test**, before phase 5 starts touching settlement paths. It also puts a real
+   layer 1 under the `money-invariants` skill, which today rests on nothing mechanical.
+4. **Then the CI chore commit** — `.nvmrc`, `build`, `concurrency`, `timeout-minutes`,
+   Dependabot. One commit, individually small, and every piece of it is now [CLOUD AI].
+5. **The `.env.test` README note** rides along with the hook.
+6. **`db-migration` stays last and may never happen.** Still marginal; the README already
+   documents the sequence.
+
+**Not on this list, but the real gate:** the human test pass. Phase 5 is waiting on it, the
+`from-test-pass` label exists for it, and no amount of repo tooling substitutes for it.
+
+**Prettier is dropped**, and the case got stronger. Adopting it means one reformat commit
+touching nearly every file. Phase 7a is built on `roadmap-7` and 7b is specced, so that commit
+would now land on one side of a long-lived branch carrying thousands of changed lines and
+guarantee a conflict in every file it touched. Revisit after the UI ladder is merged, if at all.

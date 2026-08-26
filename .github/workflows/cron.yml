@@ -4,10 +4,14 @@ name: Sportsbook cron jobs
 # minutes) and settle (every 10 minutes) run from here instead, hitting the same route
 # handlers over HTTP with the same bearer-token auth Vercel Cron would have used. allowance
 # and reconcile stay as native Vercel crons in vercel.json since both are daily-or-less.
+# The schedule is disabled until APP_URL and CRON_SECRET exist as Actions repository secrets.
+# Without them curl is handed a bare path and exits 3 before sending anything, which is what
+# every scheduled run did between 2026-08-22 and 2026-08-24. Uncomment the three lines below
+# to re-enable; see docs/repo-health.md section 1.5.
 on:
-  schedule:
-    - cron: '*/15 * * * *'
-    - cron: '*/10 * * * *'
+  # schedule:
+  #   - cron: '*/15 * * * *'
+  #   - cron: '*/10 * * * *'
   workflow_dispatch: {}
 
 jobs:
