@@ -1561,7 +1561,7 @@ if a pair is not here, stop and check whether you have misread the partner class
 | `bg-zinc-50` + `dark:bg-black` | `bg-surface` |
 | `bg-white` + `dark:bg-zinc-950` | `bg-surface-raised` |
 | `bg-white/90` + `dark:bg-zinc-950/90` | `bg-surface-raised/90` |
-| `bg-white` + `dark:bg-zinc-900` | `bg-surface-raised` |
+| `bg-white` + `dark:bg-zinc-900` | `bg-surface-raised` — but `bg-surface-sunken` when the control sits inside a `Card` (same dark value as the Card otherwise; see [design-system-audit.md](../design-system-audit.md)) |
 | `bg-zinc-50` + `dark:bg-zinc-900` | `bg-surface-sunken` |
 | `bg-zinc-100` + `dark:bg-zinc-800` | `bg-surface-muted` |
 | `bg-zinc-100` + `dark:bg-zinc-900` | `bg-surface-muted` (not `bg-surface-sunken` — sunken's light value is identical to the page background and would make the box invisible) |
@@ -1580,7 +1580,8 @@ if a pair is not here, stop and check whether you have misread the partner class
 | `text-zinc-600` + `dark:text-zinc-400` | `text-ink-secondary` |
 | `text-zinc-700` + `dark:text-zinc-300` | `text-ink-secondary` |
 | `text-zinc-500` + `dark:text-zinc-400` *or* bare `text-zinc-500` | `text-ink-muted` |
-| `text-zinc-400` + `dark:text-zinc-600` *or* bare `text-zinc-400` | `text-ink-subtle` |
+| `text-zinc-400` + `dark:text-zinc-600` | `text-ink-subtle` |
+| bare `text-zinc-400` (no dark partner) | `text-ink-muted` — NOT `text-ink-subtle`; `-subtle`'s dark value (`zinc-600`) drops a bare zinc-400 from ~8:1 to ~2.6:1 contrast, below WCAG AA. Found and fixed at 15 sites in [design-system-audit.md](../design-system-audit.md). |
 | `text-emerald-600` + `dark:text-emerald-400` | `text-positive` |
 | `bg-emerald-100` + `dark:bg-emerald-950` | `bg-positive-surface` |
 | `bg-emerald-50` | `bg-positive-surface-soft` |
@@ -1612,11 +1613,15 @@ nothing downstream needs these, but the reasoning stays useful):**
 
 - Two plain `<input>`/`<textarea>` fields in admin (`void-form.tsx`, `arbitration-form.tsx`) had
   `dark:bg-zinc-900` with no light-mode fill at all (the field was transparent in light mode).
-  `bg-surface-raised` was used for both: its dark value is exactly `zinc-900` (the
-  `bg-white`+`dark:bg-zinc-900` row above), and giving the field an explicit light fill matches
-  the `fieldClass` convention already established in `event-form.tsx`
+  `bg-surface-raised` was used for both, on the reasoning that its dark value is exactly
+  `zinc-900` (the `bg-white`+`dark:bg-zinc-900` row above) and that giving the field an explicit
+  light fill matches the `fieldClass` convention already established in `event-form.tsx`
   (`border-line-strong`/`border-negative-line` + `bg-surface-raised`) rather than leaving light
-  mode's transparency as a one-off.
+  mode's transparency as a one-off. **This is wrong on the facts** — `bg-surface-raised`'s dark
+  value is `n-950`, not `zinc-900` — and both fields sit inside a `Card`
+  (`bg-surface-raised` itself), so the fill was invisible against its container in dark mode.
+  Task 14's audit reversed both of these exact two call sites to `bg-surface-sunken`; see
+  [design-system-audit.md](../design-system-audit.md).
 - `void-form.tsx`'s "Confirm void" button was a solid fill (`bg-red-700` light /
   `bg-red-800` dark) with unconditional `text-white`. No existing negative token reproduces
   that safely: `bg-negative`/`bg-negative-on-surface`'s dark value (`neg-400`, ~70% L) gives
@@ -1631,6 +1636,22 @@ nothing downstream needs these, but the reasoning stays useful):**
   `hover:border-amber-300`/`dark:hover:border-amber-700` hover feedback has no semantic
   `-caution-line-hover` token and was dropped rather than invented, matching the brief's
   instruction to adopt `Callout` as-is.
+
+**Task 14 corrections, for the historical record:** Task 14 was the browser audit, run after the
+sweep tasks above were believed complete. It found two systemic bugs in the mapping table's rules
+and reviewed one product judgment call:
+
+- `bg-surface-raised` used for a control nested inside a `Card` (itself `bg-surface-raised`) is
+  invisible in dark mode, since both share the same dark value. Fixed to `bg-surface-sunken` at
+  11 sites.
+- Bare `text-zinc-400` (no dark partner) mapped to `text-ink-subtle` fails WCAG AA in dark mode —
+  `-subtle`'s dark value is much darker than the original `zinc-400`. Fixed to `text-ink-muted`
+  at 15 sites.
+- The `/sign-in` Google button's `variant="secondary"` (a deliberate deviation from the plan's
+  literal `primary` default) was reviewed and ratified by the plan owner; no code change.
+
+Full detail, measurements, and the complete site list for both fixes are in
+[design-system-audit.md](../design-system-audit.md).
 
 **Finding what is left in a file:**
 
