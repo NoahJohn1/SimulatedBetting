@@ -96,9 +96,9 @@ function marketErrorMessage(reason: Extract<CreateEventError, { code: 'INVALID_M
 }
 
 const fieldClass =
-  'rounded-card border border-line-strong bg-surface-raised px-3 py-2 text-sm';
+  'rounded-card border border-line-strong bg-surface-sunken px-3 py-2 text-sm';
 const fieldErrorClass =
-  'rounded-card border border-negative-line bg-surface-raised px-3 py-2 text-sm';
+  'rounded-card border border-negative-line bg-surface-sunken px-3 py-2 text-sm';
 
 export function EventForm() {
   const [title, setTitle] = useState('');
@@ -248,7 +248,7 @@ export function EventForm() {
                   type="button"
                   onClick={() => removeMarket(market.id)}
                   disabled={markets.length <= 1}
-                  className="text-xs text-ink-subtle hover:text-negative disabled:opacity-30"
+                  className="text-xs text-ink-muted hover:text-negative disabled:opacity-30"
                 >
                   Remove market
                 </button>
@@ -299,7 +299,7 @@ export function EventForm() {
                           type="button"
                           onClick={() => removeOutcome(market.id, outcome.id)}
                           disabled={market.outcomes.length <= MIN_OUTCOMES_PER_MARKET}
-                          className="shrink-0 text-xs text-ink-subtle hover:text-negative disabled:opacity-30"
+                          className="shrink-0 text-xs text-ink-muted hover:text-negative disabled:opacity-30"
                           aria-label={`Remove outcome ${outcomeIndex + 1}`}
                         >
                           Remove

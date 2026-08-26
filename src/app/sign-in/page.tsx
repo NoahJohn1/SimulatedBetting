@@ -22,7 +22,13 @@ export default async function SignInPage() {
           await signIn('google', { redirectTo: '/' });
         }}
       >
-        <Button type="submit">
+        {/*
+          `secondary`, not the default `primary`: this control was an outlined white/zinc-900
+          button before the design system landed, and phase 7b declares only that an adopted
+          control takes Button's *radius* — not that it changes weight. `secondary`'s
+          border-line-strong/text-ink pair is the exact token spelling of what it had.
+        */}
+        <Button type="submit" variant="secondary" className="bg-surface-sunken">
           <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5">
             <path
               fill="#4285F4"

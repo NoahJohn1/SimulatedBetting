@@ -74,7 +74,7 @@ export default async function MePage() {
                   {entry.note ? (
                     <span className="block truncate text-xs text-ink-muted">{entry.note}</span>
                   ) : null}
-                  <span className="block text-xs text-ink-subtle">
+                  <span className="block text-xs text-ink-muted">
                     {entry.createdAt.toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
@@ -84,7 +84,7 @@ export default async function MePage() {
                 </span>
                 <span className="shrink-0 text-right">
                   <Money cents={entry.amountCents} currency={entry.currency} className="block text-sm font-semibold" />
-                  <span className="block text-xs text-ink-subtle">
+                  <span className="block text-xs text-ink-muted">
                     <Money cents={entry.balanceAfterCents} currency={entry.currency} />
                   </span>
                 </span>

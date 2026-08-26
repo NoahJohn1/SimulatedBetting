@@ -37,7 +37,7 @@ export default async function StandingsPage() {
           return (
             <li key={row.membershipId}>
               <Card emphasis={isMe} className="flex items-center gap-3 p-3">
-                <span className="w-6 text-sm tabular-nums text-ink-subtle">{i + 1}</span>
+                <span className="w-6 text-sm tabular-nums text-ink-muted">{i + 1}</span>
                 <Link
                   href={`/members/${row.membershipId}`}
                   className="flex-1 truncate text-sm font-medium hover:underline"
@@ -64,7 +64,7 @@ export default async function StandingsPage() {
             return (
               <li key={row.membershipId}>
                 <Card emphasis={isMe} className="flex items-center gap-3 p-3">
-                  <span className="w-6 text-sm tabular-nums text-ink-subtle">{i + 1}</span>
+                  <span className="w-6 text-sm tabular-nums text-ink-muted">{i + 1}</span>
                   <Link
                     href={`/members/${row.membershipId}`}
                     className="flex-1 truncate text-sm font-medium hover:underline"

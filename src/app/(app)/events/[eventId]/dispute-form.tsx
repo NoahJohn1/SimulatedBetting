@@ -77,7 +77,7 @@ export function DisputeForm({ eventId, alreadyDisputed, existingReason }: Disput
           maxLength={MAX_DISPUTE_REASON_LENGTH}
           rows={3}
           placeholder="What's wrong with the resolution?"
-          className="rounded-xl border border-line-strong bg-surface-raised px-3 py-2 text-sm"
+          className="rounded-xl border border-line-strong bg-surface-sunken px-3 py-2 text-sm"
         />
         <span className="text-xs text-ink-muted">
           {reason.length}/{MAX_DISPUTE_REASON_LENGTH}

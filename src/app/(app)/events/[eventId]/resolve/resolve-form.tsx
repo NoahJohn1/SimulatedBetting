@@ -119,7 +119,7 @@ export function ResolveForm({ eventId, attempt, markets }: ResolveFormProps) {
           onChange={(e) => setNote(e.target.value)}
           required={noteRequired}
           rows={3}
-          className="rounded-xl border border-line-strong bg-surface-raised px-3 py-2 text-sm"
+          className="rounded-xl border border-line-strong bg-surface-sunken px-3 py-2 text-sm"
         />
       </label>
 

@@ -54,7 +54,7 @@ export function ArbitrationForm({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           required
-          className="rounded-lg border border-line-strong bg-surface-raised p-2"
+          className="rounded-lg border border-line-strong bg-surface-sunken p-2"
         />
       </label>
 

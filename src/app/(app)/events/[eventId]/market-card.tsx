@@ -83,7 +83,7 @@ function OutcomeButton({
       className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm transition-colors ${
         active
           ? 'border-accent bg-accent text-accent-ink'
-          : 'border-line bg-surface-raised hover:border-line-hover'
+          : 'border-line bg-surface-sunken hover:border-line-hover'
       }`}
     >
       <span className="min-w-0 truncate font-medium">{outcome.label}</span>
@@ -151,7 +151,7 @@ export function MarketCard(props: MarketCardProps) {
           <input
             value={draftTitle}
             onChange={(e) => setDraftTitle(e.target.value)}
-            className="min-w-0 flex-1 rounded-lg border border-line-strong bg-surface-raised px-2 py-1 text-sm"
+            className="min-w-0 flex-1 rounded-lg border border-line-strong bg-surface-sunken px-2 py-1 text-sm"
           />
         ) : (
           <h2 className="text-sm font-semibold">{props.title}</h2>
@@ -182,7 +182,7 @@ export function MarketCard(props: MarketCardProps) {
                     }
                     // "numeric" hides the minus key on iOS/Android; American odds need it.
                     inputMode="text"
-                    className="w-24 rounded-lg border border-line-strong bg-surface-raised px-2 py-1 text-sm tabular-nums"
+                    className="w-24 rounded-lg border border-line-strong bg-surface-sunken px-2 py-1 text-sm tabular-nums"
                   />
                 </div>
               ) : tappable ? (
@@ -274,7 +274,7 @@ export function MarketCard(props: MarketCardProps) {
                       ),
                     );
                   }}
-                  className="text-xs text-ink-subtle hover:text-ink-secondary"
+                  className="text-xs text-ink-muted hover:text-ink-secondary"
                 >
                   Cancel
                 </button>

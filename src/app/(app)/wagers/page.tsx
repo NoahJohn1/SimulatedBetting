@@ -28,7 +28,7 @@ function WagerRow({ wager }: { wager: WagerSummary }) {
         {wager.disputed && <span className="font-medium text-caution">disputed</span>}
         {wager.overdue && <span className="font-medium text-caution">overdue</span>}
       </div>
-      <div className="text-xs text-ink-subtle">
+      <div className="text-xs text-ink-muted">
         <Money cents={wager.offererStakeCents} currency="CREDITS" /> against{' '}
         <Money cents={wager.acceptorStakeCents} currency="CREDITS" />
       </div>

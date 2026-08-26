@@ -70,7 +70,7 @@ export function CommentThread({
               className="rounded-xl border border-line bg-surface-raised p-3"
             >
               {comment.deleted ? (
-                <p className="text-sm italic text-ink-subtle">Comment removed</p>
+                <p className="text-sm italic text-ink-muted">Comment removed</p>
               ) : (
                 <>
                   <div className="flex items-baseline justify-between gap-2">
@@ -80,7 +80,7 @@ export function CommentThread({
                         type="button"
                         onClick={() => remove(comment.id)}
                         disabled={pending}
-                        className="text-xs text-ink-subtle hover:text-negative disabled:opacity-50"
+                        className="text-xs text-ink-muted hover:text-negative disabled:opacity-50"
                       >
                         Delete
                       </button>

@@ -64,7 +64,7 @@ function OddsButton({
       className={`flex h-12 flex-col items-center justify-center rounded-lg border text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
         active
           ? 'border-accent bg-accent text-accent-ink'
-          : 'border-line bg-surface-raised hover:border-line-hover'
+          : 'border-line bg-surface-sunken hover:border-line-hover'
       }`}
     >
       <span className="font-semibold tabular-nums">
@@ -109,7 +109,7 @@ export function GameCard({ game }: { game: BoardGame }) {
       <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2 px-3 py-2">
         <span />
         {MARKET_ORDER.map((type) => (
-          <span key={type} className="w-16 text-center text-[10px] font-medium uppercase text-ink-subtle">
+          <span key={type} className="w-16 text-center text-[10px] font-medium uppercase text-ink-muted">
             {MARKET_LABEL[type]}
           </span>
         ))}
@@ -149,7 +149,7 @@ function FragmentRow({
                 teamLabel={row.label}
               />
             ) : (
-              <div className="flex h-12 items-center justify-center rounded-lg border border-dashed border-line text-xs text-ink-subtle">
+              <div className="flex h-12 items-center justify-center rounded-lg border border-dashed border-line text-xs text-ink-muted">
                 —
               </div>
             )}

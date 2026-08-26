@@ -138,7 +138,7 @@ export function BetSlip({
           <button
             type="button"
             onClick={slip.dismissNotice}
-            className="shrink-0 text-ink-subtle hover:text-ink-secondary"
+            className="shrink-0 text-ink-muted hover:text-ink-secondary"
           >
             Dismiss
           </button>
@@ -160,7 +160,7 @@ export function BetSlip({
                 <button
                   type="button"
                   onClick={() => slip.remove(leg.selectionId)}
-                  className="shrink-0 text-xs text-ink-subtle hover:text-negative"
+                  className="shrink-0 text-xs text-ink-muted hover:text-negative"
                   aria-label={`Remove ${leg.label}`}
                 >
                   Remove
@@ -176,7 +176,7 @@ export function BetSlip({
               inputMode="decimal"
               value={stake}
               onChange={(e) => setStake(e.target.value)}
-              className="w-28 rounded-lg border border-line-strong bg-surface-raised px-3 py-2 text-sm tabular-nums"
+              className="w-28 rounded-lg border border-line-strong bg-surface-sunken px-3 py-2 text-sm tabular-nums"
             />
             <span className="ml-auto text-xs text-ink-muted">
               Balance <Money cents={available} currency={currency} />

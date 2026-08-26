@@ -380,7 +380,7 @@ export function FeedCardView({
         ) : (
           <span className="truncate text-sm font-semibold text-ink-muted">The league</span>
         )}
-        <span className="shrink-0 text-xs text-ink-subtle">{relativeTime(card.occurredAt)}</span>
+        <span className="shrink-0 text-xs text-ink-muted">{relativeTime(card.occurredAt)}</span>
       </header>
 
       <Body type={card.type} payload={card.payload} />

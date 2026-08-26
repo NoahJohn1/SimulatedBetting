@@ -66,7 +66,7 @@ export function VoidForm({ eventId }: { eventId: string }) {
             required
             rows={2}
             placeholder="Why is this event being voided?"
-            className="rounded-xl border border-negative-line bg-surface-raised px-3 py-2 text-sm"
+            className="rounded-xl border border-negative-line bg-surface-sunken px-3 py-2 text-sm"
           />
         </label>
 

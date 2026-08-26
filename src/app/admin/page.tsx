@@ -38,8 +38,11 @@ export default async function AdminPage() {
     revalidatePath('/admin');
   }
 
+  // `w-full` below is load-bearing: `mx-auto` turns off cross-axis stretch inside the root
+  // layout's flex column, which leaves this a fit-content box whose min-content — the pending
+  // member's un-shrinkable email — pushed the page 2px wider than a 375px phone.
   return (
-    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-4 px-4 py-6">
+    <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-4 px-4 py-6">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold tracking-tight">Admin</h1>
         <Link href="/games" className="text-sm text-ink-muted underline">
