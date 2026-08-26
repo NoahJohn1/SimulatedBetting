@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSlip } from '@/components/bet-slip/slip-context';
 import { Badge } from '@/components/ui/badge';
+import { Price } from '@/components/ui/money';
 import { formatAmount } from '@/domain/money';
 import { editEventAction, suspendMarketAction } from '../actions';
 
@@ -41,10 +42,6 @@ export interface MarketCardProps {
   canManage: boolean;
   /** The viewer may reprice it: creator, while the event still has no bets at all. */
   canEdit: boolean;
-}
-
-function signed(price: number): string {
-  return price > 0 ? `+${price}` : String(price);
 }
 
 function credits(cents: string): string {
@@ -87,7 +84,7 @@ function OutcomeButton({
       }`}
     >
       <span className="min-w-0 truncate font-medium">{outcome.label}</span>
-      <span className="shrink-0 font-semibold tabular-nums">{signed(outcome.priceAmerican)}</span>
+      <Price american={outcome.priceAmerican} className="shrink-0 font-semibold" />
     </button>
   );
 }
@@ -205,7 +202,7 @@ export function MarketCard(props: MarketCardProps) {
                       </span>
                     ) : null}
                   </span>
-                  <span className="shrink-0 tabular-nums">{signed(outcome.priceAmerican)}</span>
+                  <Price american={outcome.priceAmerican} className="shrink-0" />
                 </div>
               )}
 

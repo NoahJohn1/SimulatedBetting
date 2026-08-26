@@ -48,7 +48,7 @@ export function VoidForm({ eventId }: { eventId: string }) {
   }
 
   return (
-    <Callout>
+    <Callout role={null}>
       <form
         onSubmit={(e) => {
           e.preventDefault();

@@ -56,7 +56,7 @@ and then corrected so the declared amber chips actually render.
 | `/admin` | Page overflowed a 375px viewport by 2px (document `scrollWidth` 377). `mx-auto` disables cross-axis stretch inside the root layout's flex `<body>`, leaving the container fit-content; the pending member's `truncate`d email contributes its full min-content, which Geist renders 2px wider than Arial did. | cosmetic | 7b — fixed (`w-full` on the page container) |
 | Bet slip | The dark-mode shadow (`shadow-slip`) is measurable (8→6/255 over the card it overlaps) but not perceptible — the shadow colour and `--surface` are both pure black in dark mode. Would need either a non-black shadow colour or a `--surface` that isn't pure black to actually read; both are Task 1 token-layer decisions, outside this audit's remit. | cosmetic | 7c |
 | `/admin/events`, `/admin/wagers` | Same `mx-auto` (no `w-full`) container pattern as `/admin`'s overflow bug — didn't overflow with current fixture content, but shares the latent issue. Not fixed here since it wasn't observed to break; worth the same `w-full` if content grows. | cosmetic | 7c |
-| `/events/[eventId]`, `/events/[eventId]/resolve`, `/events/new`, `/events`, `/me/feed-preferences`, `/sign-in`, `/join` | Controls adopted into `Button` grew 6–8px taller: `Button`'s `md` size is `h-11`, and the call sites were `py-2`, `h-9` or `h-12`. The spec declared the radius; the height comes with the component. It is a better tap target, so it is recorded rather than reverted. | cosmetic | 7c |
+| `/events/[eventId]`, `/events/[eventId]/resolve`, `/events/new`, `/events`, `/me/feed-preferences`, `/sign-in`, `/join`, `/pending`, `/wagers`, `/wagers/new` | Controls adopted into `Button` grew 6–8px taller: `Button`'s `md` size is `h-11`, and the call sites were `py-2`, `h-9` or `h-12`. The spec declared the radius; the height comes with the component. It is a better tap target, so it is recorded rather than reverted. | cosmetic | 7c |
 | `/wagers/new` and the other converted forms | `FormField` restyles labels from `text-sm font-medium` to `text-xs font-medium text-ink-secondary`. Smaller and quieter than before. | cosmetic | 7c |
 | `/me`, `/standings` | `Card` adoption gives the ledger rows and rank rows a 1px `border-line` and `rounded-card` (12px) where they had a bare fill and `rounded-lg` (8px). | cosmetic | 7c |
 | `/events` | "Create an event" lost its 1px border — `Button`'s `primary` variant has none. The old border was the same colour as the fill, so the control is 2px smaller and otherwise unchanged. | cosmetic | 7c |
@@ -96,13 +96,15 @@ and then corrected so the declared amber chips actually render.
 
 After the fixes above, these are pixel-identical to the tip of 7a apart from the typeface, the
 base surface/ink tokens, and — for the screens carrying one of the 11 `bg-surface-sunken` sites
-above — the `#ffffff`→`#fafafa` light-mode tint noted in that row: nothing on them needs 7c's
-attention on colour grounds beyond what is already recorded:
+above — the `#ffffff`→`#fafafa` light-mode tint noted in that row, and — for `/feed/[eventId]`
+and `/members/[membershipId]` specifically — the light-mode darkening from the `text-ink-muted`
+row above (bare `text-zinc-400` → `zinc-500`): nothing on them needs 7c's attention on colour
+grounds beyond what is already recorded:
 
 `/bets` and `/bets?currency=CREDITS` (both segmented controls, pending and settled rows),
-`/wagers` (all four sections), `/wagers/[wagerId]`, `/feed/[eventId]` (card, reactions and
-comment thread), `/members/[membershipId]`, `/admin/events`, `/admin/wagers`, `/pending`,
-`/join`, `/disabled`, `/no-season`, and the bet slip both collapsed and expanded, at one leg and
+`/wagers/[wagerId]`, `/feed/[eventId]` (card, reactions and
+comment thread), `/members/[membershipId]`, `/admin/events`, `/admin/wagers`,
+`/disabled`, `/no-season`, and the bet slip both collapsed and expanded, at one leg and
 at three. `/games`, `/events`, `/events/new`, `/events/[eventId]` (open, resolved, and
 corrected), `/events/[eventId]/resolve`, `/feed`, `/standings`, `/me`, `/me/feed-preferences`,
 `/admin` and `/sign-in` each carry exactly the rows the table above assigns them and nothing

@@ -16,16 +16,20 @@ const TONES: Record<CalloutTone, string> = {
 export function Callout({
   tone = 'negative',
   className = '',
+  role,
   children,
 }: {
   tone?: CalloutTone;
   className?: string;
+  /** Override the tone-based default. Pass `null` for "no role" — e.g. when the callout
+   *  wraps an interactive form rather than static alert text. */
+  role?: 'alert' | null;
   children: ReactNode;
 }) {
   return (
     <div
       // Screen readers should interrupt for a failure and not for a notice.
-      role={tone === 'negative' ? 'alert' : undefined}
+      role={role === null ? undefined : (role ?? (tone === 'negative' ? 'alert' : undefined))}
       className={`flex flex-col gap-2 rounded-card border p-3 text-sm ${TONES[tone]} ${className}`}
     >
       {children}

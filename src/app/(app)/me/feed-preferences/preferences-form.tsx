@@ -64,7 +64,7 @@ export function PreferencesForm({
 
       <div className="flex items-center justify-end gap-3 pt-2">
         {saved ? <span className="text-xs text-positive">Saved</span> : null}
-        <Button type="submit" onClick={save} disabled={pending}>
+        <Button onClick={save} disabled={pending}>
           {pending ? 'Saving…' : 'Save'}
         </Button>
       </div>

@@ -25,8 +25,8 @@ export function Money({
 }
 
 /** American prices always carry an explicit sign — +150 reads differently from 150. */
-export function Price({ american }: { american: number }) {
-  return <span className="tabular-nums">{american > 0 ? `+${american}` : american}</span>;
+export function Price({ american, className = '' }: { american: number; className?: string }) {
+  return <span className={`tabular-nums ${className}`}>{american > 0 ? `+${american}` : american}</span>;
 }
 
 /**

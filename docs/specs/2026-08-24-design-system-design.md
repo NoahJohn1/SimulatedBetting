@@ -334,8 +334,10 @@ assertion because it constrains routes not yet written and discarded the rest as
 of a tree that already exists. The token-lint test is entirely of the first kind: it says
 nothing about today's code once the sweep lands, and everything about screen nineteen.
 
-`route-conventions.test.ts` is extended to assert the new components exist and that the
-boundary files still delegate to shared components after retokenizing.
+The other new structural test is `token-layer.test.ts`, which asserts the token layer itself —
+`globals.css`'s custom properties and their light/dark pairing. `route-conventions.test.ts` is
+left unmodified: its existing assertions (pending-state disabling, boundary delegation) already
+covered what needed covering here, with nothing new to add.
 
 **What this does not catch,** stated plainly: it is a source-text assertion, so it cannot see a
 token used in the wrong role — `bg-surface-muted` where `bg-surface-sunken` was meant renders
