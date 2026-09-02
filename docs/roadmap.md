@@ -248,8 +248,8 @@ and stop there — nothing later in the ladder is a prerequisite for anything ou
 
 | Rung | What it is | Status |
 |---|---|---|
-| [7a](#7a--foundations) | Foundations — boundaries, loading states, app identity | **Built** ([spec](specs/2026-08-22-ui-foundations-design.md), [plan](plans/2026-08-22-ui-foundations-implementation-plan.md), [mobile audit](mobile-audit.md)) |
-| [7b](#7b--design-system) | Design system — tokens, dark mode, the shared set | **Built** ([spec](specs/2026-08-24-design-system-design.md), [plan](plans/2026-08-24-design-system-implementation-plan.md), [design-system audit](design-system-audit.md)) |
+| [7a](#7a--foundations) | Foundations — boundaries, loading states, app identity | **Built** ([spec](specs/2026-08-22-ui-foundations-design.md), [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md), [mobile audit](mobile-audit.md)) |
+| [7b](#7b--design-system) | Design system — tokens, dark mode, the shared set | **Built** ([spec](specs/2026-08-24-design-system-design.md), [plan](archive/plans/2026-08-24-design-system-implementation-plan.md), [design-system audit](design-system-audit.md)) |
 | [7c](#7c--screen-by-screen-rebuild) | Screen-by-screen rebuild | Not started — carries an [inherited backlog](#what-7c-inherits) |
 | [7d](#7d--craft) | Craft — motion, accessibility, copy, density | Not started — carries an [inherited backlog](#what-7d-inherits) |
 
@@ -282,7 +282,7 @@ pending states were already on all twelve forms — both needed a regression tes
 ### 7b — Design system
 
 **Built** — see [the spec](specs/2026-08-24-design-system-design.md),
-[the plan](plans/2026-08-24-design-system-implementation-plan.md), and
+[the plan](archive/plans/2026-08-24-design-system-implementation-plan.md), and
 [the design-system audit](design-system-audit.md).
 
 Before 7b there were six shared components ([`src/components/ui/`](../src/components/ui/)) — not

@@ -9,16 +9,16 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 |---|---|
 | [Core betting engine spec](specs/2026-08-14-core-betting-engine-design.md) | The v1 build: architecture, data model, odds math, grading rules, jobs, failure handling, screens, testing |
 | [Social layer spec](specs/2026-08-17-social-layer-design.md) | Subsystem 2: the season activity feed, reactions and comments, member profiles, per-viewer feed filters |
-| [Social layer plan](plans/2026-08-17-social-layer-implementation-plan.md) | The task-by-task implementation plan for subsystem 2 |
+| [Social layer plan](archive/plans/2026-08-17-social-layer-implementation-plan.md) | The task-by-task implementation plan for subsystem 2 |
 | [Custom events spec](specs/2026-08-17-custom-events-design.md) | Subsystem 3: member-created markets, the credits currency, human resolution and disputes |
-| [Custom events plan](plans/2026-08-17-custom-events-implementation-plan.md) | The task-by-task implementation plan for subsystem 3 |
+| [Custom events plan](archive/plans/2026-08-17-custom-events-implementation-plan.md) | The task-by-task implementation plan for subsystem 3 |
 | [Peer-to-peer bets spec](specs/2026-08-19-peer-to-peer-bets-design.md) | Subsystem 4: member-vs-member wagers, escrow, two-party resolution, admin arbitration, head-to-head |
-| [Peer-to-peer bets plan](plans/2026-08-19-peer-to-peer-bets-implementation-plan.md) | The task-by-task implementation plan for subsystem 4 |
+| [Peer-to-peer bets plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md) | The task-by-task implementation plan for subsystem 4 |
 | [UI foundations spec](specs/2026-08-22-ui-foundations-design.md) | Phase 7a: error, not-found, and loading boundaries inside the app shell; metadata, icons, and the web manifest |
-| [UI foundations plan](plans/2026-08-22-ui-foundations-implementation-plan.md) | The task-by-task implementation plan for phase 7a |
+| [UI foundations plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) | The task-by-task implementation plan for phase 7a |
 | [Mobile audit](mobile-audit.md) | Every screen at 375×812, with each finding assigned to the ladder rung that owns its fix |
 | [Design system spec](specs/2026-08-24-design-system-design.md) | Phase 7b: the two-tier token layer, dark mode as a remap, the shared component set, and the sweep |
-| [Design system plan](plans/2026-08-24-design-system-implementation-plan.md) | The task-by-task implementation plan for phase 7b |
+| [Design system plan](archive/plans/2026-08-24-design-system-implementation-plan.md) | The task-by-task implementation plan for phase 7b |
 | [Design-system audit](design-system-audit.md) | All 18 routes in both themes at two viewports, after the 7b sweep, with each remaining finding assigned to a rung |
 | [Roadmap](roadmap.md) | Part one: the four subsystems, what each adds, and build order. Part two: the phases between working code and a production deployment. Phase 7's rung-by-rung status and inherited backlogs |
 | [Decision log](decisions.md) | Every design decision, what was rejected, and why |
