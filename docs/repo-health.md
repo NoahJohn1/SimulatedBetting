@@ -74,15 +74,16 @@ Ordered by what should happen first. Rows 1–3 are one job: the cron workflow.
 - **That second workflow is the one thing in this repo that is actually broken.** It failed
   every scheduled fire for two days, and the fix applied on 2026-08-24 replaced that failure
   with a different one. Written up in [1.5](#15-the-cron-workflow--the-only-thing-actually-broken).
-- **`main` is not where the current UI work lives.** Fifteen commits on `roadmap-7` and
-  `claude/roadmap-7b-plan-il1opu` carry all of phase 7a plus the 7b spec and plan, including
-  `docs: mark phase 7a built`. This is deliberate — the branch is the working surface for the UI
-  ladder — but it means anything in this document measured against `main` (the route count in
-  [1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), the 546 tests in
-  [1](#1-the-ci-gate)) is measuring the pre-7a app. Every recommendation here is about repo
-  mechanics rather than app code, so none of them change; the numbers do. `roadmap-7` already
-  carries the corrected counts — 578 tests across 74 files — so those two lines update
-  themselves when it merges and should not be edited here in the meantime. That branch also adds
+- **`main` is not where the current UI work lives.** `claude/roadmap-7b-plan-il1opu` (opened as
+  [PR #10](https://github.com/NoahJohn1/SimulatedBetting/pull/10)) carries all of phase 7a
+  *and* 7b, both now **Built** — `roadmap-7` was 7a's branch-off point and is fully superseded
+  (zero commits not already on the PR branch). This is deliberate — the branch is the working
+  surface for the UI ladder — but it means anything in this document measured against `main` (the
+  route count in [1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), the 546
+  tests in [1](#1-the-ci-gate)) is measuring the pre-7a app. Every recommendation here is about
+  repo mechanics rather than app code, so none of them change; the numbers do. The PR branch
+  carries the corrected counts — 814 tests across 76 files — so those two lines update themselves
+  when it merges and should not be edited here in the meantime. That branch also adds
   D51, *UI conventions are tested structurally, not with a component-test harness* — not linked
   here because the entry does not exist on `main` yet — which is
   [3.2](#32-the-layering-rule) being applied without being asked: a convention that could have
@@ -549,6 +550,7 @@ behind the order, kept because the reasoning is the part that goes stale slowly.
 `from-test-pass` label exists for it, and no amount of repo tooling substitutes for it.
 
 **Prettier is dropped**, and the case got stronger. Adopting it means one reformat commit
-touching nearly every file. Phase 7a is built on `roadmap-7` and 7b is specced, so that commit
-would now land on one side of a long-lived branch carrying thousands of changed lines and
-guarantee a conflict in every file it touched. Revisit after the UI ladder is merged, if at all.
+touching nearly every file. Phase 7a and 7b are both built on `claude/roadmap-7b-plan-il1opu`
+([PR #10](https://github.com/NoahJohn1/SimulatedBetting/pull/10)), so that commit would now land
+on one side of a long-lived branch carrying thousands of changed lines and guarantee a conflict
+in every file it touched. Revisit after the UI ladder is merged, if at all.
