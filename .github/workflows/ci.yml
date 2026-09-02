@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Lets a branch's verify job be proven by hand before a PR exists.
+  workflow_dispatch:
 
 # Work lands in bursts of pushes; without this, superseded runs finish for nothing.
 concurrency:
