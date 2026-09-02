@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import prettier from "eslint-config-prettier";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -16,6 +17,8 @@ const eslintConfig = defineConfig([
     ".claude/**",
     ".superpowers/**",
   ]),
+  // Last on purpose: this only turns rules off, and it must win over everything above.
+  prettier,
 ]);
 
 export default eslintConfig;
