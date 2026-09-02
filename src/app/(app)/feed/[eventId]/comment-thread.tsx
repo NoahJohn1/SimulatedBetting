@@ -58,19 +58,19 @@ export function CommentThread({
 
   return (
     <section className="flex flex-col gap-3 px-4 pb-6">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Comments</h2>
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Comments</h2>
 
       {comments.length === 0 ? (
-        <p className="text-sm text-zinc-500">Nobody has said anything yet.</p>
+        <p className="text-sm text-ink-muted">Nobody has said anything yet.</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {comments.map((comment) => (
             <li
               key={comment.id}
-              className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950"
+              className="rounded-xl border border-line bg-surface-raised p-3"
             >
               {comment.deleted ? (
-                <p className="text-sm italic text-zinc-400">Comment removed</p>
+                <p className="text-sm italic text-ink-muted">Comment removed</p>
               ) : (
                 <>
                   <div className="flex items-baseline justify-between gap-2">
@@ -80,7 +80,7 @@ export function CommentThread({
                         type="button"
                         onClick={() => remove(comment.id)}
                         disabled={pending}
-                        className="text-xs text-zinc-400 hover:text-rose-600 disabled:opacity-50"
+                        className="text-xs text-ink-muted hover:text-negative disabled:opacity-50"
                       >
                         Delete
                       </button>
@@ -101,14 +101,14 @@ export function CommentThread({
           maxLength={MAX_COMMENT_LENGTH}
           rows={3}
           placeholder="Say something"
-          className="rounded-xl border border-zinc-200 bg-white p-3 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          className="rounded-xl border border-line bg-surface-raised p-3 text-sm"
         />
-        {error ? <p className="text-xs text-rose-600">{error}</p> : null}
+        {error ? <p className="text-xs text-negative">{error}</p> : null}
         <button
           type="button"
           onClick={submit}
           disabled={pending}
-          className="self-end rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+          className="self-end rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-ink disabled:opacity-50"
         >
           {pending ? 'Posting…' : 'Post'}
         </button>

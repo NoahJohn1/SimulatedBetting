@@ -819,3 +819,143 @@ are. `settle` is deliberately resumable and safe to re-run
 ([D3](#d3--stack-single-nextjs-app-on-postgres) forced the batching; idempotency made it safe),
 and an unkeyed send turns a harmless re-run into a second email to everyone. A duplicate ledger
 write has a reversing entry. A duplicate email does not.
+
+---
+
+### D51 — UI conventions are tested structurally, not with a component-test harness
+
+*Added 2026-08-22 during the phase 7a design session.*
+
+Phase 7a is the first work in this project that produces files under `src/app` worth testing.
+It tests them by walking the filesystem from a plain node test — asserting that the required
+`error.tsx`, `loading.tsx`, and `not-found.tsx` files exist, that every page calling
+`notFound()` has a not-found boundary above it, and that every form using `useTransition`
+disables a control on the result. No jsdom, no React Testing Library, no second vitest
+environment.
+
+The assertion that carries this is the `notFound()` one. The rest describe the tree as it
+stands today and would be satisfied by a developer who simply did not delete anything; that one
+constrains routes not yet written, which is the only kind of structural test worth keeping.
+
+*Rejected:* jsdom plus React Testing Library, and a vitest projects config splitting node from
+browser environments. It buys real coverage of the boundary components — but those components
+are a heading, a paragraph, and two links, and they are scheduled to be rewritten in 7b against
+a token layer that does not exist yet. Paying for a harness now means paying to keep its tests
+green through a rewrite that is already planned.
+
+*Rejected:* browser verification alone. The one-time browser pass is what proves the boundaries
+actually render, and it is genuinely necessary — a filesystem test cannot see a blank screen.
+But it leaves nothing behind. A refactor that deletes `(app)/error.tsx` would restore exactly
+the white-screen failure this phase exists to remove, and nothing would catch it.
+
+*What this accepts:* the pending-state check is a source-text assertion, and source-text
+assertions are coarse. It can be defeated by a form that disables its button through a variable
+named something else. Its job is to fail loudly when a form is added with no pending state at
+all, which is the failure that actually happens.
+
+*Revisit when:* 7b builds the shared component set. A button, dialog, and form-field component
+with real behavior is the first thing in this repo that a component test would genuinely earn,
+and that is the moment to reconsider — not before.
+
+---
+
+### D52 — Semantic tokens in two tiers; dark mode is a remap, not a variant sweep
+
+*Added 2026-08-24 during the phase 7b design session.*
+
+`src/app/globals.css` is the whole token layer. Tier 1 is a set of private ramps holding the
+exact `oklch()` values Tailwind ships for the zinc, red, emerald, and amber stops the app
+already uses. Tier 2 is thirty semantic tokens — `--surface-raised`, `--ink-muted`,
+`--negative-line`, and so on — that point at Tier 1 stops. Screens and components may name only
+Tier 2. Dark mode redefines Tier 2 and never touches Tier 1: the same thirty names pointed at
+different stops, under `@media (prefers-color-scheme: dark)` and again under
+`:root[data-theme="dark"]`, which ships with no way to set the attribute so that adding a
+toggle later is a drop-in rather than a CSS restructure.
+
+Tokens reach Tailwind through `@theme inline`, and the `inline` is load-bearing. Verified by
+compiling Tailwind 4.3.3 rather than assumed: with it, `.bg-surface` emits `background-color:
+var(--surface)` and the variable resolves at the element, picking up the scoped override;
+without it, the utility resolves through `--color-surface` at `:root` and every scoped override
+is dead. Opacity modifiers still work, compiling to a `color-mix()` guarded by `@supports` with
+the solid colour as fallback, which is what the sticky header and tab bar need.
+
+*Rejected:* keeping the 144 hand-written `dark:` variants and simply tokenizing the light
+values. It leaves every screen stating the dark theme for itself, which is how the four amber
+chips in `feed-card.tsx` ended up with no dark variant at all and no one noticing. Dark mode
+stated once is checkable; dark mode stated 144 times is not.
+
+*Rejected:* referencing Tailwind's own `--color-zinc-*` variables from Tier 2 instead of
+copying the values. Tailwind v4 emits a theme variable only when a generated utility uses it,
+so those references are not guaranteed to resolve at runtime — and the failure would be silent
+and partial.
+
+*What this accepts:* thirty names is more vocabulary than a reader holds on first pass, and the
+three `-surface-soft` dark values use `color-mix()` with no `@supports` fallback. The failure
+mode of the latter is a transparent callout tint on a browser this private group does not use.
+
+---
+
+### D53 — The shared component set is scoped to call sites that exist
+
+*Added 2026-08-24 during the phase 7b design session.*
+
+Phase 7b builds `Button`, `Card`, `Callout`, `SegmentedControl`, and `FormField`, and upgrades
+`Badge`, `Money`, `EmptyState`, `StatusScreen`, `LoadingScreen`, and `TabBar` in place. It does
+not build `Dialog`, `Sheet`, `Table`, or `Toast`, which the roadmap's 7b bullet listed. Those
+four have no call site anywhere in the app — `grep` finds zero `<table>`, zero `role="dialog"`,
+and zero `<dialog>` across 63 `.tsx` files. They belong to 7c, built in the commit that first
+needs one.
+
+The selection rule is the decision, not the specific list: a component ships in 7b only if the
+same diff contains a real call site for it.
+
+*Rejected:* building all eight, so that 7c is pure screen work with nothing left to invent. A
+component designed against zero consumers encodes a guess about its API, and the first real
+consumer either bends to the guess or rewrites it — so the work is either wasted or worse than
+wasted. "7c should not have to stop and build things" is a scheduling preference, and it is not
+worth four speculative APIs.
+
+*Rejected:* an exception for `Toast`, which was the closest call. Twelve forms report their
+results as inline text that can scroll out of view, so the problem is real. But a toast needs a
+client provider, a portal, and a dismissal policy — that is a design question about how this app
+reports success, not a styling question, and deferring it costs nothing that is not already the
+status quo.
+
+*Consequence to watch:* if 7c reaches its third screen still hand-rolling the same missing
+component, that is the signal this rule was applied too literally and the component should be
+lifted at once rather than at the end.
+
+---
+
+### D54 — A token-lint test is the harness 7b earns, revisiting D51
+
+*Added 2026-08-24 during the phase 7b design session.*
+
+[D51](#d51--ui-conventions-are-tested-structurally-not-with-a-component-test-harness) deferred
+the question of a component-test harness to "when 7b builds the shared component set." It has,
+and the answer is still no jsdom and no React Testing Library. What 7b adds instead is
+`src/app/__tests__/token-lint.test.ts`, a filesystem walk that fails when any `.tsx` file
+outside a four-entry allowlist contains a raw palette class, a `bg-white`/`text-black`-style
+literal, a hex or arbitrary colour value, or a `dark:` variant.
+
+This is D51's own reasoning applied a second time. D51 kept the `notFound()` assertion because
+it constrains routes not yet written, and discarded the others as descriptions of a tree that
+already existed. Token-lint is entirely of the first kind: once the sweep lands it says nothing
+about today's code and everything about screen nineteen.
+
+*Rejected:* jsdom plus React Testing Library for `Button`, `FormField`, and `SegmentedControl`.
+D51 predicted these would be "the first thing in this repo that a component test would genuinely
+earn" — and having specified them, they are not. `Button` is a class-name switch over a variant
+prop, `SegmentedControl` renders `next/link`s, and `FormField` is a label and a wrapper. None
+holds state, none traps focus, none has behaviour a source-text assertion cannot reach. The
+components that *would* earn a harness are the deferred ones — `Dialog` and `Toast` — so the
+harness question moves with them, to 7d.
+
+*Rejected:* extending `route-conventions.test.ts` only, asserting the new components exist.
+That describes the tree as it stands and nothing stops screen nineteen from being written in raw
+zinc, which is the entire failure this phase exists to prevent recurring.
+
+*What this accepts:* token-lint is a source-text assertion and cannot see a token used in the
+wrong *role*. `bg-surface-muted` where `bg-surface-sunken` was meant renders wrong and passes
+green. The one-time browser audit is what catches that class of error, and it is a success
+criterion of the phase rather than a nicety for exactly this reason.

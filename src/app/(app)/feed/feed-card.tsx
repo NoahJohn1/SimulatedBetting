@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
+import { Badge, StatusBadge } from '@/components/ui/badge';
 import { Money } from '@/components/ui/money';
 import type { FeedEventType } from '@/db/schema';
 import type {
@@ -54,7 +54,7 @@ function describeLeg(leg: FeedLegSnapshot): React.ReactNode {
         {leg.byCreator ? (
           <>
             {' '}
-            <Badge status="CREATOR" />
+            <StatusBadge status="CREATOR" />
           </>
         ) : null}
       </>
@@ -99,7 +99,7 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
             bet <Money cents={BigInt(bet.stakeCents)} currency={bet.currency} className="font-semibold" /> to win{' '}
             <Money cents={BigInt(bet.potentialPayoutCents)} currency={bet.currency} className="font-semibold" />
           </p>
-          <ul className="flex flex-col gap-0.5 text-sm text-zinc-600 dark:text-zinc-300">
+          <ul className="flex flex-col gap-0.5 text-sm text-ink-secondary">
             {bet.legs.map((leg, i) => (
               <li key={i}>{describeLeg(leg)}</li>
             ))}
@@ -130,19 +130,19 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
               <Money cents={BigInt(bet.payoutCents)} currency={bet.currency} className="font-semibold" />
             )}
             {net !== 0n ? (
-              <span className={net > 0n ? 'text-emerald-600' : 'text-rose-600'}>
+              <span className={net > 0n ? 'text-positive' : 'text-negative'}>
                 {' '}
                 ({net > 0n ? '+' : ''}
                 <Money cents={net} currency={bet.currency} />)
               </span>
             ) : null}
             {bet.correction ? (
-              <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900">
+              <Badge tone="caution" className="ml-2">
                 corrected
-              </span>
+              </Badge>
             ) : null}
           </p>
-          <ul className="flex flex-col gap-0.5 text-sm text-zinc-600 dark:text-zinc-300">
+          <ul className="flex flex-col gap-0.5 text-sm text-ink-secondary">
             {bet.legs.map((leg, i) => (
               <li key={i}>
                 {describeLeg(leg)} {OUTCOME_MARK[bet.legOutcomes[i]] ?? ''}
@@ -178,7 +178,7 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
       const amount = BigInt(adjustment.amountCents);
       return (
         <p className="text-sm">
-          <span className={amount > 0n ? 'text-emerald-600' : 'text-rose-600'}>
+          <span className={amount > 0n ? 'text-positive' : 'text-negative'}>
             {amount > 0n ? '+' : ''}
             <Money cents={amount} currency={adjustment.currency} className="font-semibold" />
           </span>{' '}
@@ -242,9 +242,9 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
           <EventTitleLink eventId={resolved.eventId} title={resolved.title} /> resolved by{' '}
           <span className="italic">{resolved.resolvedByDisplayName}</span> · {winners} win
           {resolved.correction ? (
-            <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900">
+            <Badge tone="caution" className="ml-2">
               correction
-            </span>
+            </Badge>
           ) : null}
         </p>
       );
@@ -311,9 +311,9 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
       return (
         <p className="text-sm">
           {settled.correction ? (
-            <span className="mr-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900">
+            <Badge tone="caution" className="mr-2">
               Corrected
-            </span>
+            </Badge>
           ) : null}
           took the <Money cents={BigInt(settled.potCents)} currency="CREDITS" className="font-semibold" />{' '}
           pot: {settled.subject}
@@ -347,9 +347,9 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
           <Money cents={BigInt(voided.refundedCents)} currency="CREDITS" className="font-semibold" /> credits
           went back
           {voided.attempt > 1 ? (
-            <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900">
+            <Badge tone="caution" className="ml-2">
               correction
-            </span>
+            </Badge>
           ) : null}
         </p>
       );
@@ -368,7 +368,7 @@ export function FeedCardView({
   reactionRow?: React.ReactNode;
 }) {
   return (
-    <article className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
+    <article className="flex flex-col gap-2 rounded-xl border border-line bg-surface-raised p-3">
       <header className="flex items-baseline justify-between gap-2">
         {card.subject ? (
           <Link
@@ -378,16 +378,16 @@ export function FeedCardView({
             {card.subject.displayName}
           </Link>
         ) : (
-          <span className="truncate text-sm font-semibold text-zinc-500">The league</span>
+          <span className="truncate text-sm font-semibold text-ink-muted">The league</span>
         )}
-        <span className="shrink-0 text-xs text-zinc-400">{relativeTime(card.occurredAt)}</span>
+        <span className="shrink-0 text-xs text-ink-muted">{relativeTime(card.occurredAt)}</span>
       </header>
 
       <Body type={card.type} payload={card.payload} />
 
       <footer className="flex items-center justify-between gap-3 pt-1">
         {reactionRow ?? <span />}
-        <Link href={`/feed/${card.id}`} className="text-xs text-zinc-500 hover:underline">
+        <Link href={`/feed/${card.id}`} className="text-xs text-ink-muted hover:underline">
           {card.commentCount === 0
             ? 'Comment'
             : `${card.commentCount} ${card.commentCount === 1 ? 'comment' : 'comments'}`}

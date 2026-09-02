@@ -1,13 +1,13 @@
 # SimulatedBetting
-
+r
 A play-money sportsbook for a small private group — NFL and college football, real
 sportsbook lines, simulated currency. No real money is involved at any point.
 
 Design documentation lives in [`docs/`](docs/README.md). Start there for the full picture —
 this file covers what the app does and how to run it locally.
 
-All four subsystems are built end-to-end and verified: `npm run verify` passes clean (73 test
-files / 546 tests, 0 lint errors), and `npm run build` compiles every route. See
+All four subsystems are built end-to-end and verified: `npm run verify` passes clean (76 test
+files / 814 tests, 0 lint errors), and `npm run build` compiles every route. See
 [where things stand](docs/README.md#where-things-stand) for the detailed rundown.
 
 The odds board is still fixture data and nothing is deployed yet. The work between here and a

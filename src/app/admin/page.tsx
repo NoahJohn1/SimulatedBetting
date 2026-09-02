@@ -1,10 +1,14 @@
 import { revalidatePath } from 'next/cache';
 import { asc, eq } from 'drizzle-orm';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { db } from '@/db/client';
 import { users } from '@/db/schema';
+import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { requireAdmin } from '@/server/auth/session';
+
+export const metadata: Metadata = { title: 'Admin' };
 
 /**
  * The approval queue. New sign-ins land PENDING (D7) and cannot bet until an admin acts,
@@ -34,25 +38,28 @@ export default async function AdminPage() {
     revalidatePath('/admin');
   }
 
+  // `w-full` below is load-bearing: `mx-auto` turns off cross-axis stretch inside the root
+  // layout's flex column, which leaves this a fit-content box whose min-content — the pending
+  // member's un-shrinkable email — pushed the page 2px wider than a 375px phone.
   return (
-    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-4 px-4 py-6">
+    <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-4 px-4 py-6">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold tracking-tight">Admin</h1>
-        <Link href="/games" className="text-sm text-zinc-500 underline">
+        <Link href="/games" className="text-sm text-ink-muted underline">
           Back to app
         </Link>
       </div>
 
-      <Link href="/admin/events" className="text-sm text-zinc-500 underline">
+      <Link href="/admin/events" className="text-sm text-ink-muted underline">
         Overdue &amp; disputed events
       </Link>
 
-      <Link href="/admin/wagers" className="text-sm text-zinc-500 underline">
+      <Link href="/admin/wagers" className="text-sm text-ink-muted underline">
         Wagers needing a ruling
       </Link>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
           Waiting for approval
         </h2>
 
@@ -60,31 +67,28 @@ export default async function AdminPage() {
           <EmptyState title="Nobody is waiting" />
         ) : (
           pending.map((user) => (
-            <div
-              key={user.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950"
-            >
+            <Card key={user.id} className="flex items-center justify-between gap-3 p-3">
               <span className="min-w-0">
                 <span className="block truncate text-sm font-medium">{user.displayName}</span>
-                <span className="block truncate text-xs text-zinc-500">{user.email}</span>
+                <span className="block truncate text-xs text-ink-muted">{user.email}</span>
               </span>
               <span className="flex shrink-0 gap-2">
                 <form action={setStatus}>
                   <input type="hidden" name="userId" value={user.id} />
                   <input type="hidden" name="status" value="APPROVED" />
-                  <button className="h-9 rounded-full bg-zinc-900 px-4 text-xs font-medium text-white dark:bg-zinc-50 dark:text-zinc-900">
+                  <button className="h-9 rounded-full bg-accent px-4 text-xs font-medium text-accent-ink">
                     Approve
                   </button>
                 </form>
                 <form action={setStatus}>
                   <input type="hidden" name="userId" value={user.id} />
                   <input type="hidden" name="status" value="DISABLED" />
-                  <button className="h-9 rounded-full border border-zinc-300 px-4 text-xs font-medium dark:border-zinc-700">
+                  <button className="h-9 rounded-full border border-line-strong px-4 text-xs font-medium">
                     Deny
                   </button>
                 </form>
               </span>
-            </div>
+            </Card>
           ))
         )}
       </section>

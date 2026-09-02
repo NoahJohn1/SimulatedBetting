@@ -4,7 +4,7 @@
 // <html>/<body> rather than relying on layout.tsx — that layout is what would have thrown.
 // Kept dependency-free (no Tailwind classes) since the app's own CSS may be what failed to
 // load in the first place.
-export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function GlobalError({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
   return (
     <html lang="en">
       <body
@@ -29,7 +29,7 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <button
             type="button"
-            onClick={() => reset()}
+            onClick={() => retry()}
             style={{ fontSize: '0.875rem', fontWeight: 500, color: '#71717a', textDecoration: 'underline' }}
           >
             Try again

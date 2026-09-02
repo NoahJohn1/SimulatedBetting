@@ -23,14 +23,14 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
     .where(eq(seasonMemberships.id, member.membershipId));
 
   return (
-    <div className="flex min-h-dvh flex-col bg-zinc-50 dark:bg-black">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200 bg-white/90 px-4 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
+    <div className="flex min-h-dvh flex-col bg-surface">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-surface-raised/90 px-4 py-3 backdrop-blur">
         <Link href="/games" className="text-sm font-semibold tracking-tight">
           SimulatedBetting
         </Link>
         <div className="flex items-center gap-3">
           {member.role === 'ADMIN' ? (
-            <Link href="/admin" className="text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200">
+            <Link href="/admin" className="text-xs font-medium text-ink-muted transition-colors hover:text-ink">
               Admin
             </Link>
           ) : null}

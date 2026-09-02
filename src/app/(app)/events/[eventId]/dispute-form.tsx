@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { Button } from '@/components/ui/button';
 import type { DisputeError } from '@/server/events/dispute';
 import { disputeEventAction } from '../actions';
 
@@ -41,11 +42,11 @@ export function DisputeForm({ eventId, alreadyDisputed, existingReason }: Disput
 
   if (submittedReason !== null) {
     return (
-      <section className="flex flex-col gap-1 rounded-xl border border-zinc-200 bg-white p-3 text-sm dark:border-zinc-800 dark:bg-zinc-950">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+      <section className="flex flex-col gap-1 rounded-xl border border-line bg-surface-raised p-3 text-sm">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
           Your dispute
         </h2>
-        <p className="text-zinc-600 dark:text-zinc-300">“{submittedReason}”</p>
+        <p className="text-ink-secondary">“{submittedReason}”</p>
       </section>
     );
   }
@@ -66,7 +67,7 @@ export function DisputeForm({ eventId, alreadyDisputed, existingReason }: Disput
         e.preventDefault();
         submit();
       }}
-      className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950"
+      className="flex flex-col gap-2 rounded-xl border border-line bg-surface-raised p-3"
     >
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium">Dispute this resolution</span>
@@ -76,22 +77,23 @@ export function DisputeForm({ eventId, alreadyDisputed, existingReason }: Disput
           maxLength={MAX_DISPUTE_REASON_LENGTH}
           rows={3}
           placeholder="What's wrong with the resolution?"
-          className="rounded-xl border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className="rounded-xl border border-line-strong bg-surface-sunken px-3 py-2 text-sm"
         />
-        <span className="text-xs text-zinc-500">
+        <span className="text-xs text-ink-muted">
           {reason.length}/{MAX_DISPUTE_REASON_LENGTH}
         </span>
       </label>
 
-      {error ? <p className="text-xs text-red-600 dark:text-red-400">{errorMessage(error)}</p> : null}
+      {error ? <p className="text-xs text-negative">{errorMessage(error)}</p> : null}
 
-      <button
+      <Button
         type="submit"
+        variant="secondary"
         disabled={pending || reason.trim().length === 0}
-        className="self-start rounded-full border border-zinc-300 px-3 py-2 text-sm font-medium disabled:opacity-40 dark:border-zinc-700"
+        className="self-start"
       >
         {pending ? 'Submitting…' : 'Submit dispute'}
-      </button>
+      </Button>
     </form>
   );
 }

@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/badge';
+import { buttonClasses } from '@/components/ui/button';
+import { Callout } from '@/components/ui/callout';
 import { Money } from '@/components/ui/money';
 import { requireApprovedMember } from '@/server/auth/session';
 import { getCustomEventDetail } from '@/server/events/query';
@@ -77,22 +79,20 @@ export default async function CustomEventPage({ params }: PageProps<'/events/[ev
         <div className="flex items-start justify-between gap-2">
           <h1 className="text-lg font-semibold">{detail.title}</h1>
           <div className="flex shrink-0 items-center gap-2">
-            {detail.overdue ? <Badge status="Overdue" /> : null}
-            <Badge status={detail.status} />
+            {detail.overdue ? <StatusBadge status="Overdue" /> : null}
+            <StatusBadge status={detail.status} />
           </div>
         </div>
 
         {detail.description ? (
-          <p className="whitespace-pre-line text-sm text-zinc-600 dark:text-zinc-300">
-            {detail.description}
-          </p>
+          <p className="whitespace-pre-line text-sm text-ink-secondary">{detail.description}</p>
         ) : null}
 
-        <p className="text-sm text-zinc-500">Created by {detail.creator.displayName}</p>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-ink-muted">Created by {detail.creator.displayName}</p>
+        <p className="text-sm text-ink-muted">
           Closes {when(detail.startsAt)} ET · Resolves by {when(detail.resolvesBy)} ET
         </p>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-ink-muted">
           <Money cents={stakedCents} currency="CREDITS" /> staked in credits
         </p>
       </header>
@@ -119,39 +119,37 @@ export default async function CustomEventPage({ params }: PageProps<'/events/[ev
       ))}
 
       {detail.resolution.resolvedAt ? (
-        <section className="flex flex-col gap-1 rounded-xl border border-zinc-200 bg-white p-3 text-sm dark:border-zinc-800 dark:bg-zinc-950">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        <section className="flex flex-col gap-1 rounded-xl border border-line bg-surface-raised p-3 text-sm">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
             Resolution
           </h2>
-          <p className="text-zinc-600 dark:text-zinc-300">
+          <p className="text-ink-secondary">
             {detail.status === 'VOIDED' ? 'Voided' : 'Resolved'} by{' '}
             {detail.resolution.byDisplayName ?? 'a member'} on {when(detail.resolution.resolvedAt)}{' '}
             ET
             {detail.resolution.attempt > 1 ? ` · correction #${detail.resolution.attempt - 1}` : ''}
           </p>
-          {detail.resolution.note ? (
-            <p className="text-zinc-600 dark:text-zinc-300">“{detail.resolution.note}”</p>
-          ) : null}
+          {detail.resolution.note ? <p className="text-ink-secondary">“{detail.resolution.note}”</p> : null}
         </section>
       ) : null}
 
       {detail.openDisputes.length > 0 ? (
-        <section className="flex flex-col gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-800 dark:bg-amber-950">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+        <Callout tone="caution">
+          <h2 className="text-xs font-semibold uppercase tracking-wide">
             Open {detail.openDisputes.length === 1 ? 'dispute' : 'disputes'}
           </h2>
           {detail.openDisputes.map((dispute, i) => (
-            <p key={i} className="text-amber-800 dark:text-amber-300">
+            <p key={i}>
               <span className="font-medium">{dispute.displayName}</span>: “{dispute.reason}”
             </p>
           ))}
-        </section>
+        </Callout>
       ) : null}
 
       {canManage ? (
         <Link
           href={`/events/${detail.eventId}/resolve`}
-          className="self-start rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
+          className={`self-start ${buttonClasses('primary')}`}
         >
           Resolve event
         </Link>

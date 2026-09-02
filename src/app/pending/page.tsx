@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 import { signOut } from '@/server/auth/config';
 import { currentMember, getSessionUser } from '@/server/auth/session';
 
@@ -17,7 +18,7 @@ export default async function PendingPage() {
     <main className="flex min-h-dvh flex-col items-center justify-center gap-8 px-6 text-center">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Waiting for approval</h1>
-        <p className="mt-3 max-w-sm text-balance text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-3 max-w-sm text-balance text-sm text-ink-muted">
           You&rsquo;re signed in as {user.email}. An admin needs to approve your account before
           you can place bets.
         </p>
@@ -28,9 +29,9 @@ export default async function PendingPage() {
           await signOut({ redirectTo: '/sign-in' });
         }}
       >
-        <button type="submit" className="text-sm font-medium text-zinc-500 underline">
+        <Button type="submit" variant="ghost" size="sm" className="underline">
           Sign out
-        </button>
+        </Button>
       </form>
     </main>
   );

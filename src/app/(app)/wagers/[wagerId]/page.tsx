@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/badge';
 import { Money } from '@/components/ui/money';
 import { requireApprovedMember } from '@/server/auth/session';
 import { loadWagerDetail } from '@/server/p2p/query';
@@ -29,22 +29,22 @@ export default async function WagerDetailPage({ params }: PageProps<'/wagers/[wa
     <div className="flex flex-col gap-4 px-4 py-4">
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <Badge status={wager.status} />
-          {wager.disputed && <Badge status="Disputed" />}
-          {wager.overdue && <Badge status="Overdue" />}
+          <StatusBadge status={wager.status} />
+          {wager.disputed && <StatusBadge status="Disputed" />}
+          {wager.overdue && <StatusBadge status="Overdue" />}
         </div>
         <h1 className="text-lg font-semibold">{wager.subject}</h1>
       </div>
 
-      <dl className="flex flex-col gap-2 rounded-lg border border-zinc-200 p-3 text-sm dark:border-zinc-800">
+      <dl className="flex flex-col gap-2 rounded-lg border border-line p-3 text-sm">
         <div className="flex justify-between">
-          <dt className="text-zinc-500">{wager.offererDisplayName} puts up</dt>
+          <dt className="text-ink-muted">{wager.offererDisplayName} puts up</dt>
           <dd>
             <Money cents={wager.offererStakeCents} currency="CREDITS" />
           </dd>
         </div>
         <div className="flex justify-between">
-          <dt className="text-zinc-500">
+          <dt className="text-ink-muted">
             {wager.acceptorDisplayName ?? 'Whoever takes it'} puts up
           </dt>
           <dd>
@@ -59,12 +59,12 @@ export default async function WagerDetailPage({ params }: PageProps<'/wagers/[wa
         </div>
         {wager.lineAtOffer && (
           <div className="flex justify-between">
-            <dt className="text-zinc-500">Line when offered</dt>
+            <dt className="text-ink-muted">Line when offered</dt>
             <dd>{wager.lineAtOffer}</dd>
           </div>
         )}
         <div className="flex justify-between">
-          <dt className="text-zinc-500">Settled by</dt>
+          <dt className="text-ink-muted">Settled by</dt>
           <dd>{wager.resolvesBy.toLocaleString()}</dd>
         </div>
       </dl>
@@ -78,7 +78,7 @@ export default async function WagerDetailPage({ params }: PageProps<'/wagers/[wa
         <p className="text-sm">Called off — both stakes went back.</p>
       )}
       {wager.resolutionNote && (
-        <p className="rounded-lg bg-zinc-100 p-3 text-sm dark:bg-zinc-900">
+        <p className="rounded-lg bg-surface-muted p-3 text-sm">
           <span className="font-medium">Admin: </span>
           {wager.resolutionNote}
         </p>

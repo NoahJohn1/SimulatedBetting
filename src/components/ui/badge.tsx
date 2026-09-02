@@ -1,17 +1,55 @@
-const TONES: Record<string, string> = {
-  PENDING: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300',
-  WON: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400',
-  LOST: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400',
-  PUSHED: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
-  VOIDED: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
+import type { ReactNode } from 'react';
+
+export type BadgeTone = 'neutral' | 'positive' | 'negative' | 'caution';
+
+const TONES: Record<BadgeTone, string> = {
+  neutral: 'bg-surface-muted text-ink-secondary',
+  positive: 'bg-positive-surface text-positive-on-surface',
+  negative: 'bg-negative-surface text-negative-on-surface',
+  caution: 'bg-caution-surface text-caution-on-surface',
 };
 
-export function Badge({ status }: { status: string }) {
+/**
+ * The bet/wager/event status vocabulary, mapped to tones once. Exported because callers that
+ * render a status alongside other content need the tone without rendering a Badge.
+ */
+export function statusTone(status: string): BadgeTone {
+  switch (status) {
+    case 'WON':
+      return 'positive';
+    case 'LOST':
+      return 'negative';
+    case 'PUSHED':
+    case 'VOIDED':
+      return 'caution';
+    default:
+      return 'neutral';
+  }
+}
+
+export function Badge({
+  children,
+  tone = 'neutral',
+  className = '',
+}: {
+  children: ReactNode;
+  tone?: BadgeTone;
+  className?: string;
+}) {
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-xs font-medium ${TONES[status] ?? TONES.PENDING}`}
+      className={`rounded-pill px-2 py-0.5 text-xs font-medium ${TONES[tone]} ${className}`}
     >
-      {status}
+      {children}
     </span>
   );
+}
+
+/**
+ * The pre-7b call signature, kept so the sweep does not have to touch every status call site
+ * in the same commit that changes the component. Callers migrate to <Badge tone={…}> as their
+ * screen is swept.
+ */
+export function StatusBadge({ status }: { status: string }) {
+  return <Badge tone={statusTone(status)}>{status}</Badge>;
 }
