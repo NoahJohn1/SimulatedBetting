@@ -19,6 +19,7 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Docs status and archive spec](specs/2026-09-02-docs-status-and-archive-design.md)              | The owner taxonomy, the roadmap's master table, and what moved to the archive                                                 |
 | [Docs status and archive plan](plans/2026-09-02-docs-status-and-archive-implementation-plan.md) | The task-by-task plan for that restructure                                                                                    |
 | [Production deployment spec](specs/2026-09-02-production-deployment-design.md)                  | Phase 6's cloud half — the run record, alerting on cron failure and drift, Sentry, and the two admin screens                  |
+| [Production deployment plan](plans/2026-09-02-production-deployment-implementation-plan.md)     | The task-by-task plan for that work, lane-tagged, with what a cloud session can and cannot verify                             |
 
 ### Reference
 
@@ -165,6 +166,7 @@ Every open item from [the roadmap](roadmap.md#roadmap) and
 | -------------------------------------------------------------------------------------- | ------------- |
 | Uncomment the three cron `schedule:` lines                                             | repo health 3 |
 | Add `format:check` to `verify` and CI                                                  | repo health 6 |
+| Phase 6's `[CLOUD]` half — the run record, alerting, Sentry, and the two admin screens | roadmap 6     |
 | 7c component work — `Dialog`, `Sheet`, `Table`, `Toast`, `Card`'s element escape hatch | roadmap 7c    |
 | 7c layout fixes from the mobile audit                                                  | roadmap 7c    |
 | 7d craft — motion, accessibility, a dark-mode toggle                                   | roadmap 7d    |
