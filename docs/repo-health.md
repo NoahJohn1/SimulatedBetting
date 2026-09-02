@@ -49,31 +49,32 @@ assumption that every test needs a database. It does not, and the table above mo
 | 4   | `decision-log` skill ([3.4](#34-decision-log--a-skill))                                                                                                                   | [CLOUD]    | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7)                                   |
 | 5   | `money-invariants` skill ([3.3](#33-money-invariants--all-three-layers))                                                                                                  | [CLOUD]    | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7)                                   |
 | 6   | `engines.node: ">=22"` — half the Node-pinning item ([1.4](#14-cheap-improvements))                                                                                       | [CLOUD]    | [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8), incidentally, not from this plan |
-| 7   | `cron.yml` restored to valid YAML, schedule off ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken))                                                            | [CLOUD]    | This branch — a holding position, not the fix                                                |
-| 8   | Cron empty-secret guards on both jobs ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken))                                                                      | [CLOUD]    | This branch                                                                                  |
-| 9   | Ledger-funnel guard test ([3.3](#33-money-invariants--all-three-layers))                                                                                                  | [CLOUD]    | This branch — proven able to fail                                                            |
-| 10  | `.nvmrc`, CI `build` / `concurrency` / `timeout-minutes`, Dependabot ([1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), [1.4](#14-cheap-improvements)) | [CLOUD]    | This branch                                                                                  |
-| 11  | `session-start` hook — written, cloud branches proven ([3.6](#36-session-start--a-hook))                                                                                  | [CLOUD]    | This branch; Docker path outstanding                                                         |
-| 12  | `money-touch` PostToolUse hook — layer 2 ([3.3](#33-money-invariants--all-three-layers))                                                                                  | [CLOUD]    | This branch                                                                                  |
-| 13  | `.env.test` documented in the README ([3.6](#36-session-start--a-hook))                                                                                                   | [CLOUD]    | This branch                                                                                  |
-| 14  | Prettier plus `eslint-config-prettier` ([2](#2-hygiene))                                                                                                                  | [CLOUD]    | This branch                                                                                  |
+| 7   | `cron.yml` restored to valid YAML, schedule off ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken))                                                            | [CLOUD]    | [#9](https://github.com/NoahJohn1/SimulatedBetting/pull/9) — a holding position, not the fix |
+| 8   | Cron empty-secret guards on both jobs ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken))                                                                      | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
+| 9   | Ledger-funnel guard test ([3.3](#33-money-invariants--all-three-layers))                                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13) — proven able to fail           |
+| 10  | `.nvmrc`, CI `build` / `concurrency` / `timeout-minutes`, Dependabot ([1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), [1.4](#14-cheap-improvements)) | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
+| 11  | `session-start` hook — written, cloud branches proven ([3.6](#36-session-start--a-hook))                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13); Docker path outstanding        |
+| 12  | `money-touch` PostToolUse hook — layer 2 ([3.3](#33-money-invariants--all-three-layers))                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
+| 13  | `.env.test` documented in the README ([3.6](#36-session-start--a-hook))                                                                                                   | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
+| 14  | Prettier plus `eslint-config-prettier` ([2](#2-hygiene))                                                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
 
 ### Outstanding
 
 Nothing here is `[CLOUD]` work that is not blocked on somebody else. Every row names its lane
 and what it is waiting on.
 
-| #   | Item                                                                            | Owner        | Blocked on                                                                                                                                  |
-| --- | ------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Add `APP_URL` and `CRON_SECRET` as Actions secrets**                          | **[NOAH]**   | Nothing — this is the only thing stopping the deployed app from settling bets. [Step by step](#what-you-must-do--the-cron-fix-step-by-step) |
-| 2   | **Dispatch both cron jobs by hand and confirm 200**                             | **[NOAH]**   | Row 1. The jobs now name the missing secret instead of exiting 3, so a red run says which side is wrong                                     |
-| 3   | Uncomment the three `schedule:` lines in `cron.yml`                             | [CLOUD]      | Rows 1 and 2. One line of work; the guard it needs already landed                                                                           |
-| 4   | Verify the `session-start` hook's Docker path                                   | **[LOCAL]**  | A desktop. The other four branches are proven — see [3.6](#36-session-start--a-hook)                                                        |
-| 5   | Tell Noah before the Prettier reformat merges                                   | **[NOAH]**   | Nothing. His unpushed adapter work conflicts in every file the reformat touches                                                             |
-| 6   | Add `format:check` to `verify` and CI                                           | [CLOUD]      | Row 5, and the adapter landing. A formatting gate now turns a merge conflict into a red build                                               |
-| 7   | Merge Dependabot's monthly PR                                                   | **[MANUAL]** | Its first fire                                                                                                                              |
-| 8   | `db-migration` skill ([3.5](#35-db-migration--a-skill))                         | [CLOUD]      | Deliberately deferred. The trigger is a migration going wrong; it has not fired                                                             |
-| 9   | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | Nothing. The gate on phase 5, and nothing here substitutes for it                                                                           |
+| #   | Item                                                                            | Owner        | Blocked on                                                                                                                                                                                                                                                                                                                                   |
+| --- | ------------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Add `APP_URL` and `CRON_SECRET` as Actions secrets**                          | **[NOAH]**   | Nothing — this is the only thing stopping the deployed app from settling bets. [Step by step](#what-you-must-do--the-cron-fix-step-by-step)                                                                                                                                                                                                  |
+| 2   | **Dispatch both cron jobs by hand and confirm 200**                             | **[NOAH]**   | Row 1. The jobs now name the missing secret instead of exiting 3, so a red run says which side is wrong                                                                                                                                                                                                                                      |
+| 3   | Uncomment the three `schedule:` lines in `cron.yml`                             | [CLOUD]      | Rows 1 and 2. One line of work; the guard it needs already landed                                                                                                                                                                                                                                                                            |
+| 4   | Verify the `session-start` hook's Docker path                                   | **[LOCAL]**  | A desktop. The other four branches are proven — see [3.6](#36-session-start--a-hook)                                                                                                                                                                                                                                                         |
+| 5   | Reconcile the unpushed ESPN adapter work against the Prettier reformat          | **[NOAH]**   | Nothing. The reformat merged in [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13), so this is now a conflict to resolve rather than a warning to give                                                                                                                                                                             |
+| 6   | Add `format:check` to `verify` and CI                                           | [CLOUD]      | Row 5. A formatting gate before the adapter lands turns that conflict into a red build                                                                                                                                                                                                                                                       |
+| 7   | Merge Dependabot's monthly PR                                                   | **[MANUAL]** | Nothing — standing monthly task. First fire 2026-09-02: [#14](https://github.com/NoahJohn1/SimulatedBetting/pull/14) and [#15](https://github.com/NoahJohn1/SimulatedBetting/pull/15) merged, [#16](https://github.com/NoahJohn1/SimulatedBetting/pull/16) and [#17](https://github.com/NoahJohn1/SimulatedBetting/pull/17) closed per row 8 |
+| 8   | ESLint 10 and TypeScript 7 majors                                               | **[MANUAL]** | Upstream. See [1.6](#16-the-dependency-majors-that-cannot-land-yet) — Dependabot re-proposes monthly, and a green run is the signal to merge                                                                                                                                                                                                 |
+| 9   | `db-migration` skill ([3.5](#35-db-migration--a-skill))                         | [CLOUD]      | Deliberately deferred. The trigger is a migration going wrong; it has not fired                                                                                                                                                                                                                                                              |
+| 10  | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | Nothing. The gate on phase 5, and nothing here substitutes for it                                                                                                                                                                                                                                                                            |
 
 ### What changed underneath all of this
 
@@ -324,6 +325,39 @@ names — _"a `settle` run that throws is invisible: no bet settles, no one is t
 signal is a member asking why Sunday never graded"_
 ([roadmap](roadmap.md#6--production-deployment)). This incident is the argument for that item,
 already paid for once.
+
+### 1.6 The dependency majors that cannot land yet
+
+**Lane: [MANUAL], blocked upstream.** Recorded 2026-09-02, after Dependabot's first fire.
+
+Dependabot's monthly run opened four pull requests. The two grouped ones —
+[#14](https://github.com/NoahJohn1/SimulatedBetting/pull/14) (GitHub Actions) and
+[#15](https://github.com/NoahJohn1/SimulatedBetting/pull/15) (npm minor and patch) — went green
+and merged. The two major bumps failed `verify` and were closed:
+
+| PR                                                           | Bump                     | Failing step   | The actual error                                                                                            |
+| ------------------------------------------------------------ | ------------------------ | -------------- | ----------------------------------------------------------------------------------------------------------- |
+| [#16](https://github.com/NoahJohn1/SimulatedBetting/pull/16) | `eslint` 9.39.5 → 10.9.1 | `npm run lint` | `TypeError: Error while loading rule 'react/display-name': contextOrFilename.getFilename is not a function` |
+| [#17](https://github.com/NoahJohn1/SimulatedBetting/pull/17) | `typescript` 5 → 7.0.2   | `npm ci`       | `Missing: typescript@5.9.3 from lock file`, under a peer conflict                                           |
+
+**Neither is a defect in this repository, and neither should have passed.** Both are
+`eslint-config-next` 16.3.3 not being ready:
+
+- It bundles `eslint-plugin-react`, which uses the rule-context API ESLint 10 removed. A green
+  run on #16 would have been a false statement about this project.
+- It bundles `typescript-eslint`, which declares `peer typescript ">=4.8.4 <6.1.0"`. TypeScript 7
+  is two majors outside that range.
+
+**Why they are closed rather than ignored.** `@dependabot ignore this major version` would stop
+the monthly re-proposal, and with it the only signal this project has that the block cleared.
+Left un-ignored, Dependabot re-opens both each month and CI re-answers the question for free: the
+month `eslint-config-next` ships support, the PR goes green on its own and that green is the cue
+to merge. The cost is a glance at two red PRs a month, which is cheaper than a reminder nobody
+set. See [D57](decisions.md#d57--dependency-majors-blocked-upstream-are-closed-not-ignored).
+
+**Why they arrived separately.** `.github/dependabot.yml` groups only `minor` and `patch`. Had
+majors been in that group, one un-landable bump would have made the entire monthly update
+unmergeable instead of just itself — the grouping earned its keep on its first run.
 
 ---
 
