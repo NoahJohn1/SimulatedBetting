@@ -41,33 +41,39 @@ assumption that every test needs a database. It does not, and the table above mo
 
 ### Done
 
-| #   | Item                                                                                                                            | Lane       | Landed                                                                                       |
-| --- | ------------------------------------------------------------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------- |
-| 1   | Branch protection on `main` requiring `verify` ([1.4](#14-cheap-improvements))                                                  | **[NOAH]** | Re-verified 2026-08-25 — `main` is protected                                                 |
-| 2   | Five milestones, and the `bug` / `money` / `ui` / `from-test-pass` / `phase-5`–`phase-9` labels ([4](#4-issues-and-milestones)) | **[NOAH]** | Spot-checked present; GitHub settings, not files                                             |
-| 3   | Bug issue template ([2](#2-hygiene))                                                                                            | [CLOUD]    | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7)                                   |
-| 4   | `decision-log` skill ([3.4](#34-decision-log--a-skill))                                                                         | [CLOUD]    | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7)                                   |
-| 5   | `money-invariants` skill ([3.3](#33-money-invariants--all-three-layers))                                                        | [CLOUD]    | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7)                                   |
-| 6   | `engines.node: ">=22"` — half the Node-pinning item ([1.4](#14-cheap-improvements))                                             | [CLOUD]    | [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8), incidentally, not from this plan |
-| 7   | `cron.yml` restored to valid YAML, schedule off ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken))                  | [CLOUD]    | This branch — a holding position, not the fix                                                |
+| #   | Item                                                                                                                                                                      | Lane       | Landed                                                                                       |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------- |
+| 1   | Branch protection on `main` requiring `verify` ([1.4](#14-cheap-improvements))                                                                                            | **[NOAH]** | Re-verified 2026-08-25 — `main` is protected                                                 |
+| 2   | Five milestones, and the `bug` / `money` / `ui` / `from-test-pass` / `phase-5`–`phase-9` labels ([4](#4-issues-and-milestones))                                           | **[NOAH]** | Spot-checked present; GitHub settings, not files                                             |
+| 3   | Bug issue template ([2](#2-hygiene))                                                                                                                                      | [CLOUD]    | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7)                                   |
+| 4   | `decision-log` skill ([3.4](#34-decision-log--a-skill))                                                                                                                   | [CLOUD]    | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7)                                   |
+| 5   | `money-invariants` skill ([3.3](#33-money-invariants--all-three-layers))                                                                                                  | [CLOUD]    | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7)                                   |
+| 6   | `engines.node: ">=22"` — half the Node-pinning item ([1.4](#14-cheap-improvements))                                                                                       | [CLOUD]    | [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8), incidentally, not from this plan |
+| 7   | `cron.yml` restored to valid YAML, schedule off ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken))                                                            | [CLOUD]    | This branch — a holding position, not the fix                                                |
+| 8   | Cron empty-secret guards on both jobs ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken))                                                                      | [CLOUD]    | This branch                                                                                  |
+| 9   | Ledger-funnel guard test ([3.3](#33-money-invariants--all-three-layers))                                                                                                  | [CLOUD]    | This branch — proven able to fail                                                            |
+| 10  | `.nvmrc`, CI `build` / `concurrency` / `timeout-minutes`, Dependabot ([1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), [1.4](#14-cheap-improvements)) | [CLOUD]    | This branch                                                                                  |
+| 11  | `session-start` hook — written, cloud branches proven ([3.6](#36-session-start--a-hook))                                                                                  | [CLOUD]    | This branch; Docker path outstanding                                                         |
+| 12  | `money-touch` PostToolUse hook — layer 2 ([3.3](#33-money-invariants--all-three-layers))                                                                                  | [CLOUD]    | This branch                                                                                  |
+| 13  | `.env.test` documented in the README ([3.6](#36-session-start--a-hook))                                                                                                   | [CLOUD]    | This branch                                                                                  |
+| 14  | Prettier plus `eslint-config-prettier` ([2](#2-hygiene))                                                                                                                  | [CLOUD]    | This branch                                                                                  |
 
 ### Outstanding
 
-Ordered by what should happen first. Rows 1–3 are one job: the cron workflow.
+Nothing here is `[CLOUD]` work that is not blocked on somebody else. Every row names its lane
+and what it is waiting on.
 
-| #   | Item                                                                                                                                                    | Owner                                            | Notes                                                                                                                                      |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | **Add `APP_URL` and `CRON_SECRET` as Actions secrets**                                                                                                  | **[NOAH]**                                       | The only production item on this list. [Step by step](#what-you-must-do--the-cron-fix-step-by-step)                                        |
-| 2   | **Dispatch both cron jobs by hand and confirm 200**                                                                                                     | **[NOAH]**                                       | Proves the secrets before a timer depends on them, with a [symptom table](#what-you-must-do--the-cron-fix-step-by-step) for when it is red |
-| 3   | **Uncomment the `schedule:` block, add the empty-secret guard**                                                                                         | [CLOUD]                                          | Three commented lines in `cron.yml` plus one `test -n` per job                                                                             |
-| 4   | Ledger-funnel guard test ([3.3](#33-money-invariants--all-three-layers))                                                                                | [CLOUD]                                          | Proven runnable in a cloud session — see that section                                                                                      |
-| 5   | `session-start` hook ([3.6](#36-session-start--a-hook))                                                                                                 | **[LOCAL]**                                      | Cloud can draft it; only a desktop can prove the Docker path                                                                               |
-| 6   | `.nvmrc` — the other half of Node pinning ([1.4](#14-cheap-improvements))                                                                               | [CLOUD]                                          | One file, one line                                                                                                                         |
-| 7   | CI: `build` step, `concurrency`, `timeout-minutes` ([1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), [1.4](#14-cheap-improvements)) | [CLOUD]                                          | The build was re-measured in a cloud session today                                                                                         |
-| 8   | Dependabot, monthly, grouped ([1.4](#14-cheap-improvements))                                                                                            | [CLOUD] to write · **[MANUAL]** to merge its PRs | Writing the file is cloud work; merging its PRs is manual                                                                                  |
-| 9   | `.env.test` note in the README ([3.6](#36-session-start--a-hook))                                                                                       | [CLOUD]                                          | One paragraph; makes item 5 land properly                                                                                                  |
-| 10  | `db-migration` skill ([3.5](#35-db-migration--a-skill))                                                                                                 | [CLOUD]                                          | Still marginal — add it if a migration goes wrong, not before                                                                              |
-| 11  | The human test pass, and the issues it produces ([4](#4-issues-and-milestones))                                                                         | **[MANUAL]**                                     | The gate on phase 5. Nothing else here substitutes for it.                                                                                 |
+| #   | Item                                                                            | Owner        | Blocked on                                                                                                                                  |
+| --- | ------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Add `APP_URL` and `CRON_SECRET` as Actions secrets**                          | **[NOAH]**   | Nothing — this is the only thing stopping the deployed app from settling bets. [Step by step](#what-you-must-do--the-cron-fix-step-by-step) |
+| 2   | **Dispatch both cron jobs by hand and confirm 200**                             | **[NOAH]**   | Row 1. The jobs now name the missing secret instead of exiting 3, so a red run says which side is wrong                                     |
+| 3   | Uncomment the three `schedule:` lines in `cron.yml`                             | [CLOUD]      | Rows 1 and 2. One line of work; the guard it needs already landed                                                                           |
+| 4   | Verify the `session-start` hook's Docker path                                   | **[LOCAL]**  | A desktop. The other four branches are proven — see [3.6](#36-session-start--a-hook)                                                        |
+| 5   | Tell Noah before the Prettier reformat merges                                   | **[NOAH]**   | Nothing. His unpushed adapter work conflicts in every file the reformat touches                                                             |
+| 6   | Add `format:check` to `verify` and CI                                           | [CLOUD]      | Row 5, and the adapter landing. A formatting gate now turns a merge conflict into a red build                                               |
+| 7   | Merge Dependabot's monthly PR                                                   | **[MANUAL]** | Its first fire                                                                                                                              |
+| 8   | `db-migration` skill ([3.5](#35-db-migration--a-skill))                         | [CLOUD]      | Deliberately deferred. The trigger is a migration going wrong; it has not fired                                                             |
+| 9   | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | Nothing. The gate on phase 5, and nothing here substitutes for it                                                                           |
 
 ### What changed underneath all of this
 
@@ -142,9 +148,9 @@ Two findings from that run:
   throws at module import if it is missing, but Postgres was not listening during that build
   and it passed anyway. The CI job already exports the variable.
 
-So the change is one line in the workflow, or adding `build` to the `verify` script. Keep it
-in the workflow rather than in `verify` — `verify` is what a developer runs in a loop, and a
-10-second build on every local run is a tax for no local benefit.
+It landed as a workflow step on this branch, not as an addition to `verify`. Keep it out of
+`verify` — `verify` is what a developer runs in a loop, and a 10-second build on every local
+run is a tax for no local benefit.
 
 **Re-measured 2026-08-25, in a Claude Code cloud session, and two things moved.** The build runs
 there — `npm ci` in 21 seconds, then `next build` green with `DATABASE_URL` pointed at a host
@@ -153,15 +159,13 @@ for a laptop:
 
 ```
 DATABASE_URL=postgres://x npx next build
-→ EXIT=0 · 30 routes · 28 ƒ (dynamic) · 2 ○ (prerendered)
+→ EXIT=0 · 32 routes · 28 ƒ (dynamic) · 4 prerendered
 ```
 
-The route count is 30, not 26, and `/` now prerenders alongside `/_not-found` — the error and
-not-found boundaries from [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8) changed
-what the compiler can settle at build time. That slightly widens the case above: with `/` static,
-`next build` does execute page code for one route, so a prerender-time throw there is a failure
-CI would catch and `verify` would not. Still narrow, still cheap, still worth adding — and now
-there is no lane argument against doing it.
+Re-measured 2026-09-02: 32 routes, not 30, and four now settle at build time rather than two —
+the icon routes became SSG. That widens the case above a little further: `next build` executes
+page code for four routes, so a prerender-time throw in any of them is a failure CI catches and
+`verify` does not. Still narrow, still cheap, and it landed on this branch.
 
 ### 1.2 Do not put real OAuth credentials in CI
 
@@ -195,13 +199,14 @@ later tries to automate it into CI and burns a weekend on it.
   superseded runs currently run to completion for nothing.
 - **`timeout-minutes: 15`.** The default is six hours. A Postgres service container that never
   reports healthy otherwise hangs that long.
-- **Pin Node everywhere.** ~~CI pins 22 via `setup-node`; nothing else does.~~ Half done:
-  `engines.node: ">=22"` landed with [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8).
-  `.nvmrc` is still missing, and it is the half that actually switches a version manager, so a
-  laptop sitting on Node 20 still gets no warning until something behaves oddly.
-- **Dependabot, monthly, grouped.** Weekly, ungrouped, on a two-person project is noise you
-  will train yourself to ignore, which is worse than not having it. Monthly with minor and
-  patch grouped into one PR is roughly one PR a month that CI can prove safe.
+- ~~**Pin Node everywhere.**~~ **Done.** `engines.node: ">=22"` landed with
+  [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8); `.nvmrc` — the half that
+  actually switches a version manager — landed on this branch. A laptop sitting on Node 20
+  now gets a warning from both.
+- ~~**Dependabot, monthly, grouped.**~~ **Done.** Weekly, ungrouped, on a two-person project
+  is noise you will train yourself to ignore, which is worse than not having it. Monthly with
+  minor and patch grouped into one PR is roughly one PR a month that CI can prove safe; it
+  landed on this branch, and its first PR is [Outstanding row 7](#outstanding).
 - ~~**Branch protection on `main`** requiring CI to pass.~~ **Done.** A settings change rather
   than a file: Settings → Branches → require status checks. This is what makes the gate a gate.
 
@@ -390,13 +395,13 @@ and the idempotency property in the root README:
 3. The `balance_cents` cache is updated in the same transaction as its entry
 4. Escrowed credits need `reconcileEscrow`, because `reconcileBalances` cannot see them
 
-**Layer 1 — a guard test.** The codebase already has the property that makes this easy:
-**every ledger write funnels through `postEntry`** in
-[`src/server/money/ledger.ts`](../src/server/money/ledger.ts). Re-verified 2026-08-25 and the
-property still holds: sixteen production call sites across ten files, exactly one
-`.insert(ledgerEntries)` in the repo outside tests — the one inside `postEntry` — and zero
-updates or deletes anywhere. The schema tests in `src/db/__tests__/` insert directly, which
-is legitimate: they exist to test the constraint itself.
+**Layer 1 — a guard test, landed in Task 2 of this branch.** The codebase already has the
+property that makes this easy: **every ledger write funnels through `postEntry`** in
+[`src/server/money/ledger.ts`](../src/server/money/ledger.ts). Re-verified 2026-09-02 and the
+property still holds: exactly one `.insert(ledgerEntries)` in the repo outside tests — at
+[`ledger.ts:64`](../src/server/money/ledger.ts), the one inside `postEntry` — zero updates or
+deletes anywhere, and 28 files referencing `postEntry`. The schema tests in `src/db/__tests__/`
+insert directly, which is legitimate: they exist to test the constraint itself.
 
 So a test can assert, by scanning source:
 
@@ -411,18 +416,22 @@ session with no Postgres anywhere: `1 passed`, 381ms. Only the surrounding `npm 
 a database, and CI supplies one on the pull request.
 
 That is invariant 1 plus the funnel, enforced deterministically, in CI, forever. It passes
-today, so it locks in a property rather than asking anyone to fix anything. Two rounds of
-verification five days apart is not the same as a test: the property held both times because
-nobody happened to write a direct insert, not because anything stopped them.
+today, so it locks in a property rather than asking anyone to fix anything. It is a test now,
+not another round of hand verification:
+[`ledger-funnel.test.ts`](../src/server/money/__tests__/ledger-funnel.test.ts) fails the build
+the day anyone writes a direct insert, rather than depending on nobody having done so yet.
 
-**Layer 2 — a `PostToolUse` hook.** Fires on `Edit`/`Write`, reads the path from stdin, and if
-it falls under `src/server/money/`, `src/server/bets/`, `src/server/p2p/`,
-`src/server/events/resolve.ts`, or the ledger schema, raises a flag that money code was
-touched. Keep it cheap — a flag, not a review. A hook that spawns a full agent review on every
-save of a money file is slow and interrupts mid-edit, and the reliable outcome of that is that
-someone disables it.
+**Layer 2 — a `PostToolUse` hook, landed in Task 5 of this branch.**
+[`money-touch.sh`](../.claude/hooks/money-touch.sh) fires on `Edit`/`Write`, reads the path
+from stdin, and if it falls under `src/server/money/`, `src/server/bets/`, `src/server/p2p/`,
+`src/server/events/resolve.ts`, or the ledger schema, prints one line flagging that money code
+was touched. Kept cheap on purpose — a flag, not a review. A hook that spawns a full agent
+review on every save of a money file is slow and interrupts mid-edit, and the reliable outcome
+of that is that someone disables it —
+[D56](decisions.md#d56--the-money-path-hook-is-a-flag-not-a-review).
 
-**Layer 3 — a `money-invariants` skill.** Deliberately a skill rather than a dedicated
+**Layer 3 — a `money-invariants` skill, landed since
+[#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7).** Deliberately a skill rather than a dedicated
 subagent: the built-in `/code-review` and `/security-review` already supply the reviewing
 machinery, and what they lack is this project's specific knowledge. Packaging that knowledge as
 a skill those reviews can pull in gets the value without maintaining a parallel review path. It
@@ -454,8 +463,17 @@ a code bug and is not.
 
 ### 3.6 `session-start` — a hook
 
-**Lane: [LOCAL].** A cloud session can write the script, but only a desktop can prove the
-part that matters — see the correction below.
+**Lane: [CLOUD] to write and mostly prove, [LOCAL] to finish.** The original `[LOCAL]` tag was
+broader than the work. A cloud session is the _better_ place to prove four of the hook's five
+branches, because a cloud session is the degraded environment the hook exists to handle.
+
+| Branch                                                   | Proven where | Status                 |
+| -------------------------------------------------------- | ------------ | ---------------------- |
+| `npm ci` when `node_modules` is absent                   | [CLOUD]      | ✅                     |
+| Re-running is a no-op                                    | [CLOUD]      | ✅                     |
+| No daemon → prints instructions, exits 0                 | [CLOUD]      | ✅                     |
+| A `docker` binary on `PATH` is not mistaken for a daemon | [CLOUD]      | ✅                     |
+| `docker compose up -d --wait` and both migrations        | **[LOCAL]**  | 🔲 Outstanding — row 4 |
 
 A Claude Code web session starts with no `node_modules` and no Postgres, so it cannot run the
 suite. Re-confirmed 2026-08-25: `node_modules` absent, port 5433 closed. Every web session is
@@ -553,10 +571,17 @@ behind the order, kept because the reasoning is the part that goes stale slowly.
 **Not on this list, but the real gate:** the human test pass. Phase 5 is waiting on it, the
 `from-test-pass` label exists for it, and no amount of repo tooling substitutes for it.
 
-**Prettier's stated reason for staying dropped has expired.** The argument was that adopting it
-means one reformat commit touching nearly every file, and that commit would have landed on one
-side of the long-lived `claude/roadmap-7b-plan-il1opu` branch
+**Prettier is adopted, on this branch.** The stated reason for staying dropped — that adopting
+it means one reformat commit touching nearly every file, and that commit would have landed on
+one side of the long-lived `claude/roadmap-7b-plan-il1opu` branch
 ([PR #10](https://github.com/NoahJohn1/SimulatedBetting/pull/10)), guaranteeing a conflict in
-every file it touched. That branch is merged now, so the conflict argument no longer holds. The
-conclusion is not re-decided here — whether to adopt Prettier is now an open question again,
-not a settled one.
+every file it touched — expired once that branch merged. `.prettierrc` is configured to match
+the existing code rather than Prettier's defaults: 86 files needed reformatting under it, not
+230, because it picked up conventions already in use rather than imposing a property nobody
+had chosen ([D55](decisions.md#d55--prettier-adopted-with-a-config-matched-to-the-existing-code)).
+The reformat itself is isolated as its own commit, so it can be dropped whole with
+one revert if it turns out to be in someone's way. `format:check` is deliberately **not** wired
+into `verify` or CI yet — Noah's ESPN adapter work is unpushed, and a formatting gate today
+would turn his eventual merge conflict into a red build instead of an ordinary one. See
+[Outstanding rows 5 and 6](#outstanding): tell him before this merges, and wire the gate once
+his branch lands.

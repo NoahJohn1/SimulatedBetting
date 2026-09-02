@@ -162,22 +162,22 @@ Every open item from [the roadmap](roadmap.md#roadmap) and
 
 | Item                                                                                   | Source        |
 | -------------------------------------------------------------------------------------- | ------------- |
-| Uncomment the cron `schedule:`, add the empty-secret guard                             | repo health 3 |
-| Ledger-funnel guard test                                                               | repo health 4 |
-| `.nvmrc`                                                                               | repo health 6 |
-| CI: `build`, `concurrency`, `timeout-minutes`                                          | repo health 7 |
-| Dependabot config                                                                      | repo health 8 |
-| `.env.test` note in the README                                                         | repo health 9 |
+| Uncomment the three cron `schedule:` lines                                             | repo health 3 |
+| Add `format:check` to `verify` and CI                                                  | repo health 6 |
 | 7c component work — `Dialog`, `Sheet`, `Table`, `Toast`, `Card`'s element escape hatch | roadmap 7c    |
 | 7c layout fixes from the mobile audit                                                  | roadmap 7c    |
+| 7d craft — motion, accessibility, a dark-mode toggle                                   | roadmap 7d    |
 | Rate limiting, house rules page, the new-member path                                   | roadmap 9     |
+
+Rows 3 and 6 above are `[CLOUD]` work that is currently blocked, not ready to pick up — see
+their "Blocked on" column in [repo health's Outstanding table](repo-health.md#outstanding).
 
 #### What needs a desktop with Docker
 
-| Item                                                           | Source        |
-| -------------------------------------------------------------- | ------------- |
-| `session-start` hook — only a laptop can prove the Docker path | repo health 5 |
-| Load sanity at real row counts                                 | roadmap 9     |
+| Item                                          | Source        |
+| --------------------------------------------- | ------------- |
+| Verify the `session-start` hook's Docker path | repo health 4 |
+| Load sanity at real row counts                | roadmap 9     |
 
 #### What needs Noah
 
@@ -185,6 +185,7 @@ Every open item from [the roadmap](roadmap.md#roadmap) and
 | -------------------------------------------------------------------------------------------------- | ------------- |
 | `APP_URL` and `CRON_SECRET` as Actions secrets — **the app is not settling bets until this lands** | repo health 1 |
 | Dispatch both cron jobs by hand, confirm 200                                                       | repo health 2 |
+| Tell Noah before the Prettier reformat merges                                                      | repo health 5 |
 | Hosted Postgres, Sentry signup, alerting destination                                               | roadmap 6     |
 | Email provider signup and sending-domain DNS                                                       | roadmap 8     |
 
@@ -193,7 +194,7 @@ Every open item from [the roadmap](roadmap.md#roadmap) and
 | Item                                          | Source        |
 | --------------------------------------------- | ------------- |
 | **The human test pass** — the gate on phase 5 | both          |
-| Merging Dependabot PRs                        | repo health 8 |
+| Merging Dependabot PRs                        | repo health 7 |
 | Confirming a real email renders               | roadmap 8     |
 
 ## Conventions

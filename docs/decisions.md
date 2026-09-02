@@ -959,3 +959,34 @@ _What this accepts:_ token-lint is a source-text assertion and cannot see a toke
 wrong _role_. `bg-surface-muted` where `bg-surface-sunken` was meant renders wrong and passes
 green. The one-time browser audit is what catches that class of error, and it is a success
 criterion of the phase rather than a nicety for exactly this reason.
+
+---
+
+### D55 — Prettier adopted with a config matched to the existing code
+
+_Added 2026-09-02 during the cloud-lane completion session._
+
+Prettier 3 plus `eslint-config-prettier`, with `.prettierrc` configured to match the codebase's
+existing conventions — single quotes, 100-column width, semicolons, trailing commas — rather
+than Prettier's own defaults. The reformat itself is isolated as its own single commit, so it
+can be dropped whole with one revert if it turns out to be in someone's way.
+
+_Rejected:_ Prettier's own defaults. They would have reformatted 230 files rather than 86, for
+no property anyone actually chose — the codebase already had a consistent style, and the
+config's job is to match it, not overwrite it. _Rejected:_ adding `format:check` to `verify` or
+CI in the same batch. Noah's ESPN adapter work is unpushed, and a formatting gate today would
+turn his eventual merge conflict into a red build.
+
+---
+
+### D56 — The money-path hook is a flag, not a review
+
+_Added 2026-09-02 during the cloud-lane completion session._
+
+The `PostToolUse` hook that fires on edits under `src/server/money/`, `src/server/bets/`,
+`src/server/p2p/`, `src/server/events/resolve.ts`, or the ledger schema prints one line flagging
+that money code was touched and points at `/money-invariants`. It invokes no review itself.
+
+_Rejected:_ spawning a full agent review automatically on every save of a money file. That is
+slow enough to interrupt an edit, and the reliable outcome of an obstructive hook is that
+someone disables it, which enforces nothing.
