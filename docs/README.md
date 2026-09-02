@@ -185,7 +185,7 @@ their "Blocked on" column in [repo health's Outstanding table](repo-health.md#ou
 | -------------------------------------------------------------------------------------------------- | ------------- |
 | `APP_URL` and `CRON_SECRET` as Actions secrets — **the app is not settling bets until this lands** | repo health 1 |
 | Dispatch both cron jobs by hand, confirm 200                                                       | repo health 2 |
-| Tell Noah before the Prettier reformat merges                                                      | repo health 5 |
+| Reconcile the unpushed ESPN adapter against the merged Prettier reformat                           | repo health 5 |
 | Hosted Postgres, Sentry signup, alerting destination                                               | roadmap 6     |
 | Email provider signup and sending-domain DNS                                                       | roadmap 8     |
 
@@ -194,7 +194,8 @@ their "Blocked on" column in [repo health's Outstanding table](repo-health.md#ou
 | Item                                          | Source        |
 | --------------------------------------------- | ------------- |
 | **The human test pass** — the gate on phase 5 | both          |
-| Merging Dependabot PRs                        | repo health 7 |
+| Merging Dependabot's monthly PR               | repo health 7 |
+| ESLint 10 / TypeScript 7 — blocked upstream   | repo health 8 |
 | Confirming a real email renders               | roadmap 8     |
 
 ## Conventions

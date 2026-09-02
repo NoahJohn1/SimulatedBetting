@@ -990,3 +990,25 @@ that money code was touched and points at `/money-invariants`. It invokes no rev
 _Rejected:_ spawning a full agent review automatically on every save of a money file. That is
 slow enough to interrupt an edit, and the reliable outcome of an obstructive hook is that
 someone disables it, which enforces nothing.
+
+---
+
+### D57 — Dependency majors blocked upstream are closed, not ignored
+
+_Added 2026-09-02 during the cloud-lane completion session._
+
+When Dependabot proposes a major bump that `verify` proves cannot land — because a dependency
+this project does not control has not caught up — the pull request is closed without
+`@dependabot ignore this major version`. Dependabot re-proposes it on the next monthly run, CI
+re-tests it, and the month it goes green is the signal that the block cleared. The first two
+cases were ESLint 10 and TypeScript 7, both blocked on `eslint-config-next`; see
+[repo-health 1.6](repo-health.md#16-the-dependency-majors-that-cannot-land-yet).
+
+_Rejected:_ ignoring the major version. It stops the monthly noise, but it also throws away the
+only mechanism that would ever tell this project the upgrade became possible — nothing else
+watches upstream, and no one was going to set a reminder. Two red pull requests a month is the
+cheaper half of that trade.
+
+_Rejected:_ merging them anyway with the failing check overridden, or relaxing `verify` so they
+pass. The red is a true statement about the dependency tree; making it green would make the
+gate lie.
