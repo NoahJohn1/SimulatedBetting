@@ -22,22 +22,22 @@ into `[MANUAL]` and `[NOAH]` below, since not every human task needs Noah's spec
 |---|---|---|
 | **[MANUAL]** | Either of you, by hand | Clicking, reading, judging. No special account needed. |
 | **[NOAH]** | Noah specifically | An account or permission only he holds: GitHub repo settings, the Vercel dashboard, DNS, paid signups. No agent has these credentials, and none should. |
-| **[CLOUD AI]** | A Claude Code web session, start to finish | Measured 2026-08-25: `npm ci` (21s), `npm run typecheck`, `npm run lint`, `npx next build` and any test that only reads source all run clean in a cloud session. |
-| **[LOCAL AI]** | Claude on your desktop | Needs Postgres. A cloud session has the `docker` binary but no daemon — `/var/run/docker.sock` does not exist — so anything gated on `npm test` as a whole must run where Docker does. |
+| **[CLOUD]** | A Claude Code web session, start to finish | Measured 2026-08-25: `npm ci` (21s), `npm run typecheck`, `npm run lint`, `npx next build` and any test that only reads source all run clean in a cloud session. |
+| **[LOCAL]** | Claude on your desktop | Needs Postgres. A cloud session has the `docker` binary but no daemon — `/var/run/docker.sock` does not exist — so anything gated on `npm test` as a whole must run where Docker does. |
 
 This document covers repo mechanics. For the product phases — the ESPN adapter, deployment, the
 UI ladder, email, hardening — see [the roadmap's status table](roadmap.md#roadmap).
 
-One thing that softens the [LOCAL AI] lane: **CI has Postgres.** A cloud session that opens a pull
+One thing that softens the [LOCAL] lane: **CI has Postgres.** A cloud session that opens a pull
 request gets the full suite run against a real database by the `verify` job. So "cloud writes it,
 CI proves it" covers most of what used to need a laptop; the local lane is for work that has to be
 *exercised* locally, like a session hook.
 
 These map onto the H / C / L lanes in the
 [implementation plan](plans/2026-08-20-repo-health-implementation-plan.md) — H is [MANUAL], C is
-[CLOUD AI], L was [LOCAL AI] — with one correction. The plan put the guard test in lane L on the
+[CLOUD], L was [LOCAL] — with one correction. The plan put the guard test in lane L on the
 assumption that every test needs a database. It does not, and the table above moves it to
-[CLOUD AI]; see [3.3](#33-money-invariants--all-three-layers) for the measurement.
+[CLOUD]; see [3.3](#33-money-invariants--all-three-layers) for the measurement.
 
 ### Done
 
@@ -45,11 +45,11 @@ assumption that every test needs a database. It does not, and the table above mo
 |---|---|---|---|
 | 1 | Branch protection on `main` requiring `verify` ([1.4](#14-cheap-improvements)) | **[NOAH]** | Re-verified 2026-08-25 — `main` is protected |
 | 2 | Five milestones, and the `bug` / `money` / `ui` / `from-test-pass` / `phase-5`–`phase-9` labels ([4](#4-issues-and-milestones)) | **[NOAH]** | Spot-checked present; GitHub settings, not files |
-| 3 | Bug issue template ([2](#2-hygiene)) | [CLOUD AI] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
-| 4 | `decision-log` skill ([3.4](#34-decision-log--a-skill)) | [CLOUD AI] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
-| 5 | `money-invariants` skill ([3.3](#33-money-invariants--all-three-layers)) | [CLOUD AI] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
-| 6 | `engines.node: ">=22"` — half the Node-pinning item ([1.4](#14-cheap-improvements)) | [CLOUD AI] | [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8), incidentally, not from this plan |
-| 7 | `cron.yml` restored to valid YAML, schedule off ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken)) | [CLOUD AI] | This branch — a holding position, not the fix |
+| 3 | Bug issue template ([2](#2-hygiene)) | [CLOUD] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
+| 4 | `decision-log` skill ([3.4](#34-decision-log--a-skill)) | [CLOUD] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
+| 5 | `money-invariants` skill ([3.3](#33-money-invariants--all-three-layers)) | [CLOUD] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
+| 6 | `engines.node: ">=22"` — half the Node-pinning item ([1.4](#14-cheap-improvements)) | [CLOUD] | [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8), incidentally, not from this plan |
+| 7 | `cron.yml` restored to valid YAML, schedule off ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken)) | [CLOUD] | This branch — a holding position, not the fix |
 
 ### Outstanding
 
@@ -148,7 +148,7 @@ in the workflow rather than in `verify` — `verify` is what a developer runs in
 
 **Re-measured 2026-08-25, in a Claude Code cloud session, and two things moved.** The build runs
 there — `npm ci` in 21 seconds, then `next build` green with `DATABASE_URL` pointed at a host
-that is not listening — which makes this item [CLOUD AI] rather than something that has to wait
+that is not listening — which makes this item [CLOUD] rather than something that has to wait
 for a laptop:
 
 ```
@@ -268,24 +268,24 @@ unaffected.
 
 ### What you must do — the cron fix, step by step
 
-Steps 1 through 4 are **[MANUAL]**: they need the Vercel dashboard and GitHub settings, which no
-agent here has or should have. Step 5 is **[CLOUD AI]** — hand it to a Claude session once the
-secrets exist. Step 6 is **[MANUAL]** again, and it is just looking.
+Steps 1 through 4 are **[NOAH]**: they need the Vercel dashboard and GitHub repo settings, which
+only Noah holds. Step 5 is **[CLOUD]** — hand it to a Claude session once the
+secrets exist. Step 6 is **[MANUAL]** — either of you, and it is just looking.
 
-1. **[MANUAL] Get the `CRON_SECRET` value out of Vercel.** Vercel → the project → Settings →
+1. **[NOAH] Get the `CRON_SECRET` value out of Vercel.** Vercel → the project → Settings →
    Environment Variables → `CRON_SECRET`. If it is not there, the deployed app is currently
    rejecting *every* cron call with `500 CRON_SECRET is not configured`
    ([`src/server/cron/auth.ts`](../src/server/cron/auth.ts) fails closed on purpose), including
    the two native Vercel crons. In that case generate one — `openssl rand -hex 32` — add it to
    all environments, and redeploy so the running app picks it up.
-2. **[MANUAL] Write down `APP_URL`.** The production origin, no trailing slash and no path:
+2. **[NOAH] Write down `APP_URL`.** The production origin, no trailing slash and no path:
    `https://<project>.vercel.app`, or the custom domain if one is attached. A trailing slash
    produces `//api/cron/settle`, which will 404.
-3. **[MANUAL] Add both as Actions secrets.** GitHub → the repo → Settings → Secrets and variables
+3. **[NOAH] Add both as Actions secrets.** GitHub → the repo → Settings → Secrets and variables
    → Actions → *New repository secret*. Add `APP_URL`, then `CRON_SECRET` with the **same value**
    Vercel holds. Repository secrets, not environment secrets — the workflow reads them as
    `secrets.APP_URL` and `secrets.CRON_SECRET` with no environment declared.
-4. **[MANUAL] Run both jobs by hand.** Actions → *Sportsbook cron jobs* → Run workflow. Both
+4. **[NOAH] Run both jobs by hand.** Actions → *Sportsbook cron jobs* → Run workflow. Both
    `sync-odds` and `settle` fire on a manual dispatch. Green means the whole path works. If it is
    red, the exit code says which side is wrong:
 
@@ -296,7 +296,7 @@ secrets exist. Step 6 is **[MANUAL]** again, and it is just looking.
    | HTTP 401, `unauthorized` | Both sides have a secret and they do not match |
    | HTTP 404 | `APP_URL` has a trailing slash or the wrong domain — step 2 |
 
-5. **[CLOUD AI] Turn the schedule back on.** Uncomment the three `schedule:` lines in
+5. **[CLOUD] Turn the schedule back on.** Uncomment the three `schedule:` lines in
    [`cron.yml`](../.github/workflows/cron.yml) and add a guard before each `curl` —
    `[ -n "$APP_URL" ] || { echo "APP_URL secret is not set"; exit 1; }` — so the next missing
    secret produces one legible failure instead of 130 illegible ones.
@@ -403,7 +403,7 @@ So a test can assert, by scanning source:
 - No file outside `src/server/money/ledger.ts` and `__tests__/` calls `.insert(ledgerEntries)`
 - No file anywhere calls `.update(ledgerEntries)` or `.delete(ledgerEntries)`
 
-**This is [CLOUD AI] work, which the original plan got wrong.** It was filed under the lane that
+**This is [CLOUD] work, which the original plan got wrong.** It was filed under the lane that
 needs Docker, on the assumption that every test needs Postgres. It does not: a test that only
 reads files touches no database, and `src/test/setup.ts` just loads `.env.test` — it opens no
 connection. Proven 2026-08-25 by running a throwaway version of exactly this test in a cloud
@@ -454,7 +454,7 @@ a code bug and is not.
 
 ### 3.6 `session-start` — a hook
 
-**Lane: [LOCAL AI].** A cloud session can write the script, but only a desktop can prove the
+**Lane: [LOCAL].** A cloud session can write the script, but only a desktop can prove the
 part that matters — see the correction below.
 
 A Claude Code web session starts with no `node_modules` and no Postgres, so it cannot run the
@@ -545,7 +545,7 @@ behind the order, kept because the reasoning is the part that goes stale slowly.
 3. **Then the guard test**, before phase 5 starts touching settlement paths. It also puts a real
    layer 1 under the `money-invariants` skill, which today rests on nothing mechanical.
 4. **Then the CI chore commit** — `.nvmrc`, `build`, `concurrency`, `timeout-minutes`,
-   Dependabot. One commit, individually small, and every piece of it is now [CLOUD AI].
+   Dependabot. One commit, individually small, and every piece of it is now [CLOUD].
 5. **The `.env.test` README note** rides along with the hook.
 6. **`db-migration` stays last and may never happen.** Still marginal; the README already
    documents the sequence.
