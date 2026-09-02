@@ -109,10 +109,7 @@ describe('validatePlacement: shape', () => {
       legs: [makeLeg({ selectionId: 'sel-a' }), makeLeg({ selectionId: 'sel-b', line: null })],
     });
     const ctx = makeCtx({
-      selections: [
-        makeSelection({ selectionId: 'sel-a', eventId: 'game-a' }),
-        null,
-      ],
+      selections: [makeSelection({ selectionId: 'sel-a', eventId: 'game-a' }), null],
     });
     const result = validatePlacement(input, ctx);
     expect(result).toEqual({ code: 'UNKNOWN_SELECTION', legIndex: 1, selectionId: 'sel-b' });
@@ -147,10 +144,7 @@ describe('validatePlacement: shape', () => {
   it('rejects a SINGLE with two legs', () => {
     const input = makeInput({
       type: 'SINGLE',
-      legs: [
-        makeLeg({ selectionId: 'sel-a' }),
-        makeLeg({ selectionId: 'sel-b' }),
-      ],
+      legs: [makeLeg({ selectionId: 'sel-a' }), makeLeg({ selectionId: 'sel-b' })],
     });
     const ctx = makeCtx({
       selections: [
@@ -173,20 +167,14 @@ describe('validatePlacement: shape', () => {
     const selections = legs.map((leg, i) =>
       makeSelection({ selectionId: leg.selectionId, eventId: `game-${i}` }),
     );
-    const result = validatePlacement(
-      makeInput({ type: 'PARLAY', legs }),
-      makeCtx({ selections }),
-    );
+    const result = validatePlacement(makeInput({ type: 'PARLAY', legs }), makeCtx({ selections }));
     expect(result).toEqual({ code: 'INVALID_LEG_COUNT', legCount: 11, min: 2, max: 10 });
   });
 
   it('rejects two legs from the same game', () => {
     const input = makeInput({
       type: 'PARLAY',
-      legs: [
-        makeLeg({ selectionId: 'sel-a' }),
-        makeLeg({ selectionId: 'sel-b' }),
-      ],
+      legs: [makeLeg({ selectionId: 'sel-a' }), makeLeg({ selectionId: 'sel-b' })],
     });
     const ctx = makeCtx({
       selections: [
@@ -245,10 +233,7 @@ describe('validatePlacement: shape', () => {
   it('checks leg count before duplicate games', () => {
     const input = makeInput({
       type: 'SINGLE',
-      legs: [
-        makeLeg({ selectionId: 'sel-a' }),
-        makeLeg({ selectionId: 'sel-b' }),
-      ],
+      legs: [makeLeg({ selectionId: 'sel-a' }), makeLeg({ selectionId: 'sel-b' })],
     });
     const ctx = makeCtx({
       selections: [
@@ -324,7 +309,9 @@ describe('validatePlacement: bettability', () => {
 
   it('rejects a game whose kickoff is one second in the past', () => {
     const startsAt = new Date(NOW.getTime() - 1000);
-    const ctx = makeCtx({ selections: [makeSelection({ eventStatus: 'SCHEDULED', eventStartsAt: startsAt })] });
+    const ctx = makeCtx({
+      selections: [makeSelection({ eventStatus: 'SCHEDULED', eventStartsAt: startsAt })],
+    });
     const result = validatePlacement(makeInput(), ctx);
     expect(result).toEqual({
       code: 'EVENT_NOT_BETTABLE',
@@ -336,7 +323,9 @@ describe('validatePlacement: bettability', () => {
 
   it('allows a game whose kickoff is one second in the future', () => {
     const startsAt = new Date(NOW.getTime() + 1000);
-    const ctx = makeCtx({ selections: [makeSelection({ eventStatus: 'SCHEDULED', eventStartsAt: startsAt })] });
+    const ctx = makeCtx({
+      selections: [makeSelection({ eventStatus: 'SCHEDULED', eventStartsAt: startsAt })],
+    });
     const result = validatePlacement(makeInput(), ctx);
     expect(result).toBeNull();
   });
@@ -356,10 +345,7 @@ describe('validatePlacement: bettability', () => {
   it('checks each leg in order, reporting the first unbettable leg', () => {
     const input = makeInput({
       type: 'PARLAY',
-      legs: [
-        makeLeg({ selectionId: 'sel-a' }),
-        makeLeg({ selectionId: 'sel-b' }),
-      ],
+      legs: [makeLeg({ selectionId: 'sel-a' }), makeLeg({ selectionId: 'sel-b' })],
     });
     const ctx = makeCtx({
       selections: [
@@ -382,10 +368,7 @@ describe('validatePlacement: bettability', () => {
     // problem is reported first even though it is a "later" kind of check than leg 1's.
     const input = makeInput({
       type: 'PARLAY',
-      legs: [
-        makeLeg({ selectionId: 'sel-a' }),
-        makeLeg({ selectionId: 'sel-b' }),
-      ],
+      legs: [makeLeg({ selectionId: 'sel-a' }), makeLeg({ selectionId: 'sel-b' })],
     });
     const ctx = makeCtx({
       selections: [
@@ -401,7 +384,11 @@ describe('validatePlacement: bettability', () => {
 describe('validatePlacement: stake', () => {
   it('rejects a stake below the minimum', () => {
     const result = validatePlacement(makeInput({ stakeCents: 99n }), makeCtx());
-    expect(result).toEqual({ code: 'STAKE_BELOW_MINIMUM', stakeCents: 99n, minimumCents: MIN_STAKE_CENTS });
+    expect(result).toEqual({
+      code: 'STAKE_BELOW_MINIMUM',
+      stakeCents: 99n,
+      minimumCents: MIN_STAKE_CENTS,
+    });
   });
 
   it('allows a stake exactly at the minimum', () => {
@@ -569,10 +556,7 @@ describe('validatePlacement: ordering', () => {
   it('prefers shape errors over bettability errors', () => {
     const input = makeInput({
       type: 'PARLAY',
-      legs: [
-        makeLeg({ selectionId: 'sel-a' }),
-        makeLeg({ selectionId: 'sel-b' }),
-      ],
+      legs: [makeLeg({ selectionId: 'sel-a' }), makeLeg({ selectionId: 'sel-b' })],
     });
     const ctx = makeCtx({
       selections: [
@@ -600,7 +584,11 @@ describe('validatePlacement: ordering', () => {
     const input = makeInput({ stakeCents: 1n, legs: [makeLeg({ priceAmerican: -110 })] });
     const ctx = makeCtx({ selections: [makeSelection({ priceAmerican: -200 })] });
     const result = validatePlacement(input, ctx);
-    expect(result).toEqual({ code: 'STAKE_BELOW_MINIMUM', stakeCents: 1n, minimumCents: MIN_STAKE_CENTS });
+    expect(result).toEqual({
+      code: 'STAKE_BELOW_MINIMUM',
+      stakeCents: 1n,
+      minimumCents: MIN_STAKE_CENTS,
+    });
   });
 
   it('returns null when every rule passes', () => {

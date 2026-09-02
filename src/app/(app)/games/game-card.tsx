@@ -23,7 +23,9 @@ function sidePrefix(market: BoardMarket, selection: BoardSelection): string {
  */
 function selectionLabel(market: BoardMarket, selection: BoardSelection): string {
   if (market.type === 'MONEYLINE' || selection.line === null) {
-    return selection.priceAmerican > 0 ? `+${selection.priceAmerican}` : String(selection.priceAmerican);
+    return selection.priceAmerican > 0
+      ? `+${selection.priceAmerican}`
+      : String(selection.priceAmerican);
   }
   const value = Number(selection.line);
   const line = market.type === 'TOTAL' ? value : value > 0 ? `+${value}` : value;
@@ -109,7 +111,10 @@ export function GameCard({ game }: { game: BoardGame }) {
       <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2 px-3 py-2">
         <span />
         {MARKET_ORDER.map((type) => (
-          <span key={type} className="w-16 text-center text-[10px] font-medium uppercase text-ink-muted">
+          <span
+            key={type}
+            className="w-16 text-center text-[10px] font-medium uppercase text-ink-muted"
+          >
             {MARKET_LABEL[type]}
           </span>
         ))}
@@ -142,12 +147,7 @@ function FragmentRow({
         return (
           <div key={type} className="w-16">
             {market && selection ? (
-              <OddsButton
-                game={game}
-                market={market}
-                selection={selection}
-                teamLabel={row.label}
-              />
+              <OddsButton game={game} market={market} selection={selection} teamLabel={row.label} />
             ) : (
               <div className="flex h-12 items-center justify-center rounded-lg border border-dashed border-line text-xs text-ink-muted">
                 —

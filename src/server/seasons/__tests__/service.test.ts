@@ -61,7 +61,10 @@ describe('season service', () => {
     expect(second.balanceCents).toBe(1_000_000n);
     // Two entries (cash + default credits), still not four — the retry grants nothing extra.
     expect(
-      await db.select().from(ledgerEntries).where(eq(ledgerEntries.membershipId, first.membershipId)),
+      await db
+        .select()
+        .from(ledgerEntries)
+        .where(eq(ledgerEntries.membershipId, first.membershipId)),
     ).toHaveLength(2);
   });
 });

@@ -74,11 +74,7 @@ export async function upsertOAuthUser(profile: OAuthProfile) {
 }
 
 export type AuthorizeDenial =
-  | 'NO_SUCH_USER'
-  | 'PENDING'
-  | 'DISABLED'
-  | 'NO_ACTIVE_SEASON'
-  | 'NOT_A_MEMBER';
+  'NO_SUCH_USER' | 'PENDING' | 'DISABLED' | 'NO_ACTIVE_SEASON' | 'NOT_A_MEMBER';
 
 export type AuthorizeResult =
   | {
@@ -118,9 +114,7 @@ export async function authorizeMember(userId: string): Promise<AuthorizeResult> 
   const [membership] = await db
     .select({ id: seasonMemberships.id, balanceCents: seasonMemberships.balanceCents })
     .from(seasonMemberships)
-    .where(
-      and(eq(seasonMemberships.userId, userId), eq(seasonMemberships.seasonId, season.id)),
-    );
+    .where(and(eq(seasonMemberships.userId, userId), eq(seasonMemberships.seasonId, season.id)));
 
   if (!membership) return { ok: false, reason: 'NOT_A_MEMBER' };
 

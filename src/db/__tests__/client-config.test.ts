@@ -15,9 +15,7 @@ describe('isTransactionPooler', () => {
   });
 
   it('treats a direct connection as unpooled', () => {
-    expect(isTransactionPooler('postgres://u:p@db.abcdefgh.supabase.co:5432/postgres')).toBe(
-      false,
-    );
+    expect(isTransactionPooler('postgres://u:p@db.abcdefgh.supabase.co:5432/postgres')).toBe(false);
   });
 
   it('treats local development as unpooled', () => {

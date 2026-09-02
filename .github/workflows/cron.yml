@@ -24,6 +24,8 @@ jobs:
           APP_URL: ${{ secrets.APP_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          [ -n "$APP_URL" ] || { echo "APP_URL secret is not set — see docs/repo-health.md section 1.5"; exit 1; }
+          [ -n "$CRON_SECRET" ] || { echo "CRON_SECRET secret is not set — see docs/repo-health.md section 1.5"; exit 1; }
           curl -sf -X GET "$APP_URL/api/cron/sync-odds" \
             -H "Authorization: Bearer $CRON_SECRET"
 
@@ -36,5 +38,7 @@ jobs:
           APP_URL: ${{ secrets.APP_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          [ -n "$APP_URL" ] || { echo "APP_URL secret is not set — see docs/repo-health.md section 1.5"; exit 1; }
+          [ -n "$CRON_SECRET" ] || { echo "CRON_SECRET secret is not set — see docs/repo-health.md section 1.5"; exit 1; }
           curl -sf -X GET "$APP_URL/api/cron/settle" \
             -H "Authorization: Bearer $CRON_SECRET"

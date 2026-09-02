@@ -31,10 +31,10 @@ export function americanToRational(price: number): Rational {
 }
 
 export function combine(rationals: Rational[]): Rational {
-  return rationals.reduce<Rational>(
-    (acc, r) => ({ num: acc.num * r.num, den: acc.den * r.den }),
-    { num: 1n, den: 1n },
-  );
+  return rationals.reduce<Rational>((acc, r) => ({ num: acc.num * r.num, den: acc.den * r.den }), {
+    num: 1n,
+    den: 1n,
+  });
 }
 
 /** Total return (stake included) for a stake at the given price. Rounds exactly once. */

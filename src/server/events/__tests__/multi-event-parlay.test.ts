@@ -46,7 +46,10 @@ async function legStatusOn(betId: string, event: MadeCustomEvent) {
     .where(
       and(
         eq(betLegs.betId, betId),
-        inArray(selections.marketId, event.marketSelections.map((m) => m.marketId)),
+        inArray(
+          selections.marketId,
+          event.marketSelections.map((m) => m.marketId),
+        ),
       ),
     );
   expect(rows).toHaveLength(1);

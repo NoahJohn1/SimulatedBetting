@@ -101,7 +101,7 @@ describe('syncOdds', () => {
     expect(after[0].eventId).toBe(before[0].eventId);
   });
 
-  it('moves the event row\'s kickoff when a game is rescheduled', async () => {
+  it("moves the event row's kickoff when a game is rescheduled", async () => {
     const original = new Date('2026-09-13T17:00:00.000Z');
     const moved = new Date('2026-09-13T13:00:00.000Z');
     const base: ProviderGame = {
@@ -118,7 +118,11 @@ describe('syncOdds', () => {
     await syncOdds({ provider: new SingleGameProvider(base), sports: ['NFL'] });
 
     const [first] = await db
-      .select({ eventId: games.eventId, gameStartsAt: games.startsAt, eventStartsAt: events.startsAt })
+      .select({
+        eventId: games.eventId,
+        gameStartsAt: games.startsAt,
+        eventStartsAt: events.startsAt,
+      })
       .from(games)
       .innerJoin(events, eq(games.eventId, events.id))
       .where(eq(games.externalId, base.externalId));
@@ -130,7 +134,11 @@ describe('syncOdds', () => {
     });
 
     const [second] = await db
-      .select({ eventId: games.eventId, gameStartsAt: games.startsAt, eventStartsAt: events.startsAt })
+      .select({
+        eventId: games.eventId,
+        gameStartsAt: games.startsAt,
+        eventStartsAt: events.startsAt,
+      })
       .from(games)
       .innerJoin(events, eq(games.eventId, events.id))
       .where(eq(games.externalId, base.externalId));
@@ -222,7 +230,9 @@ describe('suspendStaleMarkets', () => {
 
   it('never reopens a settled market', async () => {
     await syncOdds({ provider: new FixtureOddsProvider() });
-    await db.update(markets).set({ status: 'SETTLED', lastSyncedAt: new Date(Date.now() - 60 * 60_000) });
+    await db
+      .update(markets)
+      .set({ status: 'SETTLED', lastSyncedAt: new Date(Date.now() - 60 * 60_000) });
 
     await suspendStaleMarkets();
 

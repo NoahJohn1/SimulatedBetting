@@ -1,13 +1,6 @@
 import { and, eq, lt } from 'drizzle-orm';
 import { db } from '@/db/client';
-import {
-  customEvents,
-  events,
-  games,
-  markets,
-  p2pWagers,
-  selections,
-} from '@/db/schema';
+import { customEvents, events, games, markets, p2pWagers, selections } from '@/db/schema';
 import type { MarketType, Side } from '@/domain/grading';
 import { gradeLeg } from '@/domain/grading';
 import { gradeCustomLeg } from '@/domain/custom-grading';
@@ -57,11 +50,7 @@ async function expirePass(now: Date, summary: SweepP2PSummary): Promise<void> {
   for (const { id } of stale) {
     try {
       await db.transaction(async (tx) => {
-        const [wager] = await tx
-          .select()
-          .from(p2pWagers)
-          .where(eq(p2pWagers.id, id))
-          .for('update');
+        const [wager] = await tx.select().from(p2pWagers).where(eq(p2pWagers.id, id)).for('update');
         // Re-read under the lock: an acceptance may have landed since the scan.
         if (!wager || wager.status !== 'OFFERED') return;
 

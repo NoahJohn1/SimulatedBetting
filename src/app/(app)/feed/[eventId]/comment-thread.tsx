@@ -65,10 +65,7 @@ export function CommentThread({
       ) : (
         <ul className="flex flex-col gap-2">
           {comments.map((comment) => (
-            <li
-              key={comment.id}
-              className="rounded-xl border border-line bg-surface-raised p-3"
-            >
+            <li key={comment.id} className="rounded-xl border border-line bg-surface-raised p-3">
               {comment.deleted ? (
                 <p className="text-sm italic text-ink-muted">Comment removed</p>
               ) : (

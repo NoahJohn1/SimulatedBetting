@@ -179,10 +179,7 @@ describe('placing a bet on a custom event', () => {
     });
     if (!result.ok) throw new Error('expected ok');
 
-    const [card] = await db
-      .select()
-      .from(feedEvents)
-      .where(eq(feedEvents.betId, result.bet.id));
+    const [card] = await db.select().from(feedEvents).where(eq(feedEvents.betId, result.bet.id));
 
     expect(card.payload).toMatchObject({
       currency: 'CREDITS',

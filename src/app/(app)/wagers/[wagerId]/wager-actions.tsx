@@ -120,8 +120,8 @@ export function WagerActions(props: WagerActionsProps) {
             </button>
           </div>
           <p className="text-xs text-ink-muted">
-            It pays out as soon as you both say the same thing. If you disagree, an admin
-            settles it.
+            It pays out as soon as you both say the same thing. If you disagree, an admin settles
+            it.
           </p>
         </div>
       )}

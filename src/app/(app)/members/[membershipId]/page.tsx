@@ -40,7 +40,9 @@ export default async function MemberProfilePage({ params }: PageProps<'/members/
   const { stats } = profile;
   const roi = stats.roiBasisPoints === null ? '—' : `${(stats.roiBasisPoints / 100).toFixed(1)}%`;
   const streak =
-    stats.currentStreak.kind === 'NONE' ? '—' : `${stats.currentStreak.kind}${stats.currentStreak.length}`;
+    stats.currentStreak.kind === 'NONE'
+      ? '—'
+      : `${stats.currentStreak.kind}${stats.currentStreak.length}`;
 
   return (
     <div className="flex flex-col gap-4 px-4 py-4">
@@ -89,7 +91,11 @@ export default async function MemberProfilePage({ params }: PageProps<'/members/
               <span className="font-medium">
                 {headToHead.netCentsForA >= 0n ? 'up' : 'down'}{' '}
                 <Money
-                  cents={headToHead.netCentsForA < 0n ? -headToHead.netCentsForA : headToHead.netCentsForA}
+                  cents={
+                    headToHead.netCentsForA < 0n
+                      ? -headToHead.netCentsForA
+                      : headToHead.netCentsForA
+                  }
                   currency="CREDITS"
                 />
               </span>
@@ -105,7 +111,10 @@ export default async function MemberProfilePage({ params }: PageProps<'/members/
           <p className="text-sm text-ink-muted">No activity yet.</p>
         ) : (
           history.cards.map((card) => (
-            <FeedCardView key={card.id} card={{ ...card, occurredAt: card.occurredAt.toISOString() }} />
+            <FeedCardView
+              key={card.id}
+              card={{ ...card, occurredAt: card.occurredAt.toISOString() }}
+            />
           ))
         )}
       </section>

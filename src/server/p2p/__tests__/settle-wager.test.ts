@@ -130,7 +130,9 @@ describe('settleWagerInTx', () => {
 
     await settle(wagerId, 'VOID', { reason: 'MUTUAL_CANCEL' });
 
-    expect(await db.select().from(feedEvents).where(eq(feedEvents.type, 'P2P_SETTLED'))).toHaveLength(0);
+    expect(
+      await db.select().from(feedEvents).where(eq(feedEvents.type, 'P2P_SETTLED')),
+    ).toHaveLength(0);
     const [card] = await db.select().from(feedEvents).where(eq(feedEvents.type, 'P2P_VOIDED'));
     expect(card.subjectMembershipId).toBeNull();
     expect(card.dedupeKey).toBe(`p2p:${wagerId}:voided:1`);
@@ -160,9 +162,7 @@ describe('settleWagerInTx', () => {
       .where(eq(ledgerEntries.type, 'SETTLEMENT_REVERSAL'));
     expect(reversals).toHaveLength(1);
     expect(reversals[0].amountCents).toBe(-70_000n);
-    expect(reversals[0].idempotencyKey).toBe(
-      `p2p:${wagerId}:reversal:2:${offerer.membership.id}`,
-    );
+    expect(reversals[0].idempotencyKey).toBe(`p2p:${wagerId}:reversal:2:${offerer.membership.id}`);
 
     const [wager] = await db.select().from(p2pWagers).where(eq(p2pWagers.id, wagerId));
     expect(wager.verdict).toBe('ACCEPTOR');
@@ -210,10 +210,9 @@ describe('settleWagerInTx', () => {
     // Array.prototype.sort() with no comparator sorts by string coercion, which does not
     // match numeric order for negative bigints (e.g. [-50000n, -20000n].sort() ===
     // [-20000n, -50000n] because "-5" > "-2" lexicographically). Use a numeric comparator.
-    expect(reversals.map((r) => r.amountCents).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))).toEqual([
-      -50_000n,
-      -20_000n,
-    ]);
+    expect(
+      reversals.map((r) => r.amountCents).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
+    ).toEqual([-50_000n, -20_000n]);
   });
 
   it('nets a third correction against everything paid so far, not just the second attempt', async () => {
@@ -239,7 +238,9 @@ describe('settleWagerInTx', () => {
     const attempt3Reversals = await db
       .select()
       .from(ledgerEntries)
-      .where(eq(ledgerEntries.idempotencyKey, `p2p:${wagerId}:reversal:3:${acceptor.membership.id}`));
+      .where(
+        eq(ledgerEntries.idempotencyKey, `p2p:${wagerId}:reversal:3:${acceptor.membership.id}`),
+      );
     expect(attempt3Reversals).toHaveLength(1);
     expect(attempt3Reversals[0].amountCents).toBe(-70_000n);
 
@@ -248,7 +249,9 @@ describe('settleWagerInTx', () => {
     const offererAttempt3Reversals = await db
       .select()
       .from(ledgerEntries)
-      .where(eq(ledgerEntries.idempotencyKey, `p2p:${wagerId}:reversal:3:${offerer.membership.id}`));
+      .where(
+        eq(ledgerEntries.idempotencyKey, `p2p:${wagerId}:reversal:3:${offerer.membership.id}`),
+      );
     expect(offererAttempt3Reversals).toHaveLength(0);
   });
 });

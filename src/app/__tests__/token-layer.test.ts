@@ -14,13 +14,36 @@ const CSS = readFileSync(join(process.cwd(), 'src', 'app', 'globals.css'), 'utf8
 
 /** The thirty semantic names, plus the one shadow. Tier 1 ramps are deliberately absent. */
 const TIER_2 = [
-  'surface', 'surface-raised', 'surface-sunken', 'surface-muted', 'surface-skeleton',
-  'line', 'line-strong', 'line-hover', 'line-subtle',
-  'ink', 'ink-secondary', 'ink-muted', 'ink-subtle',
-  'accent', 'accent-ink',
-  'positive', 'positive-surface', 'positive-surface-soft', 'positive-line', 'positive-on-surface',
-  'negative', 'negative-surface', 'negative-surface-soft', 'negative-line', 'negative-on-surface',
-  'caution', 'caution-surface', 'caution-surface-soft', 'caution-line', 'caution-on-surface',
+  'surface',
+  'surface-raised',
+  'surface-sunken',
+  'surface-muted',
+  'surface-skeleton',
+  'line',
+  'line-strong',
+  'line-hover',
+  'line-subtle',
+  'ink',
+  'ink-secondary',
+  'ink-muted',
+  'ink-subtle',
+  'accent',
+  'accent-ink',
+  'positive',
+  'positive-surface',
+  'positive-surface-soft',
+  'positive-line',
+  'positive-on-surface',
+  'negative',
+  'negative-surface',
+  'negative-surface-soft',
+  'negative-line',
+  'negative-on-surface',
+  'caution',
+  'caution-surface',
+  'caution-surface-soft',
+  'caution-line',
+  'caution-on-surface',
   'slip-shadow',
 ];
 
@@ -31,8 +54,9 @@ function declared(block: string): string[] {
 
 /** The two dark palettes, delimited by marker comments so the test can compare them. */
 function darkBlocks(): string[] {
-  return [...CSS.matchAll(/\/\* DARK-PALETTE-START \*\/([\s\S]*?)\/\* DARK-PALETTE-END \*\//g)]
-    .map((m) => m[1]);
+  return [...CSS.matchAll(/\/\* DARK-PALETTE-START \*\/([\s\S]*?)\/\* DARK-PALETTE-END \*\//g)].map(
+    (m) => m[1],
+  );
 }
 
 describe('the token layer', () => {
@@ -69,7 +93,9 @@ describe('the token layer', () => {
         // variable of its own name, so --slip-shadow is exposed as --shadow-slip.
         expect(theme).toContain('--shadow-slip: var(--slip-shadow)');
       } else {
-        expect(theme, `--color-${token} not exposed`).toContain(`--color-${token}: var(--${token})`);
+        expect(theme, `--color-${token} not exposed`).toContain(
+          `--color-${token}: var(--${token})`,
+        );
       }
     }
   });

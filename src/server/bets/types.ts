@@ -50,9 +50,7 @@ export type PlaceBetError =
   | { code: 'LINE_MOVED'; movements: LineMovement[]; newPotentialPayoutCents: bigint }
   | { code: 'DUPLICATE_REQUEST'; betId: string };
 
-export type PlaceBetResult =
-  | { ok: true; bet: PlacedBet }
-  | { ok: false; error: PlaceBetError };
+export type PlaceBetResult = { ok: true; bet: PlacedBet } | { ok: false; error: PlaceBetError };
 
 /**
  * HTTP Status Mapping for PlaceBetError codes

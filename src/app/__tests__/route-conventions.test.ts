@@ -27,9 +27,7 @@ describe('shared status components', () => {
   });
 
   it('are shared rather than duplicated: every boundary file delegates to one of them', () => {
-    const boundaries = walk(APP).filter((f) =>
-      /(?:^|\/)(error|not-found|loading)\.tsx$/.test(f),
-    );
+    const boundaries = walk(APP).filter((f) => /(?:^|\/)(error|not-found|loading)\.tsx$/.test(f));
     expect(boundaries.length).toBeGreaterThan(0);
 
     for (const file of boundaries) {
@@ -72,9 +70,7 @@ describe('error and not-found boundaries', () => {
     expect(callers.length).toBeGreaterThan(0);
 
     for (const page of callers) {
-      const section = SECTION_ROOTS.find((root) =>
-        page.startsWith(join(APP, root) + '/'),
-      );
+      const section = SECTION_ROOTS.find((root) => page.startsWith(join(APP, root) + '/'));
       expect(section, `${page} is outside (app) and admin; extend SECTION_ROOTS`).toBeDefined();
 
       const stopAt = join(APP, section!);
@@ -240,9 +236,7 @@ describe('error boundary recovery', () => {
     for (const file of boundaries) {
       const source = readFileSync(file, 'utf8');
       expect(source, `${file} should offer retry()`).toContain('retry');
-      expect(source, `${file} still uses reset(), which does not re-fetch`).not.toContain(
-        'reset',
-      );
+      expect(source, `${file} still uses reset(), which does not re-fetch`).not.toContain('reset');
     }
   });
 });

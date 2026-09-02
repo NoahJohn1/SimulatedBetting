@@ -118,7 +118,10 @@ describe('reconcileEscrow', () => {
 
     // Simulate the bug this check exists for: the wager is marked settled but no payout
     // entry was ever written, so 70,000 credits are stranded in the pot forever.
-    await db.update(p2pWagers).set({ status: 'SETTLED', verdict: 'OFFERER' }).where(eq(p2pWagers.id, wagerId));
+    await db
+      .update(p2pWagers)
+      .set({ status: 'SETTLED', verdict: 'OFFERER' })
+      .where(eq(p2pWagers.id, wagerId));
 
     const discrepancies = await reconcileEscrow();
 

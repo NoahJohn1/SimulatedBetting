@@ -212,8 +212,8 @@ export function WagerForm({ members }: { members: MemberOption[] }) {
       </div>
 
       <p className="text-xs text-ink-muted">
-        Your stake is held the moment you post this. Withdraw it any time before someone accepts
-        and it comes straight back.
+        Your stake is held the moment you post this. Withdraw it any time before someone accepts and
+        it comes straight back.
       </p>
 
       {error ? <Callout tone="negative">{error}</Callout> : null}

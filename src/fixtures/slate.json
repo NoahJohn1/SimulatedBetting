@@ -65,7 +65,11 @@
       "externalId": "ncaaf-2026-w2-bama-uga",
       "sport": "NCAAF",
       "home": { "externalId": "ncaaf-uga", "name": "Georgia Bulldogs", "abbreviation": "UGA" },
-      "away": { "externalId": "ncaaf-bama", "name": "Alabama Crimson Tide", "abbreviation": "BAMA" },
+      "away": {
+        "externalId": "ncaaf-bama",
+        "name": "Alabama Crimson Tide",
+        "abbreviation": "BAMA"
+      },
       "startsAt": "2026-09-12T19:30:00Z",
       "seasonYear": 2026,
       "week": 2,

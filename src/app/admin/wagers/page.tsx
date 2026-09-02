@@ -37,7 +37,10 @@ export default async function AdminWagersPage() {
           {queue.map((wager) => (
             <Card key={wager.id} className="flex flex-col gap-3 p-3">
               <div className="flex flex-col gap-1">
-                <Link href={`/wagers/${wager.id}`} className="text-sm font-semibold hover:underline">
+                <Link
+                  href={`/wagers/${wager.id}`}
+                  className="text-sm font-semibold hover:underline"
+                >
                   {wager.subject}
                 </Link>
                 <span className="text-xs text-ink-muted">

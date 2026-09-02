@@ -74,11 +74,17 @@ describe('social schema', () => {
       })
       .returning();
 
-    await db.insert(feedReactions).values({ eventId: event.id, membershipId: membership.id, emoji: '🔥' });
-    await db.insert(feedReactions).values({ eventId: event.id, membershipId: membership.id, emoji: '💀' });
+    await db
+      .insert(feedReactions)
+      .values({ eventId: event.id, membershipId: membership.id, emoji: '🔥' });
+    await db
+      .insert(feedReactions)
+      .values({ eventId: event.id, membershipId: membership.id, emoji: '💀' });
 
     await expect(
-      db.insert(feedReactions).values({ eventId: event.id, membershipId: membership.id, emoji: '🔥' }),
+      db
+        .insert(feedReactions)
+        .values({ eventId: event.id, membershipId: membership.id, emoji: '🔥' }),
     ).rejects.toThrow();
 
     const rows = await db.select().from(feedReactions).where(eq(feedReactions.eventId, event.id));
@@ -106,7 +112,10 @@ describe('social schema', () => {
 
     expect(comment.deletedAt).toBeNull();
 
-    await db.update(feedComments).set({ deletedAt: new Date() }).where(eq(feedComments.id, comment.id));
+    await db
+      .update(feedComments)
+      .set({ deletedAt: new Date() })
+      .where(eq(feedComments.id, comment.id));
 
     const [after] = await db.select().from(feedComments).where(eq(feedComments.id, comment.id));
     expect(after.deletedAt).not.toBeNull();

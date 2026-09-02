@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { customEvents, feedEvents, games, markets, p2pWagers, seasonMemberships } from '@/db/schema';
+import {
+  customEvents,
+  feedEvents,
+  games,
+  markets,
+  p2pWagers,
+  seasonMemberships,
+} from '@/db/schema';
 import { acceptWager } from '@/server/p2p/accept';
 import { offerWager } from '@/server/p2p/offer';
 import { sweepP2PWagers } from '@/server/p2p/sweep';
@@ -343,10 +350,7 @@ describe('sweepP2PWagers — overdue', () => {
     expect(first.overdueFlagged).toBe(1);
     expect(second.overdueFlagged).toBe(0);
 
-    const cards = await db
-      .select()
-      .from(feedEvents)
-      .where(eq(feedEvents.type, 'P2P_DISPUTED'));
+    const cards = await db.select().from(feedEvents).where(eq(feedEvents.type, 'P2P_DISPUTED'));
     expect(cards).toHaveLength(1);
     expect(cards[0].dedupeKey).toBe(`p2p:${wagerId}:overdue:1`);
   });

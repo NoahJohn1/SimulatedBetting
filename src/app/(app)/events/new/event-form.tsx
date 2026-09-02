@@ -82,7 +82,9 @@ function bannerMessage(error: CreateEventError): string | null {
   }
 }
 
-function marketErrorMessage(reason: Extract<CreateEventError, { code: 'INVALID_MARKET' }>['reason']): string {
+function marketErrorMessage(
+  reason: Extract<CreateEventError, { code: 'INVALID_MARKET' }>['reason'],
+): string {
   switch (reason) {
     case 'TITLE':
       return 'This market needs a title.';
@@ -95,8 +97,7 @@ function marketErrorMessage(reason: Extract<CreateEventError, { code: 'INVALID_M
   }
 }
 
-const fieldClass =
-  'rounded-card border border-line-strong bg-surface-sunken px-3 py-2 text-sm';
+const fieldClass = 'rounded-card border border-line-strong bg-surface-sunken px-3 py-2 text-sm';
 const fieldErrorClass =
   'rounded-card border border-negative-line bg-surface-sunken px-3 py-2 text-sm';
 
@@ -118,7 +119,10 @@ export function EventForm() {
       current.map((m) =>
         m.id !== marketId
           ? m
-          : { ...m, outcomes: m.outcomes.map((o) => (o.id === outcomeId ? { ...o, ...patch } : o)) },
+          : {
+              ...m,
+              outcomes: m.outcomes.map((o) => (o.id === outcomeId ? { ...o, ...patch } : o)),
+            },
       ),
     );
   }

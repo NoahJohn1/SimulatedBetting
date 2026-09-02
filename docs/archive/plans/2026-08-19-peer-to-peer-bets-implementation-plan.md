@@ -4,7 +4,7 @@
 
 **Goal:** Let two members bet each other directly — one offers terms, the other accepts, both stakes are escrowed in credits, and the winner takes the pot. Wagers attach either to a market the engine already grades or to a freeform description the two parties settle themselves, with admins arbitrating when they disagree.
 
-**Architecture:** One new table, `p2p_wagers`, owning its own lifecycle. It reuses the *machinery* — `postEntry` for money, `emitFeedEvent` for cards, `gradeLeg` and `gradeCustomLeg` for market-backed verdicts, the `settle` and `reconcile` cron routes for background work — while sharing no table with `bets`. `bets`, `bet_legs`, `placeBet`, `settleGame` and `resettleBet` are **not modified at all**, so this subsystem cannot regress the money paths subsystems 1 and 3 stand on. Escrow adds three ledger entry types and one nullable column; everything else is additive.
+**Architecture:** One new table, `p2p_wagers`, owning its own lifecycle. It reuses the _machinery_ — `postEntry` for money, `emitFeedEvent` for cards, `gradeLeg` and `gradeCustomLeg` for market-backed verdicts, the `settle` and `reconcile` cron routes for background work — while sharing no table with `bets`. `bets`, `bet_legs`, `placeBet`, `settleGame` and `resettleBet` are **not modified at all**, so this subsystem cannot regress the money paths subsystems 1 and 3 stand on. Escrow adds three ledger entry types and one nullable column; everything else is additive.
 
 **Tech Stack:** Next.js 16.3.1 (App Router, React 19.2.8, Server Components + server actions), TypeScript 5, Drizzle ORM 0.45 on Postgres 16, Vitest 4, Tailwind 4.
 
@@ -22,7 +22,7 @@
 - **`gradeLeg`, `gradeCustomLeg`, `gradeParlay`, `settledPayoutCents` and everything in `src/domain/odds.ts` are read-only.** Market-backed verdicts call them unchanged.
 - **Every ledger write and every feed write carries a deterministic idempotency/dedupe key.** Running any job twice must move no extra money and create no extra feed events.
 - **Authorization is server-side on every request**, never by hiding UI. Use the existing `requireApprovedMember()` (pages, redirects), `requireApprovedMemberOrThrow()` (server actions, throws), and `requireAdmin()` (admin pages) from `src/server/auth/session.ts`.
-- **Verification command:** `npm run verify` (typecheck + lint + test). It must pass before the final commit of every task. **Three pre-existing lint *warnings* exist** and are not yours to fix: `src/server/bets/grade-legs.ts:3` unused `betLegs`, `src/server/feed/__tests__/leaders.test.ts:28` unused `seasonId`, `src/server/feed/__tests__/money-emission.test.ts:33` unused `_`. Zero lint **errors** is the bar.
+- **Verification command:** `npm run verify` (typecheck + lint + test). It must pass before the final commit of every task. **Three pre-existing lint _warnings_ exist** and are not yours to fix: `src/server/bets/grade-legs.ts:3` unused `betLegs`, `src/server/feed/__tests__/leaders.test.ts:28` unused `seasonId`, `src/server/feed/__tests__/money-emission.test.ts:33` unused `_`. Zero lint **errors** is the bar.
 - **Baseline:** `npm run verify` passes at **59 test files / 411 tests** before Task 1. Every existing test must still pass, with its behavior unchanged, after every task.
 - **Commit after every task**, with a `feat:` / `fix:` / `test:` / `docs:` prefix matching the existing history style.
 - **UI polish is deferred by decision of the project owner.** Tasks 15–18 must be correct, server-side authorized, and complete enough to exercise every path the services expose. They do not need to be finished design — match the existing screens' Tailwind idiom, reuse `src/components/ui/{badge,empty-state,money}.tsx`, keep the markup plain, and do not spend task budget on layout experiments.
@@ -83,48 +83,48 @@ All three `.env` files are covered by `.gitignore` (`.env*`), so they will not b
 
 **New files**
 
-| Path | Responsibility |
-|---|---|
-| `src/db/schema/p2p.ts` | `p2p_wagers` table and its three enums |
-| `src/domain/p2p.ts` | Pure: `verdictForLegStatus`, `potCents`, `agreedVerdict`, `isDisputed`, `isOverdue`, `computeHeadToHead` |
-| `src/server/p2p/types.ts` | Input/result/error types shared by the wager services |
-| `src/server/p2p/offer.ts` | `offerWager`, `cancelOffer`, `declineWager` |
-| `src/server/p2p/accept.ts` | `acceptWager` |
-| `src/server/p2p/settle-wager.ts` | `settleWagerInTx` — the one payout path, shared by claim, sweep and arbitration |
-| `src/server/p2p/claim.ts` | `claimWinner`, `proposeCancel` |
-| `src/server/p2p/sweep.ts` | `sweepP2PWagers` — expire, settle market-backed, flag overdue |
-| `src/server/p2p/arbitrate.ts` | `arbitrateWager` |
-| `src/server/p2p/query.ts` | Board, detail and head-to-head reads |
-| `src/app/(app)/wagers/page.tsx` | The wagers board |
-| `src/app/(app)/wagers/actions.ts` | Server actions: offer, accept, decline, cancel, claim, propose-cancel |
-| `src/app/(app)/wagers/new/page.tsx` | Offer-a-wager screen |
-| `src/app/(app)/wagers/new/wager-form.tsx` | Client component: kind toggle, opponent picker, stakes |
-| `src/app/(app)/wagers/[wagerId]/page.tsx` | Wager detail with the viewer's available actions |
-| `src/app/(app)/wagers/[wagerId]/wager-actions.tsx` | Client component: accept / decline / cancel / claim / propose-cancel |
-| `src/app/admin/wagers/page.tsx` | Arbitration queue: disputed and overdue |
-| `src/app/admin/wagers/actions.ts` | Server action: arbitrate |
-| `src/server/p2p/__tests__/*.test.ts` | One test file per service |
-| `src/domain/__tests__/p2p.test.ts` | Pure-function tests, no database |
+| Path                                               | Responsibility                                                                                           |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `src/db/schema/p2p.ts`                             | `p2p_wagers` table and its three enums                                                                   |
+| `src/domain/p2p.ts`                                | Pure: `verdictForLegStatus`, `potCents`, `agreedVerdict`, `isDisputed`, `isOverdue`, `computeHeadToHead` |
+| `src/server/p2p/types.ts`                          | Input/result/error types shared by the wager services                                                    |
+| `src/server/p2p/offer.ts`                          | `offerWager`, `cancelOffer`, `declineWager`                                                              |
+| `src/server/p2p/accept.ts`                         | `acceptWager`                                                                                            |
+| `src/server/p2p/settle-wager.ts`                   | `settleWagerInTx` — the one payout path, shared by claim, sweep and arbitration                          |
+| `src/server/p2p/claim.ts`                          | `claimWinner`, `proposeCancel`                                                                           |
+| `src/server/p2p/sweep.ts`                          | `sweepP2PWagers` — expire, settle market-backed, flag overdue                                            |
+| `src/server/p2p/arbitrate.ts`                      | `arbitrateWager`                                                                                         |
+| `src/server/p2p/query.ts`                          | Board, detail and head-to-head reads                                                                     |
+| `src/app/(app)/wagers/page.tsx`                    | The wagers board                                                                                         |
+| `src/app/(app)/wagers/actions.ts`                  | Server actions: offer, accept, decline, cancel, claim, propose-cancel                                    |
+| `src/app/(app)/wagers/new/page.tsx`                | Offer-a-wager screen                                                                                     |
+| `src/app/(app)/wagers/new/wager-form.tsx`          | Client component: kind toggle, opponent picker, stakes                                                   |
+| `src/app/(app)/wagers/[wagerId]/page.tsx`          | Wager detail with the viewer's available actions                                                         |
+| `src/app/(app)/wagers/[wagerId]/wager-actions.tsx` | Client component: accept / decline / cancel / claim / propose-cancel                                     |
+| `src/app/admin/wagers/page.tsx`                    | Arbitration queue: disputed and overdue                                                                  |
+| `src/app/admin/wagers/actions.ts`                  | Server action: arbitrate                                                                                 |
+| `src/server/p2p/__tests__/*.test.ts`               | One test file per service                                                                                |
+| `src/domain/__tests__/p2p.test.ts`                 | Pure-function tests, no database                                                                         |
 
 **Modified files**
 
-| Path | Change |
-|---|---|
-| `src/db/schema/index.ts` | Export `./p2p` |
-| `src/db/schema/money.ts` | Three new `ledger_entry_type` values; `ledger_entries.p2p_wager_id` |
-| `src/db/schema/social.ts` | Five new `feed_event_type` values |
-| `src/server/feed/payload.ts` | Five new payload interfaces, added to the `FeedEventPayload` union |
-| `src/server/money/reconcile.ts` | Add `reconcileEscrow` beside `reconcileBalances` |
-| `src/app/api/cron/settle/route.ts` | Call `sweepP2PWagers` |
-| `src/app/api/cron/reconcile/route.ts` | Call `reconcileEscrow` |
-| `src/test/db.ts` | Truncate `p2p_wagers` |
-| `src/test/factories.ts` | `makeCreditedMembership`, `makeWager` helpers |
-| `src/components/ui/tab-bar.tsx` | No change to the tab list — comment updated to record why (D-note in Task 15) |
-| `src/app/(app)/bets/page.tsx` | Bets \| Wagers segmented control |
-| `src/app/(app)/feed/feed-card.tsx` | Render the five new card types |
-| `src/app/(app)/members/[membershipId]/page.tsx` | Head-to-head block |
-| `src/server/__tests__/end-to-end.test.ts` | The peer-to-peer arc |
-| `docs/README.md`, `docs/roadmap.md` | Mark subsystem 4 built |
+| Path                                            | Change                                                                        |
+| ----------------------------------------------- | ----------------------------------------------------------------------------- |
+| `src/db/schema/index.ts`                        | Export `./p2p`                                                                |
+| `src/db/schema/money.ts`                        | Three new `ledger_entry_type` values; `ledger_entries.p2p_wager_id`           |
+| `src/db/schema/social.ts`                       | Five new `feed_event_type` values                                             |
+| `src/server/feed/payload.ts`                    | Five new payload interfaces, added to the `FeedEventPayload` union            |
+| `src/server/money/reconcile.ts`                 | Add `reconcileEscrow` beside `reconcileBalances`                              |
+| `src/app/api/cron/settle/route.ts`              | Call `sweepP2PWagers`                                                         |
+| `src/app/api/cron/reconcile/route.ts`           | Call `reconcileEscrow`                                                        |
+| `src/test/db.ts`                                | Truncate `p2p_wagers`                                                         |
+| `src/test/factories.ts`                         | `makeCreditedMembership`, `makeWager` helpers                                 |
+| `src/components/ui/tab-bar.tsx`                 | No change to the tab list — comment updated to record why (D-note in Task 15) |
+| `src/app/(app)/bets/page.tsx`                   | Bets \| Wagers segmented control                                              |
+| `src/app/(app)/feed/feed-card.tsx`              | Render the five new card types                                                |
+| `src/app/(app)/members/[membershipId]/page.tsx` | Head-to-head block                                                            |
+| `src/server/__tests__/end-to-end.test.ts`       | The peer-to-peer arc                                                          |
+| `docs/README.md`, `docs/roadmap.md`             | Mark subsystem 4 built                                                        |
 
 ## Task order and why
 
@@ -137,11 +137,13 @@ Tasks 1–4 are vocabulary: the table, the ledger's new entry types, the pure fu
 ### Task 1: The `p2p_wagers` table
 
 **Files:**
+
 - Create: `src/db/schema/p2p.ts`
 - Modify: `src/db/schema/index.ts`, `src/test/db.ts`, `src/test/factories.ts`
 - Test: `src/db/__tests__/p2p-schema.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing from earlier tasks.
 - Produces:
   - `p2pWagers` table, and the enums `p2pWagerKind`, `p2pWagerStatus`, `p2pVerdict`
@@ -442,7 +444,7 @@ export async function resetDb(): Promise<void> {
 
 - [ ] **Step 6: Add the test factories**
 
-Append to `src/test/factories.ts`. Note the existing `makeMembership` in that file returns *only* the membership and always creates its own season; these tests need the user and season id too, and need credits, so this is a new helper rather than a change to the old one.
+Append to `src/test/factories.ts`. Note the existing `makeMembership` in that file returns _only_ the membership and always creates its own season; these tests need the user and season id too, and need credits, so this is a new helper rather than a change to the old one.
 
 First extend the imports at the top of the file to include what the new helpers use:
 
@@ -555,10 +557,12 @@ Expected from `npm run verify`: 60 test files, 416 tests, 0 lint errors.
 ### Task 2: Ledger vocabulary for escrow
 
 **Files:**
+
 - Modify: `src/db/schema/money.ts`
 - Test: `src/server/money/__tests__/p2p-entries.test.ts`
 
 **Interfaces:**
+
 - Consumes: `p2pWagers` (Task 1), `postEntry` (existing, unmodified).
 - Produces: `ledger_entry_type` values `P2P_ESCROW`, `P2P_WON`, `P2P_REFUND`; `ledgerEntries.p2pWagerId`; `PostEntryInput.p2pWagerId`.
 
@@ -801,10 +805,12 @@ git commit -m "feat: add escrow entry types and the wager key to the ledger"
 ### Task 3: The pure domain functions
 
 **Files:**
+
 - Create: `src/domain/p2p.ts`
 - Test: `src/domain/__tests__/p2p.test.ts`
 
 **Interfaces:**
+
 - Consumes: `P2PVerdict`, `P2PWagerStatus` (Task 1). `SettledLegStatus` from `@/domain/grading` (existing).
 - Produces:
   - `verdictForLegStatus(status: 'WON' | 'LOST' | 'PUSHED' | 'VOIDED'): P2PVerdict`
@@ -905,13 +911,15 @@ describe('isOverdue', () => {
   const now = new Date('2026-09-01T00:00:00Z');
 
   it('is overdue past the date with no claims', () => {
-    expect(isOverdue({ resolvesBy: past, offererClaim: null, acceptorClaim: null }, now)).toBe(true);
+    expect(isOverdue({ resolvesBy: past, offererClaim: null, acceptorClaim: null }, now)).toBe(
+      true,
+    );
   });
 
   it('is overdue past the date with only one claim', () => {
-    expect(
-      isOverdue({ resolvesBy: past, offererClaim: 'OFFERER', acceptorClaim: null }, now),
-    ).toBe(true);
+    expect(isOverdue({ resolvesBy: past, offererClaim: 'OFFERER', acceptorClaim: null }, now)).toBe(
+      true,
+    );
   });
 
   it('is overdue past the date when the two disagree', () => {
@@ -921,15 +929,15 @@ describe('isOverdue', () => {
   });
 
   it('is not overdue once both agree, however late', () => {
-    expect(
-      isOverdue({ resolvesBy: past, offererClaim: 'VOID', acceptorClaim: 'VOID' }, now),
-    ).toBe(false);
+    expect(isOverdue({ resolvesBy: past, offererClaim: 'VOID', acceptorClaim: 'VOID' }, now)).toBe(
+      false,
+    );
   });
 
   it('is not overdue before the date', () => {
-    expect(
-      isOverdue({ resolvesBy: future, offererClaim: null, acceptorClaim: null }, now),
-    ).toBe(false);
+    expect(isOverdue({ resolvesBy: future, offererClaim: null, acceptorClaim: null }, now)).toBe(
+      false,
+    );
   });
 });
 
@@ -1019,10 +1027,10 @@ describe('computeHeadToHead', () => {
 
   it('accumulates a run of wagers in both directions', () => {
     const rows = [
-      row({ verdict: 'OFFERER' }),                                    // A +20,000
-      row({ verdict: 'ACCEPTOR' }),                                   // A -50,000
+      row({ verdict: 'OFFERER' }), // A +20,000
+      row({ verdict: 'ACCEPTOR' }), // A -50,000
       row({ offererMembershipId: B, acceptorMembershipId: A, verdict: 'ACCEPTOR' }), // A +50,000
-      row({ status: 'VOIDED', verdict: 'VOID' }),                     // 0
+      row({ status: 'VOIDED', verdict: 'VOID' }), // 0
     ];
     expect(computeHeadToHead(rows, A, B)).toEqual({
       settled: 3,
@@ -1203,10 +1211,12 @@ git commit -m "feat: add pure verdict, dispute and head-to-head rules"
 ### Task 4: Feed vocabulary for wagers
 
 **Files:**
+
 - Modify: `src/db/schema/social.ts`, `src/server/feed/payload.ts`
 - Test: `src/server/feed/__tests__/p2p-payload.test.ts`
 
 **Interfaces:**
+
 - Consumes: `emitFeedEvent` (existing, unmodified).
 - Produces: `feed_event_type` values `P2P_OFFERED`, `P2P_ACCEPTED`, `P2P_SETTLED`, `P2P_DISPUTED`, `P2P_VOIDED`; payload interfaces `P2POfferedPayload`, `P2PAcceptedPayload`, `P2PSettledPayload`, `P2PDisputedPayload`, `P2PVoidedPayload`, all added to the `FeedEventPayload` union.
 
@@ -1265,10 +1275,7 @@ describe('p2p feed payloads', () => {
       }),
     );
 
-    const [card] = await db
-      .select()
-      .from(feedEvents)
-      .where(eq(feedEvents.type, 'P2P_OFFERED'));
+    const [card] = await db.select().from(feedEvents).where(eq(feedEvents.type, 'P2P_OFFERED'));
 
     expect(card.dedupeKey).toBe(`p2p:${wager.id}:offered`);
     expect(card.payload).toMatchObject({ potCents: '70000', directed: false });
@@ -1532,10 +1539,12 @@ git commit -m "feat: add peer-to-peer feed card types and payloads"
 ### Task 5: Offering a wager
 
 **Files:**
+
 - Create: `src/server/p2p/types.ts`, `src/server/p2p/subject.ts`, `src/server/p2p/offer.ts`
 - Test: `src/server/p2p/__tests__/offer.test.ts`
 
 **Interfaces:**
+
 - Consumes: `p2pWagers` (Task 1), `postEntry` with `p2pWagerId` (Task 2), `potCents` (Task 3), `P2POfferedPayload` (Task 4).
 - Produces:
   - `offerWager(input: OfferWagerInput): Promise<OfferWagerResult>`
@@ -1857,8 +1866,7 @@ export type CancelOfferError =
   | { code: 'NOT_AUTHORIZED' };
 
 export type CancelOfferResult =
-  | { ok: true; refundedCents: bigint }
-  | { ok: false; error: CancelOfferError };
+  { ok: true; refundedCents: bigint } | { ok: false; error: CancelOfferError };
 
 export interface AcceptWagerInput {
   wagerId: string;
@@ -1926,8 +1934,7 @@ export type ArbitrateError =
   | { code: 'NOT_ARBITRABLE'; status: P2PWagerStatus };
 
 export type ArbitrateWagerResult =
-  | { ok: true; attempt: number; paidCents: bigint }
-  | { ok: false; error: ArbitrateError };
+  { ok: true; attempt: number; paidCents: bigint } | { ok: false; error: ArbitrateError };
 ```
 
 - [ ] **Step 4: Write the subject renderer**
@@ -2232,10 +2239,12 @@ git commit -m "feat: offer a wager and escrow the offerer stake"
 ### Task 6: Withdrawing an offer
 
 **Files:**
+
 - Modify: `src/server/p2p/offer.ts`
 - Test: `src/server/p2p/__tests__/cancel-offer.test.ts`
 
 **Interfaces:**
+
 - Consumes: `offerWager` (Task 5), `postEntry` (Task 2).
 - Produces:
   - `cancelOffer(input: CancelOfferInput): Promise<CancelOfferResult>` — the offerer withdraws
@@ -2514,10 +2523,12 @@ git commit -m "feat: withdraw and decline an unaccepted offer"
 ### Task 7: Accepting a wager
 
 **Files:**
+
 - Create: `src/server/p2p/accept.ts`
 - Test: `src/server/p2p/__tests__/accept.test.ts`
 
 **Interfaces:**
+
 - Consumes: `offerWager` (Task 5), `postEntry` (Task 2), `potCents` (Task 3), `P2PAcceptedPayload` (Task 4), `loadSelectionSubject` (Task 5).
 - Produces: `acceptWager(input: AcceptWagerInput): Promise<AcceptWagerResult>`
 
@@ -2859,10 +2870,12 @@ git commit -m "feat: accept a wager and escrow the acceptor stake"
 ### Task 8: The single payout path
 
 **Files:**
+
 - Create: `src/server/p2p/settle-wager.ts`
 - Test: `src/server/p2p/__tests__/settle-wager.test.ts`
 
 **Interfaces:**
+
 - Consumes: `postEntry` (Task 2), `potCents` (Task 3), `P2PSettledPayload` / `P2PVoidedPayload` / `P2PVoidReason` (Task 4), `loadSelectionSubject` (Task 5).
 - Produces:
   - `settleWagerInTx(tx: Tx, opts: SettleWagerOptions): Promise<SettleWagerSummary>`
@@ -3014,7 +3027,9 @@ describe('settleWagerInTx', () => {
 
     await settle(wagerId, 'VOID', { reason: 'MUTUAL_CANCEL' });
 
-    expect(await db.select().from(feedEvents).where(eq(feedEvents.type, 'P2P_SETTLED'))).toHaveLength(0);
+    expect(
+      await db.select().from(feedEvents).where(eq(feedEvents.type, 'P2P_SETTLED')),
+    ).toHaveLength(0);
     const [card] = await db.select().from(feedEvents).where(eq(feedEvents.type, 'P2P_VOIDED'));
     expect(card.subjectMembershipId).toBeNull();
     expect(card.dedupeKey).toBe(`p2p:${wagerId}:voided:1`);
@@ -3044,9 +3059,7 @@ describe('settleWagerInTx', () => {
       .where(eq(ledgerEntries.type, 'SETTLEMENT_REVERSAL'));
     expect(reversals).toHaveLength(1);
     expect(reversals[0].amountCents).toBe(-70_000n);
-    expect(reversals[0].idempotencyKey).toBe(
-      `p2p:${wagerId}:reversal:2:${offerer.membership.id}`,
-    );
+    expect(reversals[0].idempotencyKey).toBe(`p2p:${wagerId}:reversal:2:${offerer.membership.id}`);
 
     const [wager] = await db.select().from(p2pWagers).where(eq(p2pWagers.id, wagerId));
     expect(wager.verdict).toBe('ACCEPTOR');
@@ -3182,10 +3195,7 @@ export async function settleWagerInTx(
       })
       .from(ledgerEntries)
       .where(
-        and(
-          eq(ledgerEntries.p2pWagerId, wager.id),
-          inArray(ledgerEntries.type, [...PAYOUT_TYPES]),
-        ),
+        and(eq(ledgerEntries.p2pWagerId, wager.id), inArray(ledgerEntries.type, [...PAYOUT_TYPES])),
       );
 
     for (const entry of prior) {
@@ -3329,10 +3339,12 @@ git commit -m "feat: add the single wager payout path with reversal on re-settle
 ### Task 9: Claiming a winner
 
 **Files:**
+
 - Create: `src/server/p2p/claim.ts`
 - Test: `src/server/p2p/__tests__/claim.test.ts`
 
 **Interfaces:**
+
 - Consumes: `settleWagerInTx` (Task 8), `agreedVerdict` / `isDisputed` (Task 3), `P2PDisputedPayload` (Task 4).
 - Produces: `claimWinner(input: ClaimWinnerInput): Promise<ClaimWinnerResult>`
 
@@ -3483,7 +3495,9 @@ describe('claimWinner', () => {
 
     expect(await credits(offerer.membership.id)).toBe(50_000n);
     expect(await credits(acceptor.membership.id)).toBe(80_000n);
-    expect(await db.select().from(ledgerEntries).where(eq(ledgerEntries.type, 'P2P_WON'))).toHaveLength(0);
+    expect(
+      await db.select().from(ledgerEntries).where(eq(ledgerEntries.type, 'P2P_WON')),
+    ).toHaveLength(0);
   });
 
   it('posts one P2P_DISPUTED card', async () => {
@@ -3747,10 +3761,12 @@ git commit -m "feat: settle a wager when both parties agree, dispute when they d
 ### Task 10: Mutual cancellation
 
 **Files:**
+
 - Modify: `src/server/p2p/claim.ts`
 - Test: `src/server/p2p/__tests__/propose-cancel.test.ts`
 
 **Interfaces:**
+
 - Consumes: `settleWagerInTx` (Task 8).
 - Produces: `proposeCancel(input: ProposeCancelInput): Promise<ProposeCancelResult>`
 
@@ -3985,11 +4001,13 @@ git commit -m "feat: void an accepted wager when both parties agree to cancel"
 ### Task 11: The sweep, and wiring it into the settle cron
 
 **Files:**
+
 - Create: `src/server/p2p/sweep.ts`
 - Modify: `src/app/api/cron/settle/route.ts`
 - Test: `src/server/p2p/__tests__/sweep.test.ts`
 
 **Interfaces:**
+
 - Consumes: `settleWagerInTx` (Task 8), `verdictForLegStatus` / `isOverdue` (Task 3), `gradeLeg` and `gradeCustomLeg` (existing, unmodified), `lineToNumber` from `@/domain/line` (existing).
 - Produces:
   - `sweepP2PWagers(now?: Date): Promise<SweepP2PSummary>`
@@ -4007,7 +4025,14 @@ Create `src/server/p2p/__tests__/sweep.test.ts`:
 import { beforeEach, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { customEvents, feedEvents, games, markets, p2pWagers, seasonMemberships } from '@/db/schema';
+import {
+  customEvents,
+  feedEvents,
+  games,
+  markets,
+  p2pWagers,
+  seasonMemberships,
+} from '@/db/schema';
 import { acceptWager } from '@/server/p2p/accept';
 import { offerWager } from '@/server/p2p/offer';
 import { sweepP2PWagers } from '@/server/p2p/sweep';
@@ -4349,10 +4374,7 @@ describe('sweepP2PWagers — overdue', () => {
     expect(first.overdueFlagged).toBe(1);
     expect(second.overdueFlagged).toBe(0);
 
-    const cards = await db
-      .select()
-      .from(feedEvents)
-      .where(eq(feedEvents.type, 'P2P_DISPUTED'));
+    const cards = await db.select().from(feedEvents).where(eq(feedEvents.type, 'P2P_DISPUTED'));
     expect(cards).toHaveLength(1);
     expect(cards[0].dedupeKey).toBe(`p2p:${wagerId}:overdue:1`);
   });
@@ -4386,14 +4408,7 @@ Create `src/server/p2p/sweep.ts`:
 ```ts
 import { and, eq, lt } from 'drizzle-orm';
 import { db } from '@/db/client';
-import {
-  customEvents,
-  events,
-  games,
-  markets,
-  p2pWagers,
-  selections,
-} from '@/db/schema';
+import { customEvents, events, games, markets, p2pWagers, selections } from '@/db/schema';
 import type { MarketType, Side } from '@/domain/grading';
 import { gradeLeg } from '@/domain/grading';
 import { gradeCustomLeg } from '@/domain/custom-grading';
@@ -4443,11 +4458,7 @@ async function expirePass(now: Date, summary: SweepP2PSummary): Promise<void> {
   for (const { id } of stale) {
     try {
       await db.transaction(async (tx) => {
-        const [wager] = await tx
-          .select()
-          .from(p2pWagers)
-          .where(eq(p2pWagers.id, id))
-          .for('update');
+        const [wager] = await tx.select().from(p2pWagers).where(eq(p2pWagers.id, id)).for('update');
         // Re-read under the lock: an acceptance may have landed since the scan.
         if (!wager || wager.status !== 'OFFERED') return;
 
@@ -4640,28 +4651,28 @@ import { sweepP2PWagers } from '@/server/p2p/sweep';
 Add the call after the existing `sweepOverdueEvents()` line:
 
 ```ts
-  const overdue = await sweepOverdueEvents();
-  const wagers = await sweepP2PWagers();
+const overdue = await sweepOverdueEvents();
+const wagers = await sweepP2PWagers();
 ```
 
 Extend the response body and the status calculation so a sweep error is reported the same way a settlement error is:
 
 ```ts
-  // A game or wager that failed is reported, not swallowed — the run still succeeded for
-  // everyone else, but a persistent failure needs to be visible in the cron logs.
-  const status = summary.errors.length > 0 || wagers.errors.length > 0 ? 207 : 200;
-  return Response.json(
-    jsonSafe({
-      ...summary,
-      leadChanged,
-      overdueFlagged: overdue.flagged,
-      wagersExpired: wagers.expired,
-      wagersSettled: wagers.settled,
-      wagersOverdue: wagers.overdueFlagged,
-      wagerErrors: wagers.errors,
-    }),
-    { status },
-  );
+// A game or wager that failed is reported, not swallowed — the run still succeeded for
+// everyone else, but a persistent failure needs to be visible in the cron logs.
+const status = summary.errors.length > 0 || wagers.errors.length > 0 ? 207 : 200;
+return Response.json(
+  jsonSafe({
+    ...summary,
+    leadChanged,
+    overdueFlagged: overdue.flagged,
+    wagersExpired: wagers.expired,
+    wagersSettled: wagers.settled,
+    wagersOverdue: wagers.overdueFlagged,
+    wagerErrors: wagers.errors,
+  }),
+  { status },
+);
 ```
 
 Update the route's doc comment to mention the third rider:
@@ -4695,16 +4706,18 @@ git commit -m "feat: sweep expired offers, settle market wagers, flag overdue on
 ### Task 12: Admin arbitration
 
 **Files:**
+
 - Create: `src/server/p2p/arbitrate.ts`
 - Test: `src/server/p2p/__tests__/arbitrate.test.ts`
 
 **Interfaces:**
+
 - Consumes: `settleWagerInTx` (Task 8).
 - Produces: `arbitrateWager(input: ArbitrateWagerInput): Promise<ArbitrateWagerResult>`
 
 Admin-only, mandatory note. Handles both the fresh case (never settled) and the correcting case (already settled — reverse, then re-pay). `settleWagerInTx` already implements the reversal, so this function is authorization, validation, and a call.
 
-**Authorization is the caller's job.** `arbitrateWager` takes `actorUserId` and records it; the admin *check* happens at the route boundary via `requireAdmin()`, exactly as the custom-events admin actions do. The service does not re-derive role, because the admin pages are the only callers and the redirect belongs in the page.
+**Authorization is the caller's job.** `arbitrateWager` takes `actorUserId` and records it; the admin _check_ happens at the route boundary via `requireAdmin()`, exactly as the custom-events admin actions do. The service does not re-derive role, because the admin pages are the only callers and the redirect belongs in the page.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -4981,9 +4994,7 @@ const ARBITRABLE = new Set(['ACCEPTED', 'SETTLED', 'VOIDED']);
  * other admin action in this codebase. This function records who acted; it does not
  * re-derive whether they were allowed to.
  */
-export async function arbitrateWager(
-  input: ArbitrateWagerInput,
-): Promise<ArbitrateWagerResult> {
+export async function arbitrateWager(input: ArbitrateWagerInput): Promise<ArbitrateWagerResult> {
   const note = input.note.trim();
   if (note.length === 0) return { ok: false, error: { code: 'NOTE_REQUIRED' } };
 
@@ -5038,10 +5049,12 @@ git commit -m "feat: let an admin arbitrate a disputed or overdue wager"
 ### Task 13: Escrow reconciliation
 
 **Files:**
+
 - Modify: `src/server/money/reconcile.ts`, `src/app/api/cron/reconcile/route.ts`
 - Test: `src/server/money/__tests__/reconcile-escrow.test.ts`
 
 **Interfaces:**
+
 - Consumes: `p2pWagers` (Task 1), the P2P entry types (Task 2).
 - Produces:
   - `reconcileEscrow(): Promise<EscrowDiscrepancy[]>`
@@ -5147,7 +5160,10 @@ describe('reconcileEscrow', () => {
 
     // Simulate the bug this check exists for: the wager is marked settled but no payout
     // entry was ever written, so 70,000 credits are stranded in the pot forever.
-    await db.update(p2pWagers).set({ status: 'SETTLED', verdict: 'OFFERER' }).where(eq(p2pWagers.id, wagerId));
+    await db
+      .update(p2pWagers)
+      .set({ status: 'SETTLED', verdict: 'OFFERER' })
+      .where(eq(p2pWagers.id, wagerId));
 
     const discrepancies = await reconcileEscrow();
 
@@ -5302,7 +5318,7 @@ export async function reconcileEscrow(): Promise<EscrowDiscrepancy[]> {
 }
 ```
 
-**Why the sum is negated.** Every entry attributed to a wager is signed from the *member's* point of view: an escrow is negative (credits leaving them), a payout or refund positive. The pot holds the negation of their sum. A reversal is likewise positive or negative in the member's frame, so a corrected wager nets back out with no special case.
+**Why the sum is negated.** Every entry attributed to a wager is signed from the _member's_ point of view: an escrow is negative (credits leaving them), a payout or refund positive. The pot holds the negation of their sum. A reversal is likewise positive or negative in the member's frame, so a corrected wager nets back out with no special case.
 
 - [ ] **Step 4: Wire it into the reconcile cron**
 
@@ -5328,10 +5344,9 @@ export async function GET(request: Request): Promise<Response> {
 
   const ok = discrepancies.length === 0 && escrowDiscrepancies.length === 0;
 
-  return Response.json(
-    jsonSafe({ ok, discrepancies, escrowDiscrepancies }),
-    { status: ok ? 200 : 500 },
-  );
+  return Response.json(jsonSafe({ ok, discrepancies, escrowDiscrepancies }), {
+    status: ok ? 200 : 500,
+  });
 }
 ```
 
@@ -5353,10 +5368,12 @@ git commit -m "feat: reconcile escrow, which balance reconciliation cannot see"
 ### Task 14: Reads — the board, the detail, and head-to-head
 
 **Files:**
+
 - Create: `src/server/p2p/query.ts`
 - Test: `src/server/p2p/__tests__/query.test.ts`
 
 **Interfaces:**
+
 - Consumes: `computeHeadToHead`, `agreedVerdict`, `isDisputed`, `isOverdue` (Task 3), `renderSubject` / `loadSelectionSubject` (Task 5).
 - Produces:
   - `loadWagerBoard(membershipId: string, seasonId: string, now?: Date): Promise<WagerBoard>`
@@ -5528,7 +5545,9 @@ describe('loadWagerDetail', () => {
 
   it('returns null for a wager that does not exist', async () => {
     const a = await makeCreditedMembership(100_000n);
-    expect(await loadWagerDetail('00000000-0000-4000-8000-000000000000', a.membership.id)).toBeNull();
+    expect(
+      await loadWagerDetail('00000000-0000-4000-8000-000000000000', a.membership.id),
+    ).toBeNull();
   });
 });
 
@@ -5771,9 +5790,7 @@ export async function loadWagerBoard(
         w.opponentMembershipId === membershipId &&
         w.expiresAt.getTime() > now.getTime(),
     ),
-    yourOffers: all.filter(
-      (w) => w.status === 'OFFERED' && w.offererMembershipId === membershipId,
-    ),
+    yourOffers: all.filter((w) => w.status === 'OFFERED' && w.offererMembershipId === membershipId),
     liveWagers: live,
     awaitingYourClaim: live.filter((w) =>
       w.offererMembershipId === membershipId ? w.offererClaim === null : w.acceptorClaim === null,
@@ -5886,7 +5903,8 @@ export async function loadArbitrationQueue(
   return accepted.filter(
     (w) =>
       w.disputed ||
-      (w.overdue && agreedVerdict({ offererClaim: w.offererClaim, acceptorClaim: w.acceptorClaim }) === null),
+      (w.overdue &&
+        agreedVerdict({ offererClaim: w.offererClaim, acceptorClaim: w.acceptorClaim }) === null),
   );
 }
 ```
@@ -5909,11 +5927,13 @@ git commit -m "feat: read the wager board, detail, arbitration queue and head-to
 ### Task 15: The wagers board and its route into the app
 
 **Files:**
+
 - Create: `src/app/(app)/wagers/page.tsx`, `src/app/(app)/wagers/actions.ts`
 - Modify: `src/app/(app)/bets/page.tsx`, `src/components/ui/tab-bar.tsx`
 - Test: `npm run build` (see below)
 
 **Interfaces:**
+
 - Consumes: `loadWagerBoard` (Task 14), and every service from Tasks 5–10.
 - Produces: the six server actions the later screens call — `offerWagerAction`, `acceptWagerAction`, `declineWagerAction`, `cancelOfferAction`, `claimWinnerAction`, `proposeCancelAction`.
 
@@ -6143,19 +6163,19 @@ export default async function WagersPage() {
 In `src/app/(app)/bets/page.tsx`, the existing `filterLinks` block renders the Cash/Credits filter. Add a Bets | Wagers control above it. Insert this directly before the `const filterLinks = (` line:
 
 ```tsx
-  const sectionLinks = (
-    <div className="flex gap-2 px-1">
-      <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
-        Bets
-      </span>
-      <Link
-        href="/wagers"
-        className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
-      >
-        Wagers
-      </Link>
-    </div>
-  );
+const sectionLinks = (
+  <div className="flex gap-2 px-1">
+    <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
+      Bets
+    </span>
+    <Link
+      href="/wagers"
+      className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+    >
+      Wagers
+    </Link>
+  </div>
+);
 ```
 
 Then render `{sectionLinks}` immediately above `{filterLinks}` in **both** return branches — the empty-state one and the main one. `Link` is already imported in this file.
@@ -6198,14 +6218,16 @@ git commit -m "feat: add the wagers board and reach it from My Bets"
 ### Task 16: Offering a wager from the UI
 
 **Files:**
+
 - Create: `src/app/(app)/wagers/new/page.tsx`, `src/app/(app)/wagers/new/wager-form.tsx`
 - Test: `npm run build`
 
 **Interfaces:**
+
 - Consumes: `offerWagerAction` (Task 15), `loadWagerBoard`'s season membership list.
 - Produces: the create screen. No new server interfaces.
 
-The form needs the season's other members (for the opponent picker) and, for a market-backed wager, a selection to point at. Keep the selection input a plain id field in this pass — a full board picker is UI polish, and the project owner deferred that. The *services* must be fully exercisable, which a text field does.
+The form needs the season's other members (for the opponent picker) and, for a market-backed wager, a selection to point at. Keep the selection input a plain id field in this pass — a full board picker is UI polish, and the project owner deferred that. The _services_ must be fully exercisable, which a text field does.
 
 - [ ] **Step 1: Write the client form**
 
@@ -6381,8 +6403,8 @@ export function WagerForm({ members }: { members: MemberOption[] }) {
       </div>
 
       <p className="text-xs text-zinc-500">
-        Your stake is held the moment you post this. Withdraw it any time before someone
-        accepts and it comes straight back.
+        Your stake is held the moment you post this. Withdraw it any time before someone accepts and
+        it comes straight back.
       </p>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -6484,10 +6506,12 @@ git commit -m "feat: add the offer-a-wager screen"
 ### Task 17: The wager detail screen
 
 **Files:**
+
 - Create: `src/app/(app)/wagers/[wagerId]/page.tsx`, `src/app/(app)/wagers/[wagerId]/wager-actions.tsx`
 - Test: `npm run build`
 
 **Interfaces:**
+
 - Consumes: `loadWagerDetail` (Task 14), the six actions from Task 15.
 - Produces: the detail screen. No new server interfaces.
 
@@ -6622,8 +6646,8 @@ export function WagerActions(props: WagerActionsProps) {
             </button>
           </div>
           <p className="text-xs text-zinc-500">
-            It pays out as soon as you both say the same thing. If you disagree, an admin
-            settles it.
+            It pays out as soon as you both say the same thing. If you disagree, an admin settles
+            it.
           </p>
         </div>
       )}
@@ -6670,9 +6694,7 @@ export default async function WagerDetailPage({ params }: PageProps<'/wagers/[wa
 
   const isOfferer = wager.offererMembershipId === member.membershipId;
   const yourClaim = isOfferer ? wager.offererClaim : wager.acceptorClaim;
-  const youProposedCancel = isOfferer
-    ? wager.offererCancelProposed
-    : wager.acceptorCancelProposed;
+  const youProposedCancel = isOfferer ? wager.offererCancelProposed : wager.acceptorCancelProposed;
 
   const winner =
     wager.verdict === 'OFFERER'
@@ -6724,9 +6746,7 @@ export default async function WagerDetailPage({ params }: PageProps<'/wagers/[wa
           <span className="font-medium">{winner}</span> took the pot.
         </p>
       )}
-      {wager.verdict === 'VOID' && (
-        <p className="text-sm">Called off — both stakes went back.</p>
-      )}
+      {wager.verdict === 'VOID' && <p className="text-sm">Called off — both stakes went back.</p>}
       {wager.resolutionNote && (
         <p className="rounded-lg bg-zinc-100 p-3 text-sm dark:bg-zinc-900">
           <span className="font-medium">Admin: </span>
@@ -6769,11 +6789,13 @@ git commit -m "feat: add the wager detail screen with every party action"
 ### Task 18: Arbitration, feed cards, and head-to-head on profiles
 
 **Files:**
+
 - Create: `src/app/admin/wagers/page.tsx`, `src/app/admin/wagers/actions.ts`
 - Modify: `src/app/(app)/feed/feed-card.tsx`, `src/app/(app)/members/[membershipId]/page.tsx`
 - Test: `npm run build`
 
 **Interfaces:**
+
 - Consumes: `loadArbitrationQueue` and `loadHeadToHead` (Task 14), `arbitrateWager` (Task 12), the five payload types (Task 4).
 - Produces: `arbitrateWagerAction`.
 
@@ -6796,11 +6818,7 @@ import type { P2PVerdict } from '@/server/p2p/types';
  * admin action in this codebase. `arbitrateWager` records who acted; `requireAdmin` decides
  * whether they were allowed to.
  */
-export async function arbitrateWagerAction(
-  wagerId: string,
-  verdict: P2PVerdict,
-  note: string,
-) {
+export async function arbitrateWagerAction(wagerId: string, verdict: P2PVerdict, note: string) {
   const admin = await requireAdmin();
 
   const result = await arbitrateWager({
@@ -6950,40 +6968,40 @@ import { loadHeadToHead } from '@/server/p2p/query';
 Then, after the existing stats are loaded, add the load and the block. `member` is the viewing member from `requireApprovedMember()`; `membershipId` is the profile being viewed — use whatever names the file already binds:
 
 ```tsx
-  const isSelf = membershipId === member.membershipId;
-  const headToHead = isSelf
-    ? null
-    : await loadHeadToHead(member.seasonId, member.membershipId, membershipId);
+const isSelf = membershipId === member.membershipId;
+const headToHead = isSelf
+  ? null
+  : await loadHeadToHead(member.seasonId, member.membershipId, membershipId);
 ```
 
 and in the JSX:
 
 ```tsx
-      {headToHead && (
-        <section className="flex flex-col gap-2 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-            You vs them
-          </h2>
-          {headToHead.settled === 0 && headToHead.voided === 0 ? (
-            <p className="text-sm text-zinc-500">You have never wagered against each other.</p>
-          ) : (
-            <p className="text-sm">
-              <span className="font-medium">
-                {headToHead.aWon}–{headToHead.bWon}
-              </span>
-              {headToHead.voided > 0 && ` (${headToHead.voided} called off)`}, and you are{' '}
-              <span className="font-medium">
-                {headToHead.netCentsForA >= 0n ? 'up' : 'down'}{' '}
-                {(headToHead.netCentsForA < 0n
-                  ? -headToHead.netCentsForA
-                  : headToHead.netCentsForA
-                ).toString()}
-              </span>{' '}
-              credits.
-            </p>
-          )}
-        </section>
+{
+  headToHead && (
+    <section className="flex flex-col gap-2 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">You vs them</h2>
+      {headToHead.settled === 0 && headToHead.voided === 0 ? (
+        <p className="text-sm text-zinc-500">You have never wagered against each other.</p>
+      ) : (
+        <p className="text-sm">
+          <span className="font-medium">
+            {headToHead.aWon}–{headToHead.bWon}
+          </span>
+          {headToHead.voided > 0 && ` (${headToHead.voided} called off)`}, and you are{' '}
+          <span className="font-medium">
+            {headToHead.netCentsForA >= 0n ? 'up' : 'down'}{' '}
+            {(headToHead.netCentsForA < 0n
+              ? -headToHead.netCentsForA
+              : headToHead.netCentsForA
+            ).toString()}
+          </span>{' '}
+          credits.
+        </p>
       )}
+    </section>
+  );
+}
 ```
 
 - [ ] **Step 5: Verify the routes compile**
@@ -7006,10 +7024,12 @@ git commit -m "feat: arbitrate from the admin queue, render wager cards, show he
 ### Task 19: The end-to-end arc, and the docs
 
 **Files:**
+
 - Modify: `src/server/__tests__/end-to-end.test.ts`, `docs/README.md`, `docs/roadmap.md`, `docs/specs/2026-08-19-peer-to-peer-bets-design.md`
 - Test: the arc below
 
 **Interfaces:**
+
 - Consumes: every service built in Tasks 5–13.
 - Produces: nothing new. This task proves the subsystem rather than extending it.
 
@@ -7097,10 +7117,7 @@ describe('the peer-to-peer arc', () => {
     expect(await credits(offerer.membership.id)).toBe(50_000n);
     expect(await credits(acceptor.membership.id)).toBe(150_000n);
 
-    const [wager] = await db
-      .select()
-      .from(p2pWagers)
-      .where(eq(p2pWagers.id, offered.wagerId));
+    const [wager] = await db.select().from(p2pWagers).where(eq(p2pWagers.id, offered.wagerId));
     expect(wager.status).toBe('SETTLED');
     expect(wager.verdict).toBe('ACCEPTOR');
     expect(wager.settlementAttempts).toBe(2);

@@ -79,8 +79,9 @@ export default async function AdminEventsPage() {
                   </span>
                 </div>
                 <div className="text-sm text-ink-muted">
-                  Created by {row.creatorDisplayName} · {openBets} open bet{openBets === 1 ? '' : 's'}{' '}
-                  · Staked <Money cents={row.stakedCreditsCents} currency="CREDITS" />
+                  Created by {row.creatorDisplayName} · {openBets} open bet
+                  {openBets === 1 ? '' : 's'} · Staked{' '}
+                  <Money cents={row.stakedCreditsCents} currency="CREDITS" />
                 </div>
                 <VoidForm eventId={row.eventId} />
               </Card>

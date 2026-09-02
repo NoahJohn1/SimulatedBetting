@@ -47,8 +47,7 @@ export type CreateEventError =
   | { code: 'INVALID_PRICE'; marketIndex: number; outcomeIndex: number };
 
 export type CreateCustomEventResult =
-  | { ok: true; eventId: string }
-  | { ok: false; error: CreateEventError };
+  { ok: true; eventId: string } | { ok: false; error: CreateEventError };
 
 export const MAX_MARKETS_PER_EVENT = 20;
 export const MIN_OUTCOMES_PER_MARKET = 2;

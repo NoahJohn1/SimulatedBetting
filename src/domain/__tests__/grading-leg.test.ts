@@ -11,7 +11,9 @@ describe('gradeLeg — moneyline', () => {
 
   it('pushes a tie', () => {
     const tie = { homeScore: 20, awayScore: 20 };
-    expect(gradeLeg({ marketType: 'MONEYLINE', side: 'HOME', line: null, result: tie })).toBe('PUSHED');
+    expect(gradeLeg({ marketType: 'MONEYLINE', side: 'HOME', line: null, result: tie })).toBe(
+      'PUSHED',
+    );
   });
 
   it('rejects a line on a moneyline', () => {

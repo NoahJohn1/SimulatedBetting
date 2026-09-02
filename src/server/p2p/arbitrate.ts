@@ -22,9 +22,7 @@ const ARBITRABLE = new Set(['ACCEPTED', 'SETTLED', 'VOIDED']);
  * other admin action in this codebase. This function records who acted; it does not
  * re-derive whether they were allowed to.
  */
-export async function arbitrateWager(
-  input: ArbitrateWagerInput,
-): Promise<ArbitrateWagerResult> {
+export async function arbitrateWager(input: ArbitrateWagerInput): Promise<ArbitrateWagerResult> {
   const note = input.note.trim();
   if (note.length === 0) return { ok: false, error: { code: 'NOTE_REQUIRED' } };
 

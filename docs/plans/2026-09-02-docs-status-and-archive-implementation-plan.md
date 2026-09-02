@@ -16,7 +16,7 @@ Copied verbatim from [the design](../specs/2026-09-02-docs-status-and-archive-de
 - **An item may carry more than one tag** when its parts sit in different lanes. Where that happens the task table says which part is which.
 - **The roadmap records what is in the repository, not what is on somebody's laptop.** Where a status cannot be verified from the repo, say so and date the observation.
 - **Status vocabulary is exactly three values:** ✅ Complete, 🔄 In progress, 🔲 Backlog.
-- **Nothing is deleted from the repository.** Plans move via `git mv`; only roadmap *prose* about completed work is removed, and only because its spec and `decisions.md` already carry it.
+- **Nothing is deleted from the repository.** Plans move via `git mv`; only roadmap _prose_ about completed work is removed, and only because its spec and `decisions.md` already carry it.
 - **Every document must be listed in `docs/README.md`.** A spec, plan, or audit that exists but is not listed is invisible.
 - **No source files change.** If any step would edit something outside `docs/` or the root `README.md`, stop — it is out of scope.
 
@@ -51,7 +51,7 @@ print('\n'.join(bad) if bad else 'LINKS OK')
 **Expected on every run: `LINKS OK`.**
 
 Archived plans are checked too, but they were written against the old layout and may carry
-links that were already stale before this work. If the checker reports a failure *inside*
+links that were already stale before this work. If the checker reports a failure _inside_
 `docs/archive/`, note it and leave it — an archived document is a historical record, and
 rewriting its links falsifies it. Only failures in the four live documents block a commit.
 
@@ -62,6 +62,7 @@ rewriting its links falsifies it. Only failures in the four live documents block
 Moves the plans whose work has shipped and repoints every inbound link, so no later task has to work around a broken path.
 
 **Files:**
+
 - Move: `docs/plans/2026-08-17-social-layer-implementation-plan.md` → `docs/archive/plans/`
 - Move: `docs/plans/2026-08-17-custom-events-implementation-plan.md` → `docs/archive/plans/`
 - Move: `docs/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md` → `docs/archive/plans/`
@@ -73,6 +74,7 @@ Moves the plans whose work has shipped and repoints every inbound link, so no la
 **Do NOT move** `docs/plans/2026-08-20-repo-health-implementation-plan.md` — it is the only plan with open tasks.
 
 **Interfaces:**
+
 - Produces: the path prefix `archive/plans/` (relative to `docs/`), which Task 2's master table and Task 4's README table both reference.
 
 - [ ] **Step 1: Save the link checker**
@@ -180,9 +182,11 @@ Claude-Session: https://claude.ai/code/session_01SWxR2wGjtW5sV7xvW2SE2s"
 Replaces the two topic tables with one master status table, and deletes the body prose for every completed item.
 
 **Files:**
+
 - Modify: `docs/roadmap.md` — replace lines 1–20 (header and part-one table), delete lines 21–136 (subsystems 1–4 and Sequencing), delete the 7a and 7b rung sections, add task tables to phases 5, 6, 7c, 7d, 8, 9
 
 **Interfaces:**
+
 - Consumes: `archive/plans/` paths from Task 1.
 - Produces: the anchors `#5--real-data-the-espn-adapter`, `#6--production-deployment`, `#7c--screen-by-screen-rebuild`, `#7d--craft`, `#8--email-notifications`, `#9--hardening`, which Task 4's working-set table links to. Section headings for those phases must not change.
 
@@ -206,21 +210,21 @@ account only Noah holds — GitHub settings, the Vercel dashboard, DNS, paid sig
 **What this table records is what is in the repository**, not what is on somebody's laptop.
 Where a status cannot be verified from the repo, it says so and dates the observation.
 
-| # | Item | Status | Who finishes what's left | Reference |
-|---|---|---|---|---|
-| 1 | Core betting engine | ✅ Complete | — | [spec](specs/2026-08-14-core-betting-engine-design.md) |
-| 2 | Social layer | ✅ Complete | — | [spec](specs/2026-08-17-social-layer-design.md) · [plan](archive/plans/2026-08-17-social-layer-implementation-plan.md) |
-| 3 | Custom events | ✅ Complete | — | [spec](specs/2026-08-17-custom-events-design.md) · [plan](archive/plans/2026-08-17-custom-events-implementation-plan.md) |
-| 4 | Peer-to-peer bets | ✅ Complete | — | [spec](specs/2026-08-19-peer-to-peer-bets-design.md) · [plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md) |
-| — | **Human test pass** — the gate on phase 5 | 🔲 Backlog | **[MANUAL]** | — |
-| 5 | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — Noah, local only | [CLOUD] [NOAH] | spec pending |
-| 6 | [Production deployment](#6--production-deployment) | 🔄 Partial — deployed, unmonitored | **[NOAH]** mostly | — |
-| 7a | UI foundations | ✅ Complete | — | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md) |
-| 7b | Design system | ✅ Complete | — | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md) |
-| 7c | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild) | 🔲 Backlog | [CLOUD] | — |
-| 7d | [Craft](#7d--craft) | 🔲 Backlog | [CLOUD] | — |
-| 8 | [Email notifications](#8--email-notifications) | 🔲 Backlog | [CLOUD] [NOAH] | — |
-| 9 | [Hardening](#9--hardening) | 🔲 Backlog | [CLOUD] [LOCAL] [MANUAL] | — |
+| #   | Item                                                          | Status                             | Who finishes what's left | Reference                                                                                                                                                  |
+| --- | ------------------------------------------------------------- | ---------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Core betting engine                                           | ✅ Complete                        | —                        | [spec](specs/2026-08-14-core-betting-engine-design.md)                                                                                                     |
+| 2   | Social layer                                                  | ✅ Complete                        | —                        | [spec](specs/2026-08-17-social-layer-design.md) · [plan](archive/plans/2026-08-17-social-layer-implementation-plan.md)                                     |
+| 3   | Custom events                                                 | ✅ Complete                        | —                        | [spec](specs/2026-08-17-custom-events-design.md) · [plan](archive/plans/2026-08-17-custom-events-implementation-plan.md)                                   |
+| 4   | Peer-to-peer bets                                             | ✅ Complete                        | —                        | [spec](specs/2026-08-19-peer-to-peer-bets-design.md) · [plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md)                           |
+| —   | **Human test pass** — the gate on phase 5                     | 🔲 Backlog                         | **[MANUAL]**             | —                                                                                                                                                          |
+| 5   | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — Noah, local only  | [CLOUD] [NOAH]           | spec pending                                                                                                                                               |
+| 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — deployed, unmonitored | **[NOAH]** mostly        | —                                                                                                                                                          |
+| 7a  | UI foundations                                                | ✅ Complete                        | —                        | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md)      |
+| 7b  | Design system                                                 | ✅ Complete                        | —                        | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md) |
+| 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | 🔲 Backlog                         | [CLOUD]                  | —                                                                                                                                                          |
+| 7d  | [Craft](#7d--craft)                                           | 🔲 Backlog                         | [CLOUD]                  | —                                                                                                                                                          |
+| 8   | [Email notifications](#8--email-notifications)                | 🔲 Backlog                         | [CLOUD] [NOAH]           | —                                                                                                                                                          |
+| 9   | [Hardening](#9--hardening)                                    | 🔲 Backlog                         | [CLOUD] [LOCAL] [MANUAL] | —                                                                                                                                                          |
 
 All four subsystems pass `npm run verify` and have been exercised end to end against fixture
 data. None of it has been through a human test pass — that is the gate on phase 5, and no
@@ -258,15 +262,15 @@ In the `## 7 — The UI ladder` section, delete the four-row rung table (it dupl
 Immediately after the numbered task list in `## 5 — Real data: the ESPN adapter`, insert:
 
 ```markdown
-| Task | Status | Owner |
-|---|---|---|
-| Spike the payload — NFL and CFB, both endpoints | 🔄 Noah, local | [CLOUD] |
-| `EspnScoreProvider` | 🔲 Backlog | [CLOUD] |
-| `EspnOddsProvider` | 🔲 Backlog | [CLOUD] |
-| CFB paging by week and conference group | 🔲 Backlog | [CLOUD] |
-| Defensive parsing — a reshaped field skips its market | 🔲 Backlog | [CLOUD] |
-| Kill switch env flag falling back to fixtures | 🔲 Backlog | [CLOUD] to write · **[NOAH]** to set in Vercel |
-| First real slate — admin backfill plus reconciliation | 🔲 Backlog | **[NOAH]** — runs against production |
+| Task                                                  | Status         | Owner                                          |
+| ----------------------------------------------------- | -------------- | ---------------------------------------------- |
+| Spike the payload — NFL and CFB, both endpoints       | 🔄 Noah, local | [CLOUD]                                        |
+| `EspnScoreProvider`                                   | 🔲 Backlog     | [CLOUD]                                        |
+| `EspnOddsProvider`                                    | 🔲 Backlog     | [CLOUD]                                        |
+| CFB paging by week and conference group               | 🔲 Backlog     | [CLOUD]                                        |
+| Defensive parsing — a reshaped field skips its market | 🔲 Backlog     | [CLOUD]                                        |
+| Kill switch env flag falling back to fixtures         | 🔲 Backlog     | [CLOUD] to write · **[NOAH]** to set in Vercel |
+| First real slate — admin backfill plus reconciliation | 🔲 Backlog     | **[NOAH]** — runs against production           |
 ```
 
 - [ ] **Step 6: Add the phase 6 task table and correct its status**
@@ -277,15 +281,15 @@ After the task bullets in `## 6 — Production deployment`, insert:
 **Verified against the repo 2026-09-02.** The app is deployed, but the observability half —
 which this phase calls the item that earns it — is absent.
 
-| Task | Status | Owner | Evidence |
-|---|---|---|---|
-| Hosted Postgres, backups, documented restore | 🔲 Backlog | **[NOAH]** | Not verifiable from the repo |
-| Vercel wiring — env, `AUTH_URL`, OAuth redirect, migrations on deploy | 🔄 Partial | **[NOAH]** | App runs; `CRON_SECRET` presence unconfirmed |
-| `CRON_SECRET` on the real invocations | 🔲 Backlog | **[NOAH]** | Actions secrets absent — see [repo-health 1.5](repo-health.md#15-the-cron-workflow--the-only-thing-actually-broken) |
-| Error monitoring (Sentry free tier) | 🔲 Backlog | **[NOAH]** signup · [CLOUD] wiring | No monitoring dependency in `package.json` |
-| Alerting on cron failure and reconciliation drift | 🔲 Backlog | [CLOUD] code · **[NOAH]** destination | `reconcileBalances`/`reconcileEscrow` are called only from the cron route |
-| Admin health page | 🔲 Backlog | [CLOUD] | `src/app/admin` holds only `page.tsx`, `events/`, `wagers/` |
-| Admin season-creation screen | 🔲 Backlog | [CLOUD] | `createSeason` is reachable only from `seed.ts` and `bootstrap-season.ts` |
+| Task                                                                  | Status     | Owner                                 | Evidence                                                                                                            |
+| --------------------------------------------------------------------- | ---------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Hosted Postgres, backups, documented restore                          | 🔲 Backlog | **[NOAH]**                            | Not verifiable from the repo                                                                                        |
+| Vercel wiring — env, `AUTH_URL`, OAuth redirect, migrations on deploy | 🔄 Partial | **[NOAH]**                            | App runs; `CRON_SECRET` presence unconfirmed                                                                        |
+| `CRON_SECRET` on the real invocations                                 | 🔲 Backlog | **[NOAH]**                            | Actions secrets absent — see [repo-health 1.5](repo-health.md#15-the-cron-workflow--the-only-thing-actually-broken) |
+| Error monitoring (Sentry free tier)                                   | 🔲 Backlog | **[NOAH]** signup · [CLOUD] wiring    | No monitoring dependency in `package.json`                                                                          |
+| Alerting on cron failure and reconciliation drift                     | 🔲 Backlog | [CLOUD] code · **[NOAH]** destination | `reconcileBalances`/`reconcileEscrow` are called only from the cron route                                           |
+| Admin health page                                                     | 🔲 Backlog | [CLOUD]                               | `src/app/admin` holds only `page.tsx`, `events/`, `wagers/`                                                         |
+| Admin season-creation screen                                          | 🔲 Backlog | [CLOUD]                               | `createSeason` is reachable only from `seed.ts` and `bootstrap-season.ts`                                           |
 ```
 
 - [ ] **Step 7: Add an Owner column to the 7c and 7d inherited-backlog tables**
@@ -297,15 +301,15 @@ Both tables currently have `| Item | Deferred by | Why it landed here |`. Add a 
 After the "The tasks." paragraph in `## 8 — Email notifications`, insert:
 
 ```markdown
-| Task | Status | Owner |
-|---|---|---|
-| Transactional email provider on a free tier | 🔲 Backlog | **[NOAH]** — signup, API key, DNS for the sending domain |
-| `notification_preferences` table and migration | 🔲 Backlog | [CLOUD] |
-| Per-type toggles plus a global off | 🔲 Backlog | [CLOUD] |
-| One-click unsubscribe that works without signing in | 🔲 Backlog | [CLOUD] |
-| Dev mode that logs instead of sending | 🔲 Backlog | [CLOUD] |
-| Idempotency-keyed sends from the `feed_events` emit points | 🔲 Backlog | [CLOUD] |
-| Confirm a real email renders correctly in an inbox | 🔲 Backlog | **[MANUAL]** |
+| Task                                                       | Status     | Owner                                                    |
+| ---------------------------------------------------------- | ---------- | -------------------------------------------------------- |
+| Transactional email provider on a free tier                | 🔲 Backlog | **[NOAH]** — signup, API key, DNS for the sending domain |
+| `notification_preferences` table and migration             | 🔲 Backlog | [CLOUD]                                                  |
+| Per-type toggles plus a global off                         | 🔲 Backlog | [CLOUD]                                                  |
+| One-click unsubscribe that works without signing in        | 🔲 Backlog | [CLOUD]                                                  |
+| Dev mode that logs instead of sending                      | 🔲 Backlog | [CLOUD]                                                  |
+| Idempotency-keyed sends from the `feed_events` emit points | 🔲 Backlog | [CLOUD]                                                  |
+| Confirm a real email renders correctly in an inbox         | 🔲 Backlog | **[MANUAL]**                                             |
 ```
 
 - [ ] **Step 9: Add the phase 9 task table**
@@ -313,13 +317,13 @@ After the "The tasks." paragraph in `## 8 — Email notifications`, insert:
 After the bullets in `## 9 — Hardening`, insert:
 
 ```markdown
-| Task | Status | Owner |
-|---|---|---|
-| A written smoke checklist | 🔲 Backlog | [CLOUD] to draft · **[MANUAL]** to validate — it is derived from the test pass |
-| Rate limiting on mutations | 🔲 Backlog | [CLOUD] |
-| Load sanity — a full CFB Saturday and a season of feed events | 🔲 Backlog | **[LOCAL]** — needs real row counts, so it needs a database |
-| A house rules page | 🔲 Backlog | [CLOUD] |
-| The new-member path — `/pending`, `/join`, `/no-season` as a sequence | 🔲 Backlog | [CLOUD] |
+| Task                                                                  | Status     | Owner                                                                          |
+| --------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------ |
+| A written smoke checklist                                             | 🔲 Backlog | [CLOUD] to draft · **[MANUAL]** to validate — it is derived from the test pass |
+| Rate limiting on mutations                                            | 🔲 Backlog | [CLOUD]                                                                        |
+| Load sanity — a full CFB Saturday and a season of feed events         | 🔲 Backlog | **[LOCAL]** — needs real row counts, so it needs a database                    |
+| A house rules page                                                    | 🔲 Backlog | [CLOUD]                                                                        |
+| The new-member path — `/pending`, `/join`, `/no-season` as a sequence | 🔲 Backlog | [CLOUD]                                                                        |
 ```
 
 Phase 9's opening line currently says it "Wants 7a finished first." Update it: 7a and 7b are both complete and merged, so phase 9 is unblocked.
@@ -371,9 +375,11 @@ Claude-Session: https://claude.ai/code/session_01SWxR2wGjtW5sV7xvW2SE2s"
 Corrects four stale claims and adds the owner column. The document's structure is sound and stays.
 
 **Files:**
+
 - Modify: `docs/repo-health.md` — the lane table (~lines 18–33), the Outstanding table (~lines 47–63), the "What changed underneath" section (~lines 65–99), line 106, and the Prettier paragraph (~lines 552–556)
 
 **Interfaces:**
+
 - Consumes: the tag definitions from Global Constraints.
 - Produces: the anchor `#status-at-a-glance`, which Task 2's roadmap header and Task 4's working-set table both link to.
 
@@ -390,7 +396,7 @@ date is refreshed. Change it to:
 and put the date in the body instead, as the first line under it:
 
 ```markdown
-*Last verified 2026-09-02.*
+_Last verified 2026-09-02._
 ```
 
 This is what makes `#status-at-a-glance` a stable anchor for Tasks 2 and 4 to link to.
@@ -410,19 +416,19 @@ Update the sentence introducing the table to say four lanes, not three, and note
 
 Rename its `Lane` column to `Owner` and set every row per the credentials rule:
 
-| # | Item | Owner |
-|---|---|---|
-| 1 | Add `APP_URL` and `CRON_SECRET` as Actions secrets | **[NOAH]** |
-| 2 | Dispatch both cron jobs by hand and confirm 200 | **[NOAH]** |
-| 3 | Uncomment the `schedule:` block, add the empty-secret guard | [CLOUD] |
-| 4 | Ledger-funnel guard test | [CLOUD] |
-| 5 | `session-start` hook | **[LOCAL]** |
-| 6 | `.nvmrc` | [CLOUD] |
-| 7 | CI: `build` step, `concurrency`, `timeout-minutes` | [CLOUD] |
-| 8 | Dependabot, monthly, grouped | [CLOUD] to write · **[MANUAL]** to merge its PRs |
-| 9 | `.env.test` note in the README | [CLOUD] |
-| 10 | `db-migration` skill | [CLOUD] |
-| 11 | The human test pass, and the issues it produces | **[MANUAL]** |
+| #   | Item                                                        | Owner                                            |
+| --- | ----------------------------------------------------------- | ------------------------------------------------ |
+| 1   | Add `APP_URL` and `CRON_SECRET` as Actions secrets          | **[NOAH]**                                       |
+| 2   | Dispatch both cron jobs by hand and confirm 200             | **[NOAH]**                                       |
+| 3   | Uncomment the `schedule:` block, add the empty-secret guard | [CLOUD]                                          |
+| 4   | Ledger-funnel guard test                                    | [CLOUD]                                          |
+| 5   | `session-start` hook                                        | **[LOCAL]**                                      |
+| 6   | `.nvmrc`                                                    | [CLOUD]                                          |
+| 7   | CI: `build` step, `concurrency`, `timeout-minutes`          | [CLOUD]                                          |
+| 8   | Dependabot, monthly, grouped                                | [CLOUD] to write · **[MANUAL]** to merge its PRs |
+| 9   | `.env.test` note in the README                              | [CLOUD]                                          |
+| 10  | `db-migration` skill                                        | [CLOUD]                                          |
+| 11  | The human test pass, and the issues it produces             | **[MANUAL]**                                     |
 
 Do the same for the Done table's lane column — rows 1 and 2 there were GitHub settings work, so they become `[NOAH]`.
 
@@ -439,7 +445,7 @@ Replace the whole "**`main` is not where the current UI work lives**" bullet —
   not, and three different test totals had accumulated in three places by the time anyone
   looked. They are corrected below and the promise is not repeated. That branch also added
   [D51](decisions.md#d51--ui-conventions-are-tested-structurally-not-with-a-component-test-harness),
-  *UI conventions are tested structurally, not with a component-test harness* — which is
+  _UI conventions are tested structurally, not with a component-test harness_ — which is
   [3.2](#32-the-layering-rule) applied without being asked: a convention that could have been a
   code-review habit was made a test instead.
 ```
@@ -524,9 +530,11 @@ Claude-Session: https://claude.ai/code/session_01SWxR2wGjtW5sV7xvW2SE2s"
 Makes the index answer "what can I pick up today" without opening either source document.
 
 **Files:**
+
 - Modify: `docs/README.md` — the document table (lines ~7–25), the "What is left" section, the conventions list
 
 **Interfaces:**
+
 - Consumes: the archive paths from Task 1 and the phase anchors from Task 2.
 - Produces: nothing later tasks rely on.
 
@@ -557,41 +565,41 @@ Every open item from [the roadmap](roadmap.md#roadmap) and
 
 ### What a cloud session can pick up now
 
-| Item | Source |
-|---|---|
-| Uncomment the cron `schedule:`, add the empty-secret guard | repo health 3 |
-| Ledger-funnel guard test | repo health 4 |
-| `.nvmrc` | repo health 6 |
-| CI: `build`, `concurrency`, `timeout-minutes` | repo health 7 |
-| Dependabot config | repo health 8 |
-| `.env.test` note in the README | repo health 9 |
-| 7c component work — `Dialog`, `Sheet`, `Table`, `Toast`, `Card`'s element escape hatch | roadmap 7c |
-| 7c layout fixes from the mobile audit | roadmap 7c |
-| Rate limiting, house rules page, the new-member path | roadmap 9 |
+| Item                                                                                   | Source        |
+| -------------------------------------------------------------------------------------- | ------------- |
+| Uncomment the cron `schedule:`, add the empty-secret guard                             | repo health 3 |
+| Ledger-funnel guard test                                                               | repo health 4 |
+| `.nvmrc`                                                                               | repo health 6 |
+| CI: `build`, `concurrency`, `timeout-minutes`                                          | repo health 7 |
+| Dependabot config                                                                      | repo health 8 |
+| `.env.test` note in the README                                                         | repo health 9 |
+| 7c component work — `Dialog`, `Sheet`, `Table`, `Toast`, `Card`'s element escape hatch | roadmap 7c    |
+| 7c layout fixes from the mobile audit                                                  | roadmap 7c    |
+| Rate limiting, house rules page, the new-member path                                   | roadmap 9     |
 
 ### What needs a desktop with Docker
 
-| Item | Source |
-|---|---|
+| Item                                                           | Source        |
+| -------------------------------------------------------------- | ------------- |
 | `session-start` hook — only a laptop can prove the Docker path | repo health 5 |
-| Load sanity at real row counts | roadmap 9 |
+| Load sanity at real row counts                                 | roadmap 9     |
 
 ### What needs Noah
 
-| Item | Source |
-|---|---|
+| Item                                                                                               | Source        |
+| -------------------------------------------------------------------------------------------------- | ------------- |
 | `APP_URL` and `CRON_SECRET` as Actions secrets — **the app is not settling bets until this lands** | repo health 1 |
-| Dispatch both cron jobs by hand, confirm 200 | repo health 2 |
-| Hosted Postgres, Sentry signup, alerting destination | roadmap 6 |
-| Email provider signup and sending-domain DNS | roadmap 8 |
+| Dispatch both cron jobs by hand, confirm 200                                                       | repo health 2 |
+| Hosted Postgres, Sentry signup, alerting destination                                               | roadmap 6     |
+| Email provider signup and sending-domain DNS                                                       | roadmap 8     |
 
 ### What needs a person, either of you
 
-| Item | Source |
-|---|---|
-| **The human test pass** — the gate on phase 5 | both |
-| Merging Dependabot PRs | repo health 8 |
-| Confirming a real email renders | roadmap 8 |
+| Item                                          | Source        |
+| --------------------------------------------- | ------------- |
+| **The human test pass** — the gate on phase 5 | both          |
+| Merging Dependabot PRs                        | repo health 8 |
+| Confirming a real email renders               | roadmap 8     |
 ```
 
 - [ ] **Step 4: Add the convention line**
@@ -649,9 +657,11 @@ Claude-Session: https://claude.ai/code/session_01SWxR2wGjtW5sV7xvW2SE2s"
 The four content tasks each verified themselves in isolation. This one checks they agree with each other and with the repo.
 
 **Files:**
+
 - Modify: any of the four documents, only if this pass finds a contradiction
 
 **Interfaces:**
+
 - Consumes: everything.
 
 - [ ] **Step 1: Confirm the line-count reductions**

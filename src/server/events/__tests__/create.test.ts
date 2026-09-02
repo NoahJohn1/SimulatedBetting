@@ -59,7 +59,9 @@ describe('createCustomEvent', () => {
 
     const marketRows = await db.select().from(markets).where(eq(markets.eventId, result.eventId));
     expect(marketRows).toHaveLength(2);
-    expect(marketRows.every((m) => m.type === 'CUSTOM_OUTCOME' && m.sourceBook === null)).toBe(true);
+    expect(marketRows.every((m) => m.type === 'CUSTOM_OUTCOME' && m.sourceBook === null)).toBe(
+      true,
+    );
 
     const first = marketRows.find((m) => m.title === 'Who wins the cup?')!;
     const outcomes = await db
@@ -164,9 +166,7 @@ describe('createCustomEvent', () => {
   });
 
   it('rejects a membership that does not exist', async () => {
-    const result = await createCustomEvent(
-      validInput('00000000-0000-4000-8000-000000000000'),
-    );
+    const result = await createCustomEvent(validInput('00000000-0000-4000-8000-000000000000'));
     expect(result).toEqual({ ok: false, error: { code: 'NOT_A_MEMBER' } });
   });
 });

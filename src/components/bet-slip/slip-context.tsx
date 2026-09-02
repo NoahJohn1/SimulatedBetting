@@ -1,6 +1,13 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import type { Currency } from '@/db/schema';
 
 export interface SlipLeg {

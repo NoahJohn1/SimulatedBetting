@@ -209,10 +209,7 @@ describe('authorizeMember', () => {
 
   it('surfaces the admin role, so admin routes can check it server-side', async () => {
     const user = await upsertOAuthUser(GOOGLE_ACCOUNT);
-    await db
-      .update(users)
-      .set({ status: 'APPROVED', role: 'ADMIN' })
-      .where(eq(users.id, user.id));
+    await db.update(users).set({ status: 'APPROVED', role: 'ADMIN' }).where(eq(users.id, user.id));
     const season = await activeSeason();
     await joinSeason(user.id, season.id);
 

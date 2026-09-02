@@ -68,25 +68,28 @@ describe('voiding a game', () => {
     seeded = await seedBettableGame();
   });
 
-  it.each(['POSTPONED', 'CANCELED'] as const)('refunds a single in full when %s', async (status) => {
-    const { membership, user } = await makeMembership(1_000_000n);
-    const betId = await place(single(user.id, seeded.moneyline.home));
-    expect(await balanceOf(membership.id)).toBe(990_000n);
+  it.each(['POSTPONED', 'CANCELED'] as const)(
+    'refunds a single in full when %s',
+    async (status) => {
+      const { membership, user } = await makeMembership(1_000_000n);
+      const betId = await place(single(user.id, seeded.moneyline.home));
+      expect(await balanceOf(membership.id)).toBe(990_000n);
 
-    await setStatus(seeded.game.id, status);
-    const summary = await settleGame(seeded.game.id);
+      await setStatus(seeded.game.id, status);
+      const summary = await settleGame(seeded.game.id);
 
-    expect(summary.centsPaid).toBe(10_000n);
-    expect((await betRow(betId)).status).toBe('VOIDED');
+      expect(summary.centsPaid).toBe(10_000n);
+      expect((await betRow(betId)).status).toBe('VOIDED');
 
-    const [leg] = await db.select().from(betLegs).where(eq(betLegs.betId, betId));
-    expect(leg.status).toBe('VOIDED');
+      const [leg] = await db.select().from(betLegs).where(eq(betLegs.betId, betId));
+      expect(leg.status).toBe('VOIDED');
 
-    const voided = (await entriesFor(betId)).filter((e) => e.type === 'BET_VOIDED');
-    expect(voided).toHaveLength(1);
-    expect(voided[0].amountCents).toBe(10_000n);
-    expect(await balanceOf(membership.id)).toBe(1_000_000n);
-  });
+      const voided = (await entriesFor(betId)).filter((e) => e.type === 'BET_VOIDED');
+      expect(voided).toHaveLength(1);
+      expect(voided[0].amountCents).toBe(10_000n);
+      expect(await balanceOf(membership.id)).toBe(1_000_000n);
+    },
+  );
 
   it('drops a voided leg and pays the parlay at the reduced odds', async () => {
     const { user } = await makeMembership(1_000_000n);

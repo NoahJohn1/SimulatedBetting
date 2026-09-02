@@ -16,11 +16,11 @@ run the test suite, because there is no Docker daemon there (`/var/run/docker.so
 exist), so Postgres cannot start. Measured 2026-08-20: `npm test` fails immediately with
 `DATABASE_URL is not set` rather than hanging.
 
-| Lane | Who | Tasks | Finishable where they run? |
-|---|---|---|---|
-| **H** | You, in a browser | [H1](#lane-h--do-these-first-browser-only), H2, H3 | Yes — nothing is waiting on your laptop |
-| **C** | Claude, cloud session | [Task 3](#task-3--lane-c--decision-log-skill), [Task 4](#task-4--lane-c--money-invariants-skill), [Task 5](#task-5--lane-c--bug-issue-template) | **Yes, completely.** Markdown and YAML only |
-| **L** | Claude, needs Docker to close | [Task 1](#task-1--lane-l--guard-test-for-the-ledger-funnel), [Task 2](#task-2--lane-l--sessionstart-hook), [Task 6](#task-6--lane-l--ci-gaps-and-node-pinning), [Task 7](#task-7--lane-l--documentation--run-last-alone) | Files yes, verification no |
+| Lane  | Who                           | Tasks                                                                                                                                                                                                                    | Finishable where they run?                  |
+| ----- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
+| **H** | You, in a browser             | [H1](#lane-h--do-these-first-browser-only), H2, H3                                                                                                                                                                       | Yes — nothing is waiting on your laptop     |
+| **C** | Claude, cloud session         | [Task 3](#task-3--lane-c--decision-log-skill), [Task 4](#task-4--lane-c--money-invariants-skill), [Task 5](#task-5--lane-c--bug-issue-template)                                                                          | **Yes, completely.** Markdown and YAML only |
+| **L** | Claude, needs Docker to close | [Task 1](#task-1--lane-l--guard-test-for-the-ledger-funnel), [Task 2](#task-2--lane-l--sessionstart-hook), [Task 6](#task-6--lane-l--ci-gaps-and-node-pinning), [Task 7](#task-7--lane-l--documentation--run-last-alone) | Files yes, verification no                  |
 
 **What still works in a cloud session:** `npm run typecheck` (exit 0), `npm run lint` (exit 0,
 3 warnings), `npm run build` (10.7s — needs `DATABASE_URL` set but not reachable), and any test
@@ -32,7 +32,7 @@ it passes in 324ms with no database.
 report the gate as passing — they are not the gate. CI runs the full suite on the pull request
 and will catch what the cloud could not.
 
-One task is *better* tested in the cloud: Task 2's hook must survive `docker` resolving while the
+One task is _better_ tested in the cloud: Task 2's hook must survive `docker` resolving while the
 daemon is dead, which is exactly the cloud's state and is awkward to reproduce on a laptop with
 Docker running.
 
@@ -63,13 +63,13 @@ while the other is asleep, and the realistic outcome is that you disable the who
 
 Issues → Labels → New label.
 
-| Label | Color | Meaning |
-|---|---|---|
-| `bug` | `#d73a4a` (exists by default) | Something behaved wrong |
-| `money` | `#b60205` | Balances, payouts, escrow — drop-everything tier |
-| `ui` | `#a2eeef` | Layout, polish, copy |
-| `from-test-pass` | `#fbca04` | Found during the human test pass |
-| `phase-5` … `phase-9` | `#0e8a16` | One per roadmap phase |
+| Label                 | Color                         | Meaning                                          |
+| --------------------- | ----------------------------- | ------------------------------------------------ |
+| `bug`                 | `#d73a4a` (exists by default) | Something behaved wrong                          |
+| `money`               | `#b60205`                     | Balances, payouts, escrow — drop-everything tier |
+| `ui`                  | `#a2eeef`                     | Layout, polish, copy                             |
+| `from-test-pass`      | `#fbca04`                     | Found during the human test pass                 |
+| `phase-5` … `phase-9` | `#0e8a16`                     | One per roadmap phase                            |
 
 `bug` and `from-test-pass` must exist before Task 5's template can apply them automatically.
 
@@ -112,15 +112,15 @@ Expected: typecheck clean, 0 lint errors, 547 tests passing, `Compiled successfu
 Lane C's three tasks and Lane L's four touch no file in common, so all seven may be dispatched
 simultaneously. Within a lane they are equally independent:
 
-| Task | Owns these paths exclusively |
-|---|---|
-| 1 | `src/server/money/__tests__/ledger-funnel.test.ts` |
-| 2 | `.claude/settings.json`, `.claude/hooks/session-start.sh` |
-| 3 | `.claude/skills/decision-log/SKILL.md` |
-| 4 | `.claude/skills/money-invariants/SKILL.md` |
-| 5 | `.github/ISSUE_TEMPLATE/bug.yml`, `.github/ISSUE_TEMPLATE/config.yml` |
-| 6 | `.github/workflows/ci.yml`, `.github/dependabot.yml`, `.nvmrc`, `package.json` |
-| 7 | `docs/repo-health.md`, `docs/README.md`, `README.md` — **run last** |
+| Task | Owns these paths exclusively                                                   |
+| ---- | ------------------------------------------------------------------------------ |
+| 1    | `src/server/money/__tests__/ledger-funnel.test.ts`                             |
+| 2    | `.claude/settings.json`, `.claude/hooks/session-start.sh`                      |
+| 3    | `.claude/skills/decision-log/SKILL.md`                                         |
+| 4    | `.claude/skills/money-invariants/SKILL.md`                                     |
+| 5    | `.github/ISSUE_TEMPLATE/bug.yml`, `.github/ISSUE_TEMPLATE/config.yml`          |
+| 6    | `.github/workflows/ci.yml`, `.github/dependabot.yml`, `.nvmrc`, `package.json` |
+| 7    | `docs/repo-health.md`, `docs/README.md`, `README.md` — **run last**            |
 
 **If dispatching parallel subagents, give each one its own git worktree.** They share one git index otherwise, and six agents committing into one index will collide even though their files do not. The `superpowers:using-git-worktrees` skill sets this up. If running tasks sequentially in one checkout, no worktree is needed.
 
@@ -139,9 +139,11 @@ Markdown and YAML only. No database, no build, nothing deferred.
 Fifty decisions and growing. The format is fiddly, the anchor slugs are easy to get wrong by hand, and the supersede-don't-edit rule is the kind of thing that gets forgotten exactly when it matters.
 
 **Files:**
+
 - Create: `.claude/skills/decision-log/SKILL.md`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: nothing other tasks rely on.
 
@@ -149,7 +151,7 @@ Fifty decisions and growing. The format is fiddly, the anchor slugs are easy to 
 
 Create `.claude/skills/decision-log/SKILL.md`:
 
-```markdown
+````markdown
 ---
 name: decision-log
 description: Record a design decision in docs/decisions.md using this project's D-number convention, or supersede an earlier one. Use when a design choice has just been made and should be written down, when a previous decision turns out to be wrong, or when cross-linking a decision from another document. Covers the entry format, the next-number lookup, and GitHub's anchor slug rules.
@@ -165,6 +167,7 @@ by anchor from the roadmap, the specs, and the READMEs.
 ```bash
 grep -n '^### D' docs/decisions.md | tail -1
 ```
+````
 
 The next entry is that number plus one. Never reuse a number, and never renumber.
 
@@ -177,14 +180,14 @@ Append to the end of the file, after a `---` separator:
 
 ### D<n> — <Title in sentence case>
 
-*Added <YYYY-MM-DD> during the <what> session.*
+_Added <YYYY-MM-DD> during the <what> session._
 
 <One or two paragraphs: what was decided, stated as a fact about the system rather than as a
 proposal. Say what it means in practice.>
 
-*Rejected:* <the alternative>. <Why it lost — the specific cost, not a general preference.>
+_Rejected:_ <the alternative>. <Why it lost — the specific cost, not a general preference.>
 
-*Rejected:* <another alternative, if there was one>. <Why.>
+_Rejected:_ <another alternative, if there was one>. <Why.>
 ```
 
 Every entry needs at least one `*Rejected:*` paragraph. A decision with no rejected alternative
@@ -220,13 +223,14 @@ grep -c '^### D' docs/decisions.md
 
 The count should have gone up by exactly the number of entries you added. Then check that every
 anchor you wrote resolves — a broken decision link is invisible until someone follows it.
-```
+
+````
 
 - [ ] **Step 2: Verify the frontmatter parses**
 
 ```bash
 head -5 .claude/skills/decision-log/SKILL.md
-```
+````
 
 Expected: a `---` line, `name: decision-log`, a `description:` on one line, then `---`. The
 description must be a single line; a wrapped one breaks the frontmatter.
@@ -255,9 +259,11 @@ Layer 3 of the money defense. Deliberately a skill rather than a subagent — `/
 specific knowledge.
 
 **Files:**
+
 - Create: `.claude/skills/money-invariants/SKILL.md`
 
 **Interfaces:**
+
 - Consumes: references `src/server/money/__tests__/ledger-funnel.test.ts` from Task 1 by path. Write the reference even if Task 1 has not landed yet — they are being done together.
 - Produces: nothing other tasks rely on.
 
@@ -298,7 +304,7 @@ payment — but only if the key is genuinely deterministic. Ask:
   array index, or iteration order all silently defeat it.
 - Is it derived from the identity of the event (bet id, wager id, week number) rather than from
   when the code happened to run?
-- Can two *different* events collide on it? A correction must not reuse the original's key —
+- Can two _different_ events collide on it? A correction must not reuse the original's key —
   see the comments in `src/db/schema/betting.ts` and `src/db/schema/p2p.ts`.
 
 **3. The balance cache is written in the same transaction as its entry.** `balance_cents` is a
@@ -361,12 +367,14 @@ spends its attention on the judgment half instead."
 The human test pass will produce more findings than a conversation can hold, and it starts soon. This is the one template worth having.
 
 **Files:**
+
 - Create: `.github/ISSUE_TEMPLATE/bug.yml`
 - Create: `.github/ISSUE_TEMPLATE/config.yml`
 
 **Interfaces:**
+
 - Consumes: nothing.
-- Produces: nothing other tasks rely on. It *depends* on the `bug` and `from-test-pass` labels from [H2](#h2--create-the-labels) already existing — the template applies them automatically, and silently applies nothing if they do not.
+- Produces: nothing other tasks rely on. It _depends_ on the `bug` and `from-test-pass` labels from [H2](#h2--create-the-labels) already existing — the template applies them automatically, and silently applies nothing if they do not.
 
 - [ ] **Step 1: Write the template**
 
@@ -477,9 +485,11 @@ Locks in a property that holds today: every ledger write goes through `postEntry
 This is a characterization test, so the usual red step is inverted: the test passes the moment it is written. Step 2 creates a deliberate violation to prove the test can actually fail, then removes it. **Do not skip step 2** — a guard test that cannot fail is worse than none, because it looks like coverage.
 
 **Files:**
+
 - Create: `src/server/money/__tests__/ledger-funnel.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing from other tasks.
 - Produces: nothing other tasks rely on. Task 4's skill references this file by path.
 
@@ -535,7 +545,10 @@ describe('ledger funnel', () => {
     const isTest = (path: string) => path.split(sep).includes('__tests__');
 
     expect(
-      offenders(/\.insert\(\s*ledgerEntries\s*\)/, (path) => path === LEDGER_MODULE || isTest(path)),
+      offenders(
+        /\.insert\(\s*ledgerEntries\s*\)/,
+        (path) => path === LEDGER_MODULE || isTest(path),
+      ),
     ).toEqual([]);
   });
 
@@ -606,10 +619,12 @@ A Claude Code web session starts with no `node_modules` and no Postgres, so it c
 The hook must never fail the session. Every path exits 0; problems are reported on stderr as instructions.
 
 **Files:**
+
 - Create: `.claude/settings.json`
 - Create: `.claude/hooks/session-start.sh`
 
 **Interfaces:**
+
 - Consumes: nothing from other tasks.
 - Produces: a `.env.test` at runtime (gitignored, never committed). Task 7 documents it in the README.
 
@@ -754,12 +769,14 @@ bundler-level resolution failures that TypeScript's module resolution can miss. 
 it to catch much.
 
 **Files:**
+
 - Modify: `.github/workflows/ci.yml`
 - Create: `.github/dependabot.yml`
 - Create: `.nvmrc`
 - Modify: `package.json` (add an `engines` field only)
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: nothing other tasks rely on.
 
@@ -907,10 +924,12 @@ grouped Dependabot updates."
 The only task that touches documentation. Runs after every other coding task, so it can describe what actually landed.
 
 **Files:**
+
 - Modify: `docs/repo-health.md`
 - Modify: `README.md`
 
 **Interfaces:**
+
 - Consumes: the outcome of every earlier task.
 - Produces: nothing.
 
@@ -919,7 +938,7 @@ The only task that touches documentation. Runs after every other coding task, so
 In `README.md`, in the **Testing** section, immediately before the `npm run verify` code block,
 insert:
 
-```markdown
+````markdown
 Tests load `.env.test` (see `src/test/setup.ts`), which is gitignored and separate from
 `.env.local`. Create it once:
 
@@ -929,9 +948,11 @@ DATABASE_URL=postgres://simbet:simbet@localhost:5433/simbet_test
 TEST_DATABASE_URL=postgres://simbet:simbet@localhost:5433/simbet_test
 ENV
 ```
+````
 
 A Claude Code session writes this for you — see `.claude/hooks/session-start.sh`.
-```
+
+````
 
 - [ ] **Step 2: Mark landed items in the repo health doc**
 
@@ -961,7 +982,7 @@ for f,base in [('docs/repo-health.md','docs'),('docs/README.md','docs'),('README
         if anc and p.endswith('.md') and anc not in anchors(p): bad.append(f'{f}: bad anchor {link}')
 print('\n'.join(bad) if bad else 'LINKS OK')
 PY
-```
+````
 
 Expected: `LINKS OK`
 

@@ -130,7 +130,10 @@ export async function settleGame(gameId: string): Promise<SettleGameSummary> {
           statuses: legs.map((leg) => leg.status as LegStatus),
           prices: legs.map((leg) => leg.priceAtPlacement),
           snapshots: legs.map((leg) =>
-            buildLegSnapshot(leg, { line: leg.lineAtPlacement, priceAmerican: leg.priceAtPlacement }),
+            buildLegSnapshot(leg, {
+              line: leg.lineAtPlacement,
+              priceAmerican: leg.priceAtPlacement,
+            }),
           ),
         };
       },
@@ -175,9 +178,7 @@ const DEFAULT_BUDGET_MS = 45_000;
  * in `errors` while everyone else still gets paid. The budget is checked before starting a
  * game, never during one — a settlement is never abandoned half-written.
  */
-export async function settleFinalGames(
-  options: SettleRunOptions = {},
-): Promise<SettleRunSummary> {
+export async function settleFinalGames(options: SettleRunOptions = {}): Promise<SettleRunSummary> {
   const maxGames = options.maxGames ?? DEFAULT_MAX_GAMES;
   const budgetMs = options.budgetMs ?? DEFAULT_BUDGET_MS;
   const now = options.now ?? (() => Date.now());
@@ -194,10 +195,7 @@ export async function settleFinalGames(
     .innerJoin(selections, eq(selections.marketId, markets.id))
     .innerJoin(betLegs, eq(betLegs.selectionId, selections.id))
     .where(
-      and(
-        eq(betLegs.status, 'PENDING'),
-        inArray(games.status, ['FINAL', 'POSTPONED', 'CANCELED']),
-      ),
+      and(eq(betLegs.status, 'PENDING'), inArray(games.status, ['FINAL', 'POSTPONED', 'CANCELED'])),
     )
     .orderBy(asc(games.startsAt));
 

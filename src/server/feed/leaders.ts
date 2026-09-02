@@ -33,9 +33,7 @@ export async function detectLeadChange(seasonId: string): Promise<{ emitted: boo
   const priorEvents = await db
     .select({ payload: feedEvents.payload, subjectMembershipId: feedEvents.subjectMembershipId })
     .from(feedEvents)
-    .where(
-      and(eq(feedEvents.seasonId, seasonId), eq(feedEvents.type, 'MILESTONE_LEAD_CHANGE')),
-    )
+    .where(and(eq(feedEvents.seasonId, seasonId), eq(feedEvents.type, 'MILESTONE_LEAD_CHANGE')))
     // occurredAt is business time and can collide (this function's own emit defaults it to
     // `new Date()` at write time, so two calls landing in the same millisecond are a real
     // possibility). createdAt is a real defaultNow() timestamp recording actual write order,

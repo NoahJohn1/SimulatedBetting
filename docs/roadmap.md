@@ -13,21 +13,21 @@ account only Noah holds — GitHub settings, the Vercel dashboard, DNS, paid sig
 **What this table records is what is in the repository**, not what is on somebody's laptop.
 Where a status cannot be verified from the repo, it says so and dates the observation.
 
-| # | Item | Status | Who finishes what's left | Reference |
-|---|---|---|---|---|
-| 1 | Core betting engine | ✅ Complete | — | [spec](specs/2026-08-14-core-betting-engine-design.md) |
-| 2 | Social layer | ✅ Complete | — | [spec](specs/2026-08-17-social-layer-design.md) · [plan](archive/plans/2026-08-17-social-layer-implementation-plan.md) |
-| 3 | Custom events | ✅ Complete | — | [spec](specs/2026-08-17-custom-events-design.md) · [plan](archive/plans/2026-08-17-custom-events-implementation-plan.md) |
-| 4 | Peer-to-peer bets | ✅ Complete | — | [spec](specs/2026-08-19-peer-to-peer-bets-design.md) · [plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md) |
-| — | **Human test pass** — the gate on phase 5 | 🔲 Backlog | **[MANUAL]** | — |
-| 5 | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — Noah, local only | [CLOUD] [NOAH] | spec pending |
-| 6 | [Production deployment](#6--production-deployment) | 🔄 Partial — deployed, unmonitored | **[NOAH]** mostly | — |
-| 7a | UI foundations | ✅ Complete | — | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md) |
-| 7b | Design system | ✅ Complete | — | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md) |
-| 7c | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild) | 🔲 Backlog | [CLOUD] | — |
-| 7d | [Craft](#7d--craft) | 🔲 Backlog | [CLOUD] | — |
-| 8 | [Email notifications](#8--email-notifications) | 🔲 Backlog | [CLOUD] [NOAH] | — |
-| 9 | [Hardening](#9--hardening) | 🔲 Backlog | [CLOUD] [LOCAL] [MANUAL] | — |
+| #   | Item                                                          | Status                             | Who finishes what's left | Reference                                                                                                                                                  |
+| --- | ------------------------------------------------------------- | ---------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Core betting engine                                           | ✅ Complete                        | —                        | [spec](specs/2026-08-14-core-betting-engine-design.md)                                                                                                     |
+| 2   | Social layer                                                  | ✅ Complete                        | —                        | [spec](specs/2026-08-17-social-layer-design.md) · [plan](archive/plans/2026-08-17-social-layer-implementation-plan.md)                                     |
+| 3   | Custom events                                                 | ✅ Complete                        | —                        | [spec](specs/2026-08-17-custom-events-design.md) · [plan](archive/plans/2026-08-17-custom-events-implementation-plan.md)                                   |
+| 4   | Peer-to-peer bets                                             | ✅ Complete                        | —                        | [spec](specs/2026-08-19-peer-to-peer-bets-design.md) · [plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md)                           |
+| —   | **Human test pass** — the gate on phase 5                     | 🔲 Backlog                         | **[MANUAL]**             | —                                                                                                                                                          |
+| 5   | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — Noah, local only  | [CLOUD] [NOAH]           | spec pending                                                                                                                                               |
+| 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — deployed, unmonitored | **[NOAH]** mostly        | —                                                                                                                                                          |
+| 7a  | UI foundations                                                | ✅ Complete                        | —                        | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md)      |
+| 7b  | Design system                                                 | ✅ Complete                        | —                        | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md) |
+| 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | 🔲 Backlog                         | [CLOUD]                  | —                                                                                                                                                          |
+| 7d  | [Craft](#7d--craft)                                           | 🔲 Backlog                         | [CLOUD]                  | —                                                                                                                                                          |
+| 8   | [Email notifications](#8--email-notifications)                | 🔲 Backlog                         | [CLOUD] [NOAH]           | —                                                                                                                                                          |
+| 9   | [Hardening](#9--hardening)                                    | 🔲 Backlog                         | [CLOUD] [LOCAL] [MANUAL] | —                                                                                                                                                          |
 
 All four subsystems pass `npm run verify` and have been exercised end to end against fixture
 data. None of it has been through a human test pass — that is the gate on phase 5, and no
@@ -45,13 +45,13 @@ The four subsystems are feature-complete and green, but the app cannot be handed
 yet. The odds board is fixtures. Nothing is deployed. Every route renders a white screen if it
 throws. Phases 5 through 9 close that gap.
 
-| # | Phase | Why it is here |
-|---|---|---|
-| 5 | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | Everything downstream is theater while the board is fixtures |
-| 6 | [Production deployment](#6--production-deployment) | Somewhere to run, and a way to know when it breaks |
-| 7 | [The UI ladder](#7--the-ui-ladder) | Graduated 7a → 7d; ship-able at every rung |
-| 8 | [Email notifications](#8--email-notifications) | An offer nobody sees expires; a dispute nobody sees stalls |
-| 9 | [Hardening](#9--hardening) | The last mile before the URL goes out |
+| #   | Phase                                                         | Why it is here                                               |
+| --- | ------------------------------------------------------------- | ------------------------------------------------------------ |
+| 5   | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | Everything downstream is theater while the board is fixtures |
+| 6   | [Production deployment](#6--production-deployment)            | Somewhere to run, and a way to know when it breaks           |
+| 7   | [The UI ladder](#7--the-ui-ladder)                            | Graduated 7a → 7d; ship-able at every rung                   |
+| 8   | [Email notifications](#8--email-notifications)                | An offer nobody sees expires; a dispute nobody sees stalls   |
+| 9   | [Hardening](#9--hardening)                                    | The last mile before the URL goes out                        |
 
 **Order matters for 5 and 6 only.** The adapter comes first because deploying a fixture
 sportsbook proves nothing, and because it is the phase most likely to surface a schema
@@ -85,7 +85,7 @@ a variable sync cadence — real work, in service of a worse feed.
 
 **The tasks.**
 
-1. **Spike the payload first.** Confirm the shape for NFL *and* CFB, on both
+1. **Spike the payload first.** Confirm the shape for NFL _and_ CFB, on both
    `site.api.espn.com/.../scoreboard` and the per-book
    `sports.core.api.espn.com/.../odds/{providerId}` endpoints. This is genuinely unverified —
    community documentation says `competitions[].odds[]` carries spread, over/under, and
@@ -107,15 +107,15 @@ a variable sync cadence — real work, in service of a worse feed.
 7. **First real slate.** An admin-run backfill that pulls a genuine week into a real season,
    plus reconciliation over it.
 
-| Task | Status | Owner |
-|---|---|---|
-| Spike the payload — NFL and CFB, both endpoints | 🔄 Noah, local | [CLOUD] |
-| `EspnScoreProvider` | 🔲 Backlog | [CLOUD] |
-| `EspnOddsProvider` | 🔲 Backlog | [CLOUD] |
-| CFB paging by week and conference group | 🔲 Backlog | [CLOUD] |
-| Defensive parsing — a reshaped field skips its market | 🔲 Backlog | [CLOUD] |
-| Kill switch env flag falling back to fixtures | 🔲 Backlog | [CLOUD] to write · **[NOAH]** to set in Vercel |
-| First real slate — admin backfill plus reconciliation | 🔲 Backlog | **[NOAH]** — runs against production |
+| Task                                                  | Status         | Owner                                          |
+| ----------------------------------------------------- | -------------- | ---------------------------------------------- |
+| Spike the payload — NFL and CFB, both endpoints       | 🔄 Noah, local | [CLOUD]                                        |
+| `EspnScoreProvider`                                   | 🔲 Backlog     | [CLOUD]                                        |
+| `EspnOddsProvider`                                    | 🔲 Backlog     | [CLOUD]                                        |
+| CFB paging by week and conference group               | 🔲 Backlog     | [CLOUD]                                        |
+| Defensive parsing — a reshaped field skips its market | 🔲 Backlog     | [CLOUD]                                        |
+| Kill switch env flag falling back to fixtures         | 🔲 Backlog     | [CLOUD] to write · **[NOAH]** to set in Vercel |
+| First real slate — admin backfill plus reconciliation | 🔲 Backlog     | **[NOAH]** — runs against production           |
 
 **The honest risk.** This is an undocumented endpoint with no SLA and no contract. It can
 change shape without notice. The mitigations are tasks 5 and 6 and the fact that this is a
@@ -153,15 +153,15 @@ private group of friends, not a business — a broken Saturday is an annoyance, 
 **Verified against the repo 2026-09-02.** The app is deployed, but the observability half —
 which this phase calls the item that earns it — is absent.
 
-| Task | Status | Owner | Evidence |
-|---|---|---|---|
-| Hosted Postgres, backups, documented restore | 🔲 Backlog | **[NOAH]** | Not verifiable from the repo |
-| Vercel wiring — env, `AUTH_URL`, OAuth redirect, migrations on deploy | 🔄 Partial | **[NOAH]** | App runs; `CRON_SECRET` presence unconfirmed |
-| `CRON_SECRET` on the real invocations | 🔲 Backlog | **[NOAH]** | Actions secrets absent — see [repo-health 1.5](repo-health.md#15-the-cron-workflow--the-only-thing-actually-broken) |
-| Error monitoring (Sentry free tier) | 🔲 Backlog | **[NOAH]** signup · [CLOUD] wiring | No monitoring dependency in `package.json` |
-| Alerting on cron failure and reconciliation drift | 🔲 Backlog | [CLOUD] code · **[NOAH]** destination | `reconcileBalances`/`reconcileEscrow` are called only from the cron route |
-| Admin health page | 🔲 Backlog | [CLOUD] | `src/app/admin` holds only `page.tsx`, `events/`, `wagers/` |
-| Admin season-creation screen | 🔲 Backlog | [CLOUD] | `createSeason` is reachable only from `seed.ts` and `bootstrap-season.ts` |
+| Task                                                                  | Status     | Owner                                 | Evidence                                                                                                            |
+| --------------------------------------------------------------------- | ---------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Hosted Postgres, backups, documented restore                          | 🔲 Backlog | **[NOAH]**                            | Not verifiable from the repo                                                                                        |
+| Vercel wiring — env, `AUTH_URL`, OAuth redirect, migrations on deploy | 🔄 Partial | **[NOAH]**                            | App runs; `CRON_SECRET` presence unconfirmed                                                                        |
+| `CRON_SECRET` on the real invocations                                 | 🔲 Backlog | **[NOAH]**                            | Actions secrets absent — see [repo-health 1.5](repo-health.md#15-the-cron-workflow--the-only-thing-actually-broken) |
+| Error monitoring (Sentry free tier)                                   | 🔲 Backlog | **[NOAH]** signup · [CLOUD] wiring    | No monitoring dependency in `package.json`                                                                          |
+| Alerting on cron failure and reconciliation drift                     | 🔲 Backlog | [CLOUD] code · **[NOAH]** destination | `reconcileBalances`/`reconcileEscrow` are called only from the cron route                                           |
+| Admin health page                                                     | 🔲 Backlog | [CLOUD]                               | `src/app/admin` holds only `page.tsx`, `events/`, `wagers/`                                                         |
+| Admin season-creation screen                                          | 🔲 Backlog | [CLOUD]                               | `createSeason` is reachable only from `seed.ts` and `bootstrap-season.ts`                                           |
 
 **Deliberately skipped.** A staging environment. For a private group, a kill switch plus fast
 rollback covers what staging would, at a fraction of the setup.
@@ -188,24 +188,24 @@ Games and the bet slip → Feed → Standings → Bets and Wagers → Events →
 Deferred here by an earlier rung. This is a backlog, not a wish list — each line has a phase
 that declined it and a reason.
 
-| Item | Deferred by | Why it landed here | Owner |
-|---|---|---|---|
-| Build `Dialog`, `Sheet`, `Table`, and `Toast` | 7b | No call sites existed; each is built in the commit that first needs one ([D53](decisions.md#d53--the-shared-component-set-is-scoped-to-call-sites-that-exist)) | [CLOUD] |
-| Normalize the type scale and spacing on existing screens | 7b | 7b's sweep was colour-only so that any visual change was provably a bug; normalizing is intentional drift and belongs with a redesign | [CLOUD] |
-| Choose a brand accent colour, if the app wants one | 7b | `--accent` makes it a two-line change; picking a hue before any screen is redesigned is a guess | [CLOUD] |
-| `generateMetadata` on detail routes, for per-entity titles | 7a | Those screens are rebuilt here anyway | [CLOUD] |
-| Odds-board density at 375px — the SPREAD/MONEY/TOTAL grid is tight | 7a (mobile audit) | Needs the screen redesigned, not restyled | [CLOUD] |
-| `datetime-local` inputs cramped two-up on `/events/new` and `/wagers/new` | 7a (mobile audit) | A layout fix | [CLOUD] |
-| `/admin/events` header runs together as "Event queueBack to admin" | 7a (mobile audit) | Page-specific markup | [CLOUD] |
-| Controls adopted into `Button` grew 6–8px taller — `Button`'s `md` size is `h-11`; the call sites had been `py-2`, `h-9`, or `h-12` | 7b (design-system audit) | The spec declared the radius change, not the height. It is a better tap target, so it is recorded rather than reverted | [CLOUD] |
-| `FormField` restyles labels from `text-sm font-medium` to `text-xs font-medium text-ink-secondary` — smaller and quieter than before | 7b (design-system audit) | Cosmetic consequence of adoption, not a bug; changing it back is a design call for the rebuild | [CLOUD] |
-| `Card` adoption gives `/me`'s ledger rows and `/standings`' rank rows a 1px `border-line` and `rounded-card` (12px), where they had a bare fill and `rounded-lg` (8px) | 7b (design-system audit) | Cosmetic consequence of adoption, not a bug | [CLOUD] |
-| "Create an event" on `/events` lost its 1px border — `Button`'s `primary` variant has none. The old border was the same colour as the fill, so the control is 2px smaller and otherwise unchanged | 7b (design-system audit) | Consequence of adoption; not reverted since it reads as unchanged | [CLOUD] |
-| No screen has a desktop layout at 1280×800 — outside `/admin*`'s `max-w-2xl`, every list runs edge to edge | 7b (design-system audit) | Existing design, not a 7b regression, but it needs the screen redesigned, not restyled | [CLOUD] |
-| The bet slip's dark-mode shadow (`shadow-slip`) is measurable but not perceptible — the shadow colour and `--surface` are both pure black in dark mode | 7b (design-system audit) | Needs a non-black shadow colour or a `--surface` that isn't pure black to read; both are Task 1 token-layer decisions, outside the audit's remit | [CLOUD] |
-| `/admin/events` and `/admin/wagers` share `/admin`'s `mx-auto` (no `w-full`) container pattern — didn't overflow with current fixture content, but carries the same latent bug | 7b (design-system audit) | Not fixed since it wasn't observed to break; worth the same `w-full` fix if content grows | [CLOUD] |
-| `Card` adoption is unfinished — 11 call sites (`bets/page.tsx`, `events/page.tsx`, `dispute-form.tsx` ×2, `market-card.tsx`, `events/[eventId]/page.tsx`, `comment-thread.tsx` ×2, `feed-card.tsx`, `game-card.tsx`, `preferences-form.tsx`) still hand-write the byte-identical `rounded-xl border border-line bg-surface-raised` that `Card` renders | 7b (final review) | Seven of the eleven are semantic elements (`<article>`/`<section>`/`<li>`), and `Card` hard-codes `<div>` with no element-type escape hatch | [CLOUD] |
-| The radius vocabulary (`rounded-card`/`rounded-control`/`rounded-pill`) is adopted at only 10 uses across `src/`, against 45 raw `rounded-xl`/`rounded-lg`/`rounded-full` | 7b (final review) | The phase's "no radii on existing markup" constraint correctly left this alone, but it isn't tracked anywhere | [CLOUD] |
+| Item                                                                                                                                                                                                                                                                                                                                                   | Deferred by              | Why it landed here                                                                                                                                             | Owner   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| Build `Dialog`, `Sheet`, `Table`, and `Toast`                                                                                                                                                                                                                                                                                                          | 7b                       | No call sites existed; each is built in the commit that first needs one ([D53](decisions.md#d53--the-shared-component-set-is-scoped-to-call-sites-that-exist)) | [CLOUD] |
+| Normalize the type scale and spacing on existing screens                                                                                                                                                                                                                                                                                               | 7b                       | 7b's sweep was colour-only so that any visual change was provably a bug; normalizing is intentional drift and belongs with a redesign                          | [CLOUD] |
+| Choose a brand accent colour, if the app wants one                                                                                                                                                                                                                                                                                                     | 7b                       | `--accent` makes it a two-line change; picking a hue before any screen is redesigned is a guess                                                                | [CLOUD] |
+| `generateMetadata` on detail routes, for per-entity titles                                                                                                                                                                                                                                                                                             | 7a                       | Those screens are rebuilt here anyway                                                                                                                          | [CLOUD] |
+| Odds-board density at 375px — the SPREAD/MONEY/TOTAL grid is tight                                                                                                                                                                                                                                                                                     | 7a (mobile audit)        | Needs the screen redesigned, not restyled                                                                                                                      | [CLOUD] |
+| `datetime-local` inputs cramped two-up on `/events/new` and `/wagers/new`                                                                                                                                                                                                                                                                              | 7a (mobile audit)        | A layout fix                                                                                                                                                   | [CLOUD] |
+| `/admin/events` header runs together as "Event queueBack to admin"                                                                                                                                                                                                                                                                                     | 7a (mobile audit)        | Page-specific markup                                                                                                                                           | [CLOUD] |
+| Controls adopted into `Button` grew 6–8px taller — `Button`'s `md` size is `h-11`; the call sites had been `py-2`, `h-9`, or `h-12`                                                                                                                                                                                                                    | 7b (design-system audit) | The spec declared the radius change, not the height. It is a better tap target, so it is recorded rather than reverted                                         | [CLOUD] |
+| `FormField` restyles labels from `text-sm font-medium` to `text-xs font-medium text-ink-secondary` — smaller and quieter than before                                                                                                                                                                                                                   | 7b (design-system audit) | Cosmetic consequence of adoption, not a bug; changing it back is a design call for the rebuild                                                                 | [CLOUD] |
+| `Card` adoption gives `/me`'s ledger rows and `/standings`' rank rows a 1px `border-line` and `rounded-card` (12px), where they had a bare fill and `rounded-lg` (8px)                                                                                                                                                                                 | 7b (design-system audit) | Cosmetic consequence of adoption, not a bug                                                                                                                    | [CLOUD] |
+| "Create an event" on `/events` lost its 1px border — `Button`'s `primary` variant has none. The old border was the same colour as the fill, so the control is 2px smaller and otherwise unchanged                                                                                                                                                      | 7b (design-system audit) | Consequence of adoption; not reverted since it reads as unchanged                                                                                              | [CLOUD] |
+| No screen has a desktop layout at 1280×800 — outside `/admin*`'s `max-w-2xl`, every list runs edge to edge                                                                                                                                                                                                                                             | 7b (design-system audit) | Existing design, not a 7b regression, but it needs the screen redesigned, not restyled                                                                         | [CLOUD] |
+| The bet slip's dark-mode shadow (`shadow-slip`) is measurable but not perceptible — the shadow colour and `--surface` are both pure black in dark mode                                                                                                                                                                                                 | 7b (design-system audit) | Needs a non-black shadow colour or a `--surface` that isn't pure black to read; both are Task 1 token-layer decisions, outside the audit's remit               | [CLOUD] |
+| `/admin/events` and `/admin/wagers` share `/admin`'s `mx-auto` (no `w-full`) container pattern — didn't overflow with current fixture content, but carries the same latent bug                                                                                                                                                                         | 7b (design-system audit) | Not fixed since it wasn't observed to break; worth the same `w-full` fix if content grows                                                                      | [CLOUD] |
+| `Card` adoption is unfinished — 11 call sites (`bets/page.tsx`, `events/page.tsx`, `dispute-form.tsx` ×2, `market-card.tsx`, `events/[eventId]/page.tsx`, `comment-thread.tsx` ×2, `feed-card.tsx`, `game-card.tsx`, `preferences-form.tsx`) still hand-write the byte-identical `rounded-xl border border-line bg-surface-raised` that `Card` renders | 7b (final review)        | Seven of the eleven are semantic elements (`<article>`/`<section>`/`<li>`), and `Card` hard-codes `<div>` with no element-type escape hatch                    | [CLOUD] |
+| The radius vocabulary (`rounded-card`/`rounded-control`/`rounded-pill`) is adopted at only 10 uses across `src/`, against 45 raw `rounded-xl`/`rounded-lg`/`rounded-full`                                                                                                                                                                              | 7b (final review)        | The phase's "no radii on existing markup" constraint correctly left this alone, but it isn't tracked anywhere                                                  | [CLOUD] |
 
 If a third screen in a row hand-rolls the same missing component, lift it immediately rather
 than at the end — see the consequence noted on
@@ -222,13 +222,13 @@ than at the end — see the consequence noted on
 
 #### What 7d inherits
 
-| Item | Deferred by | Why it landed here | Owner |
-|---|---|---|---|
-| A dark-mode toggle — the control, the cookie, and the persistence | 7b | The `[data-theme]` selectors already ship; only the control is missing, and a control is craft | [CLOUD] |
-| Focus management, keyboard paths, and SR labels on the shared components | 7b | Tokens carry contrast; behaviour is this rung's subject | [CLOUD] |
-| Revisit the component-test harness question | 7b | [D54](decisions.md#d54--a-token-lint-test-is-the-harness-7b-earns-revisiting-d51) found 7b's components too simple to earn one. `Dialog` and `Toast` are the ones that would, and they arrive in 7c | [CLOUD] |
-| Skeleton loaders replacing the neutral `LoadingScreen` | 7a | A skeleton that does not match its screen is worse than none, and the screens did not exist yet | [CLOUD] |
-| The admin section renders with no header or tab bar on mobile | 7a (mobile audit) | A structural decision about whether admin joins the app shell, not a styling one | [CLOUD] |
+| Item                                                                     | Deferred by       | Why it landed here                                                                                                                                                                                  | Owner   |
+| ------------------------------------------------------------------------ | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| A dark-mode toggle — the control, the cookie, and the persistence        | 7b                | The `[data-theme]` selectors already ship; only the control is missing, and a control is craft                                                                                                      | [CLOUD] |
+| Focus management, keyboard paths, and SR labels on the shared components | 7b                | Tokens carry contrast; behaviour is this rung's subject                                                                                                                                             | [CLOUD] |
+| Revisit the component-test harness question                              | 7b                | [D54](decisions.md#d54--a-token-lint-test-is-the-harness-7b-earns-revisiting-d51) found 7b's components too simple to earn one. `Dialog` and `Toast` are the ones that would, and they arrive in 7c | [CLOUD] |
+| Skeleton loaders replacing the neutral `LoadingScreen`                   | 7a                | A skeleton that does not match its screen is worse than none, and the screens did not exist yet                                                                                                     | [CLOUD] |
+| The admin section renders with no header or tab bar on mobile            | 7a (mobile audit) | A structural decision about whether admin joins the app shell, not a styling one                                                                                                                    | [CLOUD] |
 
 ---
 
@@ -245,14 +245,14 @@ a nicety; those three are the feature not working.
 
 **What sends.**
 
-| Event | Urgency |
-|---|---|
-| A wager was offered to you | Immediate |
-| Your offer expires soon | Immediate |
+| Event                               | Urgency   |
+| ----------------------------------- | --------- |
+| A wager was offered to you          | Immediate |
+| Your offer expires soon             | Immediate |
 | A dispute needs your ruling (admin) | Immediate |
-| Your account was approved | Immediate |
-| Your bets settled | Digest |
-| The weekly allowance landed | Digest |
+| Your account was approved           | Immediate |
+| Your bets settled                   | Digest    |
+| The weekly allowance landed         | Digest    |
 
 **The design constraint that matters.** Sends have to be idempotency-keyed exactly the way
 `feed_events` are ([D34](decisions.md#d34--currency-is-a-dimension-on-the-existing-ledger-not-a-second-ledger)
@@ -266,15 +266,15 @@ table extending the pattern [`/me/feed-preferences`](<../src/app/(app)/me/feed-p
 already established; per-type toggles plus a global off; a one-click unsubscribe link that works
 without signing in; and a dev mode that logs instead of sending.
 
-| Task | Status | Owner |
-|---|---|---|
-| Transactional email provider on a free tier | 🔲 Backlog | **[NOAH]** — signup, API key, DNS for the sending domain |
-| `notification_preferences` table and migration | 🔲 Backlog | [CLOUD] |
-| Per-type toggles plus a global off | 🔲 Backlog | [CLOUD] |
-| One-click unsubscribe that works without signing in | 🔲 Backlog | [CLOUD] |
-| Dev mode that logs instead of sending | 🔲 Backlog | [CLOUD] |
-| Idempotency-keyed sends from the `feed_events` emit points | 🔲 Backlog | [CLOUD] |
-| Confirm a real email renders correctly in an inbox | 🔲 Backlog | **[MANUAL]** |
+| Task                                                       | Status     | Owner                                                    |
+| ---------------------------------------------------------- | ---------- | -------------------------------------------------------- |
+| Transactional email provider on a free tier                | 🔲 Backlog | **[NOAH]** — signup, API key, DNS for the sending domain |
+| `notification_preferences` table and migration             | 🔲 Backlog | [CLOUD]                                                  |
+| Per-type toggles plus a global off                         | 🔲 Backlog | [CLOUD]                                                  |
+| One-click unsubscribe that works without signing in        | 🔲 Backlog | [CLOUD]                                                  |
+| Dev mode that logs instead of sending                      | 🔲 Backlog | [CLOUD]                                                  |
+| Idempotency-keyed sends from the `feed_events` emit points | 🔲 Backlog | [CLOUD]                                                  |
+| Confirm a real email renders correctly in an inbox         | 🔲 Backlog | **[MANUAL]**                                             |
 
 ---
 
@@ -297,13 +297,13 @@ smoke test is checking that error states exist, and they do.
   ([`/pending`](../src/app/pending/page.tsx), [`/join`](../src/app/join/page.tsx),
   [`/no-season`](../src/app/no-season/page.tsx)) and have never been looked at as a sequence.
 
-| Task | Status | Owner |
-|---|---|---|
-| A written smoke checklist | 🔲 Backlog | [CLOUD] to draft · **[MANUAL]** to validate — it is derived from the test pass |
-| Rate limiting on mutations | 🔲 Backlog | [CLOUD] |
-| Load sanity — a full CFB Saturday and a season of feed events | 🔲 Backlog | **[LOCAL]** — needs real row counts, so it needs a database |
-| A house rules page | 🔲 Backlog | [CLOUD] |
-| The new-member path — `/pending`, `/join`, `/no-season` as a sequence | 🔲 Backlog | [CLOUD] |
+| Task                                                                  | Status     | Owner                                                                          |
+| --------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------ |
+| A written smoke checklist                                             | 🔲 Backlog | [CLOUD] to draft · **[MANUAL]** to validate — it is derived from the test pass |
+| Rate limiting on mutations                                            | 🔲 Backlog | [CLOUD]                                                                        |
+| Load sanity — a full CFB Saturday and a season of feed events         | 🔲 Backlog | **[LOCAL]** — needs real row counts, so it needs a database                    |
+| A house rules page                                                    | 🔲 Backlog | [CLOUD]                                                                        |
+| The new-member path — `/pending`, `/join`, `/no-season` as a sequence | 🔲 Backlog | [CLOUD]                                                                        |
 
 ---
 

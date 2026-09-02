@@ -84,7 +84,9 @@ describe('custom events schema', () => {
       .values({ eventId: event.id, type: 'CUSTOM_OUTCOME', title: 'Who wins?' })
       .returning();
 
-    await db.insert(selections).values({ marketId: market.id, label: 'Falcons', priceAmerican: -150 });
+    await db
+      .insert(selections)
+      .values({ marketId: market.id, label: 'Falcons', priceAmerican: -150 });
 
     await expect(
       db.insert(selections).values({ marketId: market.id, label: 'Falcons', priceAmerican: 100 }),

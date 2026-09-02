@@ -129,7 +129,9 @@ export default async function CustomEventPage({ params }: PageProps<'/events/[ev
             ET
             {detail.resolution.attempt > 1 ? ` · correction #${detail.resolution.attempt - 1}` : ''}
           </p>
-          {detail.resolution.note ? <p className="text-ink-secondary">“{detail.resolution.note}”</p> : null}
+          {detail.resolution.note ? (
+            <p className="text-ink-secondary">“{detail.resolution.note}”</p>
+          ) : null}
         </section>
       ) : null}
 

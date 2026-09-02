@@ -216,7 +216,9 @@ export function MarketCard(props: MarketCardProps) {
                     <span
                       key={`${position.holder}-${i}`}
                       className={`text-xs ${
-                        position.holder === 'creator' ? 'text-caution-on-surface' : 'text-ink-secondary'
+                        position.holder === 'creator'
+                          ? 'text-caution-on-surface'
+                          : 'text-ink-secondary'
                       }`}
                     >
                       {position.holder === 'creator' ? 'creator' : 'you'} ·{' '}

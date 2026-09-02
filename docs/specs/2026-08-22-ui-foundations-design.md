@@ -59,7 +59,7 @@ are untouched completely.
 9. `docs/mobile-audit.md` records every screen viewed at 375×812, with each finding assigned to
    the ladder rung that owns its fix.
 10. `npm run verify` passes, including new tests that fail if a boundary is deleted or a form
-   loses its pending state.
+    loses its pending state.
 
 ## Non-goals
 
@@ -68,7 +68,7 @@ are untouched completely.
 - **Fixing what the mobile audit finds, with one exception.** The audit produces a document.
   Its findings are 7b/7c/7d work by construction — an inline Tailwind screen that reads badly
   at 375px is going to be rebuilt anyway, and fixing it twice is waste. The exception is the
-  narrow class of finding that makes a screen *unusable* rather than ugly, which 7a fixes for
+  narrow class of finding that makes a screen _unusable_ rather than ugly, which 7a fixes for
   the same reason it fixes white screens; see [the mobile audit](#the-mobile-audit).
 - **Skeleton loaders.** 7d owns "skeleton loaders in place of spinners" explicitly. 7a's
   loading UI is a neutral placeholder that reserves vertical space; it is deliberately not a
@@ -116,19 +116,19 @@ The alternative — a file in every segment — was rejected. It produces twelve
 identical files nobody will ever see, and it is uniform for the sake of being easy to assert
 rather than because a navigation crosses those boundaries.
 
-| File | Catches |
-|---|---|
-| `src/app/(app)/error.tsx` | any throw in a member page, rendered inside the shell |
-| `src/app/(app)/not-found.tsx` | the four `notFound()` calls, rendered inside the shell |
-| `src/app/admin/error.tsx` | any throw in an admin page |
-| `src/app/(app)/games/loading.tsx` | `/games` |
-| `src/app/(app)/events/loading.tsx` | `/events`, `/events/new`, `/events/[eventId]`, `…/resolve` |
-| `src/app/(app)/feed/loading.tsx` | `/feed`, `/feed/[eventId]` |
-| `src/app/(app)/bets/loading.tsx` | `/bets` |
-| `src/app/(app)/wagers/loading.tsx` | `/wagers`, `/wagers/new`, `/wagers/[wagerId]` |
-| `src/app/(app)/standings/loading.tsx` | `/standings` |
-| `src/app/(app)/me/loading.tsx` | `/me`, `/me/feed-preferences` |
-| `src/app/admin/loading.tsx` | `/admin`, `/admin/events`, `/admin/wagers` |
+| File                                  | Catches                                                    |
+| ------------------------------------- | ---------------------------------------------------------- |
+| `src/app/(app)/error.tsx`             | any throw in a member page, rendered inside the shell      |
+| `src/app/(app)/not-found.tsx`         | the four `notFound()` calls, rendered inside the shell     |
+| `src/app/admin/error.tsx`             | any throw in an admin page                                 |
+| `src/app/(app)/games/loading.tsx`     | `/games`                                                   |
+| `src/app/(app)/events/loading.tsx`    | `/events`, `/events/new`, `/events/[eventId]`, `…/resolve` |
+| `src/app/(app)/feed/loading.tsx`      | `/feed`, `/feed/[eventId]`                                 |
+| `src/app/(app)/bets/loading.tsx`      | `/bets`                                                    |
+| `src/app/(app)/wagers/loading.tsx`    | `/wagers`, `/wagers/new`, `/wagers/[wagerId]`              |
+| `src/app/(app)/standings/loading.tsx` | `/standings`                                               |
+| `src/app/(app)/me/loading.tsx`        | `/me`, `/me/feed-preferences`                              |
+| `src/app/admin/loading.tsx`           | `/admin`, `/admin/events`, `/admin/wagers`                 |
 
 `/members/[membershipId]` sits directly under `(app)` with no feature segment of its own; it
 inherits `(app)`'s error and not-found boundaries and gets no loading state. Adding
@@ -159,7 +159,7 @@ no-season/join redirects keep working exactly as they do now. Nothing in this ph
 to special-case them.
 
 **A throw in `(app)/layout.tsx` still hits the root boundary.** An error boundary renders
-*inside* the layout of its own segment, so `(app)/error.tsx` cannot catch a failure of the very
+_inside_ the layout of its own segment, so `(app)/error.tsx` cannot catch a failure of the very
 layout that would have to render it — the credits-balance query at
 [`(app)/layout.tsx:21`](<../../src/app/(app)/layout.tsx>), for instance. That case correctly
 falls through to the existing root [`error.tsx`](../../src/app/error.tsx). This is why the root
@@ -288,7 +288,7 @@ Findings are classified as they are recorded:
 - **7c** — anything that needs the screen rebuilt: layout that does not reflow, a table that
   overflows
 - **7d** — density and craft: the CFB Saturday board, focus states, motion
-- **7a** — the rare case where something is *broken*, not ugly: content trapped under the fixed
+- **7a** — the rare case where something is _broken_, not ugly: content trapped under the fixed
   tab bar, a horizontal scroll on the body, a form control that cannot be reached. These are in
   scope, because they are the same class of problem as a white screen.
 

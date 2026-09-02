@@ -75,5 +75,8 @@ export function settledPayoutCents(stakeCents: bigint, legs: SettledLeg[]): bigi
   if (outcome === 'PUSHED') return stakeCents;
 
   const surviving = legs.filter((leg) => leg.status === 'WON');
-  return payoutCents(stakeCents, combine(surviving.map((leg) => americanToRational(leg.priceAmerican))));
+  return payoutCents(
+    stakeCents,
+    combine(surviving.map((leg) => americanToRational(leg.priceAmerican))),
+  );
 }

@@ -153,7 +153,9 @@ describe('loadWagerDetail', () => {
 
   it('returns null for a wager that does not exist', async () => {
     const a = await makeCreditedMembership(100_000n);
-    expect(await loadWagerDetail('00000000-0000-4000-8000-000000000000', a.membership.id)).toBeNull();
+    expect(
+      await loadWagerDetail('00000000-0000-4000-8000-000000000000', a.membership.id),
+    ).toBeNull();
   });
 });
 

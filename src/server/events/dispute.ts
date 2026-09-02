@@ -20,8 +20,7 @@ export interface DisputeResolutionInput {
 }
 
 export type DisputeResolutionResult =
-  | { ok: true; disputeId: string; created: boolean }
-  | { ok: false; error: DisputeError };
+  { ok: true; disputeId: string; created: boolean } | { ok: false; error: DisputeError };
 
 /**
  * A dispute is state, not just an announcement: the admin queue queries this table rather

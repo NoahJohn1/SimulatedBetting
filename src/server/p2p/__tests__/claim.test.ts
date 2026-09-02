@@ -138,7 +138,9 @@ describe('claimWinner', () => {
 
     expect(await credits(offerer.membership.id)).toBe(50_000n);
     expect(await credits(acceptor.membership.id)).toBe(80_000n);
-    expect(await db.select().from(ledgerEntries).where(eq(ledgerEntries.type, 'P2P_WON'))).toHaveLength(0);
+    expect(
+      await db.select().from(ledgerEntries).where(eq(ledgerEntries.type, 'P2P_WON')),
+    ).toHaveLength(0);
   });
 
   it('posts one P2P_DISPUTED card', async () => {

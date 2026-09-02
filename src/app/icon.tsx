@@ -7,8 +7,18 @@ import { ImageResponse } from 'next/og';
  */
 export function generateImageMetadata() {
   return [
-    { id: '192', contentType: 'image/png', size: { width: 192, height: 192 }, alt: 'SimulatedBetting' },
-    { id: '512', contentType: 'image/png', size: { width: 512, height: 512 }, alt: 'SimulatedBetting' },
+    {
+      id: '192',
+      contentType: 'image/png',
+      size: { width: 192, height: 192 },
+      alt: 'SimulatedBetting',
+    },
+    {
+      id: '512',
+      contentType: 'image/png',
+      size: { width: 512, height: 512 },
+      alt: 'SimulatedBetting',
+    },
   ];
 }
 
@@ -16,24 +26,22 @@ export default async function Icon({ id }: { id: Promise<string | number> }) {
   const side = Number(await id);
 
   return new ImageResponse(
-    (
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#0a0a0a',
-          color: '#fafafa',
-          fontSize: side * 0.44,
-          fontWeight: 700,
-          letterSpacing: side * -0.02,
-        }}
-      >
-        SB
-      </div>
-    ),
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#0a0a0a',
+        color: '#fafafa',
+        fontSize: side * 0.44,
+        fontWeight: 700,
+        letterSpacing: side * -0.02,
+      }}
+    >
+      SB
+    </div>,
     { width: side, height: side },
   );
 }

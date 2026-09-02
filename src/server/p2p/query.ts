@@ -160,9 +160,7 @@ export async function loadWagerBoard(
         w.opponentMembershipId === membershipId &&
         w.expiresAt.getTime() > now.getTime(),
     ),
-    yourOffers: all.filter(
-      (w) => w.status === 'OFFERED' && w.offererMembershipId === membershipId,
-    ),
+    yourOffers: all.filter((w) => w.status === 'OFFERED' && w.offererMembershipId === membershipId),
     liveWagers: live,
     awaitingYourClaim: live.filter((w) =>
       w.offererMembershipId === membershipId ? w.offererClaim === null : w.acceptorClaim === null,
@@ -275,6 +273,7 @@ export async function loadArbitrationQueue(
   return accepted.filter(
     (w) =>
       w.disputed ||
-      (w.overdue && agreedVerdict({ offererClaim: w.offererClaim, acceptorClaim: w.acceptorClaim }) === null),
+      (w.overdue &&
+        agreedVerdict({ offererClaim: w.offererClaim, acceptorClaim: w.acceptorClaim }) === null),
   );
 }

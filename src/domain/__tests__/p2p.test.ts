@@ -81,13 +81,15 @@ describe('isOverdue', () => {
   const now = new Date('2026-09-01T00:00:00Z');
 
   it('is overdue past the date with no claims', () => {
-    expect(isOverdue({ resolvesBy: past, offererClaim: null, acceptorClaim: null }, now)).toBe(true);
+    expect(isOverdue({ resolvesBy: past, offererClaim: null, acceptorClaim: null }, now)).toBe(
+      true,
+    );
   });
 
   it('is overdue past the date with only one claim', () => {
-    expect(
-      isOverdue({ resolvesBy: past, offererClaim: 'OFFERER', acceptorClaim: null }, now),
-    ).toBe(true);
+    expect(isOverdue({ resolvesBy: past, offererClaim: 'OFFERER', acceptorClaim: null }, now)).toBe(
+      true,
+    );
   });
 
   it('is overdue past the date when the two disagree', () => {
@@ -97,15 +99,15 @@ describe('isOverdue', () => {
   });
 
   it('is not overdue once both agree, however late', () => {
-    expect(
-      isOverdue({ resolvesBy: past, offererClaim: 'VOID', acceptorClaim: 'VOID' }, now),
-    ).toBe(false);
+    expect(isOverdue({ resolvesBy: past, offererClaim: 'VOID', acceptorClaim: 'VOID' }, now)).toBe(
+      false,
+    );
   });
 
   it('is not overdue before the date', () => {
-    expect(
-      isOverdue({ resolvesBy: future, offererClaim: null, acceptorClaim: null }, now),
-    ).toBe(false);
+    expect(isOverdue({ resolvesBy: future, offererClaim: null, acceptorClaim: null }, now)).toBe(
+      false,
+    );
   });
 });
 
@@ -195,10 +197,10 @@ describe('computeHeadToHead', () => {
 
   it('accumulates a run of wagers in both directions', () => {
     const rows = [
-      row({ verdict: 'OFFERER' }),                                    // A +20,000
-      row({ verdict: 'ACCEPTOR' }),                                   // A -50,000
+      row({ verdict: 'OFFERER' }), // A +20,000
+      row({ verdict: 'ACCEPTOR' }), // A -50,000
       row({ offererMembershipId: B, acceptorMembershipId: A, verdict: 'ACCEPTOR' }), // A +50,000
-      row({ status: 'VOIDED', verdict: 'VOID' }),                     // 0
+      row({ status: 'VOIDED', verdict: 'VOID' }), // 0
     ];
     expect(computeHeadToHead(rows, A, B)).toEqual({
       settled: 3,

@@ -132,7 +132,9 @@ function Section({
         >
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold">
-              {bet.type === 'PARLAY' ? `${legsByBet.get(bet.id)?.length ?? 0}-leg parlay` : 'Single'}
+              {bet.type === 'PARLAY'
+                ? `${legsByBet.get(bet.id)?.length ?? 0}-leg parlay`
+                : 'Single'}
             </span>
             <StatusBadge status={bet.status} />
           </div>

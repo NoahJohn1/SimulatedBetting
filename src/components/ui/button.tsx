@@ -20,10 +20,7 @@ const SIZES: Record<ButtonSize, string> = {
  * instead of an `asChild` prop: cloning children to forward props is what makes button
  * components hard to read, and every link-button in this app is a plain next/link.
  */
-export function buttonClasses(
-  variant: ButtonVariant = 'primary',
-  size: ButtonSize = 'md',
-): string {
+export function buttonClasses(variant: ButtonVariant = 'primary', size: ButtonSize = 'md'): string {
   return [
     'inline-flex items-center justify-center gap-2 rounded-control font-medium',
     'transition-colors disabled:cursor-not-allowed disabled:opacity-50',
@@ -44,5 +41,7 @@ export function Button({
   type = 'button',
   ...props
 }: ComponentProps<'button'> & { variant?: ButtonVariant; size?: ButtonSize }) {
-  return <button type={type} className={`${buttonClasses(variant, size)} ${className}`} {...props} />;
+  return (
+    <button type={type} className={`${buttonClasses(variant, size)} ${className}`} {...props} />
+  );
 }

@@ -154,7 +154,12 @@ export async function resolveCustomEvent(
     const outcomeRows = await tx
       .select({ id: selections.id, marketId: selections.marketId, label: selections.label })
       .from(selections)
-      .where(inArray(selections.marketId, eventMarkets.map((m) => m.id)));
+      .where(
+        inArray(
+          selections.marketId,
+          eventMarkets.map((m) => m.id),
+        ),
+      );
 
     for (const [marketId, winningSelectionId] of chosen) {
       const belongs = outcomeRows.some(
@@ -189,7 +194,10 @@ export async function resolveCustomEvent(
       .innerJoin(selections, eq(betLegs.selectionId, selections.id))
       .where(
         and(
-          inArray(selections.marketId, eventMarkets.map((m) => m.id)),
+          inArray(
+            selections.marketId,
+            eventMarkets.map((m) => m.id),
+          ),
           eq(betLegs.status, 'PENDING'),
         ),
       );
@@ -225,7 +233,12 @@ export async function resolveCustomEvent(
         .selectDistinct({ betId: betLegs.betId })
         .from(betLegs)
         .innerJoin(selections, eq(betLegs.selectionId, selections.id))
-        .where(inArray(selections.marketId, eventMarkets.map((m) => m.id)));
+        .where(
+          inArray(
+            selections.marketId,
+            eventMarkets.map((m) => m.id),
+          ),
+        );
 
       for (const { betId } of affected) {
         const result = await resettleBetInTx(tx, {
@@ -254,7 +267,10 @@ export async function resolveCustomEvent(
                 eq(betLegs.betId, betId),
                 // Deliberately not filtered to PENDING: these legs already carry attempt 1's
                 // grade, which is exactly the value being overwritten.
-                inArray(selections.marketId, eventMarkets.map((m) => m.id)),
+                inArray(
+                  selections.marketId,
+                  eventMarkets.map((m) => m.id),
+                ),
               ),
             );
 
@@ -299,8 +315,7 @@ export async function resolveCustomEvent(
       title: event.title,
       outcomes: eventMarkets.map((market) => ({
         marketTitle: market.title ?? '',
-        winningLabel:
-          outcomeRows.find((row) => row.id === chosen.get(market.id))?.label ?? '',
+        winningLabel: outcomeRows.find((row) => row.id === chosen.get(market.id))?.label ?? '',
       })),
       note: input.note?.trim() ?? null,
       attempt,
@@ -327,9 +342,7 @@ export async function resolveCustomEvent(
 }
 
 export type VoidError =
-  | { code: 'EVENT_NOT_FOUND' }
-  | { code: 'ALREADY_VOIDED' }
-  | { code: 'NOTE_REQUIRED' };
+  { code: 'EVENT_NOT_FOUND' } | { code: 'ALREADY_VOIDED' } | { code: 'NOTE_REQUIRED' };
 
 export interface VoidCustomEventInput {
   eventId: string;
@@ -340,8 +353,7 @@ export interface VoidCustomEventInput {
 }
 
 export type VoidCustomEventResult =
-  | { ok: true; refundedBets: number; refundedCents: bigint }
-  | { ok: false; error: VoidError };
+  { ok: true; refundedBets: number; refundedCents: bigint } | { ok: false; error: VoidError };
 
 /**
  * Admin-only. Voids every bet on the event and refunds every stake — the same path a
@@ -351,9 +363,7 @@ export type VoidCustomEventResult =
  * resolution paid before writing the refund. An open event has nothing to reverse, so its
  * legs are voided in place and settled normally.
  */
-export async function voidCustomEvent(
-  input: VoidCustomEventInput,
-): Promise<VoidCustomEventResult> {
+export async function voidCustomEvent(input: VoidCustomEventInput): Promise<VoidCustomEventResult> {
   const note = input.note.trim();
   if (note.length === 0) return { ok: false, error: { code: 'NOTE_REQUIRED' as const } };
 
@@ -447,7 +457,10 @@ export async function voidCustomEvent(
           and(
             inArray(
               betLegs.selectionId,
-              tx.select({ id: selections.id }).from(selections).where(inArray(selections.marketId, marketIds)),
+              tx
+                .select({ id: selections.id })
+                .from(selections)
+                .where(inArray(selections.marketId, marketIds)),
             ),
             eq(betLegs.status, 'PENDING'),
           ),
@@ -462,10 +475,7 @@ export async function voidCustomEvent(
       refundedCents = summary.centsPaid;
     }
 
-    await tx
-      .update(markets)
-      .set({ status: 'SETTLED' })
-      .where(eq(markets.eventId, input.eventId));
+    await tx.update(markets).set({ status: 'SETTLED' }).where(eq(markets.eventId, input.eventId));
 
     const [event] = await tx.select().from(events).where(eq(events.id, input.eventId));
     const [admin] = await tx

@@ -39,7 +39,10 @@ export async function adjustBalance(input: AdjustBalanceInput): Promise<{ balanc
         .select({ seasonId: seasonMemberships.seasonId })
         .from(seasonMemberships)
         .where(eq(seasonMemberships.id, input.membershipId)),
-      tx.select({ displayName: users.displayName }).from(users).where(eq(users.id, input.actorUserId)),
+      tx
+        .select({ displayName: users.displayName })
+        .from(users)
+        .where(eq(users.id, input.actorUserId)),
     ]);
 
     // Published to the whole season on purpose (D24): an admin cannot quietly gift anyone

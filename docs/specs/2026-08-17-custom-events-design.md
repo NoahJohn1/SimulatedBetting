@@ -17,7 +17,7 @@ granted, never bought, and never convert to or from the cash bankroll. That sepa
 entire integrity story: a hand-priced market resolved by a human being cannot move a single
 cash cent, so the standings keep measuring what they measure today.
 
-The engineering goal is that this is *one* betting engine, not two. Custom markets flow
+The engineering goal is that this is _one_ betting engine, not two. Custom markets flow
 through the same placement path, the same odds arithmetic, the same parlay grading, and the
 same ledger as an NFL spread. What differs is where the result comes from — a person instead
 of a score feed — and which denomination moves.
@@ -122,14 +122,14 @@ pure function sits beside it:
 ```ts
 export function gradeCustomLeg(input: {
   selectionId: string;
-  winningSelectionId: string | null;   // null = market not yet resolved
+  winningSelectionId: string | null; // null = market not yet resolved
 }): 'WON' | 'LOST' | 'PENDING';
 ```
 
 One helper, `gradeBetLegs`, picks between them per leg from the leg's event kind. Everything
 downstream — `gradeParlay`, `settledPayoutCents`, `americanToRational`, `combine` — is used
 unchanged. A three-leg credits parlay is priced by the same exact rational arithmetic as a
-three-leg NFL parlay, because it *is* the same code.
+three-leg NFL parlay, because it _is_ the same code.
 
 ### Layering rule, restated
 
@@ -146,13 +146,13 @@ Timestamps are `TIMESTAMPTZ`. Primary keys are UUIDv4
 
 ### `events`
 
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid | PK |
-| `kind` | enum | `GAME` \| `CUSTOM` |
-| `title` | text | `"KC @ BUF"` for games (backfilled from abbreviations), the creator's title for custom |
-| `starts_at` | timestamptz | when betting closes |
-| `created_at` | timestamptz | |
+| Column       | Type        | Notes                                                                                  |
+| ------------ | ----------- | -------------------------------------------------------------------------------------- |
+| `id`         | uuid        | PK                                                                                     |
+| `kind`       | enum        | `GAME` \| `CUSTOM`                                                                     |
+| `title`      | text        | `"KC @ BUF"` for games (backfilled from abbreviations), the creator's title for custom |
+| `starts_at`  | timestamptz | when betting closes                                                                    |
+| `created_at` | timestamptz |                                                                                        |
 
 `title` exists so a polymorphic read has something to render without knowing the subtype. The
 sports feed snapshot keeps building its own richer leg description from `teams` exactly as it
@@ -160,18 +160,18 @@ does today — this column is a fallback, not a replacement.
 
 ### `custom_events`
 
-| Column | Type | Notes |
-|---|---|---|
-| `event_id` | uuid | PK, FK `events` |
-| `season_id` | uuid | FK `seasons` — credits are season-scoped, so events are too |
-| `creator_membership_id` | uuid | FK `season_memberships` |
-| `description` | text | nullable, free text |
-| `resolves_by` | timestamptz | the creator's own deadline |
-| `status` | enum | `OPEN` \| `RESOLVED` \| `VOIDED` |
-| `resolved_at` | timestamptz | nullable |
-| `resolved_by_user_id` | uuid | nullable FK `users` — creator or admin |
-| `resolution_note` | text | nullable; **mandatory on a re-resolution** |
-| `resolution_attempts` | integer | default 0 |
+| Column                  | Type        | Notes                                                       |
+| ----------------------- | ----------- | ----------------------------------------------------------- |
+| `event_id`              | uuid        | PK, FK `events`                                             |
+| `season_id`             | uuid        | FK `seasons` — credits are season-scoped, so events are too |
+| `creator_membership_id` | uuid        | FK `season_memberships`                                     |
+| `description`           | text        | nullable, free text                                         |
+| `resolves_by`           | timestamptz | the creator's own deadline                                  |
+| `status`                | enum        | `OPEN` \| `RESOLVED` \| `VOIDED`                            |
+| `resolved_at`           | timestamptz | nullable                                                    |
+| `resolved_by_user_id`   | uuid        | nullable FK `users` — creator or admin                      |
+| `resolution_note`       | text        | nullable; **mandatory on a re-resolution**                  |
+| `resolution_attempts`   | integer     | default 0                                                   |
 
 `resolution_attempts` is `bets.settlement_attempts` under another name, and for the same
 reason: a disputed re-resolution must write idempotency keys that cannot collide with the
@@ -182,22 +182,22 @@ is a third state that can disagree with the clock, and it would need a job to ma
 
 **Indexes**
 
-| Index | Columns | Serves |
-|---|---|---|
-| `custom_events_season_status_idx` | (`season_id`, `status`) | the events board |
-| `custom_events_overdue_idx` | (`resolves_by`) `WHERE status = 'OPEN'` | the overdue sweep |
-| `custom_events_creator_idx` | (`creator_membership_id`) | a member's created events |
+| Index                             | Columns                                 | Serves                    |
+| --------------------------------- | --------------------------------------- | ------------------------- |
+| `custom_events_season_status_idx` | (`season_id`, `status`)                 | the events board          |
+| `custom_events_overdue_idx`       | (`resolves_by`) `WHERE status = 'OPEN'` | the overdue sweep         |
+| `custom_events_creator_idx`       | (`creator_membership_id`)               | a member's created events |
 
 ### `custom_event_disputes`
 
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid | PK |
-| `event_id` | uuid | FK `events` |
-| `membership_id` | uuid | FK `season_memberships` — who disputed |
-| `reason` | text | required, trimmed, ≤ 500 chars |
-| `created_at` | timestamptz | |
-| `resolved_at` | timestamptz | nullable — set when an admin re-resolves or voids |
+| Column          | Type        | Notes                                             |
+| --------------- | ----------- | ------------------------------------------------- |
+| `id`            | uuid        | PK                                                |
+| `event_id`      | uuid        | FK `events`                                       |
+| `membership_id` | uuid        | FK `season_memberships` — who disputed            |
+| `reason`        | text        | required, trimmed, ≤ 500 chars                    |
+| `created_at`    | timestamptz |                                                   |
+| `resolved_at`   | timestamptz | nullable — set when an admin re-resolves or voids |
 
 Unique on `(event_id, membership_id)`: one dispute per member per event, and a second click is
 a no-op rather than a second row.
@@ -214,13 +214,13 @@ index, and query on this table keeps working.
 
 ### `markets`
 
-| Change | Detail |
-|---|---|
-| `event_id` | `NOT NULL` FK `events`, **replaces** `game_id` |
-| `type` | gains `CUSTOM_OUTCOME` |
-| `title` | new, nullable — the question ("Who wins map 3?"); null for sports markets |
-| `source_book` | becomes **nullable**; NULL means hand-priced by a member |
-| `winning_selection_id` | new, nullable FK `selections` — set at resolution |
+| Change                   | Detail                                                                        |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| `event_id`               | `NOT NULL` FK `events`, **replaces** `game_id`                                |
+| `type`                   | gains `CUSTOM_OUTCOME`                                                        |
+| `title`                  | new, nullable — the question ("Who wins map 3?"); null for sports markets     |
+| `source_book`            | becomes **nullable**; NULL means hand-priced by a member                      |
+| `winning_selection_id`   | new, nullable FK `selections` — set at resolution                             |
 | `markets_event_type_idx` | becomes **partial**: `UNIQUE (event_id, type) WHERE type <> 'CUSTOM_OUTCOME'` |
 
 The unique index has to become partial because one custom event carries many `CUSTOM_OUTCOME`
@@ -233,13 +233,13 @@ is rewritten (not cleared and re-set) on a re-resolution.
 
 ### `selections`
 
-| Change | Detail |
-|---|---|
-| `side` | becomes **nullable** — a custom outcome has no HOME/AWAY/OVER/UNDER |
-| `label` | new, nullable — the outcome name ("Team Falcons"); null for sports |
-| `sort_order` | new, `smallint NOT NULL DEFAULT 0` — the creator's display order |
-| `selections_market_side_idx` | becomes `UNIQUE (market_id, side) WHERE side IS NOT NULL` |
-| `selections_market_label_idx` | new, `UNIQUE (market_id, label) WHERE label IS NOT NULL` |
+| Change                        | Detail                                                              |
+| ----------------------------- | ------------------------------------------------------------------- |
+| `side`                        | becomes **nullable** — a custom outcome has no HOME/AWAY/OVER/UNDER |
+| `label`                       | new, nullable — the outcome name ("Team Falcons"); null for sports  |
+| `sort_order`                  | new, `smallint NOT NULL DEFAULT 0` — the creator's display order    |
+| `selections_market_side_idx`  | becomes `UNIQUE (market_id, side) WHERE side IS NOT NULL`           |
+| `selections_market_label_idx` | new, `UNIQUE (market_id, label) WHERE label IS NOT NULL`            |
 
 `price_american` is unchanged and required. A hand-priced outcome is priced in the same units
 as a sportsbook line, which is exactly why no odds code changes. `line` stays null for custom
@@ -256,11 +256,11 @@ balance a bet came out of.
 
 ### `season_memberships` and `seasons`
 
-| Table | Column | Notes |
-|---|---|---|
-| `season_memberships` | `credits_balance_cents` | `bigint NOT NULL DEFAULT 0` |
-| `seasons` | `starting_credits_cents` | `bigint NOT NULL DEFAULT 0` |
-| `seasons` | `weekly_credit_allowance_cents` | `bigint NOT NULL DEFAULT 0` |
+| Table                | Column                          | Notes                       |
+| -------------------- | ------------------------------- | --------------------------- |
+| `season_memberships` | `credits_balance_cents`         | `bigint NOT NULL DEFAULT 0` |
+| `seasons`            | `starting_credits_cents`        | `bigint NOT NULL DEFAULT 0` |
+| `seasons`            | `weekly_credit_allowance_cents` | `bigint NOT NULL DEFAULT 0` |
 
 ### `ledger_entries`
 
@@ -273,11 +273,11 @@ credit keys carry their own suffix (below).
 
 ### Where they come from
 
-| Movement | Entry | Idempotency key |
-|---|---|---|
-| Joining a season | `SEASON_STARTING_GRANT`, `CREDITS` | `grant:<membershipId>:credits` |
-| Weekly drip | `WEEKLY_ALLOWANCE`, `CREDITS` | `allowance:<membershipId>:<weekKey>:credits` |
-| Admin grant/removal | `ADMIN_CREDIT` / `ADMIN_DEBIT`, `CREDITS` | caller-supplied, as today |
+| Movement            | Entry                                     | Idempotency key                              |
+| ------------------- | ----------------------------------------- | -------------------------------------------- |
+| Joining a season    | `SEASON_STARTING_GRANT`, `CREDITS`        | `grant:<membershipId>:credits`               |
+| Weekly drip         | `WEEKLY_ALLOWANCE`, `CREDITS`             | `allowance:<membershipId>:<weekKey>:credits` |
+| Admin grant/removal | `ADMIN_CREDIT` / `ADMIN_DEBIT`, `CREDITS` | caller-supplied, as today                    |
 
 Each key is the existing cash key plus a `:credits` suffix — `grant:<id>` and
 `grant:<id>:credits` are two entries in two denominations for one event, lined up by eye.
@@ -320,11 +320,38 @@ which would drop every custom leg on the floor. It becomes `markets → events`,
 
 ```ts
 type LoadedSelection =
-  | { kind: 'GAME';   selectionId; marketId; marketType; marketStatus; side; line;
-      priceAmerican; eventId; eventStatus; eventStartsAt; sport; homeAbbr; awayAbbr }
-  | { kind: 'CUSTOM'; selectionId; marketId; marketType; marketStatus; label; line: null;
-      priceAmerican; eventId; eventStatus; eventStartsAt; eventTitle; marketTitle;
-      creatorMembershipId };
+  | {
+      kind: 'GAME';
+      selectionId;
+      marketId;
+      marketType;
+      marketStatus;
+      side;
+      line;
+      priceAmerican;
+      eventId;
+      eventStatus;
+      eventStartsAt;
+      sport;
+      homeAbbr;
+      awayAbbr;
+    }
+  | {
+      kind: 'CUSTOM';
+      selectionId;
+      marketId;
+      marketType;
+      marketStatus;
+      label;
+      line: null;
+      priceAmerican;
+      eventId;
+      eventStatus;
+      eventStartsAt;
+      eventTitle;
+      marketTitle;
+      creatorMembershipId;
+    };
 ```
 
 `gameId`/`gameStatus`/`gameStartsAt` become `eventId`/`eventStatus`/`eventStartsAt` across both
@@ -367,22 +394,22 @@ export async function createCustomEvent(input: {
   resolvesBy: Date;
   markets: {
     title: string;
-    outcomes: { label: string; priceAmerican: number }[];   // ≥ 2
-  }[];                                                       // ≥ 1
+    outcomes: { label: string; priceAmerican: number }[]; // ≥ 2
+  }[]; // ≥ 1
 }): Promise<{ ok: true; eventId: string } | { ok: false; error: CreateEventError }>;
 ```
 
 One transaction writes `events`, `custom_events`, every market and every selection, and emits
 one `CUSTOM_EVENT_CREATED` feed card. Validation, all server-side:
 
-| Rule | Error |
-|---|---|
-| Title trimmed, 1–120 chars; description ≤ 1000 | `INVALID_TITLE` / `INVALID_DESCRIPTION` |
-| `startsAt` in the future; `resolvesBy` ≥ `startsAt` | `INVALID_SCHEDULE` |
-| At least one market, at most 20 | `INVALID_MARKET_COUNT` |
-| Each market: title 1–120 chars, 2–20 outcomes, labels unique within the market | `INVALID_MARKET` |
-| Each price parses through `americanToRational` | `INVALID_PRICE` |
-| Creator is an approved member of the active season | `NOT_A_MEMBER` |
+| Rule                                                                           | Error                                   |
+| ------------------------------------------------------------------------------ | --------------------------------------- |
+| Title trimmed, 1–120 chars; description ≤ 1000                                 | `INVALID_TITLE` / `INVALID_DESCRIPTION` |
+| `startsAt` in the future; `resolvesBy` ≥ `startsAt`                            | `INVALID_SCHEDULE`                      |
+| At least one market, at most 20                                                | `INVALID_MARKET_COUNT`                  |
+| Each market: title 1–120 chars, 2–20 outcomes, labels unique within the market | `INVALID_MARKET`                        |
+| Each price parses through `americanToRational`                                 | `INVALID_PRICE`                         |
+| Creator is an approved member of the active season                             | `NOT_A_MEMBER`                          |
 
 Prices are **not** validated for sanity. A creator may offer +50000 on a coin flip; that is
 their credits to give away, and a house-edge rule is a tuning knob nobody asked for
@@ -409,8 +436,8 @@ export async function resolveCustomEvent(input: {
   actorUserId: string;
   actorMembershipId: string;
   isAdmin: boolean;
-  winners: { marketId: string; winningSelectionId: string }[];  // every market, or none
-  note?: string;              // required when this is a re-resolution
+  winners: { marketId: string; winningSelectionId: string }[]; // every market, or none
+  note?: string; // required when this is a re-resolution
 }): Promise<ResolveResult>;
 ```
 
@@ -453,7 +480,9 @@ referee.
 
 ```ts
 export async function voidCustomEvent(input: {
-  eventId: string; actorUserId: string; note: string;   // note required
+  eventId: string;
+  actorUserId: string;
+  note: string; // note required
 }): Promise<VoidResult>;
 ```
 
@@ -488,13 +517,13 @@ eventually void an event that just needed one more day
 
 Five new event types, and two existing payloads gain a currency:
 
-| Type | Subject | Emitted from | Reads as |
-|---|---|---|---|
-| `CUSTOM_EVENT_CREATED` | creator | `createCustomEvent` | *Dana* opened **Jyxnzi Cup** · 3 markets · closes Fri 8pm |
-| `CUSTOM_EVENT_RESOLVED` | resolver | `resolveCustomEvent` | **Jyxnzi Cup** resolved by *Dana* · Falcons win |
-| `CUSTOM_EVENT_DISPUTED` | disputer | `disputeResolution` | *Sam* disputed **Jyxnzi Cup** — "map 3 was forfeited" |
-| `CUSTOM_EVENT_VOIDED` | *null* | `voidCustomEvent` | **Jyxnzi Cup** voided by admin *Chris* · all stakes refunded |
-| `CUSTOM_EVENT_OVERDUE` | creator | `sweepOverdueEvents` | **Jyxnzi Cup** is past its resolve-by date |
+| Type                    | Subject  | Emitted from         | Reads as                                                     |
+| ----------------------- | -------- | -------------------- | ------------------------------------------------------------ |
+| `CUSTOM_EVENT_CREATED`  | creator  | `createCustomEvent`  | _Dana_ opened **Jyxnzi Cup** · 3 markets · closes Fri 8pm    |
+| `CUSTOM_EVENT_RESOLVED` | resolver | `resolveCustomEvent` | **Jyxnzi Cup** resolved by _Dana_ · Falcons win              |
+| `CUSTOM_EVENT_DISPUTED` | disputer | `disputeResolution`  | _Sam_ disputed **Jyxnzi Cup** — "map 3 was forfeited"        |
+| `CUSTOM_EVENT_VOIDED`   | _null_   | `voidCustomEvent`    | **Jyxnzi Cup** voided by admin _Chris_ · all stakes refunded |
+| `CUSTOM_EVENT_OVERDUE`  | creator  | `sweepOverdueEvents` | **Jyxnzi Cup** is past its resolve-by date                   |
 
 Dedupe keys follow the existing scheme: `customevent:<eventId>:created`, `…:resolved:<attempt>`,
 `…:disputed:<membershipId>`, `…:voided`, `…:overdue`.
@@ -505,8 +534,15 @@ discriminated union so a custom leg can render at all:
 ```ts
 type FeedLegSnapshot =
   | { kind: 'GAME'; sport; startsAt; homeAbbr; awayAbbr; marketType; side; line; priceAmerican }
-  | { kind: 'CUSTOM'; startsAt; eventTitle; marketTitle; outcomeLabel; priceAmerican;
-      byCreator: boolean };
+  | {
+      kind: 'CUSTOM';
+      startsAt;
+      eventTitle;
+      marketTitle;
+      outcomeLabel;
+      priceAmerican;
+      byCreator: boolean;
+    };
 ```
 
 `byCreator` is the disclosure: a creator's bet on their own event is labelled on every card it
@@ -524,7 +560,7 @@ The bottom bar goes from five tabs to six: **Games · Events · Feed · My Bets 
 Six is the practical ceiling on a phone; if it reads as crowded once it is on a real device,
 the fallback is a segmented control on the Games screen rather than a seventh tab.
 
-- **Events** (`/events`) — open events sorted by close time, then an *Awaiting resolution*
+- **Events** (`/events`) — open events sorted by close time, then an _Awaiting resolution_
   section (past `starts_at`, unresolved), then recently resolved. Each row shows title, creator,
   close time, market count, and total credits staked. Overdue rows are marked.
 - **Create** (`/events/new`) — title, description, close time, resolve-by, then a repeatable
@@ -533,7 +569,7 @@ the fallback is a segmented control on the Games screen rather than a seventh ta
   book adds to 140% without stopping them.
 - **Event detail** (`/events/[eventId]`) — the markets and their outcomes as a bet-slip surface,
   the creator's name, **the creator's own position if any**, every member's open interest, and
-  the state-appropriate control: *Resolve* for creator or admin while `OPEN`, *Dispute* for any
+  the state-appropriate control: _Resolve_ for creator or admin while `OPEN`, _Dispute_ for any
   member while `RESOLVED`, nothing while `VOIDED`. Resolution notes and disputes are shown
   inline with the outcome.
 - **Resolve** (`/events/[eventId]/resolve`) — one radio group per market, a note field
@@ -549,22 +585,22 @@ grant fields.
 
 ## Failure handling
 
-| Failure | Behavior |
-|---|---|
-| Two resolutions submitted at once | The `FOR UPDATE` lock on `custom_events` serializes them; the second sees `RESOLVED` and is rejected as a re-resolution attempt (admin-only, note required). |
-| A resolution is retried after a timeout | Bet payouts are keyed `bet:<betId>:settled:<attempt>`; the retry re-posts nothing. The event's own status update is idempotent. |
-| A bet lands as the event resolves | The resolution holds the event row and grades only legs that are `PENDING`; placement re-validates bettability under lock and fails on `starts_at`/status. One of the two loses cleanly. |
-| Creator resolves an event they bet on | Allowed, and the payout to their own bet is visible on the card and on their profile. Disclosure, not prevention ([D32](../decisions.md#d32--anyone-can-create-events-and-creators-may-bet-their-own-with-disclosure)). |
-| Resolution names a selection from another market | Rejected in step 2. Never partially applied — the whole transaction rolls back. |
-| An event is resolved with a market missing | Rejected. Partial resolution is not a state; a parlay leg on the missing market could never grade. |
-| A creator leaves the league mid-event | `season_memberships` rows are never deleted, so the FK holds. The event goes overdue and an admin resolves or voids it. |
-| Credits would go negative | `postEntry` rejects against `credits_balance_cents` exactly as it does for cash. A bet cannot be placed with credits the member does not have. |
-| A cash operation touches credits, or vice versa | Impossible by construction — currency is explicit on every `postEntry` call and every entry row, and reconciliation asserts each denomination separately. |
-| Reconciliation finds a credits drift | Reported per membership *per currency*, so a clean cash balance never masks a broken credits one. |
-| A member disputes twice | Unique `(event_id, membership_id)`; the second is a no-op returning the existing dispute. |
-| The overdue sweep runs every ten minutes forever | One card per event, ever, by dedupe key. |
-| Events that predate this subsystem | None exist. Games get backfilled event rows by the migration; no bet, leg, or ledger row is rewritten. |
-| A season with zero credit grants | Members hold zero credits and simply cannot bet custom markets. The events board says so rather than erroring. |
+| Failure                                          | Behavior                                                                                                                                                                                                                |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Two resolutions submitted at once                | The `FOR UPDATE` lock on `custom_events` serializes them; the second sees `RESOLVED` and is rejected as a re-resolution attempt (admin-only, note required).                                                            |
+| A resolution is retried after a timeout          | Bet payouts are keyed `bet:<betId>:settled:<attempt>`; the retry re-posts nothing. The event's own status update is idempotent.                                                                                         |
+| A bet lands as the event resolves                | The resolution holds the event row and grades only legs that are `PENDING`; placement re-validates bettability under lock and fails on `starts_at`/status. One of the two loses cleanly.                                |
+| Creator resolves an event they bet on            | Allowed, and the payout to their own bet is visible on the card and on their profile. Disclosure, not prevention ([D32](../decisions.md#d32--anyone-can-create-events-and-creators-may-bet-their-own-with-disclosure)). |
+| Resolution names a selection from another market | Rejected in step 2. Never partially applied — the whole transaction rolls back.                                                                                                                                         |
+| An event is resolved with a market missing       | Rejected. Partial resolution is not a state; a parlay leg on the missing market could never grade.                                                                                                                      |
+| A creator leaves the league mid-event            | `season_memberships` rows are never deleted, so the FK holds. The event goes overdue and an admin resolves or voids it.                                                                                                 |
+| Credits would go negative                        | `postEntry` rejects against `credits_balance_cents` exactly as it does for cash. A bet cannot be placed with credits the member does not have.                                                                          |
+| A cash operation touches credits, or vice versa  | Impossible by construction — currency is explicit on every `postEntry` call and every entry row, and reconciliation asserts each denomination separately.                                                               |
+| Reconciliation finds a credits drift             | Reported per membership _per currency_, so a clean cash balance never masks a broken credits one.                                                                                                                       |
+| A member disputes twice                          | Unique `(event_id, membership_id)`; the second is a no-op returning the existing dispute.                                                                                                                               |
+| The overdue sweep runs every ten minutes forever | One card per event, ever, by dedupe key.                                                                                                                                                                                |
+| Events that predate this subsystem               | None exist. Games get backfilled event rows by the migration; no bet, leg, or ledger row is rewritten.                                                                                                                  |
+| A season with zero credit grants                 | Members hold zero credits and simply cannot bet custom markets. The events board says so rather than erroring.                                                                                                          |
 
 ## Testing
 
@@ -583,32 +619,32 @@ grant fields.
 
 **Integration, against the test database:**
 
-1. *Two balances stay independent* — grant both, place and settle a cash bet and a credits bet,
+1. _Two balances stay independent_ — grant both, place and settle a cash bet and a credits bet,
    and assert each balance moved by exactly its own currency's amount and the other did not.
-2. *Reconciliation per currency* — corrupt `credits_balance_cents` directly and assert
+2. _Reconciliation per currency_ — corrupt `credits_balance_cents` directly and assert
    `reconcileBalances` reports exactly that membership and currency while cash reports clean.
-3. *Resolution idempotency* — resolve, then replay the same resolution; assert the ledger and
+3. _Resolution idempotency_ — resolve, then replay the same resolution; assert the ledger and
    `feed_events` are byte-identical after the second call. The most important test in the
    subsystem, and the direct analogue of subsystem 2's settlement-idempotency test.
-4. *Dispute and re-resolution* — resolve wrongly, dispute, admin re-resolves; assert a
+4. _Dispute and re-resolution_ — resolve wrongly, dispute, admin re-resolves; assert a
    `SETTLEMENT_REVERSAL` plus the corrected entry, `resolution_attempts = 2`, the original
    entries untouched, and a correction-flagged card.
-5. *Void refunds everything* — bets across three markets, admin voids; assert every stake is
+5. _Void refunds everything_ — bets across three markets, admin voids; assert every stake is
    back, every bet is `VOIDED`, and credits reconcile.
-6. *Mixed parlay rejected* — one NFL leg and one custom leg in one slip; assert the error and
+6. _Mixed parlay rejected_ — one NFL leg and one custom leg in one slip; assert the error and
    assert no `bets` row was written.
-7. *Same-event parlay rejected* — two legs on two markets of one event; assert `DUPLICATE_EVENT`.
-8. *Bettability* — a leg on a `SUSPENDED` custom market, on an event past `starts_at`, and on a
+7. _Same-event parlay rejected_ — two legs on two markets of one event; assert `DUPLICATE_EVENT`.
+8. _Bettability_ — a leg on a `SUSPENDED` custom market, on an event past `starts_at`, and on a
    `VOIDED` event are each rejected with the right code.
-9. *Overdue sweep* — an event past `resolves_by` emits one card; running the sweep five more
+9. _Overdue sweep_ — an event past `resolves_by` emits one card; running the sweep five more
    times emits none.
-10. *Authorization* — a non-creator non-admin cannot resolve; a creator cannot re-resolve; a
+10. _Authorization_ — a non-creator non-admin cannot resolve; a creator cannot re-resolve; a
     member of another season cannot bet, resolve, or dispute; a `PENDING` user is rejected
     everywhere.
-11. *Supertype migration* — every pre-existing game has exactly one `events` row, every market
+11. _Supertype migration_ — every pre-existing game has exactly one `events` row, every market
     points at it, and the full subsystem-1 settlement flow still produces identical ledger
     entries. Run against a database seeded before the migration.
-12. *End-to-end* — extend `end-to-end.test.ts` with a second arc: create event → two members bet
+12. _End-to-end_ — extend `end-to-end.test.ts` with a second arc: create event → two members bet
     → creator resolves → member disputes → admin re-resolves → assert both balances, the full
     feed sequence, and clean reconciliation in both currencies.
 

@@ -17,8 +17,7 @@ export async function GET(request: Request): Promise<Response> {
 
   const ok = discrepancies.length === 0 && escrowDiscrepancies.length === 0;
 
-  return Response.json(
-    jsonSafe({ ok, discrepancies, escrowDiscrepancies }),
-    { status: ok ? 200 : 500 },
-  );
+  return Response.json(jsonSafe({ ok, discrepancies, escrowDiscrepancies }), {
+    status: ok ? 200 : 500,
+  });
 }

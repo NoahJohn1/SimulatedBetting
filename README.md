@@ -1,4 +1,5 @@
 # SimulatedBetting
+
 r
 A play-money sportsbook for a small private group — NFL and college football, real
 sportsbook lines, simulated currency. No real money is involved at any point.
@@ -98,6 +99,18 @@ Safe to run before your first sign-in too — it records the intent so the row i
 moment your account exists.
 
 ### Testing
+
+The suite reads its connection string from `.env.test`, which is gitignored and therefore
+missing from a fresh checkout. `src/test/setup.ts` loads it with `override: true`, so it wins
+over `.env.local` and the tests cannot accidentally run against your development database.
+Create it once:
+
+```bash
+echo 'DATABASE_URL=postgres://simbet:simbet@localhost:5433/simbet_test' > .env.test
+```
+
+The `SessionStart` hook in `.claude/hooks/session-start.sh` writes this file for you if it is
+missing, so a Claude Code session handles it automatically.
 
 ```bash
 npm run verify      # typecheck + lint + full test suite — the same gate CI runs
