@@ -24,7 +24,11 @@ async function counts() {
   };
 }
 
-function singleInput(userId: string, selectionId: string, over: Partial<PlaceBetInput> = {}): PlaceBetInput {
+function singleInput(
+  userId: string,
+  selectionId: string,
+  over: Partial<PlaceBetInput> = {},
+): PlaceBetInput {
   return {
     userId,
     type: 'SINGLE',

@@ -63,7 +63,10 @@ describe('money-path feed emission', () => {
       idempotencyKey: 'adjust:test:1',
     });
 
-    const [event] = await db.select().from(feedEvents).where(eq(feedEvents.type, 'ADMIN_ADJUSTMENT'));
+    const [event] = await db
+      .select()
+      .from(feedEvents)
+      .where(eq(feedEvents.type, 'ADMIN_ADJUSTMENT'));
     expect(event.subjectMembershipId).toBe(membershipId);
     expect(event.ledgerEntryId).not.toBeNull();
 
@@ -89,7 +92,10 @@ describe('money-path feed emission', () => {
     await adjustBalance(input);
     await adjustBalance(input);
 
-    const events = await db.select().from(feedEvents).where(eq(feedEvents.type, 'ADMIN_ADJUSTMENT'));
+    const events = await db
+      .select()
+      .from(feedEvents)
+      .where(eq(feedEvents.type, 'ADMIN_ADJUSTMENT'));
     expect(events).toHaveLength(1);
 
     const [membership] = await db

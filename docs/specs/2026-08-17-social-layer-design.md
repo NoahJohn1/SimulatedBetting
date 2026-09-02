@@ -7,7 +7,7 @@
 
 ## Purpose
 
-Turn a private sportsbook into a private *league*. Subsystem 1 records what everybody bet
+Turn a private sportsbook into a private _league_. Subsystem 1 records what everybody bet
 and what it paid; nobody can see any of it. This subsystem publishes that record to the
 season, lets members react and talk on it, and gives every member a profile page with real
 numbers behind their name.
@@ -116,36 +116,36 @@ UUIDv4 ([D18](../decisions.md#d18--primary-keys-are-uuidv4-not-uuidv7)).
 
 Append-only. Never updated, never deleted.
 
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid | PK |
-| `season_id` | uuid | FK `seasons`; every event is season-scoped |
-| `type` | enum | see below |
-| `subject_membership_id` | uuid | FK `season_memberships`, nullable — the member the event is *about* |
-| `bet_id` | uuid | nullable FK `bets` |
-| `ledger_entry_id` | uuid | nullable FK `ledger_entries` |
-| `payload` | jsonb | frozen render snapshot; see [Payloads](#payloads) |
-| `dedupe_key` | text | **unique** |
-| `occurred_at` | timestamptz | business time — copied from the source row, not `now()` |
-| `created_at` | timestamptz | write time |
+| Column                  | Type        | Notes                                                               |
+| ----------------------- | ----------- | ------------------------------------------------------------------- |
+| `id`                    | uuid        | PK                                                                  |
+| `season_id`             | uuid        | FK `seasons`; every event is season-scoped                          |
+| `type`                  | enum        | see below                                                           |
+| `subject_membership_id` | uuid        | FK `season_memberships`, nullable — the member the event is _about_ |
+| `bet_id`                | uuid        | nullable FK `bets`                                                  |
+| `ledger_entry_id`       | uuid        | nullable FK `ledger_entries`                                        |
+| `payload`               | jsonb       | frozen render snapshot; see [Payloads](#payloads)                   |
+| `dedupe_key`            | text        | **unique**                                                          |
+| `occurred_at`           | timestamptz | business time — copied from the source row, not `now()`             |
+| `created_at`            | timestamptz | write time                                                          |
 
 Event types:
 
-| Type | Subject | Emitted from |
-|---|---|---|
-| `BET_PLACED` | bettor | `placeBet` |
-| `BET_SETTLED` | bettor | `settleGame`, `resettleBet` |
-| `MEMBER_JOINED` | joiner | `joinSeason` |
-| `ALLOWANCE_PAID` | *null* — season-wide | `payWeeklyAllowance` |
-| `ADMIN_ADJUSTMENT` | adjusted member | `adjustBalance` |
-| `MILESTONE_LEAD_CHANGE` | new leader | `detectLeadChange` |
-| `MILESTONE_BIG_WIN` | bettor | `settleGame`, `resettleBet` |
-| `MILESTONE_PARLAY_HIT` | bettor | `settleGame`, `resettleBet` |
+| Type                    | Subject              | Emitted from                |
+| ----------------------- | -------------------- | --------------------------- |
+| `BET_PLACED`            | bettor               | `placeBet`                  |
+| `BET_SETTLED`           | bettor               | `settleGame`, `resettleBet` |
+| `MEMBER_JOINED`         | joiner               | `joinSeason`                |
+| `ALLOWANCE_PAID`        | _null_ — season-wide | `payWeeklyAllowance`        |
+| `ADMIN_ADJUSTMENT`      | adjusted member      | `adjustBalance`             |
+| `MILESTONE_LEAD_CHANGE` | new leader           | `detectLeadChange`          |
+| `MILESTONE_BIG_WIN`     | bettor               | `settleGame`, `resettleBet` |
+| `MILESTONE_PARLAY_HIT`  | bettor               | `settleGame`, `resettleBet` |
 
 The column is `subject_membership_id`, not `actor_membership_id`, because of
 `ADMIN_ADJUSTMENT`: the actor is the admin, but the card belongs to the member whose balance
-moved. Naming it "subject" makes every type read the same way — *this card is about this
-member* — and the admin's name lives in the payload.
+moved. Naming it "subject" makes every type read the same way — _this card is about this
+member_ — and the admin's name lives in the payload.
 
 `ALLOWANCE_PAID` is the one event with no subject. It is **one event per season per week**,
 not one per member: a twelve-person league would otherwise post twelve identical cards every
@@ -154,12 +154,12 @@ Tuesday, which is how a feed dies. See
 
 **Indexes**
 
-| Index | Columns | Serves |
-|---|---|---|
-| `feed_events_dedupe_key_idx` | unique (`dedupe_key`) | idempotency |
-| `feed_events_season_idx` | (`season_id`, `occurred_at` desc, `id` desc) | the feed's keyset pagination |
-| `feed_events_subject_idx` | (`subject_membership_id`, `occurred_at` desc) | a profile's event history |
-| `feed_events_bet_idx` | (`bet_id`) | finding a bet's cards |
+| Index                        | Columns                                       | Serves                       |
+| ---------------------------- | --------------------------------------------- | ---------------------------- |
+| `feed_events_dedupe_key_idx` | unique (`dedupe_key`)                         | idempotency                  |
+| `feed_events_season_idx`     | (`season_id`, `occurred_at` desc, `id` desc)  | the feed's keyset pagination |
+| `feed_events_subject_idx`    | (`subject_membership_id`, `occurred_at` desc) | a profile's event history    |
+| `feed_events_bet_idx`        | (`bet_id`)                                    | finding a bet's cards        |
 
 The season index is `(occurred_at, id)` and not `occurred_at` alone because two events can
 share a timestamp to the microsecond — a settlement transaction posts several. Paginating on
@@ -170,16 +170,16 @@ a non-unique sort key silently skips or repeats rows at page boundaries.
 Deterministic, and deliberately parallel to the ledger's idempotency keys so a card and its
 ledger entry can be lined up by eye:
 
-| Event | Key |
-|---|---|
-| `BET_PLACED` | `bet:<betId>:placed` |
-| `BET_SETTLED` | `bet:<betId>:settled:<attempt>` |
-| `MILESTONE_BIG_WIN` | `bet:<betId>:bigwin:<attempt>` |
-| `MILESTONE_PARLAY_HIT` | `bet:<betId>:parlayhit:<attempt>` |
-| `MEMBER_JOINED` | `membership:<membershipId>:joined` |
-| `ALLOWANCE_PAID` | `allowance:<seasonId>:<isoWeekKey>` |
-| `ADMIN_ADJUSTMENT` | `ledger:<ledgerEntryId>` |
-| `MILESTONE_LEAD_CHANGE` | `lead:<seasonId>:<sequence>` |
+| Event                   | Key                                 |
+| ----------------------- | ----------------------------------- |
+| `BET_PLACED`            | `bet:<betId>:placed`                |
+| `BET_SETTLED`           | `bet:<betId>:settled:<attempt>`     |
+| `MILESTONE_BIG_WIN`     | `bet:<betId>:bigwin:<attempt>`      |
+| `MILESTONE_PARLAY_HIT`  | `bet:<betId>:parlayhit:<attempt>`   |
+| `MEMBER_JOINED`         | `membership:<membershipId>:joined`  |
+| `ALLOWANCE_PAID`        | `allowance:<seasonId>:<isoWeekKey>` |
+| `ADMIN_ADJUSTMENT`      | `ledger:<ledgerEntryId>`            |
+| `MILESTONE_LEAD_CHANGE` | `lead:<seasonId>:<sequence>`        |
 
 Settlement keys carry the attempt counter for the same reason the ledger's do: a re-settled
 bet must be able to post a corrected card without colliding with the original.
@@ -188,7 +188,7 @@ bet must be able to post a corrected card without colliding with the original.
 
 `payload` is a discriminated union on `type`, typed in `src/server/feed/payload.ts`. It holds
 a **frozen snapshot of what to render** — the teams, the market, the line and price as they
-were, the stake, the result. Identity is *not* in the payload: display name and avatar are
+were, the stake, the result. Identity is _not_ in the payload: display name and avatar are
 joined live from `users`, so renaming yourself updates every card you ever posted.
 
 That split is the whole rule: **facts freeze, identity doesn't.** A leg's line is what was
@@ -205,11 +205,11 @@ export interface FeedLegSnapshot {
   sport: 'NFL' | 'NCAAF';
   marketType: 'MONEYLINE' | 'SPREAD' | 'TOTAL';
   side: 'HOME' | 'AWAY' | 'OVER' | 'UNDER';
-  line: string | null;          // numeric(5,2) as Drizzle returns it
+  line: string | null; // numeric(5,2) as Drizzle returns it
   priceAmerican: number;
   homeAbbr: string;
   awayAbbr: string;
-  startsAt: string;             // ISO 8601
+  startsAt: string; // ISO 8601
 }
 
 export interface BetPlacedPayload {
@@ -225,25 +225,43 @@ export type LegOutcome = 'WON' | 'LOST' | 'PUSHED' | 'VOIDED';
 
 export interface BetSettledPayload extends BetPlacedPayload {
   outcome: 'WON' | 'LOST' | 'PUSHED' | 'VOIDED';
-  payoutCents: string;                    // "0" for LOST
-  netCents: string;                       // payout − stake, signed
-  legOutcomes: LegOutcome[];              // parallel to legs, same order
+  payoutCents: string; // "0" for LOST
+  netCents: string; // payout − stake, signed
+  legOutcomes: LegOutcome[]; // parallel to legs, same order
   settlementAttempt: number;
-  correction: boolean;                    // settlementAttempt > 1
+  correction: boolean; // settlementAttempt > 1
 }
 
-export interface MemberJoinedPayload  { startingBankrollCents: string }
-export interface AllowancePaidPayload { weekKey: string; memberCount: number; amountCents: string }
-export interface AdminAdjustmentPayload { amountCents: string; note: string; adminDisplayName: string }
+export interface MemberJoinedPayload {
+  startingBankrollCents: string;
+}
+export interface AllowancePaidPayload {
+  weekKey: string;
+  memberCount: number;
+  amountCents: string;
+}
+export interface AdminAdjustmentPayload {
+  amountCents: string;
+  note: string;
+  adminDisplayName: string;
+}
 export interface LeadChangePayload {
   sequence: number;
   previousLeaderMembershipId: string | null;
   previousLeaderDisplayName: string | null;
   balanceCents: string;
-  marginCents: string;                    // over second place
+  marginCents: string; // over second place
 }
-export interface BigWinPayload    { stakeCents: string; payoutCents: string; multipleBasisPoints: number }
-export interface ParlayHitPayload { legCount: number; payoutCents: string; combinedPriceAmerican: number }
+export interface BigWinPayload {
+  stakeCents: string;
+  payoutCents: string;
+  multipleBasisPoints: number;
+}
+export interface ParlayHitPayload {
+  legCount: number;
+  payoutCents: string;
+  combinedPriceAmerican: number;
+}
 
 /** The union stored in `feed_events.payload`, discriminated by the row's `type` column. */
 export type FeedEventPayload =
@@ -263,17 +281,17 @@ including in display-only fields ([D17](../decisions.md#d17--all-money-is-intege
 
 ### `feed_reactions`
 
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid | PK |
-| `event_id` | uuid | FK `feed_events` |
-| `membership_id` | uuid | FK `season_memberships` |
-| `emoji` | text | must be in the allowed set |
-| `created_at` | timestamptz | |
+| Column          | Type        | Notes                      |
+| --------------- | ----------- | -------------------------- |
+| `id`            | uuid        | PK                         |
+| `event_id`      | uuid        | FK `feed_events`           |
+| `membership_id` | uuid        | FK `season_memberships`    |
+| `emoji`         | text        | must be in the allowed set |
+| `created_at`    | timestamptz |                            |
 
 Unique on (`event_id`, `membership_id`, `emoji`); indexed on (`event_id`).
 
-A member may leave several *different* emoji on a card but not the same one twice. Tapping an
+A member may leave several _different_ emoji on a card but not the same one twice. Tapping an
 active reaction removes it — a hard `DELETE`, because a reaction is not an audit record and
 nobody needs its history ([D28](../decisions.md#d28--reactions-hard-delete-comments-soft-delete)).
 
@@ -289,31 +307,31 @@ respect, which is the entire emotional range of a betting group chat.
 
 ### `feed_comments`
 
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid | PK |
-| `event_id` | uuid | FK `feed_events` |
-| `membership_id` | uuid | FK `season_memberships` |
-| `body` | text | trimmed, 1–500 characters |
-| `created_at` | timestamptz | |
-| `deleted_at` | timestamptz | nullable |
-| `deleted_by_user_id` | uuid | nullable FK `users` |
+| Column               | Type        | Notes                     |
+| -------------------- | ----------- | ------------------------- |
+| `id`                 | uuid        | PK                        |
+| `event_id`           | uuid        | FK `feed_events`          |
+| `membership_id`      | uuid        | FK `season_memberships`   |
+| `body`               | text        | trimmed, 1–500 characters |
+| `created_at`         | timestamptz |                           |
+| `deleted_at`         | timestamptz | nullable                  |
+| `deleted_by_user_id` | uuid        | nullable FK `users`       |
 
 Indexed on (`event_id`, `created_at`).
 
 Flat — no threading, no editing. Deletion is **soft**: the row stays, the thread keeps its
-shape, the card renders *"Comment removed"*, and `deleted_by_user_id` records whether the
+shape, the card renders _"Comment removed"_, and `deleted_by_user_id` records whether the
 author or an admin did it. That's the same instinct as
 [D15](../decisions.md#d15--corrections-write-reversing-entries-history-is-never-edited): when
 an admin removes something, there is a record that they did.
 
 ### `feed_preferences`
 
-| Column | Type | Notes |
-|---|---|---|
-| `user_id` | uuid | PK, FK `users` |
+| Column        | Type                | Notes                    |
+| ------------- | ------------------- | ------------------------ |
+| `user_id`     | uuid                | PK, FK `users`           |
 | `muted_types` | `feed_event_type[]` | NOT NULL, default `'{}'` |
-| `updated_at` | timestamptz | |
+| `updated_at`  | timestamptz         |                          |
 
 Keyed on `user_id`, not `membership_id`: a preference is about a person, and it should survive
 into next season rather than resetting when a new membership is created.
@@ -397,15 +415,18 @@ back out of the last event's payload, which is the only place it needs to exist.
 ## Reading the feed
 
 ```ts
-export interface FeedCursor { occurredAt: Date; id: string }
+export interface FeedCursor {
+  occurredAt: Date;
+  id: string;
+}
 
 export async function getSeasonFeed(opts: {
   seasonId: string;
   viewerUserId: string;
   viewerMembershipId: string;
-  subjectMembershipId?: string;   // set for a profile's history
+  subjectMembershipId?: string; // set for a profile's history
   cursor?: FeedCursor;
-  limit?: number;                 // default 25, hard max 50
+  limit?: number; // default 25, hard max 50
 }): Promise<{ cards: FeedCard[]; nextCursor: FeedCursor | null }>;
 ```
 
@@ -444,15 +465,22 @@ user gets the same treatment they already get everywhere else.
 
 ```ts
 export async function toggleReaction(input: {
-  eventId: string; membershipId: string; emoji: string;
+  eventId: string;
+  membershipId: string;
+  emoji: string;
 }): Promise<{ active: boolean }>;
 
 export async function addComment(input: {
-  eventId: string; membershipId: string; body: string;
+  eventId: string;
+  membershipId: string;
+  body: string;
 }): Promise<{ commentId: string }>;
 
 export async function deleteComment(input: {
-  commentId: string; actorUserId: string; actorMembershipId: string; isAdmin: boolean;
+  commentId: string;
+  actorUserId: string;
+  actorMembershipId: string;
+  isAdmin: boolean;
 }): Promise<{ deleted: boolean }>;
 ```
 
@@ -473,7 +501,7 @@ Pure, in `src/domain/stats.ts`:
 export interface BetOutcomeRow {
   status: BetStatus;
   stakeCents: bigint;
-  payoutCents: bigint;      // 0 for PENDING and LOST
+  payoutCents: bigint; // 0 for PENDING and LOST
   settledAt: Date | null;
 }
 
@@ -481,13 +509,16 @@ export interface MemberStats {
   pending: number;
   pendingStakeCents: bigint;
   settled: number;
-  won: number; lost: number; pushed: number; voided: number;
+  won: number;
+  lost: number;
+  pushed: number;
+  voided: number;
   stakedCents: bigint;
   returnedCents: bigint;
   netCents: bigint;
-  roiBasisPoints: number | null;               // null when stakedCents is 0
+  roiBasisPoints: number | null; // null when stakedCents is 0
   currentStreak: { kind: 'W' | 'L' | 'NONE'; length: number };
-  biggestWinCents: bigint;                     // largest net profit on a single won bet
+  biggestWinCents: bigint; // largest net profit on a single won bet
 }
 
 export function computeMemberStats(rows: BetOutcomeRow[]): MemberStats;
@@ -499,7 +530,7 @@ Definitions, chosen and then written down because each has a defensible alternat
   never happened; counting it as action would drag every ROI toward zero for reasons that have
   nothing to do with betting skill.
 - **`PUSHED` bets are included** in both staked and returned, so they are ROI-neutral rather
-  than invisible. A push *is* a result — you had action and got your money back.
+  than invisible. A push _is_ a result — you had action and got your money back.
 - **ROI is integer basis points**, `net × 10000 / staked` in BigInt, displayed as a percentage
   with one decimal. Zero staked gives `null`, which the UI renders as `—` rather than `0.0%`.
 - **Streaks count only `WON` and `LOST`**, in `settledAt` order; pushes and voids are skipped
@@ -532,33 +563,33 @@ Feed sits second, one tap from open.
 
 Card bodies by type, so the UI has no room for invention:
 
-| Type | Reads as |
-|---|---|
-| `BET_PLACED` | *Dana* bet **$50** · KC −3.5 (−110) · to win $95.45 |
-| `BET_SETTLED` | *Dana* **won $95.45** · KC −3.5 ✓ (with per-leg marks on parlays) |
-| `MEMBER_JOINED` | *Dana* joined with **$10,000** |
-| `ALLOWANCE_PAID` | Weekly allowance paid · **$500** to 12 members |
-| `ADMIN_ADJUSTMENT` | *Dana* **+$250** by admin *Chris* — "won the survivor pool" |
-| `MILESTONE_LEAD_CHANGE` | *Dana* takes the lead · **$12,480** (+$310 over *Sam*) |
-| `MILESTONE_BIG_WIN` | *Dana* cashed **12.4×** · $50 → $620 |
-| `MILESTONE_PARLAY_HIT` | *Dana* hit a **5-leg parlay** · +$2,400 |
+| Type                    | Reads as                                                          |
+| ----------------------- | ----------------------------------------------------------------- |
+| `BET_PLACED`            | _Dana_ bet **$50** · KC −3.5 (−110) · to win $95.45               |
+| `BET_SETTLED`           | _Dana_ **won $95.45** · KC −3.5 ✓ (with per-leg marks on parlays) |
+| `MEMBER_JOINED`         | _Dana_ joined with **$10,000**                                    |
+| `ALLOWANCE_PAID`        | Weekly allowance paid · **$500** to 12 members                    |
+| `ADMIN_ADJUSTMENT`      | _Dana_ **+$250** by admin _Chris_ — "won the survivor pool"       |
+| `MILESTONE_LEAD_CHANGE` | _Dana_ takes the lead · **$12,480** (+$310 over _Sam_)            |
+| `MILESTONE_BIG_WIN`     | _Dana_ cashed **12.4×** · $50 → $620                              |
+| `MILESTONE_PARLAY_HIT`  | _Dana_ hit a **5-leg parlay** · +$2,400                           |
 
 ## Failure handling
 
-| Failure | Behavior |
-|---|---|
-| Feed insert fails inside a money transaction | The whole transaction rolls back. Deliberate: the insert is one dumb statement, so failure means Postgres is unavailable and the bet must not commit either. |
-| Cron double-fires; settlement re-runs | Unique `dedupe_key` plus `ON CONFLICT DO NOTHING` makes the second write a no-op — the same guarantee the ledger already gives. |
-| Admin re-settles a bet | A second `BET_SETTLED` card is posted with `correction: true`; the original stays. History is never edited ([D15](../decisions.md#d15--corrections-write-reversing-entries-history-is-never-edited)). |
-| Two runs both detect the same lead change | Both compute the same `sequence`; one wins the unique key, the other no-ops. |
-| Lead change while the top balance is tied | No event. A tie has no leader. |
-| A member is `DISABLED` mid-season | Their events and comments remain. Their profile renders with a disabled badge. They cannot react or comment (existing authorization already blocks it). |
-| A viewer mutes a type | Filtered at read time only. Nothing is deleted, and unmuting restores the full history. |
-| Comment is empty, whitespace, or over 500 chars | Rejected by the server action with a field error. The client also guards, but the server is what decides. |
-| Deleting an already-deleted comment | Returns `{ deleted: false }`. Not an error. |
-| A reaction emoji outside the allowed set | Rejected. The set is a server-side constant, not a client contract. |
-| Bets and settlements that predate this subsystem | No backfill. There is no production data yet ([docs/README.md](../README.md#where-things-stand)), so the feed simply starts empty and fills forward. |
-| A card's underlying game or team row changes | Irrelevant — the payload froze what to render. Only identity is joined live. |
+| Failure                                          | Behavior                                                                                                                                                                                              |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Feed insert fails inside a money transaction     | The whole transaction rolls back. Deliberate: the insert is one dumb statement, so failure means Postgres is unavailable and the bet must not commit either.                                          |
+| Cron double-fires; settlement re-runs            | Unique `dedupe_key` plus `ON CONFLICT DO NOTHING` makes the second write a no-op — the same guarantee the ledger already gives.                                                                       |
+| Admin re-settles a bet                           | A second `BET_SETTLED` card is posted with `correction: true`; the original stays. History is never edited ([D15](../decisions.md#d15--corrections-write-reversing-entries-history-is-never-edited)). |
+| Two runs both detect the same lead change        | Both compute the same `sequence`; one wins the unique key, the other no-ops.                                                                                                                          |
+| Lead change while the top balance is tied        | No event. A tie has no leader.                                                                                                                                                                        |
+| A member is `DISABLED` mid-season                | Their events and comments remain. Their profile renders with a disabled badge. They cannot react or comment (existing authorization already blocks it).                                               |
+| A viewer mutes a type                            | Filtered at read time only. Nothing is deleted, and unmuting restores the full history.                                                                                                               |
+| Comment is empty, whitespace, or over 500 chars  | Rejected by the server action with a field error. The client also guards, but the server is what decides.                                                                                             |
+| Deleting an already-deleted comment              | Returns `{ deleted: false }`. Not an error.                                                                                                                                                           |
+| A reaction emoji outside the allowed set         | Rejected. The set is a server-side constant, not a client contract.                                                                                                                                   |
+| Bets and settlements that predate this subsystem | No backfill. There is no production data yet ([docs/README.md](../README.md#where-things-stand)), so the feed simply starts empty and fills forward.                                                  |
+| A card's underlying game or team row changes     | Irrelevant — the payload froze what to render. Only identity is joined live.                                                                                                                          |
 
 ## Testing
 
@@ -566,7 +597,7 @@ Card bodies by type, so the UI has no room for invention:
 
 - `computeMemberStats`: empty history; all-pending; a push counted in both staked and returned;
   a void excluded from staked; ROI at zero staked returning `null`; ROI sign on a losing
-  season; streak broken by a loss; streak *not* broken by a push; biggest win taken as net
+  season; streak broken by a loss; streak _not_ broken by a push; biggest win taken as net
   profit rather than gross payout.
 - Milestone thresholds: big win at exactly 10× (inclusive) and at 9.99× (excluded); parlay hit
   at exactly 4 surviving legs and at 3; a 5-leg parlay reduced to 3 by pushes not counting as
@@ -576,25 +607,25 @@ Card bodies by type, so the UI has no room for invention:
 
 **Integration, against the test database:**
 
-1. *Emission* — placing a bet writes exactly one `BET_PLACED` with the expected dedupe key and
+1. _Emission_ — placing a bet writes exactly one `BET_PLACED` with the expected dedupe key and
    a payload whose legs match the frozen `bet_legs` rows.
-2. *Idempotency* — run `settleFinalGames` twice; assert `feed_events` is byte-identical after
+2. _Idempotency_ — run `settleFinalGames` twice; assert `feed_events` is byte-identical after
    the second run. This mirrors the existing ledger idempotency test and is the single most
    important test in the subsystem.
-3. *Correction* — re-settle a bet; assert two `BET_SETTLED` rows exist, the second flagged
+3. _Correction_ — re-settle a bet; assert two `BET_SETTLED` rows exist, the second flagged
    `correction`, and the first unmodified.
-4. *Pagination* — seed 60 events with colliding timestamps, page through with `limit: 25`, and
+4. _Pagination_ — seed 60 events with colliding timestamps, page through with `limit: 25`, and
    assert every event appears exactly once across the pages.
-5. *Muting* — mute `ALLOWANCE_PAID`; assert it is absent for that viewer and present for
+5. _Muting_ — mute `ALLOWANCE_PAID`; assert it is absent for that viewer and present for
    another; unmute and assert it returns.
-6. *Authorization* — a member of season A cannot read season B's feed, react to its events, or
+6. _Authorization_ — a member of season A cannot read season B's feed, react to its events, or
    comment on them; a `PENDING` user is rejected.
-7. *Comments* — author deletes own (allowed), non-author non-admin deletes (rejected), admin
+7. _Comments_ — author deletes own (allowed), non-author non-admin deletes (rejected), admin
    deletes another's (allowed, `deleted_by_user_id` recorded), double-delete returns
    `{ deleted: false }`.
-8. *Reactions* — toggle on, toggle off, two distinct emoji from one member allowed, the same
+8. _Reactions_ — toggle on, toggle off, two distinct emoji from one member allowed, the same
    emoji twice is one row.
-9. *End-to-end* — extend the existing `end-to-end.test.ts`: after the full place-and-settle
+9. _End-to-end_ — extend the existing `end-to-end.test.ts`: after the full place-and-settle
    flow, assert the feed contains the expected event sequence in the expected order.
 
 The reconciliation property from subsystem 1 must still hold after every social operation:

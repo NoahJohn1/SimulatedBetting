@@ -37,9 +37,7 @@ export function Badge({
   className?: string;
 }) {
   return (
-    <span
-      className={`rounded-pill px-2 py-0.5 text-xs font-medium ${TONES[tone]} ${className}`}
-    >
+    <span className={`rounded-pill px-2 py-0.5 text-xs font-medium ${TONES[tone]} ${className}`}>
       {children}
     </span>
   );

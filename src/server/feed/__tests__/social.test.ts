@@ -43,7 +43,12 @@ describe('toggleReaction', () => {
     const season = await makeSeason({ status: 'ACTIVE' });
     const { membership } = await seedMember(season.id);
     const event = await seedEvent(season.id, membership.id);
-    const input = { eventId: event.id, membershipId: membership.id, seasonId: season.id, emoji: '🔥' };
+    const input = {
+      eventId: event.id,
+      membershipId: membership.id,
+      seasonId: season.id,
+      emoji: '🔥',
+    };
 
     expect(await toggleReaction(input)).toEqual({ active: true });
     expect(await db.select().from(feedReactions)).toHaveLength(1);
@@ -57,8 +62,18 @@ describe('toggleReaction', () => {
     const { membership } = await seedMember(season.id);
     const event = await seedEvent(season.id, membership.id);
 
-    await toggleReaction({ eventId: event.id, membershipId: membership.id, seasonId: season.id, emoji: '🔥' });
-    await toggleReaction({ eventId: event.id, membershipId: membership.id, seasonId: season.id, emoji: '💀' });
+    await toggleReaction({
+      eventId: event.id,
+      membershipId: membership.id,
+      seasonId: season.id,
+      emoji: '🔥',
+    });
+    await toggleReaction({
+      eventId: event.id,
+      membershipId: membership.id,
+      seasonId: season.id,
+      emoji: '💀',
+    });
 
     expect(await db.select().from(feedReactions)).toHaveLength(2);
   });
@@ -69,7 +84,12 @@ describe('toggleReaction', () => {
     const event = await seedEvent(season.id, membership.id);
 
     await expect(
-      toggleReaction({ eventId: event.id, membershipId: membership.id, seasonId: season.id, emoji: '🍕' }),
+      toggleReaction({
+        eventId: event.id,
+        membershipId: membership.id,
+        seasonId: season.id,
+        emoji: '🍕',
+      }),
     ).rejects.toThrow(FeedError);
     expect(await db.select().from(feedReactions)).toHaveLength(0);
   });
@@ -82,7 +102,12 @@ describe('toggleReaction', () => {
     const event = await seedEvent(theirs.id, them.membership.id);
 
     await expect(
-      toggleReaction({ eventId: event.id, membershipId: me.membership.id, seasonId: mine.id, emoji: '🔥' }),
+      toggleReaction({
+        eventId: event.id,
+        membershipId: me.membership.id,
+        seasonId: mine.id,
+        emoji: '🔥',
+      }),
     ).rejects.toThrow(/WRONG_SEASON/);
   });
 });
@@ -112,7 +137,12 @@ describe('addComment', () => {
     const event = await seedEvent(season.id, membership.id);
 
     await expect(
-      addComment({ eventId: event.id, membershipId: membership.id, seasonId: season.id, body: '   ' }),
+      addComment({
+        eventId: event.id,
+        membershipId: membership.id,
+        seasonId: season.id,
+        body: '   ',
+      }),
     ).rejects.toThrow(/COMMENT_EMPTY/);
   });
 

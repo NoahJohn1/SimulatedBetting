@@ -27,7 +27,13 @@ export default async function StandingsPage() {
 
   if (rows.length === 0) return <EmptyState title="Nobody has joined yet" />;
 
-  const byCredits = [...rows].sort((a, b) => (a.creditsBalanceCents < b.creditsBalanceCents ? 1 : a.creditsBalanceCents > b.creditsBalanceCents ? -1 : 0));
+  const byCredits = [...rows].sort((a, b) =>
+    a.creditsBalanceCents < b.creditsBalanceCents
+      ? 1
+      : a.creditsBalanceCents > b.creditsBalanceCents
+        ? -1
+        : 0,
+  );
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4">
@@ -71,7 +77,11 @@ export default async function StandingsPage() {
                   >
                     {row.displayName}
                   </Link>
-                  <Money cents={row.creditsBalanceCents} currency="CREDITS" className="text-sm font-semibold" />
+                  <Money
+                    cents={row.creditsBalanceCents}
+                    currency="CREDITS"
+                    className="text-sm font-semibold"
+                  />
                 </Card>
               </li>
             );

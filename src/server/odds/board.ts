@@ -55,9 +55,7 @@ export async function getSlate(now: Date = new Date()): Promise<BoardGame[]> {
 
   if (gameRows.length === 0) return [];
 
-  const teamIds = [
-    ...new Set(gameRows.flatMap((g) => [g.homeTeamId, g.awayTeamId])),
-  ];
+  const teamIds = [...new Set(gameRows.flatMap((g) => [g.homeTeamId, g.awayTeamId]))];
   const teamRows = await db
     .select({ id: teams.id, name: teams.name, abbreviation: teams.abbreviation })
     .from(teams)

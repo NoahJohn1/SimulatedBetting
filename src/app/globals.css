@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Tier 1 — private ramps (D52).
@@ -11,21 +11,21 @@
    vocabulary the app speaks.
    ═══════════════════════════════════════════════════════════════════════════ */
 :root {
-  --n-0:    #fff;
-  --n-50:   oklch(98.5% 0 none);
-  --n-100:  oklch(96.7% 0.001 286.375);
-  --n-200:  oklch(92% 0.004 286.32);
-  --n-300:  oklch(87.1% 0.006 286.286);
-  --n-400:  oklch(70.5% 0.015 286.067);
-  --n-500:  oklch(55.2% 0.016 285.938);
-  --n-600:  oklch(44.2% 0.017 285.786);
-  --n-700:  oklch(37% 0.013 285.805);
-  --n-800:  oklch(27.4% 0.006 286.033);
-  --n-900:  oklch(21% 0.006 285.885);
-  --n-950:  oklch(14.1% 0.005 285.823);
+  --n-0: #fff;
+  --n-50: oklch(98.5% 0 none);
+  --n-100: oklch(96.7% 0.001 286.375);
+  --n-200: oklch(92% 0.004 286.32);
+  --n-300: oklch(87.1% 0.006 286.286);
+  --n-400: oklch(70.5% 0.015 286.067);
+  --n-500: oklch(55.2% 0.016 285.938);
+  --n-600: oklch(44.2% 0.017 285.786);
+  --n-700: oklch(37% 0.013 285.805);
+  --n-800: oklch(27.4% 0.006 286.033);
+  --n-900: oklch(21% 0.006 285.885);
+  --n-950: oklch(14.1% 0.005 285.823);
   --n-1000: #000;
 
-  --pos-50:  oklch(97.9% 0.021 166.113);
+  --pos-50: oklch(97.9% 0.021 166.113);
   --pos-100: oklch(95% 0.052 163.051);
   --pos-400: oklch(76.5% 0.177 163.223);
   --pos-500: oklch(69.6% 0.17 162.48);
@@ -33,7 +33,7 @@
   --pos-700: oklch(50.8% 0.118 165.612);
   --pos-950: oklch(26.2% 0.051 172.552);
 
-  --neg-50:  oklch(97.1% 0.013 17.38);
+  --neg-50: oklch(97.1% 0.013 17.38);
   --neg-100: oklch(93.6% 0.032 17.717);
   --neg-300: oklch(80.8% 0.114 19.571);
   --neg-400: oklch(70.4% 0.191 22.216);
@@ -42,7 +42,7 @@
   --neg-800: oklch(44.4% 0.177 26.899);
   --neg-950: oklch(25.8% 0.092 26.042);
 
-  --cau-50:  oklch(98.7% 0.022 95.277);
+  --cau-50: oklch(98.7% 0.022 95.277);
   --cau-100: oklch(96.2% 0.059 95.617);
   --cau-300: oklch(87.9% 0.169 91.605);
   --cau-400: oklch(82.8% 0.189 84.429);
@@ -60,42 +60,42 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 :root {
   /* LIGHT-PALETTE-START */
-  --surface:               var(--n-50);
-  --surface-raised:        var(--n-0);
-  --surface-sunken:        var(--n-50);
-  --surface-muted:         var(--n-100);
-  --surface-skeleton:      var(--n-200);
+  --surface: var(--n-50);
+  --surface-raised: var(--n-0);
+  --surface-sunken: var(--n-50);
+  --surface-muted: var(--n-100);
+  --surface-skeleton: var(--n-200);
 
-  --line:                  var(--n-200);
-  --line-strong:           var(--n-300);
-  --line-hover:            var(--n-400);
-  --line-subtle:           var(--n-100);
+  --line: var(--n-200);
+  --line-strong: var(--n-300);
+  --line-hover: var(--n-400);
+  --line-subtle: var(--n-100);
 
-  --ink:                   var(--n-900);
-  --ink-secondary:         var(--n-600);
-  --ink-muted:             var(--n-500);
-  --ink-subtle:            var(--n-400);
+  --ink: var(--n-900);
+  --ink-secondary: var(--n-600);
+  --ink-muted: var(--n-500);
+  --ink-subtle: var(--n-400);
 
-  --accent:                var(--n-900);
-  --accent-ink:            var(--n-0);
+  --accent: var(--n-900);
+  --accent-ink: var(--n-0);
 
-  --positive:              var(--pos-600);
-  --positive-surface:      var(--pos-100);
+  --positive: var(--pos-600);
+  --positive-surface: var(--pos-100);
   --positive-surface-soft: var(--pos-50);
-  --positive-line:         var(--pos-500);
-  --positive-on-surface:   var(--pos-700);
+  --positive-line: var(--pos-500);
+  --positive-on-surface: var(--pos-700);
 
-  --negative:              var(--neg-600);
-  --negative-surface:      var(--neg-100);
+  --negative: var(--neg-600);
+  --negative-surface: var(--neg-100);
   --negative-surface-soft: var(--neg-50);
-  --negative-line:         var(--neg-300);
-  --negative-on-surface:   var(--neg-700);
+  --negative-line: var(--neg-300);
+  --negative-on-surface: var(--neg-700);
 
-  --caution:               var(--cau-600);
-  --caution-surface:       var(--cau-100);
-  --caution-surface-soft:  var(--cau-50);
-  --caution-line:          var(--cau-300);
-  --caution-on-surface:    var(--cau-700);
+  --caution: var(--cau-600);
+  --caution-surface: var(--cau-100);
+  --caution-surface-soft: var(--cau-50);
+  --caution-line: var(--cau-300);
+  --caution-on-surface: var(--cau-700);
 
   --slip-shadow: 0 -8px 24px rgb(0 0 0 / 0.06);
   /* LIGHT-PALETTE-END */
@@ -116,44 +116,44 @@
    a drop-in rather than a restructure.
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-theme='light']) {
     /* DARK-PALETTE-START */
-    --surface:               var(--n-1000);
-    --surface-raised:        var(--n-950);
-    --surface-sunken:        var(--n-900);
-    --surface-muted:         var(--n-800);
-    --surface-skeleton:      var(--n-800);
+    --surface: var(--n-1000);
+    --surface-raised: var(--n-950);
+    --surface-sunken: var(--n-900);
+    --surface-muted: var(--n-800);
+    --surface-skeleton: var(--n-800);
 
-    --line:                  var(--n-800);
-    --line-strong:           var(--n-700);
-    --line-hover:            var(--n-600);
-    --line-subtle:           var(--n-900);
+    --line: var(--n-800);
+    --line-strong: var(--n-700);
+    --line-hover: var(--n-600);
+    --line-subtle: var(--n-900);
 
-    --ink:                   var(--n-50);
-    --ink-secondary:         var(--n-300);
-    --ink-muted:             var(--n-400);
-    --ink-subtle:            var(--n-600);
+    --ink: var(--n-50);
+    --ink-secondary: var(--n-300);
+    --ink-muted: var(--n-400);
+    --ink-subtle: var(--n-600);
 
-    --accent:                var(--n-100);
-    --accent-ink:            var(--n-900);
+    --accent: var(--n-100);
+    --accent-ink: var(--n-900);
 
-    --positive:              var(--pos-400);
-    --positive-surface:      var(--pos-950);
+    --positive: var(--pos-400);
+    --positive-surface: var(--pos-950);
     --positive-surface-soft: color-mix(in oklab, var(--pos-950) 30%, transparent);
-    --positive-line:         var(--pos-700);
-    --positive-on-surface:   var(--pos-400);
+    --positive-line: var(--pos-700);
+    --positive-on-surface: var(--pos-400);
 
-    --negative:              var(--neg-400);
-    --negative-surface:      var(--neg-950);
+    --negative: var(--neg-400);
+    --negative-surface: var(--neg-950);
     --negative-surface-soft: color-mix(in oklab, var(--neg-950) 30%, transparent);
-    --negative-line:         var(--neg-800);
-    --negative-on-surface:   var(--neg-400);
+    --negative-line: var(--neg-800);
+    --negative-on-surface: var(--neg-400);
 
-    --caution:               var(--cau-400);
-    --caution-surface:       var(--cau-950);
-    --caution-surface-soft:  color-mix(in oklab, var(--cau-950) 20%, transparent);
-    --caution-line:          var(--cau-800);
-    --caution-on-surface:    var(--cau-400);
+    --caution: var(--cau-400);
+    --caution-surface: var(--cau-950);
+    --caution-surface-soft: color-mix(in oklab, var(--cau-950) 20%, transparent);
+    --caution-line: var(--cau-800);
+    --caution-on-surface: var(--cau-400);
 
     --slip-shadow: 0 -8px 24px rgb(0 0 0 / 0.5);
     /* DARK-PALETTE-END */
@@ -162,44 +162,44 @@
   }
 }
 
-:root[data-theme="dark"] {
+:root[data-theme='dark'] {
   /* DARK-PALETTE-START */
-  --surface:               var(--n-1000);
-  --surface-raised:        var(--n-950);
-  --surface-sunken:        var(--n-900);
-  --surface-muted:         var(--n-800);
-  --surface-skeleton:      var(--n-800);
+  --surface: var(--n-1000);
+  --surface-raised: var(--n-950);
+  --surface-sunken: var(--n-900);
+  --surface-muted: var(--n-800);
+  --surface-skeleton: var(--n-800);
 
-  --line:                  var(--n-800);
-  --line-strong:           var(--n-700);
-  --line-hover:            var(--n-600);
-  --line-subtle:           var(--n-900);
+  --line: var(--n-800);
+  --line-strong: var(--n-700);
+  --line-hover: var(--n-600);
+  --line-subtle: var(--n-900);
 
-  --ink:                   var(--n-50);
-  --ink-secondary:         var(--n-300);
-  --ink-muted:             var(--n-400);
-  --ink-subtle:            var(--n-600);
+  --ink: var(--n-50);
+  --ink-secondary: var(--n-300);
+  --ink-muted: var(--n-400);
+  --ink-subtle: var(--n-600);
 
-  --accent:                var(--n-100);
-  --accent-ink:            var(--n-900);
+  --accent: var(--n-100);
+  --accent-ink: var(--n-900);
 
-  --positive:              var(--pos-400);
-  --positive-surface:      var(--pos-950);
+  --positive: var(--pos-400);
+  --positive-surface: var(--pos-950);
   --positive-surface-soft: color-mix(in oklab, var(--pos-950) 30%, transparent);
-  --positive-line:         var(--pos-700);
-  --positive-on-surface:   var(--pos-400);
+  --positive-line: var(--pos-700);
+  --positive-on-surface: var(--pos-400);
 
-  --negative:              var(--neg-400);
-  --negative-surface:      var(--neg-950);
+  --negative: var(--neg-400);
+  --negative-surface: var(--neg-950);
   --negative-surface-soft: color-mix(in oklab, var(--neg-950) 30%, transparent);
-  --negative-line:         var(--neg-800);
-  --negative-on-surface:   var(--neg-400);
+  --negative-line: var(--neg-800);
+  --negative-on-surface: var(--neg-400);
 
-  --caution:               var(--cau-400);
-  --caution-surface:       var(--cau-950);
-  --caution-surface-soft:  color-mix(in oklab, var(--cau-950) 20%, transparent);
-  --caution-line:          var(--cau-800);
-  --caution-on-surface:    var(--cau-400);
+  --caution: var(--cau-400);
+  --caution-surface: var(--cau-950);
+  --caution-surface-soft: color-mix(in oklab, var(--cau-950) 20%, transparent);
+  --caution-line: var(--cau-800);
+  --caution-on-surface: var(--cau-400);
 
   --slip-shadow: 0 -8px 24px rgb(0 0 0 / 0.5);
   /* DARK-PALETTE-END */
@@ -259,8 +259,8 @@
   /* Named for their role, because the codebase's rounded-lg/xl/full mix has never
      meant anything until now. */
   --radius-control: 0.5rem;
-  --radius-card:    0.75rem;
-  --radius-pill:    9999px;
+  --radius-card: 0.75rem;
+  --radius-pill: 9999px;
 
   /* Renamed on the way through: a theme variable may not reference a runtime
      variable of its own name. */

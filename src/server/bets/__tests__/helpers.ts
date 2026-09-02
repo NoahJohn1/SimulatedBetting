@@ -127,7 +127,10 @@ export async function makeMarket(
   type: MarketTypeValue = 'MONEYLINE',
   overrides: Partial<typeof markets.$inferInsert> = {},
 ) {
-  const [game] = await db.select({ eventId: games.eventId }).from(games).where(eq(games.id, gameId));
+  const [game] = await db
+    .select({ eventId: games.eventId })
+    .from(games)
+    .where(eq(games.id, gameId));
   const [market] = await db
     .insert(markets)
     .values({

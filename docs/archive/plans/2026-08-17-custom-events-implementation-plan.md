@@ -22,7 +22,7 @@
 - **Authorization is server-side on every request**, never by hiding UI. Use the existing `requireApprovedMember()` (pages, redirects), `requireApprovedMemberOrThrow()` (server actions, throws), and `requireAdmin()` (admin pages) from `src/server/auth/session.ts`.
 - **Do not change existing money or grading behavior.** All 306 existing tests must still pass. `gradeLeg`, `gradeParlay`, `settledPayoutCents` and everything in `src/domain/odds.ts` are read-only for this plan.
 - **Database for tests:** see [Environment setup](#environment-setup). The `npm run db:up` path needs Docker and does **not** work in the Claude Code cloud environment. Tests run against `simbet_test`.
-- **Verification command:** `npm run verify` (typecheck + lint + test). It must pass before the final commit of every task. Two pre-existing lint *warnings* exist (`src/server/feed/leaders.ts` unused `seasonId`, `src/server/feed/__tests__/money-emission.test.ts` unused `_`); they are not errors and are not yours to fix. Zero errors is the bar.
+- **Verification command:** `npm run verify` (typecheck + lint + test). It must pass before the final commit of every task. Two pre-existing lint _warnings_ exist (`src/server/feed/leaders.ts` unused `seasonId`, `src/server/feed/__tests__/money-emission.test.ts` unused `_`); they are not errors and are not yours to fix. Zero errors is the bar.
 - **Commit after every task**, with a `feat:` / `test:` / `docs:` prefix matching the existing history style.
 - **UI polish is deferred by decision of the project owner.** Tasks 16–21 must be correct, server-side authorized, and complete enough to exercise every path the services expose. They do not need to be finished design — match the existing screens' Tailwind idiom, keep the markup plain, and do not spend task budget on layout experiments. A later pass owns the visual work.
 
@@ -82,63 +82,63 @@ All three `.env` files are covered by `.gitignore` (`.env*`), so they will not b
 
 **New files**
 
-| Path | Responsibility |
-|---|---|
-| `src/db/schema/currency.ts` | The `currency` pgEnum alone. Its own file because both `money.ts` and `betting.ts` import it, and `money.ts` already imports `betting.ts` — a shared leaf avoids an import cycle. |
-| `src/db/schema/events.ts` | `events`, `custom_events`, `custom_event_disputes` tables and their enums |
-| `src/domain/custom-grading.ts` | Pure `gradeCustomLeg` and `currencyForKinds` |
-| `src/server/events/types.ts` | Input/result/error types shared by the event services |
-| `src/server/events/create.ts` | `createCustomEvent` + its validation |
-| `src/server/events/resolve.ts` | `resolveCustomEvent`, `voidCustomEvent` |
-| `src/server/events/dispute.ts` | `disputeResolution` |
-| `src/server/events/overdue.ts` | `sweepOverdueEvents` |
-| `src/server/events/manage.ts` | `setMarketStatus` (suspend/reopen) and `editCustomEvent` (only while unbet) |
-| `src/server/events/query.ts` | Reads for the board and the event detail page |
-| `src/server/bets/grade-legs.ts` | `gradeBetLegs` — the one place that routes a leg to its grader by kind |
-| `src/app/(app)/events/page.tsx` | Events board |
-| `src/app/(app)/events/actions.ts` | Server actions: create, resolve, dispute, suspend |
-| `src/app/(app)/events/new/page.tsx` | Create-event screen |
-| `src/app/(app)/events/new/event-form.tsx` | Client component: repeatable market/outcome builder |
-| `src/app/(app)/events/[eventId]/page.tsx` | Event detail |
-| `src/app/(app)/events/[eventId]/market-card.tsx` | One market and its outcomes, bettable |
-| `src/app/(app)/events/[eventId]/dispute-form.tsx` | Client component: dispute composer |
-| `src/app/(app)/events/[eventId]/resolve/page.tsx` | Resolution screen |
-| `src/app/(app)/events/[eventId]/resolve/resolve-form.tsx` | Client component: one radio group per market |
-| `src/app/admin/events/page.tsx` | Overdue queue, open disputes, void control |
-| `src/app/admin/events/actions.ts` | Server actions: void, re-resolve |
+| Path                                                      | Responsibility                                                                                                                                                                    |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/db/schema/currency.ts`                               | The `currency` pgEnum alone. Its own file because both `money.ts` and `betting.ts` import it, and `money.ts` already imports `betting.ts` — a shared leaf avoids an import cycle. |
+| `src/db/schema/events.ts`                                 | `events`, `custom_events`, `custom_event_disputes` tables and their enums                                                                                                         |
+| `src/domain/custom-grading.ts`                            | Pure `gradeCustomLeg` and `currencyForKinds`                                                                                                                                      |
+| `src/server/events/types.ts`                              | Input/result/error types shared by the event services                                                                                                                             |
+| `src/server/events/create.ts`                             | `createCustomEvent` + its validation                                                                                                                                              |
+| `src/server/events/resolve.ts`                            | `resolveCustomEvent`, `voidCustomEvent`                                                                                                                                           |
+| `src/server/events/dispute.ts`                            | `disputeResolution`                                                                                                                                                               |
+| `src/server/events/overdue.ts`                            | `sweepOverdueEvents`                                                                                                                                                              |
+| `src/server/events/manage.ts`                             | `setMarketStatus` (suspend/reopen) and `editCustomEvent` (only while unbet)                                                                                                       |
+| `src/server/events/query.ts`                              | Reads for the board and the event detail page                                                                                                                                     |
+| `src/server/bets/grade-legs.ts`                           | `gradeBetLegs` — the one place that routes a leg to its grader by kind                                                                                                            |
+| `src/app/(app)/events/page.tsx`                           | Events board                                                                                                                                                                      |
+| `src/app/(app)/events/actions.ts`                         | Server actions: create, resolve, dispute, suspend                                                                                                                                 |
+| `src/app/(app)/events/new/page.tsx`                       | Create-event screen                                                                                                                                                               |
+| `src/app/(app)/events/new/event-form.tsx`                 | Client component: repeatable market/outcome builder                                                                                                                               |
+| `src/app/(app)/events/[eventId]/page.tsx`                 | Event detail                                                                                                                                                                      |
+| `src/app/(app)/events/[eventId]/market-card.tsx`          | One market and its outcomes, bettable                                                                                                                                             |
+| `src/app/(app)/events/[eventId]/dispute-form.tsx`         | Client component: dispute composer                                                                                                                                                |
+| `src/app/(app)/events/[eventId]/resolve/page.tsx`         | Resolution screen                                                                                                                                                                 |
+| `src/app/(app)/events/[eventId]/resolve/resolve-form.tsx` | Client component: one radio group per market                                                                                                                                      |
+| `src/app/admin/events/page.tsx`                           | Overdue queue, open disputes, void control                                                                                                                                        |
+| `src/app/admin/events/actions.ts`                         | Server actions: void, re-resolve                                                                                                                                                  |
 
 **Modified files**
 
-| Path | Change |
-|---|---|
-| `src/db/schema/index.ts` | Export `./currency` and `./events` |
-| `src/db/schema/money.ts` | `ledger_entries.currency` |
-| `src/db/schema/identity.ts` | `season_memberships.credits_balance_cents`; `seasons` credit grant columns |
-| `src/db/schema/betting.ts` | `bets.currency` |
-| `src/db/schema/sports.ts` | `games.event_id`; `markets.event_id` replaces `game_id`, plus `title`, `winning_selection_id`, nullable `source_book`; `selections.label`, `sort_order`, nullable `side` |
-| `src/db/schema/social.ts` | Five new `feed_event_type` values |
-| `src/test/db.ts` | Truncate the three new tables |
-| `src/test/factories.ts` | `makeCustomEvent`, `makeCreditMembership` helpers |
-| `src/server/money/ledger.ts` | `postEntry` takes a currency |
-| `src/server/money/reconcile.ts` | Reconcile per currency |
-| `src/server/seasons/service.ts` | Grant starting credits on join |
-| `src/server/seasons/allowance.ts` | Pay the weekly credit drip |
-| `src/server/admin/adjust.ts` | Adjust in either currency |
-| `src/server/bets/validate.ts` | Kind-aware `LoadedSelection`; `DUPLICATE_EVENT`; `MIXED_CURRENCY_PARLAY` |
-| `src/server/bets/place.ts` | Kind-aware `loadSelections`; writes `bets.currency` |
-| `src/server/bets/settle.ts` | Joins through `events`; pays in the bet's currency |
-| `src/server/bets/resettle.ts` | Regrades by kind |
-| `src/server/odds/sync.ts`, `board.ts`, `results.ts` | Join through `events` |
-| `src/server/feed/payload.ts` | `FeedLegSnapshot` union, `currency` on bet payloads, five new payload types |
-| `src/server/feed/snapshot.ts` | `buildCustomLegSnapshot` |
-| `src/app/api/cron/settle/route.ts` | Call `sweepOverdueEvents` |
-| `src/components/ui/tab-bar.tsx` | Six tabs |
-| `src/components/bet-slip/*` | Credits mode |
-| `src/app/(app)/standings/page.tsx` | Credits leaderboard |
-| `src/app/(app)/me/page.tsx` | Both balances, currency column |
-| `src/app/(app)/bets/page.tsx` | Currency filter |
-| `src/app/(app)/feed/feed-card.tsx` | Render the five new card types and custom legs |
-| `src/server/__tests__/end-to-end.test.ts` | The custom-event arc |
+| Path                                                | Change                                                                                                                                                                   |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/db/schema/index.ts`                            | Export `./currency` and `./events`                                                                                                                                       |
+| `src/db/schema/money.ts`                            | `ledger_entries.currency`                                                                                                                                                |
+| `src/db/schema/identity.ts`                         | `season_memberships.credits_balance_cents`; `seasons` credit grant columns                                                                                               |
+| `src/db/schema/betting.ts`                          | `bets.currency`                                                                                                                                                          |
+| `src/db/schema/sports.ts`                           | `games.event_id`; `markets.event_id` replaces `game_id`, plus `title`, `winning_selection_id`, nullable `source_book`; `selections.label`, `sort_order`, nullable `side` |
+| `src/db/schema/social.ts`                           | Five new `feed_event_type` values                                                                                                                                        |
+| `src/test/db.ts`                                    | Truncate the three new tables                                                                                                                                            |
+| `src/test/factories.ts`                             | `makeCustomEvent`, `makeCreditMembership` helpers                                                                                                                        |
+| `src/server/money/ledger.ts`                        | `postEntry` takes a currency                                                                                                                                             |
+| `src/server/money/reconcile.ts`                     | Reconcile per currency                                                                                                                                                   |
+| `src/server/seasons/service.ts`                     | Grant starting credits on join                                                                                                                                           |
+| `src/server/seasons/allowance.ts`                   | Pay the weekly credit drip                                                                                                                                               |
+| `src/server/admin/adjust.ts`                        | Adjust in either currency                                                                                                                                                |
+| `src/server/bets/validate.ts`                       | Kind-aware `LoadedSelection`; `DUPLICATE_EVENT`; `MIXED_CURRENCY_PARLAY`                                                                                                 |
+| `src/server/bets/place.ts`                          | Kind-aware `loadSelections`; writes `bets.currency`                                                                                                                      |
+| `src/server/bets/settle.ts`                         | Joins through `events`; pays in the bet's currency                                                                                                                       |
+| `src/server/bets/resettle.ts`                       | Regrades by kind                                                                                                                                                         |
+| `src/server/odds/sync.ts`, `board.ts`, `results.ts` | Join through `events`                                                                                                                                                    |
+| `src/server/feed/payload.ts`                        | `FeedLegSnapshot` union, `currency` on bet payloads, five new payload types                                                                                              |
+| `src/server/feed/snapshot.ts`                       | `buildCustomLegSnapshot`                                                                                                                                                 |
+| `src/app/api/cron/settle/route.ts`                  | Call `sweepOverdueEvents`                                                                                                                                                |
+| `src/components/ui/tab-bar.tsx`                     | Six tabs                                                                                                                                                                 |
+| `src/components/bet-slip/*`                         | Credits mode                                                                                                                                                             |
+| `src/app/(app)/standings/page.tsx`                  | Credits leaderboard                                                                                                                                                      |
+| `src/app/(app)/me/page.tsx`                         | Both balances, currency column                                                                                                                                           |
+| `src/app/(app)/bets/page.tsx`                       | Currency filter                                                                                                                                                          |
+| `src/app/(app)/feed/feed-card.tsx`                  | Render the five new card types and custom legs                                                                                                                           |
+| `src/server/__tests__/end-to-end.test.ts`           | The custom-event arc                                                                                                                                                     |
 
 ## Task order and why
 
@@ -151,12 +151,14 @@ Tasks 1–4 add credits to the money core with no reference to events at all —
 ### Task 1: Currency on the ledger
 
 **Files:**
+
 - Create: `src/db/schema/currency.ts`
 - Modify: `src/db/schema/money.ts`, `src/db/schema/identity.ts`, `src/db/schema/betting.ts`, `src/db/schema/index.ts`
 - Create: `drizzle/0005_*.sql` (generated)
 - Test: `src/db/__tests__/currency-schema.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing — this is the first task.
 - Produces: `currency` pgEnum and `type Currency = 'CASH' | 'CREDITS'`; `ledgerEntries.currency`; `seasonMemberships.creditsBalanceCents`; `seasons.startingCreditsCents`; `seasons.weeklyCreditAllowanceCents`; `bets.currency`.
 
@@ -342,10 +344,12 @@ git commit -m "feat: add a currency dimension to the ledger schema"
 ### Task 2: `postEntry` moves the currency it is told to
 
 **Files:**
+
 - Modify: `src/server/money/ledger.ts`
 - Test: `src/server/money/__tests__/ledger-currency.test.ts`
 
 **Interfaces:**
+
 - Consumes: `Currency` from Task 1.
 - Produces: `PostEntryInput` gains `currency?: Currency` (defaults `'CASH'`). `PostEntryResult` unchanged in shape — `balanceCents` is the balance **of the entry's own currency** after the write.
 
@@ -468,12 +472,7 @@ Rewrite `src/server/money/ledger.ts`. The whole file, so there is nothing to inf
 ```ts
 import { eq } from 'drizzle-orm';
 import type { Tx } from '@/db/client';
-import {
-  ledgerEntries,
-  seasonMemberships,
-  type Currency,
-  type LedgerEntryType,
-} from '@/db/schema';
+import { ledgerEntries, seasonMemberships, type Currency, type LedgerEntryType } from '@/db/schema';
 import { MoneyError } from './errors';
 
 const ADMIN_TYPES: ReadonlySet<LedgerEntryType> = new Set(['ADMIN_CREDIT', 'ADMIN_DEBIT']);
@@ -553,11 +552,7 @@ export async function postEntry(tx: Tx, input: PostEntryInput): Promise<PostEntr
 
   await tx
     .update(seasonMemberships)
-    .set(
-      currency === 'CASH'
-        ? { balanceCents: nextBalance }
-        : { creditsBalanceCents: nextBalance },
-    )
+    .set(currency === 'CASH' ? { balanceCents: nextBalance } : { creditsBalanceCents: nextBalance })
     .where(eq(seasonMemberships.id, input.membershipId));
 
   return { applied: true, balanceCents: nextBalance, entryId: inserted[0].id };
@@ -586,10 +581,12 @@ git commit -m "feat: post ledger entries in a named currency"
 ### Task 3: Reconciliation checks each currency separately
 
 **Files:**
+
 - Modify: `src/server/money/reconcile.ts`
 - Test: `src/server/money/__tests__/reconcile-currency.test.ts`
 
 **Interfaces:**
+
 - Consumes: `postEntry`'s currency from Task 2.
 - Produces: `Discrepancy` gains `currency: Currency`. `reconcileBalances()` returns one row per drifting `(membership, currency)` pair.
 
@@ -791,11 +788,13 @@ git commit -m "feat: reconcile cash and credits balances independently"
 ### Task 4: Credits are granted at join, dripped weekly, adjustable by admins
 
 **Files:**
+
 - Modify: `src/server/seasons/service.ts`, `src/server/seasons/allowance.ts`, `src/server/seasons/defaults.ts`, `src/server/admin/adjust.ts`
 - Modify: `src/server/feed/payload.ts` (allowance and join payloads gain credit amounts)
 - Test: `src/server/seasons/__tests__/credit-grants.test.ts`
 
 **Interfaces:**
+
 - Consumes: `postEntry` currency (Task 2).
 - Produces: `createSeason` accepts `startingCreditsCents` / `weeklyCreditAllowanceCents`; `joinSeason` returns `{ membershipId, balanceCents, creditsBalanceCents }`; `adjustBalance` accepts `currency?: Currency`; `AllowancePaidPayload` gains `creditAmountCents: string`; `MemberJoinedPayload` gains `startingCreditsCents: string`.
 
@@ -952,42 +951,42 @@ In `src/server/seasons/service.ts`, extend `CreateSeasonInput` with `startingCre
 Then, in `joinSeason`, after the existing cash grant, add the credits grant and widen the return:
 
 ```ts
-    const result = await postEntry(tx, {
-      membershipId: membership.id,
-      amountCents: season.startingBankrollCents,
-      type: 'SEASON_STARTING_GRANT',
-      idempotencyKey: `grant:${membership.id}`,
-    });
+const result = await postEntry(tx, {
+  membershipId: membership.id,
+  amountCents: season.startingBankrollCents,
+  type: 'SEASON_STARTING_GRANT',
+  idempotencyKey: `grant:${membership.id}`,
+});
 
-    // Credits are granted, never bought (D31). Same transaction, distinct key, so a
-    // replayed join grants neither currency twice.
-    const credits = await postEntry(tx, {
-      membershipId: membership.id,
-      amountCents: season.startingCreditsCents,
-      type: 'SEASON_STARTING_GRANT',
-      currency: 'CREDITS',
-      idempotencyKey: `grant:${membership.id}:credits`,
-    });
+// Credits are granted, never bought (D31). Same transaction, distinct key, so a
+// replayed join grants neither currency twice.
+const credits = await postEntry(tx, {
+  membershipId: membership.id,
+  amountCents: season.startingCreditsCents,
+  type: 'SEASON_STARTING_GRANT',
+  currency: 'CREDITS',
+  idempotencyKey: `grant:${membership.id}:credits`,
+});
 
-    if (result.applied) {
-      await emitFeedEvent(tx, {
-        seasonId,
-        type: 'MEMBER_JOINED',
-        subjectMembershipId: membership.id,
-        dedupeKey: `membership:${membership.id}:joined`,
-        payload: {
-          startingBankrollCents: season.startingBankrollCents.toString(),
-          startingCreditsCents: season.startingCreditsCents.toString(),
-        },
-        occurredAt: membership.joinedAt,
-      });
-    }
+if (result.applied) {
+  await emitFeedEvent(tx, {
+    seasonId,
+    type: 'MEMBER_JOINED',
+    subjectMembershipId: membership.id,
+    dedupeKey: `membership:${membership.id}:joined`,
+    payload: {
+      startingBankrollCents: season.startingBankrollCents.toString(),
+      startingCreditsCents: season.startingCreditsCents.toString(),
+    },
+    occurredAt: membership.joinedAt,
+  });
+}
 
-    return {
-      membershipId: membership.id,
-      balanceCents: result.balanceCents,
-      creditsBalanceCents: credits.balanceCents,
-    };
+return {
+  membershipId: membership.id,
+  balanceCents: result.balanceCents,
+  creditsBalanceCents: credits.balanceCents,
+};
 ```
 
 Update `JoinSeasonResult` to include `creditsBalanceCents: bigint`.
@@ -997,26 +996,26 @@ Update `JoinSeasonResult` to include `creditsBalanceCents: bigint`.
 In `src/server/seasons/allowance.ts`, replace the body of the membership loop so both entries post in one transaction:
 
 ```ts
-  for (const membership of memberships) {
-    const result = await db.transaction(async (tx) => {
-      const cash = await postEntry(tx, {
-        membershipId: membership.id,
-        amountCents: season.weeklyAllowanceCents,
-        type: 'WEEKLY_ALLOWANCE',
-        idempotencyKey: `allowance:${membership.id}:${weekKey}`,
-      });
-      await postEntry(tx, {
-        membershipId: membership.id,
-        amountCents: season.weeklyCreditAllowanceCents,
-        type: 'WEEKLY_ALLOWANCE',
-        currency: 'CREDITS',
-        idempotencyKey: `allowance:${membership.id}:${weekKey}:credits`,
-      });
-      return cash;
+for (const membership of memberships) {
+  const result = await db.transaction(async (tx) => {
+    const cash = await postEntry(tx, {
+      membershipId: membership.id,
+      amountCents: season.weeklyAllowanceCents,
+      type: 'WEEKLY_ALLOWANCE',
+      idempotencyKey: `allowance:${membership.id}:${weekKey}`,
     });
-    if (result.applied) credited += 1;
-    else skipped += 1;
-  }
+    await postEntry(tx, {
+      membershipId: membership.id,
+      amountCents: season.weeklyCreditAllowanceCents,
+      type: 'WEEKLY_ALLOWANCE',
+      currency: 'CREDITS',
+      idempotencyKey: `allowance:${membership.id}:${weekKey}:credits`,
+    });
+    return cash;
+  });
+  if (result.applied) credited += 1;
+  else skipped += 1;
+}
 ```
 
 `credited` / `skipped` continue to count the cash entry only — one number per member, not two, which is what the aggregated card reports.
@@ -1039,11 +1038,11 @@ In `src/server/admin/adjust.ts`, add `currency?: Currency` to `AdjustBalanceInpu
 **Skip `detectLeadChange` for credit adjustments** — the lead is a cash concept:
 
 ```ts
-  // The lead means the standings, and the standings are cash (D31). A credits adjustment
-  // cannot reorder them, so there is nothing to detect.
-  if (result.applied && result.seasonId && (input.currency ?? 'CASH') === 'CASH') {
-    await detectLeadChange(result.seasonId);
-  }
+// The lead means the standings, and the standings are cash (D31). A credits adjustment
+// cannot reorder them, so there is nothing to detect.
+if (result.applied && result.seasonId && (input.currency ?? 'CASH') === 'CASH') {
+  await detectLeadChange(result.seasonId);
+}
 ```
 
 - [ ] **Step 7: Widen the payload types**
@@ -1083,16 +1082,16 @@ Existing tests that assert on join, allowance, or adjustment payloads will now s
 Fix it by making the credits grant conditional, which is the behavior the tests should assert:
 
 ```ts
-    const credits =
-      season.startingCreditsCents > 0n
-        ? await postEntry(tx, {
-            membershipId: membership.id,
-            amountCents: season.startingCreditsCents,
-            type: 'SEASON_STARTING_GRANT',
-            currency: 'CREDITS',
-            idempotencyKey: `grant:${membership.id}:credits`,
-          })
-        : { applied: false as const, balanceCents: 0n, entryId: null };
+const credits =
+  season.startingCreditsCents > 0n
+    ? await postEntry(tx, {
+        membershipId: membership.id,
+        amountCents: season.startingCreditsCents,
+        type: 'SEASON_STARTING_GRANT',
+        currency: 'CREDITS',
+        idempotencyKey: `grant:${membership.id}:credits`,
+      })
+    : { applied: false as const, balanceCents: 0n, entryId: null };
 ```
 
 Apply the same `> 0n` guard to the weekly credit drip. A zero-credit season writes no credit rows at all.
@@ -1114,12 +1113,14 @@ git commit -m "feat: grant, drip and adjust credits alongside cash"
 ### Task 5: The `events` supertype, added and backfilled
 
 **Files:**
+
 - Create: `src/db/schema/events.ts`
 - Modify: `src/db/schema/sports.ts`, `src/db/schema/index.ts`, `src/test/db.ts`, `src/server/bets/__tests__/helpers.ts`
 - Create: `drizzle/0006_*.sql` (generated, then hand-edited for the backfill)
 - Test: `src/db/__tests__/events-supertype.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing from Tasks 1–4.
 - Produces: `events` table with `eventKind` pgEnum (`'GAME' | 'CUSTOM'`) and `type EventKind`; `games.eventId` (`NOT NULL`, unique); `markets.eventId` (**nullable in this task**, populated for every existing row).
 
@@ -1317,7 +1318,10 @@ export async function makeMarket(
   type: MarketTypeValue = 'MONEYLINE',
   overrides: Partial<typeof markets.$inferInsert> = {},
 ) {
-  const [game] = await db.select({ eventId: games.eventId }).from(games).where(eq(games.id, gameId));
+  const [game] = await db
+    .select({ eventId: games.eventId })
+    .from(games)
+    .where(eq(games.id, gameId));
   const [market] = await db
     .insert(markets)
     .values({
@@ -1370,12 +1374,14 @@ git commit -m "feat: add the events supertype and backfill one event per game"
 ### Task 6: Every read goes through `markets.event_id`
 
 **Files:**
+
 - Modify: `src/server/bets/place.ts`, `src/server/bets/settle.ts`, `src/server/bets/resettle.ts`, `src/server/odds/sync.ts`, `src/server/odds/board.ts`, `src/app/(app)/bets/page.tsx`
 - Modify: `src/db/schema/sports.ts` (`markets.eventId` becomes `NOT NULL`, `game_id` dropped)
 - Modify tests: `src/server/__tests__/end-to-end.test.ts`, `src/server/bets/__tests__/settle.test.ts`, `src/server/bets/__tests__/settle-void.test.ts`, `src/server/odds/__tests__/sync.test.ts`
 - Create: `drizzle/0007_*.sql` (generated)
 
 **Interfaces:**
+
 - Consumes: `markets.eventId` from Task 5.
 - Produces: `markets.gameId` no longer exists. Every join from a market to a game goes `markets.eventId → games.eventId`.
 
@@ -1406,18 +1412,18 @@ The three non-mechanical spots:
 **`settle.ts:76`** — the pending-legs query filters `eq(markets.gameId, gameId)`. It becomes a join through the game's event:
 
 ```ts
-    const pending = await tx
-      .select({
-        legId: betLegs.id,
-        betId: betLegs.betId,
-        line: betLegs.lineAtPlacement,
-        marketType: markets.type,
-        side: selections.side,
-      })
-      .from(betLegs)
-      .innerJoin(selections, eq(betLegs.selectionId, selections.id))
-      .innerJoin(markets, eq(selections.marketId, markets.id))
-      .where(and(eq(markets.eventId, game.eventId), eq(betLegs.status, 'PENDING')));
+const pending = await tx
+  .select({
+    legId: betLegs.id,
+    betId: betLegs.betId,
+    line: betLegs.lineAtPlacement,
+    marketType: markets.type,
+    side: selections.side,
+  })
+  .from(betLegs)
+  .innerJoin(selections, eq(betLegs.selectionId, selections.id))
+  .innerJoin(markets, eq(selections.marketId, markets.id))
+  .where(and(eq(markets.eventId, game.eventId), eq(betLegs.status, 'PENDING')));
 ```
 
 `game` is already loaded and locked at the top of `settleGame`, so `game.eventId` is in hand.
@@ -1425,7 +1431,7 @@ The three non-mechanical spots:
 **`settle.ts:251`** — the market close-out becomes:
 
 ```ts
-    await tx.update(markets).set({ status: 'SETTLED' }).where(eq(markets.eventId, game.eventId));
+await tx.update(markets).set({ status: 'SETTLED' }).where(eq(markets.eventId, game.eventId));
 ```
 
 **`settle.ts:302`** — the candidate sweep joins games to markets:
@@ -1499,6 +1505,7 @@ git commit -m "refactor: point markets at events and drop markets.game_id"
 ### Task 7: Custom event tables and the outcome market shape
 
 **Files:**
+
 - Modify: `src/db/schema/events.ts` (add `custom_events`, `custom_event_disputes`)
 - Modify: `src/db/schema/sports.ts` (`markets.title`, `winning_selection_id`, nullable `source_book`, `CUSTOM_OUTCOME`; `selections.label`, `sort_order`, nullable `side`)
 - Modify: `src/db/schema/index.ts`, `src/test/db.ts`, `src/server/odds/sync.ts`
@@ -1506,6 +1513,7 @@ git commit -m "refactor: point markets at events and drop markets.game_id"
 - Test: `src/db/__tests__/custom-events-schema.test.ts`
 
 **Interfaces:**
+
 - Consumes: `events` from Task 5.
 - Produces: `customEvents` table with `customEventStatus` pgEnum (`'OPEN' | 'RESOLVED' | 'VOIDED'`); `customEventDisputes` table; `markets.title`, `markets.winningSelectionId`; `selections.label`, `selections.sortOrder`; `marketType` gains `'CUSTOM_OUTCOME'`.
 
@@ -1600,7 +1608,9 @@ describe('custom events schema', () => {
       .values({ eventId: event.id, type: 'CUSTOM_OUTCOME', title: 'Who wins?' })
       .returning();
 
-    await db.insert(selections).values({ marketId: market.id, label: 'Falcons', priceAmerican: -150 });
+    await db
+      .insert(selections)
+      .values({ marketId: market.id, label: 'Falcons', priceAmerican: -150 });
 
     await expect(
       db.insert(selections).values({ marketId: market.id, label: 'Falcons', priceAmerican: 100 }),
@@ -1633,7 +1643,12 @@ Expected: FAIL — `customEvents` is not exported.
 Append to `src/db/schema/events.ts`:
 
 ```ts
-import { integer, text as pgText, timestamp as pgTimestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+  integer,
+  text as pgText,
+  timestamp as pgTimestamp,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { seasonMemberships, seasons, users } from './identity';
 
@@ -1829,10 +1844,12 @@ git commit -m "feat: add custom event tables and the N-way outcome market shape"
 ### Task 8: Pure grading and currency derivation
 
 **Files:**
+
 - Create: `src/domain/custom-grading.ts`
 - Test: `src/domain/__tests__/custom-grading.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing — pure functions, no I/O, no database.
 - Produces:
   - `gradeCustomLeg(input: { selectionId: string; winningSelectionId: string | null }): 'WON' | 'LOST' | 'PENDING'`
@@ -1915,8 +1932,7 @@ export function gradeCustomLeg(input: {
 }
 
 export type CurrencyForKindsResult =
-  | { ok: true; currency: Currency }
-  | { ok: false; gameIndexes: number[]; customIndexes: number[] };
+  { ok: true; currency: Currency } | { ok: false; gameIndexes: number[]; customIndexes: number[] };
 
 /**
  * Derives the currency a slip must be placed in, from the kinds of its legs.
@@ -1967,12 +1983,14 @@ git commit -m "feat: add pure custom-market grading and currency derivation"
 ### Task 9: Feed vocabulary for custom events
 
 **Files:**
+
 - Modify: `src/db/schema/social.ts` (five new `feed_event_type` values)
 - Modify: `src/server/feed/payload.ts`, `src/server/feed/snapshot.ts`
 - Create: `drizzle/0009_*.sql` (generated)
 - Test: `src/server/feed/__tests__/custom-snapshot.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing from Tasks 5–8 at runtime; it is the vocabulary the next six tasks emit into.
 - Produces: `FeedEventType` gains `'CUSTOM_EVENT_CREATED' | 'CUSTOM_EVENT_RESOLVED' | 'CUSTOM_EVENT_DISPUTED' | 'CUSTOM_EVENT_VOIDED' | 'CUSTOM_EVENT_OVERDUE'`; `FeedLegSnapshot` becomes a discriminated union; `BetPlacedPayload`/`BetSettledPayload` gain `currency`; `buildCustomLegSnapshot(source, frozen)`.
 
@@ -2078,7 +2096,7 @@ npm run db:generate
 npm run db:migrate:test
 ```
 
-The generated SQL is five `ALTER TYPE "public"."feed_event_type" ADD VALUE …` statements. Postgres 16 permits these inside the migrator's transaction because the migration only *adds* the values without using them in the same transaction — if a later migration ever needs to use a value it just added, it must be split into two migrations.
+The generated SQL is five `ALTER TYPE "public"."feed_event_type" ADD VALUE …` statements. Postgres 16 permits these inside the migrator's transaction because the migration only _adds_ the values without using them in the same transaction — if a later migration ever needs to use a value it just added, it must be split into two migrations.
 
 Existing `feed_preferences.muted_types` is an array of this enum and needs no change: adding a value widens what can be muted, and the preferences screen enumerates the enum at render time.
 
@@ -2235,11 +2253,13 @@ git commit -m "feat: add custom-event feed types and the custom leg snapshot"
 ### Task 10: Creating an event
 
 **Files:**
+
 - Create: `src/server/events/types.ts`, `src/server/events/create.ts`
 - Test: `src/server/events/__tests__/create.test.ts`
 - Modify: `src/test/factories.ts` (add `makeCustomEvent`)
 
 **Interfaces:**
+
 - Consumes: `customEvents`, `events`, `markets`, `selections` (Tasks 5–7); `emitFeedEvent`; `CustomEventCreatedPayload` (Task 9).
 - Produces:
   - `createCustomEvent(input: CreateCustomEventInput): Promise<CreateCustomEventResult>`
@@ -2314,7 +2334,9 @@ describe('createCustomEvent', () => {
 
     const marketRows = await db.select().from(markets).where(eq(markets.eventId, result.eventId));
     expect(marketRows).toHaveLength(2);
-    expect(marketRows.every((m) => m.type === 'CUSTOM_OUTCOME' && m.sourceBook === null)).toBe(true);
+    expect(marketRows.every((m) => m.type === 'CUSTOM_OUTCOME' && m.sourceBook === null)).toBe(
+      true,
+    );
 
     const first = marketRows.find((m) => m.title === 'Who wins the cup?')!;
     const outcomes = await db
@@ -2419,9 +2441,7 @@ describe('createCustomEvent', () => {
   });
 
   it('rejects a membership that does not exist', async () => {
-    const result = await createCustomEvent(
-      validInput('00000000-0000-4000-8000-000000000000'),
-    );
+    const result = await createCustomEvent(validInput('00000000-0000-4000-8000-000000000000'));
     expect(result).toEqual({ ok: false, error: { code: 'NOT_A_MEMBER' } });
   });
 });
@@ -2467,8 +2487,7 @@ export type CreateEventError =
   | { code: 'INVALID_PRICE'; marketIndex: number; outcomeIndex: number };
 
 export type CreateCustomEventResult =
-  | { ok: true; eventId: string }
-  | { ok: false; error: CreateEventError };
+  { ok: true; eventId: string } | { ok: false; error: CreateEventError };
 
 export const MAX_MARKETS_PER_EVENT = 20;
 export const MIN_OUTCOMES_PER_MARKET = 2;
@@ -2743,11 +2762,13 @@ git commit -m "feat: create custom events with hand-priced outcome markets"
 ### Task 11: Placement understands both kinds
 
 **Files:**
+
 - Modify: `src/server/bets/validate.ts`, `src/server/bets/place.ts`, `src/server/bets/types.ts`
 - Test: `src/server/bets/__tests__/place-custom.test.ts`
 - Modify tests: `src/server/bets/__tests__/validate.test.ts`, `src/server/bets/__tests__/place.test.ts`
 
 **Interfaces:**
+
 - Consumes: `currencyForKinds` (Task 8), `buildCustomLegSnapshot` (Task 9), `makeCustomEvent` (Task 10).
 - Produces: `LoadedSelection` is a discriminated union on `kind`; `PlaceBetError` gains `MIXED_CURRENCY_PARLAY`, renames `DUPLICATE_GAME` → `DUPLICATE_EVENT` and `GAME_NOT_BETTABLE` → `EVENT_NOT_BETTABLE`; `bets.currency` is written at placement.
 
@@ -2939,10 +2960,7 @@ describe('placing a bet on a custom event', () => {
     });
     if (!result.ok) throw new Error('expected ok');
 
-    const [card] = await db
-      .select()
-      .from(feedEvents)
-      .where(eq(feedEvents.betId, result.bet.id));
+    const [card] = await db.select().from(feedEvents).where(eq(feedEvents.betId, result.bet.id));
 
     expect(card.payload).toMatchObject({
       currency: 'CREDITS',
@@ -3010,7 +3028,10 @@ Still in `validate.ts`:
 
 ```ts
 function isBettable(selection: LoadedSelection, now: Date): boolean {
-  const open = selection.kind === 'GAME' ? selection.eventStatus === 'SCHEDULED' : selection.eventStatus === 'OPEN';
+  const open =
+    selection.kind === 'GAME'
+      ? selection.eventStatus === 'SCHEDULED'
+      : selection.eventStatus === 'OPEN';
   return open && selection.eventStartsAt > now;
 }
 ```
@@ -3018,68 +3039,66 @@ function isBettable(selection: LoadedSelection, now: Date): boolean {
 Replace the duplicate-game scan with a duplicate-event scan (the whole block from `const firstIndexByGameId` through the `DUPLICATE_GAME` return):
 
 ```ts
-  // Same-event legs are correlated for exactly the reason same-game legs are: "who wins the
-  // cup" and "who wins the final" are not independent, and paying them at independent odds
-  // is free money (D13, extended to events).
-  const firstIndexByEventId = new Map<string, number>();
-  let duplicateEventId: string | null = null;
-  for (let i = 0; i < selections.length; i++) {
-    const eventId = selections[i].eventId;
-    if (firstIndexByEventId.has(eventId)) {
-      duplicateEventId = eventId;
-      break;
-    }
-    firstIndexByEventId.set(eventId, i);
+// Same-event legs are correlated for exactly the reason same-game legs are: "who wins the
+// cup" and "who wins the final" are not independent, and paying them at independent odds
+// is free money (D13, extended to events).
+const firstIndexByEventId = new Map<string, number>();
+let duplicateEventId: string | null = null;
+for (let i = 0; i < selections.length; i++) {
+  const eventId = selections[i].eventId;
+  if (firstIndexByEventId.has(eventId)) {
+    duplicateEventId = eventId;
+    break;
   }
-  if (duplicateEventId !== null) {
-    const legIndexes = selections
-      .map((selection, i) => (selection.eventId === duplicateEventId ? i : -1))
-      .filter((i) => i !== -1);
-    return { code: 'DUPLICATE_EVENT', eventId: duplicateEventId, legIndexes };
-  }
+  firstIndexByEventId.set(eventId, i);
+}
+if (duplicateEventId !== null) {
+  const legIndexes = selections
+    .map((selection, i) => (selection.eventId === duplicateEventId ? i : -1))
+    .filter((i) => i !== -1);
+  return { code: 'DUPLICATE_EVENT', eventId: duplicateEventId, legIndexes };
+}
 
-  // Currency is derived from the legs, and a mixed slip is a shape one stake cannot
-  // represent (D31). Checked before bettability so the clearest error wins.
-  const derived = currencyForKinds(selections.map((s) => s.kind));
-  if (!derived.ok) {
-    return {
-      code: 'MIXED_CURRENCY_PARLAY',
-      gameLegIndexes: derived.gameIndexes,
-      customLegIndexes: derived.customIndexes,
-    };
-  }
+// Currency is derived from the legs, and a mixed slip is a shape one stake cannot
+// represent (D31). Checked before bettability so the clearest error wins.
+const derived = currencyForKinds(selections.map((s) => s.kind));
+if (!derived.ok) {
+  return {
+    code: 'MIXED_CURRENCY_PARLAY',
+    gameLegIndexes: derived.gameIndexes,
+    customLegIndexes: derived.customIndexes,
+  };
+}
 ```
 
 and the bettability loop:
 
 ```ts
-  for (let i = 0; i < selections.length; i++) {
-    const selection = selections[i];
-    if (!isBettable(selection, ctx.now)) {
-      return {
-        code: 'EVENT_NOT_BETTABLE',
-        legIndex: i,
-        eventStatus: selection.eventStatus,
-        startsAt: selection.eventStartsAt.toISOString(),
-      };
-    }
-    if (selection.marketStatus !== 'OPEN') {
-      return { code: 'MARKET_CLOSED', legIndex: i, marketStatus: selection.marketStatus };
-    }
+for (let i = 0; i < selections.length; i++) {
+  const selection = selections[i];
+  if (!isBettable(selection, ctx.now)) {
+    return {
+      code: 'EVENT_NOT_BETTABLE',
+      legIndex: i,
+      eventStatus: selection.eventStatus,
+      startsAt: selection.eventStartsAt.toISOString(),
+    };
   }
+  if (selection.marketStatus !== 'OPEN') {
+    return { code: 'MARKET_CLOSED', legIndex: i, marketStatus: selection.marketStatus };
+  }
+}
 ```
 
 The balance check reads whichever balance the derived currency names, so `PlacementContext.membership` gains a second field (Step 6) and the check becomes:
 
 ```ts
-  const available =
-    derived.currency === 'CASH'
-      ? ctx.membership.balanceCents
-      : ctx.membership.creditsBalanceCents;
+const available =
+  derived.currency === 'CASH' ? ctx.membership.balanceCents : ctx.membership.creditsBalanceCents;
 
-  if (input.stakeCents > available) {
-    return { code: 'INSUFFICIENT_FUNDS', stakeCents: input.stakeCents, balanceCents: available };
-  }
+if (input.stakeCents > available) {
+  return { code: 'INSUFFICIENT_FUNDS', stakeCents: input.stakeCents, balanceCents: available };
+}
 ```
 
 Export the derived currency so `placeBet` does not re-derive it:
@@ -3194,65 +3213,63 @@ In `loadPlacementContext`, select `creditsBalanceCents` alongside `balanceCents`
 Inside the transaction, after `freshSelections` is available:
 
 ```ts
-      const currency = currencyForSelections(freshSelections);
+const currency = currencyForSelections(freshSelections);
 
-      const inserted = await tx
-        .insert(bets)
-        .values({
-          membershipId: context.membership!.id,
-          type: input.type,
-          currency,
-          stakeCents: input.stakeCents,
-          /* …unchanged… */
-        })
+const inserted = await tx.insert(bets).values({
+  membershipId: context.membership!.id,
+  type: input.type,
+  currency,
+  stakeCents: input.stakeCents,
+  /* …unchanged… */
+});
 ```
 
-Note the ordering problem this creates: the bet row is inserted **before** `fresh` is loaded in the existing code, so `currency` is not known yet at insert time. Derive it from the *early* `context.selections` instead — validation has already proven the early context is well-formed by that point, and the re-validation under lock re-derives and would reject any slip whose kinds somehow changed:
+Note the ordering problem this creates: the bet row is inserted **before** `fresh` is loaded in the existing code, so `currency` is not known yet at insert time. Derive it from the _early_ `context.selections` instead — validation has already proven the early context is well-formed by that point, and the re-validation under lock re-derives and would reject any slip whose kinds somehow changed:
 
 ```ts
-      const currency = currencyForSelections(context.selections as LoadedSelection[]);
+const currency = currencyForSelections(context.selections as LoadedSelection[]);
 ```
 
 Place that line immediately before the insert, and keep using it for the ledger call:
 
 ```ts
-      const posted = await postEntry(tx, {
-        membershipId: fresh.membership!.id,
-        amountCents: -input.stakeCents,
-        type: 'BET_PLACED',
-        currency,
-        idempotencyKey: `bet:${betId}:placed`,
-        betId,
-      });
+const posted = await postEntry(tx, {
+  membershipId: fresh.membership!.id,
+  amountCents: -input.stakeCents,
+  type: 'BET_PLACED',
+  currency,
+  idempotencyKey: `bet:${betId}:placed`,
+  betId,
+});
 ```
 
 The payload's legs branch on kind:
 
 ```ts
-      const payload: BetPlacedPayload = {
-        betType: input.type,
-        currency,
-        stakeCents: input.stakeCents.toString(),
-        potentialPayoutCents: freshQuote.potentialPayoutCents.toString(),
-        combinedPriceAmerican: freshQuote.combinedPriceAmerican,
-        legs: freshSelections.map((selection) =>
-          selection.kind === 'GAME'
-            ? buildLegSnapshot(
-                { ...selection, startsAt: selection.eventStartsAt },
-                { line: selection.line, priceAmerican: selection.priceAmerican },
-              )
-            : buildCustomLegSnapshot(
-                {
-                  eventTitle: selection.eventTitle,
-                  marketTitle: selection.marketTitle,
-                  outcomeLabel: selection.outcomeLabel,
-                  startsAt: selection.eventStartsAt,
-                  byCreator: selection.creatorMembershipId === fresh.membership!.id,
-                },
-                { priceAmerican: selection.priceAmerican },
-              ),
+const payload: BetPlacedPayload = {
+  betType: input.type,
+  currency,
+  stakeCents: input.stakeCents.toString(),
+  potentialPayoutCents: freshQuote.potentialPayoutCents.toString(),
+  combinedPriceAmerican: freshQuote.combinedPriceAmerican,
+  legs: freshSelections.map((selection) =>
+    selection.kind === 'GAME'
+      ? buildLegSnapshot(
+          { ...selection, startsAt: selection.eventStartsAt },
+          { line: selection.line, priceAmerican: selection.priceAmerican },
+        )
+      : buildCustomLegSnapshot(
+          {
+            eventTitle: selection.eventTitle,
+            marketTitle: selection.marketTitle,
+            outcomeLabel: selection.outcomeLabel,
+            startsAt: selection.eventStartsAt,
+            byCreator: selection.creatorMembershipId === fresh.membership!.id,
+          },
+          { priceAmerican: selection.priceAmerican },
         ),
-      };
+  ),
+};
 ```
 
 - [ ] **Step 9: Run the tests to verify they pass**
@@ -3281,10 +3298,12 @@ git commit -m "feat: place credit bets on custom events and reject mixed slips"
 ### Task 12: Resolving an event and paying the winners
 
 **Files:**
+
 - Create: `src/server/bets/grade-legs.ts`, `src/server/events/resolve.ts`
 - Test: `src/server/events/__tests__/resolve.test.ts`
 
 **Interfaces:**
+
 - Consumes: `gradeCustomLeg` (Task 8), `gradeParlay` / `settledPayoutCents` (existing), `postEntry` currency (Task 2), the resolved payload types (Task 9).
 - Produces:
   - `resolveCustomEvent(input: ResolveCustomEventInput): Promise<ResolveCustomEventResult>`
@@ -3302,7 +3321,14 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { and, eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { db } from '@/db/client';
-import { bets, customEvents, feedEvents, ledgerEntries, markets, seasonMemberships } from '@/db/schema';
+import {
+  bets,
+  customEvents,
+  feedEvents,
+  ledgerEntries,
+  markets,
+  seasonMemberships,
+} from '@/db/schema';
 import { placeBet } from '@/server/bets/place';
 import { resolveCustomEvent } from '@/server/events/resolve';
 import { postEntry } from '@/server/money/ledger';
@@ -3579,13 +3605,26 @@ Expected: FAIL — cannot resolve `@/server/events/resolve`.
 ```ts
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import type { Tx } from '@/db/client';
-import { betLegs, bets, seasonMemberships, type BetStatus, type Currency, type LedgerEntryType } from '@/db/schema';
+import {
+  betLegs,
+  bets,
+  seasonMemberships,
+  type BetStatus,
+  type Currency,
+  type LedgerEntryType,
+} from '@/db/schema';
 import { gradeParlay, settledPayoutCents } from '@/domain/grading';
 import type { LegStatus } from '@/domain/grading';
 import { isBigWin, isParlayHit, multipleBasisPoints, survivingLegCount } from '@/domain/milestones';
 import { emitFeedEvent } from '@/server/feed/emit';
 import { postEntry } from '@/server/money/ledger';
-import type { BetSettledPayload, BigWinPayload, FeedLegSnapshot, LegOutcome, ParlayHitPayload } from '@/server/feed/payload';
+import type {
+  BetSettledPayload,
+  BigWinPayload,
+  FeedLegSnapshot,
+  LegOutcome,
+  ParlayHitPayload,
+} from '@/server/feed/payload';
 
 const ENTRY_TYPE_FOR_STATUS: Partial<Record<BetStatus, LedgerEntryType>> = {
   WON: 'BET_WON',
@@ -3856,7 +3895,12 @@ export async function resolveCustomEvent(
     const outcomeRows = await tx
       .select({ id: selections.id, marketId: selections.marketId, label: selections.label })
       .from(selections)
-      .where(inArray(selections.marketId, eventMarkets.map((m) => m.id)));
+      .where(
+        inArray(
+          selections.marketId,
+          eventMarkets.map((m) => m.id),
+        ),
+      );
 
     for (const [marketId, winningSelectionId] of chosen) {
       const belongs = outcomeRows.some(
@@ -3891,7 +3935,10 @@ export async function resolveCustomEvent(
       .innerJoin(selections, eq(betLegs.selectionId, selections.id))
       .where(
         and(
-          inArray(selections.marketId, eventMarkets.map((m) => m.id)),
+          inArray(
+            selections.marketId,
+            eventMarkets.map((m) => m.id),
+          ),
           eq(betLegs.status, 'PENDING'),
         ),
       );
@@ -3977,8 +4024,7 @@ export async function resolveCustomEvent(
       title: event.title,
       outcomes: eventMarkets.map((market) => ({
         marketTitle: market.title ?? '',
-        winningLabel:
-          outcomeRows.find((row) => row.id === chosen.get(market.id))?.label ?? '',
+        winningLabel: outcomeRows.find((row) => row.id === chosen.get(market.id))?.label ?? '',
       })),
       note: input.note?.trim() ?? null,
       attempt,
@@ -4027,12 +4073,14 @@ git commit -m "feat: resolve custom events and pay winners in credits"
 ### Task 13: Disputes and admin re-resolution
 
 **Files:**
+
 - Create: `src/server/events/dispute.ts`
 - Modify: `src/server/bets/resettle.ts` (extract `resettleBetInTx`, regrade by kind)
 - Modify: `src/server/events/resolve.ts` (attempt > 1 goes through the reversal path)
 - Test: `src/server/events/__tests__/dispute.test.ts`
 
 **Interfaces:**
+
 - Consumes: `resolveCustomEvent` (Task 12), `customEventDisputes` (Task 7).
 - Produces:
   - `disputeResolution(input: { eventId: string; membershipId: string; reason: string; now?: Date }): Promise<{ ok: true; disputeId: string; created: boolean } | { ok: false; error: DisputeError }>`
@@ -4369,8 +4417,7 @@ export interface DisputeResolutionInput {
 }
 
 export type DisputeResolutionResult =
-  | { ok: true; disputeId: string; created: boolean }
-  | { ok: false; error: DisputeError };
+  { ok: true; disputeId: string; created: boolean } | { ok: false; error: DisputeError };
 
 /**
  * A dispute is state, not just an announcement: the admin queue queries this table rather
@@ -4467,16 +4514,16 @@ export async function resettleBetInTx(tx: Tx, input: ResettleBetInput): Promise<
 **Change one — the reversal and the payout carry the bet's currency:**
 
 ```ts
-      await postEntry(tx, {
-        membershipId: bet.membershipId,
-        amountCents: -reversedCents,
-        type: 'SETTLEMENT_REVERSAL',
-        currency: bet.currency,
-        idempotencyKey: `bet:${bet.id}:reversal:${attempt}`,
-        actorUserId: input.actorUserId,
-        betId: bet.id,
-        note: input.note,
-      });
+await postEntry(tx, {
+  membershipId: bet.membershipId,
+  amountCents: -reversedCents,
+  type: 'SETTLEMENT_REVERSAL',
+  currency: bet.currency,
+  idempotencyKey: `bet:${bet.id}:reversal:${attempt}`,
+  actorUserId: input.actorUserId,
+  betId: bet.id,
+  note: input.note,
+});
 ```
 
 and the same `currency: bet.currency` on the corrected `BET_WON` / `BET_PUSHED` / `BET_VOIDED` entry. Note the reversal sums `ledger_entries` for the bet — filter that sum by currency too, so a bet can never reverse against the wrong denomination:
@@ -4494,64 +4541,64 @@ and the same `currency: bet.currency` on the corrected `BET_WON` / `BET_PUSHED` 
 **Change two — the leg regrade routes by kind.** Replace the single games-joined query with a branch on the bet's currency (which is exactly the kind of its legs, by Task 11's derivation):
 
 ```ts
-    const settledAt = new Date();
-    const regraded: { status: LegStatus; priceAmerican: number }[] = [];
-    let snapshots: FeedLegSnapshot[] = [];
+const settledAt = new Date();
+const regraded: { status: LegStatus; priceAmerican: number }[] = [];
+let snapshots: FeedLegSnapshot[] = [];
 
-    if (bet.currency === 'CASH') {
-      // …the existing games-joined query and grading loop, unchanged except that the join
-      // is now `.innerJoin(games, eq(markets.eventId, games.eventId))` from Task 6…
-      snapshots = legs.map((leg) =>
-        buildLegSnapshot(leg, { line: leg.line, priceAmerican: leg.priceAtPlacement }),
-      );
-    } else {
-      const legs = await tx
-        .select({
-          legId: betLegs.id,
-          selectionId: betLegs.selectionId,
-          priceAtPlacement: betLegs.priceAtPlacement,
-          label: selections.label,
-          marketTitle: markets.title,
-          winningSelectionId: markets.winningSelectionId,
-          eventTitle: events.title,
-          eventStartsAt: events.startsAt,
-          customStatus: customEvents.status,
-        })
-        .from(betLegs)
-        .innerJoin(selections, eq(betLegs.selectionId, selections.id))
-        .innerJoin(markets, eq(selections.marketId, markets.id))
-        .innerJoin(events, eq(markets.eventId, events.id))
-        .innerJoin(customEvents, eq(customEvents.eventId, events.id))
-        .where(eq(betLegs.betId, bet.id))
-        .orderBy(asc(betLegs.createdAt));
+if (bet.currency === 'CASH') {
+  // …the existing games-joined query and grading loop, unchanged except that the join
+  // is now `.innerJoin(games, eq(markets.eventId, games.eventId))` from Task 6…
+  snapshots = legs.map((leg) =>
+    buildLegSnapshot(leg, { line: leg.line, priceAmerican: leg.priceAtPlacement }),
+  );
+} else {
+  const legs = await tx
+    .select({
+      legId: betLegs.id,
+      selectionId: betLegs.selectionId,
+      priceAtPlacement: betLegs.priceAtPlacement,
+      label: selections.label,
+      marketTitle: markets.title,
+      winningSelectionId: markets.winningSelectionId,
+      eventTitle: events.title,
+      eventStartsAt: events.startsAt,
+      customStatus: customEvents.status,
+    })
+    .from(betLegs)
+    .innerJoin(selections, eq(betLegs.selectionId, selections.id))
+    .innerJoin(markets, eq(selections.marketId, markets.id))
+    .innerJoin(events, eq(markets.eventId, events.id))
+    .innerJoin(customEvents, eq(customEvents.eventId, events.id))
+    .where(eq(betLegs.betId, bet.id))
+    .orderBy(asc(betLegs.createdAt));
 
-      for (const leg of legs) {
-        // A voided event voids its legs; otherwise grade against the stored winner.
-        const status: LegStatus =
-          leg.customStatus === 'VOIDED'
-            ? 'VOIDED'
-            : gradeCustomLeg({
-                selectionId: leg.selectionId,
-                winningSelectionId: leg.winningSelectionId,
-              });
+  for (const leg of legs) {
+    // A voided event voids its legs; otherwise grade against the stored winner.
+    const status: LegStatus =
+      leg.customStatus === 'VOIDED'
+        ? 'VOIDED'
+        : gradeCustomLeg({
+            selectionId: leg.selectionId,
+            winningSelectionId: leg.winningSelectionId,
+          });
 
-        await tx.update(betLegs).set({ status, settledAt }).where(eq(betLegs.id, leg.legId));
-        regraded.push({ status, priceAmerican: leg.priceAtPlacement });
-      }
+    await tx.update(betLegs).set({ status, settledAt }).where(eq(betLegs.id, leg.legId));
+    regraded.push({ status, priceAmerican: leg.priceAtPlacement });
+  }
 
-      snapshots = legs.map((leg) =>
-        buildCustomLegSnapshot(
-          {
-            eventTitle: leg.eventTitle,
-            marketTitle: leg.marketTitle ?? '',
-            outcomeLabel: leg.label ?? '',
-            startsAt: leg.eventStartsAt,
-            byCreator: false,
-          },
-          { priceAmerican: leg.priceAtPlacement },
-        ),
-      );
-    }
+  snapshots = legs.map((leg) =>
+    buildCustomLegSnapshot(
+      {
+        eventTitle: leg.eventTitle,
+        marketTitle: leg.marketTitle ?? '',
+        outcomeLabel: leg.label ?? '',
+        startsAt: leg.eventStartsAt,
+        byCreator: false,
+      },
+      { priceAmerican: leg.priceAtPlacement },
+    ),
+  );
+}
 ```
 
 and the payload uses `legs: snapshots` plus `currency: bet.currency`.
@@ -4561,37 +4608,42 @@ and the payload uses `legs: snapshots` plus `currency: bet.currency`.
 In `src/server/events/resolve.ts`, after the leg-grading loop, branch on `attempt`:
 
 ```ts
-    let betsSettled = 0;
-    let creditsPaid = 0n;
+let betsSettled = 0;
+let creditsPaid = 0n;
 
-    const touchedBetIds = [...new Set(pending.map((leg) => leg.betId))];
+const touchedBetIds = [...new Set(pending.map((leg) => leg.betId))];
 
-    if (attempt === 1) {
-      const summary = await settleBetsForLegs(tx, { /* …as written in Task 12… */ });
-      betsSettled = summary.betsSettled;
-      creditsPaid = summary.centsPaid;
-    } else {
-      // Every bet on this event was already settled by the previous attempt, so correcting
-      // it means reversing what that attempt paid — which is precisely resettleBet's job
-      // (D15). resettleBetInTx re-grades from the markets' new winning_selection_id.
-      const affected = await tx
-        .selectDistinct({ betId: betLegs.betId })
-        .from(betLegs)
-        .innerJoin(selections, eq(betLegs.selectionId, selections.id))
-        .where(inArray(selections.marketId, eventMarkets.map((m) => m.id)));
+if (attempt === 1) {
+  const summary = await settleBetsForLegs(tx, {/* …as written in Task 12… */});
+  betsSettled = summary.betsSettled;
+  creditsPaid = summary.centsPaid;
+} else {
+  // Every bet on this event was already settled by the previous attempt, so correcting
+  // it means reversing what that attempt paid — which is precisely resettleBet's job
+  // (D15). resettleBetInTx re-grades from the markets' new winning_selection_id.
+  const affected = await tx
+    .selectDistinct({ betId: betLegs.betId })
+    .from(betLegs)
+    .innerJoin(selections, eq(betLegs.selectionId, selections.id))
+    .where(
+      inArray(
+        selections.marketId,
+        eventMarkets.map((m) => m.id),
+      ),
+    );
 
-      for (const { betId } of affected) {
-        const result = await resettleBetInTx(tx, {
-          betId,
-          actorUserId: input.actorUserId,
-          note: input.note!.trim(),
-        });
-        if (result.ok) {
-          betsSettled += 1;
-          creditsPaid += result.paidCents;
-        }
-      }
+  for (const { betId } of affected) {
+    const result = await resettleBetInTx(tx, {
+      betId,
+      actorUserId: input.actorUserId,
+      note: input.note!.trim(),
+    });
+    if (result.ok) {
+      betsSettled += 1;
+      creditsPaid += result.paidCents;
     }
+  }
+}
 ```
 
 The `pending` query stays as it is: on attempt 1 it finds the pending legs, and on attempt 2+ it correctly finds none, because `resettleBetInTx` re-grades every leg of each affected bet itself.
@@ -4618,10 +4670,12 @@ git commit -m "feat: dispute a resolution and correct it by admin re-resolution"
 ### Task 14: Voiding an event
 
 **Files:**
+
 - Modify: `src/server/events/resolve.ts` (add `voidCustomEvent`)
 - Test: `src/server/events/__tests__/void.test.ts`
 
 **Interfaces:**
+
 - Consumes: `resettleBetInTx` (Task 13), `settleBetsForLegs` (Task 12).
 - Produces: `voidCustomEvent(input: { eventId: string; actorUserId: string; note: string; now?: Date }): Promise<{ ok: true; refundedBets: number; refundedCents: bigint } | { ok: false; error: VoidError }>` with `VoidError` codes `EVENT_NOT_FOUND`, `ALREADY_VOIDED`, `NOTE_REQUIRED`.
 
@@ -4805,9 +4859,7 @@ Append to `src/server/events/resolve.ts`:
 
 ```ts
 export type VoidError =
-  | { code: 'EVENT_NOT_FOUND' }
-  | { code: 'ALREADY_VOIDED' }
-  | { code: 'NOTE_REQUIRED' };
+  { code: 'EVENT_NOT_FOUND' } | { code: 'ALREADY_VOIDED' } | { code: 'NOTE_REQUIRED' };
 
 export interface VoidCustomEventInput {
   eventId: string;
@@ -4818,8 +4870,7 @@ export interface VoidCustomEventInput {
 }
 
 export type VoidCustomEventResult =
-  | { ok: true; refundedBets: number; refundedCents: bigint }
-  | { ok: false; error: VoidError };
+  { ok: true; refundedBets: number; refundedCents: bigint } | { ok: false; error: VoidError };
 
 /**
  * Admin-only. Voids every bet on the event and refunds every stake — the same path a
@@ -4829,9 +4880,7 @@ export type VoidCustomEventResult =
  * resolution paid before writing the refund. An open event has nothing to reverse, so its
  * legs are voided in place and settled normally.
  */
-export async function voidCustomEvent(
-  input: VoidCustomEventInput,
-): Promise<VoidCustomEventResult> {
+export async function voidCustomEvent(input: VoidCustomEventInput): Promise<VoidCustomEventResult> {
   const note = input.note.trim();
   if (note.length === 0) return { ok: false, error: { code: 'NOTE_REQUIRED' } };
 
@@ -4904,7 +4953,10 @@ export async function voidCustomEvent(
           and(
             inArray(
               betLegs.selectionId,
-              tx.select({ id: selections.id }).from(selections).where(inArray(selections.marketId, marketIds)),
+              tx
+                .select({ id: selections.id })
+                .from(selections)
+                .where(inArray(selections.marketId, marketIds)),
             ),
             eq(betLegs.status, 'PENDING'),
           ),
@@ -4919,10 +4971,7 @@ export async function voidCustomEvent(
       refundedCents = summary.centsPaid;
     }
 
-    await tx
-      .update(markets)
-      .set({ status: 'SETTLED' })
-      .where(eq(markets.eventId, input.eventId));
+    await tx.update(markets).set({ status: 'SETTLED' }).where(eq(markets.eventId, input.eventId));
 
     const [event] = await tx.select().from(events).where(eq(events.id, input.eventId));
     const [admin] = await tx
@@ -4977,11 +5026,13 @@ git commit -m "feat: void a custom event and refund every stake"
 ### Task 15: The overdue sweep
 
 **Files:**
+
 - Create: `src/server/events/overdue.ts`
 - Modify: `src/app/api/cron/settle/route.ts`
 - Test: `src/server/events/__tests__/overdue.test.ts`
 
 **Interfaces:**
+
 - Consumes: `customEvents` (Task 7), `CustomEventOverduePayload` (Task 9).
 - Produces: `sweepOverdueEvents(now?: Date): Promise<{ flagged: number }>`; the settle cron route's JSON response gains `overdueFlagged`.
 
@@ -5148,13 +5199,12 @@ export async function sweepOverdueEvents(now: Date = new Date()): Promise<{ flag
 In `src/app/api/cron/settle/route.ts`, after the lead-change block:
 
 ```ts
-  const overdue = await sweepOverdueEvents();
+const overdue = await sweepOverdueEvents();
 
-  const status = summary.errors.length > 0 ? 207 : 200;
-  return Response.json(
-    jsonSafe({ ...summary, leadChanged, overdueFlagged: overdue.flagged }),
-    { status },
-  );
+const status = summary.errors.length > 0 ? 207 : 200;
+return Response.json(jsonSafe({ ...summary, leadChanged, overdueFlagged: overdue.flagged }), {
+  status,
+});
 ```
 
 Update the route's doc comment to say the sweep rides along here too.
@@ -5181,10 +5231,12 @@ git commit -m "feat: sweep overdue custom events from the settle cron"
 ### Task 16: The events board
 
 **Files:**
+
 - Create: `src/server/events/query.ts`, `src/app/(app)/events/page.tsx`
 - Test: `src/server/events/__tests__/query.test.ts`
 
 **Interfaces:**
+
 - Consumes: `customEvents`, `events`, `markets`, `bets` (Tasks 5–7, 11).
 - Produces:
   - `listSeasonEvents(seasonId: string, now?: Date): Promise<EventBoardRow[]>`
@@ -5306,7 +5358,13 @@ Create `src/server/events/query.ts`:
 ```ts
 import { asc, eq, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { customEvents, events, seasonMemberships, users, type CustomEventStatus } from '@/db/schema';
+import {
+  customEvents,
+  events,
+  seasonMemberships,
+  users,
+  type CustomEventStatus,
+} from '@/db/schema';
 
 export type EventSection = 'OPEN' | 'AWAITING' | 'SETTLED';
 
@@ -5445,10 +5503,12 @@ git commit -m "feat: add the custom events board"
 ### Task 17: Creating an event from the UI
 
 **Files:**
+
 - Create: `src/app/(app)/events/actions.ts`, `src/app/(app)/events/new/page.tsx`, `src/app/(app)/events/new/event-form.tsx`
 - Test: none new — `createCustomEvent` is covered by Task 10; this task is the boundary around it.
 
 **Interfaces:**
+
 - Consumes: `createCustomEvent` (Task 10), `requireApprovedMemberOrThrow` (existing).
 - Produces: `createEventAction(form: CreateEventFormValues): Promise<{ ok: true; eventId: string } | { ok: false; error: CreateEventError }>` in `src/app/(app)/events/actions.ts`, where every money-free field is a plain string or number and dates cross as ISO strings.
 
@@ -5524,12 +5584,14 @@ git commit -m "feat: add the create-event screen"
 ### Task 18: The event page, bettable in credits, with creator controls
 
 **Files:**
+
 - Create: `src/app/(app)/events/[eventId]/page.tsx`, `src/app/(app)/events/[eventId]/market-card.tsx`
 - Create: `src/server/events/manage.ts` (`setMarketStatus`, `editCustomEvent`)
 - Modify: `src/server/events/query.ts` (add `getCustomEventDetail`), `src/components/bet-slip/slip-context.tsx`, `src/components/bet-slip/bet-slip.tsx`, `src/app/(app)/events/actions.ts`
 - Test: `src/server/events/__tests__/detail.test.ts`, `src/server/events/__tests__/manage.test.ts`
 
 **Interfaces:**
+
 - Consumes: `listSeasonEvents` (Task 16), `placeBet` (Task 11).
 - Produces: `getCustomEventDetail(eventId: string, viewerMembershipId: string): Promise<CustomEventDetail | null>` where
 
@@ -5545,13 +5607,23 @@ interface CustomEventDetail {
   seasonId: string;
   creator: { membershipId: string; displayName: string };
   viewerIsCreator: boolean;
-  resolution: { note: string | null; resolvedAt: Date | null; attempt: number; byDisplayName: string | null };
+  resolution: {
+    note: string | null;
+    resolvedAt: Date | null;
+    attempt: number;
+    byDisplayName: string | null;
+  };
   markets: {
     marketId: string;
     title: string;
     status: 'OPEN' | 'SUSPENDED' | 'SETTLED';
     winningSelectionId: string | null;
-    outcomes: { selectionId: string; label: string; priceAmerican: number; stakedCreditsCents: bigint }[];
+    outcomes: {
+      selectionId: string;
+      label: string;
+      priceAmerican: number;
+      stakedCreditsCents: bigint;
+    }[];
   }[];
   viewerPositions: { marketId: string; selectionId: string; stakeCents: bigint; status: string }[];
   creatorPositions: { marketId: string; selectionId: string; stakeCents: bigint }[];
@@ -5869,7 +5941,7 @@ export async function editCustomEvent(input: {
 The rules, straight from the spec:
 
 - **Suspension is the only lever after bets exist.** It stops new bets and touches nothing placed. Allowed for the creator or an admin, while the event is `OPEN`. Reopening is allowed while `OPEN` and `starts_at` has not passed.
-- **Editing requires zero bets.** Count `bet_legs` joined through `selections → markets` for the event inside the transaction; any row at all returns `EVENT_HAS_BETS`. Placed bets are immune to repricing anyway ([D10](../decisions.md#d10--legs-freeze-their-line-and-price-at-placement)) — this rule exists so the *displayed* market cannot change out from under people who have already acted on it.
+- **Editing requires zero bets.** Count `bet_legs` joined through `selections → markets` for the event inside the transaction; any row at all returns `EVENT_HAS_BETS`. Placed bets are immune to repricing anyway ([D10](../decisions.md#d10--legs-freeze-their-line-and-price-at-placement)) — this rule exists so the _displayed_ market cannot change out from under people who have already acted on it.
 - Prices go through `americanToRational` for validation, exactly as `createCustomEvent` does. Reuse that check rather than re-deriving it.
 - Neither function emits a feed card. Creating, resolving, disputing and voiding are league news; a creator fixing a typo before anyone has bet is not.
 
@@ -5907,11 +5979,13 @@ git commit -m "feat: add the event detail page and credit betting in the slip"
 ### Task 19: Resolving and disputing from the UI
 
 **Files:**
+
 - Create: `src/app/(app)/events/[eventId]/resolve/page.tsx`, `src/app/(app)/events/[eventId]/resolve/resolve-form.tsx`, `src/app/(app)/events/[eventId]/dispute-form.tsx`
 - Modify: `src/app/(app)/events/actions.ts`
 - Test: none new — the services are covered by Tasks 12 and 13.
 
 **Interfaces:**
+
 - Consumes: `resolveCustomEvent` (Task 12), `disputeResolution` (Task 13).
 - Produces: `resolveEventAction(input: { eventId: string; winners: { marketId: string; winningSelectionId: string }[]; note: string })` and `disputeEventAction(input: { eventId: string; reason: string })`.
 
@@ -5979,12 +6053,14 @@ git commit -m "feat: resolve and dispute custom events from the UI"
 ### Task 20: The admin events screen
 
 **Files:**
+
 - Create: `src/app/admin/events/page.tsx`, `src/app/admin/events/actions.ts`
 - Modify: `src/server/events/query.ts` (add `listAdminEventQueue`)
 - Modify: `src/app/admin/page.tsx` (link to it)
 - Test: `src/server/events/__tests__/admin-queue.test.ts`
 
 **Interfaces:**
+
 - Consumes: `voidCustomEvent` (Task 14), `resolveCustomEvent` (Task 12).
 - Produces: `listAdminEventQueue(seasonId: string, now?: Date): Promise<{ overdue: EventBoardRow[]; disputed: (EventBoardRow & { disputes: { displayName: string; reason: string }[] })[] }>`; `voidEventAction({ eventId, note })`.
 
@@ -6113,7 +6189,7 @@ describe('listAdminEventQueue', () => {
 
 `src/app/admin/events/page.tsx` calls `requireAdmin()` first — the gate is server-side, and the screen must not be reachable by URL for a non-admin.
 
-It renders two sections. **Overdue** rows show the creator, how late the event is, and how many bets are open, with a *Void* control that takes a mandatory note. **Disputed** rows quote each dispute and link to the resolve screen, where an admin can re-resolve.
+It renders two sections. **Overdue** rows show the creator, how late the event is, and how many bets are open, with a _Void_ control that takes a mandatory note. **Disputed** rows quote each dispute and link to the resolve screen, where an admin can re-resolve.
 
 `voidEventAction` mirrors the other actions: `requireAdmin()`, call `voidCustomEvent`, return the error or redirect.
 
@@ -6131,10 +6207,12 @@ git commit -m "feat: add the admin queue for overdue and disputed events"
 ### Task 21: Two currencies across the existing screens
 
 **Files:**
+
 - Modify: `src/components/ui/tab-bar.tsx`, `src/components/ui/money.tsx`, `src/app/(app)/standings/page.tsx`, `src/app/(app)/me/page.tsx`, `src/app/(app)/bets/page.tsx`, `src/app/(app)/feed/feed-card.tsx`
 - Test: `src/server/events/__tests__/standings-credits.test.ts` (if a query is extracted) — otherwise none new
 
 **Interfaces:**
+
 - Consumes: `season_memberships.credits_balance_cents` (Task 1), the five feed types (Task 9).
 - Produces: no new module-level exports; this is presentation.
 
@@ -6162,13 +6240,13 @@ If six tabs read as crowded on a real phone, the documented fallback is a segmen
 
 `src/app/(app)/feed/feed-card.tsx` renders each new type. Copy, so the UI has no room for invention:
 
-| Type | Reads as |
-|---|---|
-| `CUSTOM_EVENT_CREATED` | *Dana* opened **Jyxnzi Cup** · 3 markets · closes Fri 8pm |
-| `CUSTOM_EVENT_RESOLVED` | **Jyxnzi Cup** resolved by *Dana* · Falcons win (with a "correction" badge when `correction`) |
-| `CUSTOM_EVENT_DISPUTED` | *Sam* disputed **Jyxnzi Cup** — "map 3 was forfeited" |
-| `CUSTOM_EVENT_VOIDED` | **Jyxnzi Cup** voided by admin *Chris* · 4 bets refunded |
-| `CUSTOM_EVENT_OVERDUE` | **Jyxnzi Cup** is past its resolve-by date · 4 bets open |
+| Type                    | Reads as                                                                                      |
+| ----------------------- | --------------------------------------------------------------------------------------------- |
+| `CUSTOM_EVENT_CREATED`  | _Dana_ opened **Jyxnzi Cup** · 3 markets · closes Fri 8pm                                     |
+| `CUSTOM_EVENT_RESOLVED` | **Jyxnzi Cup** resolved by _Dana_ · Falcons win (with a "correction" badge when `correction`) |
+| `CUSTOM_EVENT_DISPUTED` | _Sam_ disputed **Jyxnzi Cup** — "map 3 was forfeited"                                         |
+| `CUSTOM_EVENT_VOIDED`   | **Jyxnzi Cup** voided by admin _Chris_ · 4 bets refunded                                      |
+| `CUSTOM_EVENT_OVERDUE`  | **Jyxnzi Cup** is past its resolve-by date · 4 bets open                                      |
 
 Each card title links to `/events/[eventId]`. `BET_PLACED` and `BET_SETTLED` cards render credit amounts in the credits unit and show the "creator" badge when a leg carries `byCreator`.
 
@@ -6186,10 +6264,12 @@ git commit -m "feat: surface credits and custom events across the existing scree
 ### Task 22: End-to-end and documentation
 
 **Files:**
+
 - Modify: `src/server/__tests__/end-to-end.test.ts`
 - Modify: `docs/specs/2026-08-17-custom-events-design.md` (status line), `docs/roadmap.md`, `docs/README.md`
 
 **Interfaces:**
+
 - Consumes: everything.
 - Produces: nothing new.
 
@@ -6358,12 +6438,7 @@ it('runs a custom event from creation through dispute and correction', async () 
       .where(eq(ledgerEntries.betId, creatorBet.bet.id))
       .orderBy(asc(ledgerEntries.createdAt))
   ).map((r) => r.type);
-  expect(creatorEntryTypes).toEqual([
-    'BET_PLACED',
-    'BET_WON',
-    'SETTLEMENT_REVERSAL',
-    'BET_WON',
-  ]);
+  expect(creatorEntryTypes).toEqual(['BET_PLACED', 'BET_WON', 'SETTLEMENT_REVERSAL', 'BET_WON']);
 
   // 7. The feed tells the same story, in order.
   const feedTypes = (
@@ -6400,7 +6475,7 @@ Expected: PASS. If reconciliation reports drift, stop and find it — do not adj
 
 - `docs/specs/2026-08-17-custom-events-design.md`: change `**Status:** Specified, not built` to `**Status:** Built`.
 - `docs/roadmap.md`: subsystem 3's row becomes `[Built](specs/2026-08-17-custom-events-design.md)`, and the intro line becomes "Subsystems 1–3 are built".
-- `docs/README.md`: add subsystem 3 to *Where things stand* with what shipped — the credits currency, the events supertype, creation, resolution, disputes, voids, the overdue sweep, and the five screens — plus the final test-file and test counts from `npm run verify`.
+- `docs/README.md`: add subsystem 3 to _Where things stand_ with what shipped — the credits currency, the events supertype, creation, resolution, disputes, voids, the overdue sweep, and the five screens — plus the final test-file and test counts from `npm run verify`.
 
 Record any decision you had to make during implementation that the spec did not anticipate as a new entry in `docs/decisions.md` (D39 onward), following the existing format: what was decided, what was rejected, and why. Never edit an old entry.
 

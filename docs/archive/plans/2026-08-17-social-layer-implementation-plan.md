@@ -75,59 +75,61 @@ Both `.env` files are covered by `.gitignore` (`.env*`), so they will not be com
 
 **New files**
 
-| Path | Responsibility |
-|---|---|
-| `src/db/schema/social.ts` | `feed_events`, `feed_reactions`, `feed_comments`, `feed_preferences` tables and the `feed_event_type` enum |
-| `src/server/feed/payload.ts` | The discriminated-union payload types stored in `feed_events.payload` |
-| `src/server/feed/emit.ts` | `emitFeedEvent(tx, input)` — the single write path for every event |
-| `src/server/feed/snapshot.ts` | Builds `FeedLegSnapshot[]` from already-loaded selection rows |
-| `src/server/feed/query.ts` | `getSeasonFeed(…)` — keyset-paginated read with reactions and comment counts |
-| `src/server/feed/social.ts` | `toggleReaction`, `addComment`, `deleteComment`, `listComments` |
-| `src/server/feed/preferences.ts` | `getMutedTypes`, `setMutedTypes` |
-| `src/server/feed/leaders.ts` | `detectLeadChange(seasonId)` |
-| `src/server/feed/stats.ts` | Loads a member's bet rows and calls the pure stats function |
-| `src/domain/milestones.ts` | Pure milestone thresholds |
-| `src/domain/stats.ts` | Pure `computeMemberStats` |
-| `src/app/(app)/feed/page.tsx` | Feed tab — first page, server-rendered |
-| `src/app/(app)/feed/feed-list.tsx` | Client component: appends further pages |
-| `src/app/(app)/feed/feed-card.tsx` | One card, all eight event types |
-| `src/app/(app)/feed/actions.ts` | Server actions: load more, react, comment, delete |
-| `src/app/(app)/feed/[eventId]/page.tsx` | Event detail with the full comment thread |
-| `src/app/(app)/feed/[eventId]/comment-thread.tsx` | Client component: composer + delete controls |
-| `src/app/(app)/members/[membershipId]/page.tsx` | Member profile |
-| `src/app/(app)/me/feed-preferences/page.tsx` | Per-viewer mute settings |
-| `src/app/(app)/me/feed-preferences/preferences-form.tsx` | Client component for the checkbox list |
+| Path                                                     | Responsibility                                                                                             |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `src/db/schema/social.ts`                                | `feed_events`, `feed_reactions`, `feed_comments`, `feed_preferences` tables and the `feed_event_type` enum |
+| `src/server/feed/payload.ts`                             | The discriminated-union payload types stored in `feed_events.payload`                                      |
+| `src/server/feed/emit.ts`                                | `emitFeedEvent(tx, input)` — the single write path for every event                                         |
+| `src/server/feed/snapshot.ts`                            | Builds `FeedLegSnapshot[]` from already-loaded selection rows                                              |
+| `src/server/feed/query.ts`                               | `getSeasonFeed(…)` — keyset-paginated read with reactions and comment counts                               |
+| `src/server/feed/social.ts`                              | `toggleReaction`, `addComment`, `deleteComment`, `listComments`                                            |
+| `src/server/feed/preferences.ts`                         | `getMutedTypes`, `setMutedTypes`                                                                           |
+| `src/server/feed/leaders.ts`                             | `detectLeadChange(seasonId)`                                                                               |
+| `src/server/feed/stats.ts`                               | Loads a member's bet rows and calls the pure stats function                                                |
+| `src/domain/milestones.ts`                               | Pure milestone thresholds                                                                                  |
+| `src/domain/stats.ts`                                    | Pure `computeMemberStats`                                                                                  |
+| `src/app/(app)/feed/page.tsx`                            | Feed tab — first page, server-rendered                                                                     |
+| `src/app/(app)/feed/feed-list.tsx`                       | Client component: appends further pages                                                                    |
+| `src/app/(app)/feed/feed-card.tsx`                       | One card, all eight event types                                                                            |
+| `src/app/(app)/feed/actions.ts`                          | Server actions: load more, react, comment, delete                                                          |
+| `src/app/(app)/feed/[eventId]/page.tsx`                  | Event detail with the full comment thread                                                                  |
+| `src/app/(app)/feed/[eventId]/comment-thread.tsx`        | Client component: composer + delete controls                                                               |
+| `src/app/(app)/members/[membershipId]/page.tsx`          | Member profile                                                                                             |
+| `src/app/(app)/me/feed-preferences/page.tsx`             | Per-viewer mute settings                                                                                   |
+| `src/app/(app)/me/feed-preferences/preferences-form.tsx` | Client component for the checkbox list                                                                     |
 
 **Modified files**
 
-| Path | Change |
-|---|---|
-| `src/db/schema/index.ts` | Export `./social` |
-| `src/test/db.ts` | Truncate the four new tables |
-| `src/server/bets/validate.ts` | `LoadedSelection` gains snapshot columns |
-| `src/server/bets/place.ts` | `loadSelections` selects the snapshot columns; emit `BET_PLACED` |
-| `src/server/bets/settle.ts` | Emit `BET_SETTLED` + big-win + parlay-hit |
-| `src/server/bets/resettle.ts` | Emit the corrected `BET_SETTLED` + milestones |
-| `src/server/seasons/service.ts` | Emit `MEMBER_JOINED` |
-| `src/server/seasons/allowance.ts` | Emit one aggregated `ALLOWANCE_PAID` |
-| `src/server/admin/adjust.ts` | Emit `ADMIN_ADJUSTMENT` |
-| `src/app/api/cron/settle/route.ts` | Call `detectLeadChange` after the sweep |
-| `src/components/ui/tab-bar.tsx` | Five tabs instead of four |
-| `src/app/(app)/standings/page.tsx` | Link rows to member profiles |
-| `src/app/(app)/me/page.tsx` | Link to feed preferences |
-| `src/server/__tests__/end-to-end.test.ts` | Assert the feed's event sequence |
+| Path                                      | Change                                                           |
+| ----------------------------------------- | ---------------------------------------------------------------- |
+| `src/db/schema/index.ts`                  | Export `./social`                                                |
+| `src/test/db.ts`                          | Truncate the four new tables                                     |
+| `src/server/bets/validate.ts`             | `LoadedSelection` gains snapshot columns                         |
+| `src/server/bets/place.ts`                | `loadSelections` selects the snapshot columns; emit `BET_PLACED` |
+| `src/server/bets/settle.ts`               | Emit `BET_SETTLED` + big-win + parlay-hit                        |
+| `src/server/bets/resettle.ts`             | Emit the corrected `BET_SETTLED` + milestones                    |
+| `src/server/seasons/service.ts`           | Emit `MEMBER_JOINED`                                             |
+| `src/server/seasons/allowance.ts`         | Emit one aggregated `ALLOWANCE_PAID`                             |
+| `src/server/admin/adjust.ts`              | Emit `ADMIN_ADJUSTMENT`                                          |
+| `src/app/api/cron/settle/route.ts`        | Call `detectLeadChange` after the sweep                          |
+| `src/components/ui/tab-bar.tsx`           | Five tabs instead of four                                        |
+| `src/app/(app)/standings/page.tsx`        | Link rows to member profiles                                     |
+| `src/app/(app)/me/page.tsx`               | Link to feed preferences                                         |
+| `src/server/__tests__/end-to-end.test.ts` | Assert the feed's event sequence                                 |
 
 ---
 
 ### Task 1: Social schema and migration
 
 **Files:**
+
 - Create: `src/db/schema/social.ts`
 - Modify: `src/db/schema/index.ts`
 - Modify: `src/test/db.ts:6`
 - Test: `src/db/__tests__/social-schema.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing — this is the first task.
 - Produces: `feedEvents`, `feedReactions`, `feedComments`, `feedPreferences` tables; `feedEventType` pgEnum; `type FeedEventType = 'BET_PLACED' | 'BET_SETTLED' | 'MEMBER_JOINED' | 'ALLOWANCE_PAID' | 'ADMIN_ADJUSTMENT' | 'MILESTONE_LEAD_CHANGE' | 'MILESTONE_BIG_WIN' | 'MILESTONE_PARLAY_HIT'`.
 
@@ -212,11 +214,17 @@ describe('social schema', () => {
       })
       .returning();
 
-    await db.insert(feedReactions).values({ eventId: event.id, membershipId: membership.id, emoji: '🔥' });
-    await db.insert(feedReactions).values({ eventId: event.id, membershipId: membership.id, emoji: '💀' });
+    await db
+      .insert(feedReactions)
+      .values({ eventId: event.id, membershipId: membership.id, emoji: '🔥' });
+    await db
+      .insert(feedReactions)
+      .values({ eventId: event.id, membershipId: membership.id, emoji: '💀' });
 
     await expect(
-      db.insert(feedReactions).values({ eventId: event.id, membershipId: membership.id, emoji: '🔥' }),
+      db
+        .insert(feedReactions)
+        .values({ eventId: event.id, membershipId: membership.id, emoji: '🔥' }),
     ).rejects.toThrow();
 
     const rows = await db.select().from(feedReactions).where(eq(feedReactions.eventId, event.id));
@@ -244,7 +252,10 @@ describe('social schema', () => {
 
     expect(comment.deletedAt).toBeNull();
 
-    await db.update(feedComments).set({ deletedAt: new Date() }).where(eq(feedComments.id, comment.id));
+    await db
+      .update(feedComments)
+      .set({ deletedAt: new Date() })
+      .where(eq(feedComments.id, comment.id));
 
     const [after] = await db.select().from(feedComments).where(eq(feedComments.id, comment.id));
     expect(after.deletedAt).not.toBeNull();
@@ -274,7 +285,16 @@ Create `src/db/schema/social.ts`:
 
 ```ts
 import { sql } from 'drizzle-orm';
-import { index, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import {
+  index,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { seasonMemberships, seasons, users } from './identity';
 import { bets } from './betting';
 import { ledgerEntries } from './money';
@@ -403,20 +423,22 @@ export * from './social';
 In `src/test/db.ts`, replace the `TRUNCATE` statement with one that includes the new tables. The new tables come first because they reference the old ones:
 
 ```ts
-  await db.execute(
-    sql`TRUNCATE TABLE feed_reactions, feed_comments, feed_events, feed_preferences, ledger_entries, bet_legs, bets, odds_snapshots, selections, markets, games, teams, season_memberships, seasons, users RESTART IDENTITY CASCADE`,
-  );
+await db.execute(
+  sql`TRUNCATE TABLE feed_reactions, feed_comments, feed_events, feed_preferences, ledger_entries, bet_legs, bets, odds_snapshots, selections, markets, games, teams, season_memberships, seasons, users RESTART IDENTITY CASCADE`,
+);
 ```
 
 - [ ] **Step 5: Generate and apply the migration**
 
 Run:
+
 ```bash
 npm run db:generate
 npm run db:up
 npm run db:test:create
 npm run db:migrate:test
 ```
+
 Expected: `db:generate` writes `drizzle/0004_<name>.sql` plus a new snapshot in `drizzle/meta/`. Open the generated SQL and confirm it creates the `feed_event_type` enum, all four tables, and the five indexes. If the `muted_types` default came out as anything other than `DEFAULT '{}'::feed_event_type[]`, fix the schema and regenerate rather than hand-editing the SQL.
 
 - [ ] **Step 6: Run the test and verify it passes**
@@ -439,11 +461,13 @@ git commit -m "feat: add the social layer schema"
 ### Task 2: Payload types and `emitFeedEvent`
 
 **Files:**
+
 - Create: `src/server/feed/payload.ts`
 - Create: `src/server/feed/emit.ts`
 - Test: `src/server/feed/__tests__/emit.test.ts`
 
 **Interfaces:**
+
 - Consumes: `feedEvents`, `FeedEventType` from Task 1; `Tx` from `@/db/client`.
 - Produces:
   - `type FeedLegSnapshot`, `BetPlacedPayload`, `BetSettledPayload`, `MemberJoinedPayload`, `AllowancePaidPayload`, `AdminAdjustmentPayload`, `LeadChangePayload`, `BigWinPayload`, `ParlayHitPayload`, `FeedEventPayload`, `LegOutcome`
@@ -707,10 +731,12 @@ git commit -m "feat: add the feed event emitter"
 ### Task 3: Profile statistics (pure)
 
 **Files:**
+
 - Create: `src/domain/stats.ts`
 - Test: `src/domain/__tests__/stats.test.ts`
 
 **Interfaces:**
+
 - Consumes: `BetStatus` from `@/db/schema`.
 - Produces: `interface BetOutcomeRow`, `interface MemberStats`, `computeMemberStats(rows: BetOutcomeRow[]): MemberStats`.
 
@@ -979,10 +1005,12 @@ git commit -m "feat: add member season statistics"
 ### Task 4: Milestone thresholds (pure)
 
 **Files:**
+
 - Create: `src/domain/milestones.ts`
 - Test: `src/domain/__tests__/milestones.test.ts`
 
 **Interfaces:**
+
 - Consumes: `LegOutcome` from `@/server/feed/payload`.
 - Produces:
   - `BIG_WIN_MULTIPLE = 10n`
@@ -1194,6 +1222,7 @@ git commit -m "feat: add milestone thresholds"
 ### Task 5: Emit `BET_PLACED` from `placeBet`
 
 **Files:**
+
 - Create: `src/server/feed/snapshot.ts`
 - Create: `src/server/feed/__tests__/snapshot.test.ts`
 - Modify: `src/server/bets/validate.ts` — `LoadedSelection` gains three columns
@@ -1201,6 +1230,7 @@ git commit -m "feat: add milestone thresholds"
 - Test: `src/server/feed/__tests__/place-emission.test.ts`
 
 **Interfaces:**
+
 - Consumes: `emitFeedEvent` (Task 2), `FeedLegSnapshot`/`BetPlacedPayload` (Task 2).
 - Produces:
   - `interface SnapshotSource { sport; marketType; side; homeAbbr; awayAbbr; startsAt: Date }`
@@ -1495,35 +1525,35 @@ Still in `src/server/bets/place.ts`, change the bet insert's `returning` to incl
 and capture it next to `betId`:
 
 ```ts
-      const betId = inserted[0].id;
-      const placedAt = inserted[0].placedAt;
+const betId = inserted[0].id;
+const placedAt = inserted[0].placedAt;
 ```
 
 Then, immediately after the existing `postEntry` call and before the `return`, add the emit:
 
 ```ts
-      const payload: BetPlacedPayload = {
-        betType: input.type,
-        stakeCents: input.stakeCents.toString(),
-        potentialPayoutCents: freshQuote.potentialPayoutCents.toString(),
-        combinedPriceAmerican: freshQuote.combinedPriceAmerican,
-        legs: input.legs.map((_leg, i) =>
-          buildLegSnapshot(freshSelections[i], {
-            line: freshSelections[i].line,
-            priceAmerican: freshSelections[i].priceAmerican,
-          }),
-        ),
-      };
+const payload: BetPlacedPayload = {
+  betType: input.type,
+  stakeCents: input.stakeCents.toString(),
+  potentialPayoutCents: freshQuote.potentialPayoutCents.toString(),
+  combinedPriceAmerican: freshQuote.combinedPriceAmerican,
+  legs: input.legs.map((_leg, i) =>
+    buildLegSnapshot(freshSelections[i], {
+      line: freshSelections[i].line,
+      priceAmerican: freshSelections[i].priceAmerican,
+    }),
+  ),
+};
 
-      await emitFeedEvent(tx, {
-        seasonId: fresh.activeSeasonId!,
-        type: 'BET_PLACED',
-        subjectMembershipId: fresh.membership!.id,
-        betId,
-        dedupeKey: `bet:${betId}:placed`,
-        payload,
-        occurredAt: placedAt,
-      });
+await emitFeedEvent(tx, {
+  seasonId: fresh.activeSeasonId!,
+  type: 'BET_PLACED',
+  subjectMembershipId: fresh.membership!.id,
+  betId,
+  dedupeKey: `bet:${betId}:placed`,
+  payload,
+  occurredAt: placedAt,
+});
 ```
 
 `fresh.activeSeasonId` is non-null here because `validatePlacement` already rejected the request otherwise — the same reason the existing code writes `fresh.membership!`.
@@ -1548,10 +1578,12 @@ git commit -m "feat: post a feed card when a bet is placed"
 ### Task 6: Emit `BET_SETTLED` and the two per-bet milestones from `settleGame`
 
 **Files:**
+
 - Modify: `src/server/bets/settle.ts`
 - Test: `src/server/feed/__tests__/settle-emission.test.ts`
 
 **Interfaces:**
+
 - Consumes: `emitFeedEvent`, `buildLegSnapshot`, `BetSettledPayload`, `BigWinPayload`, `ParlayHitPayload`, `isBigWin`, `isParlayHit`, `multipleBasisPoints`, `survivingLegCount`.
 - Produces: no new exports. `settleGame`'s existing `SettleGameSummary` return type is unchanged.
 
@@ -1595,10 +1627,7 @@ describe('settleGame feed emission', () => {
     await finalize(game.game.id, 27, 20);
     await settleGame(game.game.id);
 
-    const settled = await db
-      .select()
-      .from(feedEvents)
-      .where(eq(feedEvents.type, 'BET_SETTLED'));
+    const settled = await db.select().from(feedEvents).where(eq(feedEvents.type, 'BET_SETTLED'));
 
     expect(settled).toHaveLength(1);
     expect(settled[0].dedupeKey).toBe(`bet:${placed.bet.id}:settled:1`);
@@ -1726,7 +1755,12 @@ import { seasonMemberships, teams } from '@/db/schema';
 import { isBigWin, isParlayHit, multipleBasisPoints, survivingLegCount } from '@/domain/milestones';
 import { emitFeedEvent } from '@/server/feed/emit';
 import { buildLegSnapshot } from '@/server/feed/snapshot';
-import type { BetSettledPayload, BigWinPayload, LegOutcome, ParlayHitPayload } from '@/server/feed/payload';
+import type {
+  BetSettledPayload,
+  BigWinPayload,
+  LegOutcome,
+  ParlayHitPayload,
+} from '@/server/feed/payload';
 
 const homeTeams = alias(teams, 'settle_home_teams');
 const awayTeams = alias(teams, 'settle_away_teams');
@@ -1735,24 +1769,24 @@ const awayTeams = alias(teams, 'settle_away_teams');
 Replace the `candidates` query so it carries the season id and the columns the payload needs. It selects explicit columns now rather than the whole row:
 
 ```ts
-    const candidates =
-      touchedBetIds.length === 0
-        ? []
-        : await tx
-            .select({
-              id: bets.id,
-              membershipId: bets.membershipId,
-              seasonId: seasonMemberships.seasonId,
-              type: bets.type,
-              stakeCents: bets.stakeCents,
-              potentialPayoutCents: bets.potentialPayoutCents,
-              combinedPriceAmerican: bets.combinedPriceAmerican,
-              settlementAttempts: bets.settlementAttempts,
-            })
-            .from(bets)
-            .innerJoin(seasonMemberships, eq(bets.membershipId, seasonMemberships.id))
-            .where(and(inArray(bets.id, touchedBetIds), eq(bets.status, 'PENDING')))
-            .orderBy(asc(bets.membershipId));
+const candidates =
+  touchedBetIds.length === 0
+    ? []
+    : await tx
+        .select({
+          id: bets.id,
+          membershipId: bets.membershipId,
+          seasonId: seasonMemberships.seasonId,
+          type: bets.type,
+          stakeCents: bets.stakeCents,
+          potentialPayoutCents: bets.potentialPayoutCents,
+          combinedPriceAmerican: bets.combinedPriceAmerican,
+          settlementAttempts: bets.settlementAttempts,
+        })
+        .from(bets)
+        .innerJoin(seasonMemberships, eq(bets.membershipId, seasonMemberships.id))
+        .where(and(inArray(bets.id, touchedBetIds), eq(bets.status, 'PENDING')))
+        .orderBy(asc(bets.membershipId));
 ```
 
 - [ ] **Step 4: Extend the per-bet legs query with snapshot columns**
@@ -1760,26 +1794,26 @@ Replace the `candidates` query so it carries the season id and the columns the p
 Still inside the `for (const bet of candidates)` loop, replace the `legs` query:
 
 ```ts
-      const legs = await tx
-        .select({
-          status: betLegs.status,
-          priceAtPlacement: betLegs.priceAtPlacement,
-          lineAtPlacement: betLegs.lineAtPlacement,
-          marketType: markets.type,
-          side: selections.side,
-          sport: games.sport,
-          startsAt: games.startsAt,
-          homeAbbr: homeTeams.abbreviation,
-          awayAbbr: awayTeams.abbreviation,
-        })
-        .from(betLegs)
-        .innerJoin(selections, eq(betLegs.selectionId, selections.id))
-        .innerJoin(markets, eq(selections.marketId, markets.id))
-        .innerJoin(games, eq(markets.gameId, games.id))
-        .innerJoin(homeTeams, eq(games.homeTeamId, homeTeams.id))
-        .innerJoin(awayTeams, eq(games.awayTeamId, awayTeams.id))
-        .where(eq(betLegs.betId, bet.id))
-        .orderBy(asc(betLegs.createdAt));
+const legs = await tx
+  .select({
+    status: betLegs.status,
+    priceAtPlacement: betLegs.priceAtPlacement,
+    lineAtPlacement: betLegs.lineAtPlacement,
+    marketType: markets.type,
+    side: selections.side,
+    sport: games.sport,
+    startsAt: games.startsAt,
+    homeAbbr: homeTeams.abbreviation,
+    awayAbbr: awayTeams.abbreviation,
+  })
+  .from(betLegs)
+  .innerJoin(selections, eq(betLegs.selectionId, selections.id))
+  .innerJoin(markets, eq(selections.marketId, markets.id))
+  .innerJoin(games, eq(markets.gameId, games.id))
+  .innerJoin(homeTeams, eq(games.homeTeamId, homeTeams.id))
+  .innerJoin(awayTeams, eq(games.awayTeamId, awayTeams.id))
+  .where(eq(betLegs.betId, bet.id))
+  .orderBy(asc(betLegs.createdAt));
 ```
 
 The `orderBy` is new and load-bearing: `legOutcomes` must be parallel to `legs` in the payload, and an unordered query does not guarantee that across two reads.
@@ -1789,67 +1823,67 @@ The `orderBy` is new and load-bearing: `legOutcomes` must be parallel to `legs` 
 Immediately after the existing `await tx.update(bets).set({ status: outcome, ... })` call and before `summary.betsSettled += 1`, add:
 
 ```ts
-      const legOutcomes = legs.map((leg) => leg.status as LegOutcome);
+const legOutcomes = legs.map((leg) => leg.status as LegOutcome);
 
-      const settledPayload: BetSettledPayload = {
-        betType: bet.type,
-        stakeCents: bet.stakeCents.toString(),
-        potentialPayoutCents: bet.potentialPayoutCents.toString(),
-        combinedPriceAmerican: bet.combinedPriceAmerican,
-        legs: legs.map((leg) =>
-          buildLegSnapshot(leg, { line: leg.lineAtPlacement, priceAmerican: leg.priceAtPlacement }),
-        ),
-        outcome,
-        payoutCents: payout.toString(),
-        netCents: (payout - bet.stakeCents).toString(),
-        legOutcomes,
-        settlementAttempt: attempts,
-        correction: attempts > 1,
-      };
+const settledPayload: BetSettledPayload = {
+  betType: bet.type,
+  stakeCents: bet.stakeCents.toString(),
+  potentialPayoutCents: bet.potentialPayoutCents.toString(),
+  combinedPriceAmerican: bet.combinedPriceAmerican,
+  legs: legs.map((leg) =>
+    buildLegSnapshot(leg, { line: leg.lineAtPlacement, priceAmerican: leg.priceAtPlacement }),
+  ),
+  outcome,
+  payoutCents: payout.toString(),
+  netCents: (payout - bet.stakeCents).toString(),
+  legOutcomes,
+  settlementAttempt: attempts,
+  correction: attempts > 1,
+};
 
-      await emitFeedEvent(tx, {
-        seasonId: bet.seasonId,
-        type: 'BET_SETTLED',
-        subjectMembershipId: bet.membershipId,
-        betId: bet.id,
-        dedupeKey: `bet:${bet.id}:settled:${attempts}`,
-        payload: settledPayload,
-        occurredAt: settledAt,
-      });
+await emitFeedEvent(tx, {
+  seasonId: bet.seasonId,
+  type: 'BET_SETTLED',
+  subjectMembershipId: bet.membershipId,
+  betId: bet.id,
+  dedupeKey: `bet:${bet.id}:settled:${attempts}`,
+  payload: settledPayload,
+  occurredAt: settledAt,
+});
 
-      if (outcome === 'WON' && isBigWin(bet.stakeCents, payout)) {
-        const bigWin: BigWinPayload = {
-          stakeCents: bet.stakeCents.toString(),
-          payoutCents: payout.toString(),
-          multipleBasisPoints: multipleBasisPoints(bet.stakeCents, payout),
-        };
-        await emitFeedEvent(tx, {
-          seasonId: bet.seasonId,
-          type: 'MILESTONE_BIG_WIN',
-          subjectMembershipId: bet.membershipId,
-          betId: bet.id,
-          dedupeKey: `bet:${bet.id}:bigwin:${attempts}`,
-          payload: bigWin,
-          occurredAt: settledAt,
-        });
-      }
+if (outcome === 'WON' && isBigWin(bet.stakeCents, payout)) {
+  const bigWin: BigWinPayload = {
+    stakeCents: bet.stakeCents.toString(),
+    payoutCents: payout.toString(),
+    multipleBasisPoints: multipleBasisPoints(bet.stakeCents, payout),
+  };
+  await emitFeedEvent(tx, {
+    seasonId: bet.seasonId,
+    type: 'MILESTONE_BIG_WIN',
+    subjectMembershipId: bet.membershipId,
+    betId: bet.id,
+    dedupeKey: `bet:${bet.id}:bigwin:${attempts}`,
+    payload: bigWin,
+    occurredAt: settledAt,
+  });
+}
 
-      if (isParlayHit(bet.type, outcome, legOutcomes)) {
-        const parlayHit: ParlayHitPayload = {
-          legCount: survivingLegCount(legOutcomes),
-          payoutCents: payout.toString(),
-          combinedPriceAmerican: bet.combinedPriceAmerican,
-        };
-        await emitFeedEvent(tx, {
-          seasonId: bet.seasonId,
-          type: 'MILESTONE_PARLAY_HIT',
-          subjectMembershipId: bet.membershipId,
-          betId: bet.id,
-          dedupeKey: `bet:${bet.id}:parlayhit:${attempts}`,
-          payload: parlayHit,
-          occurredAt: settledAt,
-        });
-      }
+if (isParlayHit(bet.type, outcome, legOutcomes)) {
+  const parlayHit: ParlayHitPayload = {
+    legCount: survivingLegCount(legOutcomes),
+    payoutCents: payout.toString(),
+    combinedPriceAmerican: bet.combinedPriceAmerican,
+  };
+  await emitFeedEvent(tx, {
+    seasonId: bet.seasonId,
+    type: 'MILESTONE_PARLAY_HIT',
+    subjectMembershipId: bet.membershipId,
+    betId: bet.id,
+    dedupeKey: `bet:${bet.id}:parlayhit:${attempts}`,
+    payload: parlayHit,
+    occurredAt: settledAt,
+  });
+}
 ```
 
 Note the milestone dedupe keys carry `attempts` for the same reason the settlement key does: a corrected settlement must be able to re-post without colliding.
@@ -1874,10 +1908,12 @@ git commit -m "feat: post feed cards when bets settle"
 ### Task 7: Emit the corrected settlement from `resettleBet`
 
 **Files:**
+
 - Modify: `src/server/bets/resettle.ts`
 - Test: `src/server/feed/__tests__/resettle-emission.test.ts`
 
 **Interfaces:**
+
 - Consumes: everything Task 6 consumed. No new exports.
 
 - [ ] **Step 1: Write the failing test**
@@ -1916,7 +1952,10 @@ describe('resettleBet feed emission', () => {
     if (!placed.ok) return;
 
     // Settle on a wrong score: home loses.
-    await db.update(games).set({ status: 'FINAL', homeScore: 17, awayScore: 24 }).where(eq(games.id, game.game.id));
+    await db
+      .update(games)
+      .set({ status: 'FINAL', homeScore: 17, awayScore: 24 })
+      .where(eq(games.id, game.game.id));
     await settleGame(game.game.id);
 
     const [first] = await db.select().from(feedEvents).where(eq(feedEvents.type, 'BET_SETTLED'));
@@ -1968,10 +2007,10 @@ Two differences from Task 6:
 - The season id is not yet in scope. Add it to the file's existing `bet` load by joining `season_memberships`:
 
 ```ts
-    const [membership] = await tx
-      .select({ seasonId: seasonMemberships.seasonId })
-      .from(seasonMemberships)
-      .where(eq(seasonMemberships.id, bet.membershipId));
+const [membership] = await tx
+  .select({ seasonId: seasonMemberships.seasonId })
+  .from(seasonMemberships)
+  .where(eq(seasonMemberships.id, bet.membershipId));
 ```
 
 This is a separate small read rather than a join because `resettleBet` loads the bet with `.for('update')`, and Postgres will not take a `FOR UPDATE` lock through an outer-joined query.
@@ -1996,6 +2035,7 @@ git commit -m "feat: post a correction card when a bet is re-settled"
 ### Task 8: Emit `MEMBER_JOINED`, `ALLOWANCE_PAID` and `ADMIN_ADJUSTMENT`
 
 **Files:**
+
 - Modify: `src/server/money/ledger.ts` — `PostEntryResult` gains `entryId`
 - Modify: `src/server/seasons/service.ts`
 - Modify: `src/server/seasons/allowance.ts`
@@ -2003,6 +2043,7 @@ git commit -m "feat: post a correction card when a bet is re-settled"
 - Test: `src/server/feed/__tests__/money-emission.test.ts`
 
 **Interfaces:**
+
 - Consumes: `emitFeedEvent`, `isoWeekKey` (already exported from `@/server/seasons/allowance`).
 - Produces: `PostEntryResult` is now `{ applied: boolean; balanceCents: bigint; entryId: string | null }`. This is additive — existing callers destructure only what they use.
 
@@ -2078,7 +2119,10 @@ describe('money-path feed emission', () => {
       idempotencyKey: 'adjust:test:1',
     });
 
-    const [event] = await db.select().from(feedEvents).where(eq(feedEvents.type, 'ADMIN_ADJUSTMENT'));
+    const [event] = await db
+      .select()
+      .from(feedEvents)
+      .where(eq(feedEvents.type, 'ADMIN_ADJUSTMENT'));
     expect(event.subjectMembershipId).toBe(membershipId);
     expect(event.ledgerEntryId).not.toBeNull();
 
@@ -2104,7 +2148,10 @@ describe('money-path feed emission', () => {
     await adjustBalance(input);
     await adjustBalance(input);
 
-    const events = await db.select().from(feedEvents).where(eq(feedEvents.type, 'ADMIN_ADJUSTMENT'));
+    const events = await db
+      .select()
+      .from(feedEvents)
+      .where(eq(feedEvents.type, 'ADMIN_ADJUSTMENT'));
     expect(events).toHaveLength(1);
 
     const [membership] = await db
@@ -2137,13 +2184,13 @@ export interface PostEntryResult {
 and thread it through the two return statements:
 
 ```ts
-  if (inserted.length === 0) {
-    return { applied: false, balanceCents: membership.balanceCents, entryId: null };
-  }
+if (inserted.length === 0) {
+  return { applied: false, balanceCents: membership.balanceCents, entryId: null };
+}
 ```
 
 ```ts
-  return { applied: true, balanceCents: nextBalance, entryId: inserted[0].id };
+return { applied: true, balanceCents: nextBalance, entryId: inserted[0].id };
 ```
 
 - [ ] **Step 4: Emit `MEMBER_JOINED`**
@@ -2155,18 +2202,18 @@ import { emitFeedEvent } from '@/server/feed/emit';
 ```
 
 ```ts
-    if (result.applied) {
-      await emitFeedEvent(tx, {
-        seasonId,
-        type: 'MEMBER_JOINED',
-        subjectMembershipId: membership.id,
-        dedupeKey: `membership:${membership.id}:joined`,
-        payload: { startingBankrollCents: season.startingBankrollCents.toString() },
-        occurredAt: membership.joinedAt,
-      });
-    }
+if (result.applied) {
+  await emitFeedEvent(tx, {
+    seasonId,
+    type: 'MEMBER_JOINED',
+    subjectMembershipId: membership.id,
+    dedupeKey: `membership:${membership.id}:joined`,
+    payload: { startingBankrollCents: season.startingBankrollCents.toString() },
+    occurredAt: membership.joinedAt,
+  });
+}
 
-    return { membershipId: membership.id, balanceCents: result.balanceCents };
+return { membershipId: membership.id, balanceCents: result.balanceCents };
 ```
 
 The `dedupeKey` alone would make this safe, but the guard also keeps a re-join from posting a card dated to the original join.
@@ -2180,24 +2227,24 @@ import { emitFeedEvent } from '@/server/feed/emit';
 ```
 
 ```ts
-  // One card for the whole run (D26). Twelve members would otherwise post twelve identical
-  // cards every Tuesday, which is how a feed dies. Emitted unconditionally — the week-scoped
-  // dedupe key already makes a repeat run a no-op, so there is nothing to branch on.
-  await db.transaction((tx) =>
-    emitFeedEvent(tx, {
-      seasonId: season.id,
-      type: 'ALLOWANCE_PAID',
-      dedupeKey: `allowance:${season.id}:${weekKey}`,
-      payload: {
-        weekKey,
-        memberCount: memberships.length,
-        amountCents: season.weeklyAllowanceCents.toString(),
-      },
-      occurredAt: now,
-    }),
-  );
+// One card for the whole run (D26). Twelve members would otherwise post twelve identical
+// cards every Tuesday, which is how a feed dies. Emitted unconditionally — the week-scoped
+// dedupe key already makes a repeat run a no-op, so there is nothing to branch on.
+await db.transaction((tx) =>
+  emitFeedEvent(tx, {
+    seasonId: season.id,
+    type: 'ALLOWANCE_PAID',
+    dedupeKey: `allowance:${season.id}:${weekKey}`,
+    payload: {
+      weekKey,
+      memberCount: memberships.length,
+      amountCents: season.weeklyAllowanceCents.toString(),
+    },
+    occurredAt: now,
+  }),
+);
 
-  return { credited, skipped };
+return { credited, skipped };
 ```
 
 - [ ] **Step 6: Emit `ADMIN_ADJUSTMENT`**
@@ -2289,11 +2336,13 @@ git commit -m "feat: post feed cards for joins, allowance and admin adjustments"
 ### Task 9: Lead-change detection
 
 **Files:**
+
 - Create: `src/server/feed/leaders.ts`
 - Modify: `src/app/api/cron/settle/route.ts`
 - Test: `src/server/feed/__tests__/leaders.test.ts`
 
 **Interfaces:**
+
 - Consumes: `pickLeader` (Task 4), `emitFeedEvent` (Task 2), `LeadChangePayload` (Task 2).
 - Produces: `detectLeadChange(seasonId: string): Promise<{ emitted: boolean }>`.
 
@@ -2328,7 +2377,10 @@ async function seedSeason(balances: bigint[]) {
 }
 
 async function setBalance(membershipId: string, balanceCents: bigint) {
-  await db.update(seasonMemberships).set({ balanceCents }).where(eq(seasonMemberships.id, membershipId));
+  await db
+    .update(seasonMemberships)
+    .set({ balanceCents })
+    .where(eq(seasonMemberships.id, membershipId));
 }
 
 async function leadEvents(seasonId: string) {
@@ -2396,7 +2448,9 @@ describe('detectLeadChange', () => {
       membershipIds[0],
     ]);
     expect((events[2].payload as LeadChangePayload).sequence).toBe(3);
-    expect((events[2].payload as LeadChangePayload).previousLeaderMembershipId).toBe(membershipIds[1]);
+    expect((events[2].payload as LeadChangePayload).previousLeaderMembershipId).toBe(
+      membershipIds[1],
+    );
     expect(events[2].dedupeKey).toBe(`lead:${seasonId}:3`);
   });
 
@@ -2461,9 +2515,7 @@ export async function detectLeadChange(seasonId: string): Promise<{ emitted: boo
   const priorEvents = await db
     .select({ payload: feedEvents.payload, subjectMembershipId: feedEvents.subjectMembershipId })
     .from(feedEvents)
-    .where(
-      and(eq(feedEvents.seasonId, seasonId), eq(feedEvents.type, 'MILESTONE_LEAD_CHANGE')),
-    )
+    .where(and(eq(feedEvents.seasonId, seasonId), eq(feedEvents.type, 'MILESTONE_LEAD_CHANGE')))
     .orderBy(desc(feedEvents.occurredAt), desc(feedEvents.id));
 
   const previous = priorEvents[0] ?? null;
@@ -2562,15 +2614,15 @@ import { detectLeadChange } from '@/server/feed/leaders';
 At the end of `adjustBalance`, replace the final return with:
 
 ```ts
-  if (result.applied) {
-    const [membership] = await db
-      .select({ seasonId: seasonMemberships.seasonId })
-      .from(seasonMemberships)
-      .where(eq(seasonMemberships.id, input.membershipId));
-    await detectLeadChange(membership.seasonId);
-  }
+if (result.applied) {
+  const [membership] = await db
+    .select({ seasonId: seasonMemberships.seasonId })
+    .from(seasonMemberships)
+    .where(eq(seasonMemberships.id, input.membershipId));
+  await detectLeadChange(membership.seasonId);
+}
 
-  return { balanceCents: result.balanceCents };
+return { balanceCents: result.balanceCents };
 ```
 
 - [ ] **Step 7: Verify and commit**
@@ -2588,11 +2640,13 @@ git commit -m "feat: announce lead changes in the feed"
 ### Task 10: Read the feed
 
 **Files:**
+
 - Create: `src/server/feed/preferences.ts`
 - Create: `src/server/feed/query.ts`
 - Test: `src/server/feed/__tests__/query.test.ts`
 
 **Interfaces:**
+
 - Consumes: the schema from Task 1, `FeedEventPayload` from Task 2.
 - Produces:
   - `getMutedTypes(userId: string): Promise<FeedEventType[]>`
@@ -3035,10 +3089,12 @@ git commit -m "feat: add the paginated season feed query"
 ### Task 11: Reactions and comments
 
 **Files:**
+
 - Create: `src/server/feed/social.ts`
 - Test: `src/server/feed/__tests__/social.test.ts`
 
 **Interfaces:**
+
 - Consumes: schema from Task 1.
 - Produces:
   - `REACTION_EMOJI: readonly string[]` and `isAllowedEmoji(emoji: string): boolean`
@@ -3099,7 +3155,12 @@ describe('toggleReaction', () => {
     const season = await makeSeason({ status: 'ACTIVE' });
     const { membership } = await seedMember(season.id);
     const event = await seedEvent(season.id, membership.id);
-    const input = { eventId: event.id, membershipId: membership.id, seasonId: season.id, emoji: '🔥' };
+    const input = {
+      eventId: event.id,
+      membershipId: membership.id,
+      seasonId: season.id,
+      emoji: '🔥',
+    };
 
     expect(await toggleReaction(input)).toEqual({ active: true });
     expect(await db.select().from(feedReactions)).toHaveLength(1);
@@ -3113,8 +3174,18 @@ describe('toggleReaction', () => {
     const { membership } = await seedMember(season.id);
     const event = await seedEvent(season.id, membership.id);
 
-    await toggleReaction({ eventId: event.id, membershipId: membership.id, seasonId: season.id, emoji: '🔥' });
-    await toggleReaction({ eventId: event.id, membershipId: membership.id, seasonId: season.id, emoji: '💀' });
+    await toggleReaction({
+      eventId: event.id,
+      membershipId: membership.id,
+      seasonId: season.id,
+      emoji: '🔥',
+    });
+    await toggleReaction({
+      eventId: event.id,
+      membershipId: membership.id,
+      seasonId: season.id,
+      emoji: '💀',
+    });
 
     expect(await db.select().from(feedReactions)).toHaveLength(2);
   });
@@ -3125,7 +3196,12 @@ describe('toggleReaction', () => {
     const event = await seedEvent(season.id, membership.id);
 
     await expect(
-      toggleReaction({ eventId: event.id, membershipId: membership.id, seasonId: season.id, emoji: '🍕' }),
+      toggleReaction({
+        eventId: event.id,
+        membershipId: membership.id,
+        seasonId: season.id,
+        emoji: '🍕',
+      }),
     ).rejects.toThrow(FeedError);
     expect(await db.select().from(feedReactions)).toHaveLength(0);
   });
@@ -3138,7 +3214,12 @@ describe('toggleReaction', () => {
     const event = await seedEvent(theirs.id, them.membership.id);
 
     await expect(
-      toggleReaction({ eventId: event.id, membershipId: me.membership.id, seasonId: mine.id, emoji: '🔥' }),
+      toggleReaction({
+        eventId: event.id,
+        membershipId: me.membership.id,
+        seasonId: mine.id,
+        emoji: '🔥',
+      }),
     ).rejects.toThrow(/WRONG_SEASON/);
   });
 });
@@ -3168,7 +3249,12 @@ describe('addComment', () => {
     const event = await seedEvent(season.id, membership.id);
 
     await expect(
-      addComment({ eventId: event.id, membershipId: membership.id, seasonId: season.id, body: '   ' }),
+      addComment({
+        eventId: event.id,
+        membershipId: membership.id,
+        seasonId: season.id,
+        body: '   ',
+      }),
     ).rejects.toThrow(/COMMENT_EMPTY/);
   });
 
@@ -3504,6 +3590,7 @@ git commit -m "feat: add feed reactions and comments"
 ### Task 12: The Feed tab
 
 **Files:**
+
 - Modify: `src/components/ui/tab-bar.tsx`
 - Create: `src/app/(app)/feed/page.tsx`
 - Create: `src/app/(app)/feed/actions.ts`
@@ -3511,6 +3598,7 @@ git commit -m "feat: add feed reactions and comments"
 - Create: `src/app/(app)/feed/feed-list.tsx`
 
 **Interfaces:**
+
 - Consumes: `getSeasonFeed`, `FeedCard`, `FeedCursor` (Task 10); `REACTION_EMOJI`, `toggleReaction` (Task 11); `requireApprovedMember`, `requireApprovedMemberOrThrow`.
 - Produces:
   - `loadMoreFeedAction(cursor: { occurredAt: string; id: string }): Promise<SerializedFeedPage>`
@@ -3782,7 +3870,8 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
       const joined = payload as MemberJoinedPayload;
       return (
         <p className="text-sm">
-          joined with <Money cents={BigInt(joined.startingBankrollCents)} className="font-semibold" />
+          joined with{' '}
+          <Money cents={BigInt(joined.startingBankrollCents)} className="font-semibold" />
         </p>
       );
     }
@@ -3828,8 +3917,9 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
       const win = payload as BigWinPayload;
       return (
         <p className="text-sm">
-          cashed <span className="font-semibold">{(win.multipleBasisPoints / 10_000).toFixed(1)}×</span>{' '}
-          · <Money cents={BigInt(win.stakeCents)} /> → <Money cents={BigInt(win.payoutCents)} />
+          cashed{' '}
+          <span className="font-semibold">{(win.multipleBasisPoints / 10_000).toFixed(1)}×</span> ·{' '}
+          <Money cents={BigInt(win.stakeCents)} /> → <Money cents={BigInt(win.payoutCents)} />
         </p>
       );
     }
@@ -4053,7 +4143,7 @@ export default async function FeedPage() {
 Run: `npm run build`
 Expected: PASS, with `/feed` listed as a route (`ƒ /feed`). This is the gate that matters here — it compiles the server/client boundary for real, which is where the mistakes in this task live (a server-only import pulled into `feed-list.tsx`, an action that isn't actually serializable).
 
-*Local only, skip in the cloud environment:* `npm run dev`, then sign in and open `http://localhost:3000/feed` — place a bet from the Games tab, confirm a card appears, and confirm a reaction toggle survives a reload. Sign-in needs real Google credentials, so this is not runnable in the cloud environment. Do not treat it as a blocker; `npm run build` plus the Task 10 and 11 test suites cover the same ground.
+_Local only, skip in the cloud environment:_ `npm run dev`, then sign in and open `http://localhost:3000/feed` — place a bet from the Games tab, confirm a card appears, and confirm a reaction toggle survives a reload. Sign-in needs real Google credentials, so this is not runnable in the cloud environment. Do not treat it as a blocker; `npm run build` plus the Task 10 and 11 test suites cover the same ground.
 
 - [ ] **Step 7: Verify and commit**
 
@@ -4070,12 +4160,14 @@ git commit -m "feat: add the feed tab"
 ### Task 13: Event detail and the comment thread
 
 **Files:**
+
 - Create: `src/app/(app)/feed/[eventId]/page.tsx`
 - Create: `src/app/(app)/feed/[eventId]/comment-thread.tsx`
 - Create: `src/server/feed/__tests__/single-event.test.ts`
 - Modify: `src/server/feed/query.ts` — add `getFeedEvent`
 
 **Interfaces:**
+
 - Consumes: `listComments`, `deleteCommentAction`, `addCommentAction`, `FeedCardView`.
 - Produces: `getFeedEvent(opts: { eventId: string; seasonId: string; viewerUserId: string; viewerMembershipId: string }): Promise<FeedCard | null>` — returns null when the event does not exist **or** belongs to another season, so the page cannot distinguish the two and cannot be used to probe for ids.
 
@@ -4421,7 +4513,7 @@ export default async function FeedEventPage({ params }: PageProps<'/feed/[eventI
 Run: `npm run build`
 Expected: PASS, with `ƒ /feed/[eventId]` in the route list.
 
-*Local only, skip in the cloud environment:* open a card from `/feed`, post a comment, delete it, and confirm it renders as "Comment removed" rather than disappearing; then sign in as a second non-admin user and confirm the Delete control is absent on somebody else's comment. Both behaviors are already asserted server-side by the Task 11 tests (`deleteComment` soft-deletes and keeps the row; a non-author non-admin is rejected), so the cloud environment loses the visual confirmation only, not the coverage.
+_Local only, skip in the cloud environment:_ open a card from `/feed`, post a comment, delete it, and confirm it renders as "Comment removed" rather than disappearing; then sign in as a second non-admin user and confirm the Delete control is absent on somebody else's comment. Both behaviors are already asserted server-side by the Task 11 tests (`deleteComment` soft-deletes and keeps the row; a non-author non-admin is rejected), so the cloud environment loses the visual confirmation only, not the coverage.
 
 - [ ] **Step 8: Verify and commit**
 
@@ -4438,12 +4530,14 @@ git commit -m "feat: add the feed event detail screen with comments"
 ### Task 14: Member profiles
 
 **Files:**
+
 - Create: `src/server/feed/stats.ts`
 - Create: `src/app/(app)/members/[membershipId]/page.tsx`
 - Modify: `src/app/(app)/standings/page.tsx`
 - Test: `src/server/feed/__tests__/stats.test.ts`
 
 **Interfaces:**
+
 - Consumes: `computeMemberStats` (Task 3), `getSeasonFeed` (Task 10).
 - Produces: `getMemberProfile(opts: { membershipId: string; seasonId: string }): Promise<MemberProfile | null>` where `MemberProfile = { membershipId; userId; displayName; avatarUrl; status; balanceCents; rank; stats: MemberStats }`.
 
@@ -4664,7 +4758,9 @@ export default async function MemberProfilePage({ params }: PageProps<'/members/
   const { stats } = profile;
   const roi = stats.roiBasisPoints === null ? '—' : `${(stats.roiBasisPoints / 100).toFixed(1)}%`;
   const streak =
-    stats.currentStreak.kind === 'NONE' ? '—' : `${stats.currentStreak.kind}${stats.currentStreak.length}`;
+    stats.currentStreak.kind === 'NONE'
+      ? '—'
+      : `${stats.currentStreak.kind}${stats.currentStreak.length}`;
 
   return (
     <div className="flex flex-col gap-4 px-4 py-4">
@@ -4703,7 +4799,10 @@ export default async function MemberProfilePage({ params }: PageProps<'/members/
           <p className="text-sm text-zinc-500">No activity yet.</p>
         ) : (
           history.cards.map((card) => (
-            <FeedCardView key={card.id} card={{ ...card, occurredAt: card.occurredAt.toISOString() }} />
+            <FeedCardView
+              key={card.id}
+              card={{ ...card, occurredAt: card.occurredAt.toISOString() }}
+            />
           ))
         )}
       </section>
@@ -4723,12 +4822,12 @@ import Link from 'next/link';
 ```
 
 ```tsx
-            <Link
-              href={`/members/${row.membershipId}`}
-              className="flex-1 truncate text-sm font-medium hover:underline"
-            >
-              {row.displayName}
-            </Link>
+<Link
+  href={`/members/${row.membershipId}`}
+  className="flex-1 truncate text-sm font-medium hover:underline"
+>
+  {row.displayName}
+</Link>
 ```
 
 - [ ] **Step 7: Verify and commit**
@@ -4746,11 +4845,13 @@ git commit -m "feat: add member profiles with season statistics"
 ### Task 15: Feed preferences screen
 
 **Files:**
+
 - Create: `src/app/(app)/me/feed-preferences/page.tsx`
 - Create: `src/app/(app)/me/feed-preferences/preferences-form.tsx`
 - Modify: `src/app/(app)/me/page.tsx`
 
 **Interfaces:**
+
 - Consumes: `getMutedTypes`, `setMutedTypes` (Task 10).
 - Produces: `saveFeedPreferencesAction(mutedTypes: FeedEventType[]): Promise<{ saved: true }>`.
 
@@ -4771,10 +4872,22 @@ const OPTIONS: PreferenceOption[] = [
   { type: 'BET_SETTLED', label: 'Bets settled', description: 'How everyone’s bets resolved' },
   { type: 'MEMBER_JOINED', label: 'New members', description: 'When somebody joins the season' },
   { type: 'ALLOWANCE_PAID', label: 'Weekly allowance', description: 'The weekly allowance card' },
-  { type: 'ADMIN_ADJUSTMENT', label: 'Admin adjustments', description: 'Balance changes made by an admin' },
-  { type: 'MILESTONE_LEAD_CHANGE', label: 'Lead changes', description: 'When the standings lead changes hands' },
+  {
+    type: 'ADMIN_ADJUSTMENT',
+    label: 'Admin adjustments',
+    description: 'Balance changes made by an admin',
+  },
+  {
+    type: 'MILESTONE_LEAD_CHANGE',
+    label: 'Lead changes',
+    description: 'When the standings lead changes hands',
+  },
   { type: 'MILESTONE_BIG_WIN', label: 'Big wins', description: 'Payouts of 10× or better' },
-  { type: 'MILESTONE_PARLAY_HIT', label: 'Parlay hits', description: 'Parlays of four legs or more cashing' },
+  {
+    type: 'MILESTONE_PARLAY_HIT',
+    label: 'Parlay hits',
+    description: 'Parlays of four legs or more cashing',
+  },
 ];
 
 async function saveFeedPreferencesAction(mutedTypes: FeedEventType[]): Promise<{ saved: true }> {
@@ -4909,7 +5022,7 @@ Read `src/app/(app)/me/page.tsx` and add a link near the top of the page, matchi
 Run: `npm run build`
 Expected: PASS, with `ƒ /me/feed-preferences` in the route list. This is also where an inline `'use server'` function passed as a prop will fail if this Next version disallows it — if it does, move the action into `src/app/(app)/feed/actions.ts` as Step 1 noted.
 
-*Local only, skip in the cloud environment:* uncheck "Weekly allowance", save, and confirm the allowance card disappears from `/feed`, then re-check it and confirm it comes back. The Task 10 muting test already asserts exactly this round trip against the database.
+_Local only, skip in the cloud environment:_ uncheck "Weekly allowance", save, and confirm the allowance card disappears from `/feed`, then re-check it and confirm it comes back. The Task 10 muting test already asserts exactly this round trip against the database.
 
 Run: `npm run verify`
 Expected: PASS.
@@ -4924,12 +5037,14 @@ git commit -m "feat: add per-member feed filters"
 ### Task 16: End-to-end coverage and documentation
 
 **Files:**
+
 - Modify: `src/server/__tests__/end-to-end.test.ts`
 - Modify: `docs/README.md`
 - Modify: `docs/roadmap.md`
 - Modify: `docs/specs/2026-08-17-social-layer-design.md` — status line
 
 **Interfaces:**
+
 - Consumes: everything above. Produces nothing new.
 
 - [ ] **Step 1: Read the existing end-to-end test**
@@ -4941,21 +5056,21 @@ Open `src/server/__tests__/end-to-end.test.ts` and find where it has finished pl
 Append to that test, adapting the variable names to whatever the file already uses:
 
 ```ts
-    // The feed is a read model over the same events the ledger recorded. If these two ever
-    // disagree, one of them is lying.
-    const events = await db
-      .select({ type: feedEvents.type, betId: feedEvents.betId })
-      .from(feedEvents)
-      .orderBy(asc(feedEvents.occurredAt), asc(feedEvents.id));
+// The feed is a read model over the same events the ledger recorded. If these two ever
+// disagree, one of them is lying.
+const events = await db
+  .select({ type: feedEvents.type, betId: feedEvents.betId })
+  .from(feedEvents)
+  .orderBy(asc(feedEvents.occurredAt), asc(feedEvents.id));
 
-    const types = events.map((event) => event.type);
-    expect(types).toContain('BET_PLACED');
-    expect(types).toContain('BET_SETTLED');
+const types = events.map((event) => event.type);
+expect(types).toContain('BET_PLACED');
+expect(types).toContain('BET_SETTLED');
 
-    // Every settled bet got exactly one card, and every card points at a real bet.
-    const placedCards = events.filter((event) => event.type === 'BET_PLACED');
-    expect(new Set(placedCards.map((card) => card.betId)).size).toBe(placedCards.length);
-    expect(placedCards.every((card) => card.betId !== null)).toBe(true);
+// Every settled bet got exactly one card, and every card points at a real bet.
+const placedCards = events.filter((event) => event.type === 'BET_PLACED');
+expect(new Set(placedCards.map((card) => card.betId)).size).toBe(placedCards.length);
+expect(placedCards.every((card) => card.betId !== null)).toBe(true);
 ```
 
 with these added to the file's imports:
@@ -5010,29 +5125,28 @@ git push -u origin claude/subsystem-2-plan-27h377
 
 Checked against the spec, section by section:
 
-| Spec section | Covered by |
-|---|---|
-| `feed_events` table, indexes, dedupe keys | Task 1 |
-| Payload types, money-as-string | Task 2 |
-| `emitFeedEvent` mirroring `postEntry` | Task 2 |
-| `feed_reactions`, allowed emoji set | Tasks 1, 11 |
-| `feed_comments`, soft delete, author/admin rules | Tasks 1, 11 |
-| `feed_preferences`, read-time muting | Tasks 1, 10 |
-| Profile statistics and their definitions | Tasks 3, 14 |
-| Milestone thresholds | Task 4 |
-| `BET_PLACED` emission | Task 5 |
-| `BET_SETTLED` + big win + parlay hit | Task 6 |
-| Correction cards on re-settlement | Task 7 |
-| `MEMBER_JOINED`, `ALLOWANCE_PAID`, `ADMIN_ADJUSTMENT` | Task 8 |
-| Lead-change detection and its three rules | Task 9 |
-| Keyset pagination, three-query read | Task 10 |
-| Five-tab bar, feed screen | Task 12 |
-| Event detail and comment thread | Task 13 |
-| Member profile, standings links | Task 14 |
-| Feed preferences screen | Task 15 |
-| Every test in the spec's Testing section | Tasks 1–16, one per listed case |
+| Spec section                                          | Covered by                      |
+| ----------------------------------------------------- | ------------------------------- |
+| `feed_events` table, indexes, dedupe keys             | Task 1                          |
+| Payload types, money-as-string                        | Task 2                          |
+| `emitFeedEvent` mirroring `postEntry`                 | Task 2                          |
+| `feed_reactions`, allowed emoji set                   | Tasks 1, 11                     |
+| `feed_comments`, soft delete, author/admin rules      | Tasks 1, 11                     |
+| `feed_preferences`, read-time muting                  | Tasks 1, 10                     |
+| Profile statistics and their definitions              | Tasks 3, 14                     |
+| Milestone thresholds                                  | Task 4                          |
+| `BET_PLACED` emission                                 | Task 5                          |
+| `BET_SETTLED` + big win + parlay hit                  | Task 6                          |
+| Correction cards on re-settlement                     | Task 7                          |
+| `MEMBER_JOINED`, `ALLOWANCE_PAID`, `ADMIN_ADJUSTMENT` | Task 8                          |
+| Lead-change detection and its three rules             | Task 9                          |
+| Keyset pagination, three-query read                   | Task 10                         |
+| Five-tab bar, feed screen                             | Task 12                         |
+| Event detail and comment thread                       | Task 13                         |
+| Member profile, standings links                       | Task 14                         |
+| Feed preferences screen                               | Task 15                         |
+| Every test in the spec's Testing section              | Tasks 1–16, one per listed case |
 
 **Environment verified:** the setup in [Environment setup](#environment-setup) was executed in the Claude Code cloud environment on 2026-08-17 — `npm ci`, a locally started Postgres 16 (no Docker), `npm run db:migrate:test`, `npm run verify` at 26 files / 222 tests passing, and `npm run build` compiling all 17 existing routes. Every task in this plan is executable there. The only thing that is not is signing into the running app, because sign-in is Google OAuth with no dev bypass; Tasks 12–15 substitute `npm run build` for their browser steps and say so.
 
 **Known open item for the implementer:** the bundled Next.js documentation could not be read when this plan was written, because `node_modules` was not yet installed at that point. Tasks 12–15 use the conventions the existing code in this repo demonstrates (`LayoutProps<'/'>`-style generated route types, `'use server'` action files, `revalidatePath`), and each UI task begins by telling you to confirm those conventions against `node_modules/next/dist/docs/`. If a convention differs, follow the docs and adjust the code shown here — the shapes of the data and the server functions are what matter and those are settled.
-

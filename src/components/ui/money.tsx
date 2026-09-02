@@ -26,14 +26,16 @@ export function Money({
 
 /** American prices always carry an explicit sign — +150 reads differently from 150. */
 export function Price({ american, className = '' }: { american: number; className?: string }) {
-  return <span className={`tabular-nums ${className}`}>{american > 0 ? `+${american}` : american}</span>;
+  return (
+    <span className={`tabular-nums ${className}`}>{american > 0 ? `+${american}` : american}</span>
+  );
 }
 
 /**
  * The number a selection's button shows. Lifted out of games/game-card.tsx, which had its own
  * copy of this and its own copy of Price's signing rule.
  */
-export function Line({ value, market }: { value: string; market: 'SPREAD' | 'TOTAL'; }) {
+export function Line({ value, market }: { value: string; market: 'SPREAD' | 'TOTAL' }) {
   const n = Number(value);
   if (market === 'TOTAL') return <span className="tabular-nums">{n}</span>;
   return <span className="tabular-nums">{n > 0 ? `+${n}` : n}</span>;

@@ -2,7 +2,14 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { and, eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { db } from '@/db/client';
-import { bets, customEvents, feedEvents, ledgerEntries, markets, seasonMemberships } from '@/db/schema';
+import {
+  bets,
+  customEvents,
+  feedEvents,
+  ledgerEntries,
+  markets,
+  seasonMemberships,
+} from '@/db/schema';
 import { placeBet } from '@/server/bets/place';
 import { resolveCustomEvent } from '@/server/events/resolve';
 import type {
@@ -139,7 +146,7 @@ describe('resolveCustomEvent', () => {
     expect(entry.idempotencyKey).toBe(`bet:${placed.bet.id}:settled:1`);
   });
 
-  it('labels the creator\'s own bet on the settlement card, but not a non-creator\'s', async () => {
+  it("labels the creator's own bet on the settlement card, but not a non-creator's", async () => {
     const { creator, bettor, event } = await seed();
 
     const creatorBet = await placeBet({
@@ -173,10 +180,7 @@ describe('resolveCustomEvent', () => {
     });
     expect(result).toMatchObject({ ok: true, attempt: 1, betsSettled: 2 });
 
-    const cards = await db
-      .select()
-      .from(feedEvents)
-      .where(eq(feedEvents.type, 'BET_SETTLED'));
+    const cards = await db.select().from(feedEvents).where(eq(feedEvents.type, 'BET_SETTLED'));
 
     const creatorCard = cards.find((c) => c.betId === creatorBet.bet.id);
     const bettorCard = cards.find((c) => c.betId === bettorBet.bet.id);

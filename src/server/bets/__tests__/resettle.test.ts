@@ -189,7 +189,7 @@ describe('resettleBet', () => {
     expect(await balanceOf(membership.id)).toBe(balanceBefore);
   });
 
-  it('labels the creator\'s own custom-event bet on the corrected card, but not a non-creator\'s', async () => {
+  it("labels the creator's own custom-event bet on the corrected card, but not a non-creator's", async () => {
     const creator = await makeMembership(1_000_000n);
     const bettor = await makeMembership(1_000_000n, creator.seasonId);
     const admin = await makeUser({ role: 'ADMIN' });

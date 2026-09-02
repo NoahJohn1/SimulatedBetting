@@ -14,9 +14,7 @@ export default async function WagerDetailPage({ params }: PageProps<'/wagers/[wa
 
   const isOfferer = wager.offererMembershipId === member.membershipId;
   const yourClaim = isOfferer ? wager.offererClaim : wager.acceptorClaim;
-  const youProposedCancel = isOfferer
-    ? wager.offererCancelProposed
-    : wager.acceptorCancelProposed;
+  const youProposedCancel = isOfferer ? wager.offererCancelProposed : wager.acceptorCancelProposed;
 
   const winner =
     wager.verdict === 'OFFERER'
@@ -74,9 +72,7 @@ export default async function WagerDetailPage({ params }: PageProps<'/wagers/[wa
           <span className="font-medium">{winner}</span> took the pot.
         </p>
       )}
-      {wager.verdict === 'VOID' && (
-        <p className="text-sm">Called off — both stakes went back.</p>
-      )}
+      {wager.verdict === 'VOID' && <p className="text-sm">Called off — both stakes went back.</p>}
       {wager.resolutionNote && (
         <p className="rounded-lg bg-surface-muted p-3 text-sm">
           <span className="font-medium">Admin: </span>

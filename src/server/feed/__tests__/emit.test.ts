@@ -30,7 +30,10 @@ describe('emitFeedEvent', () => {
     const [row] = await db.select().from(feedEvents).where(eq(feedEvents.id, result.eventId!));
     expect(row.type).toBe('MEMBER_JOINED');
     expect(row.occurredAt).toEqual(occurredAt);
-    expect(row.payload).toEqual({ startingBankrollCents: '1000000', startingCreditsCents: '100000' });
+    expect(row.payload).toEqual({
+      startingBankrollCents: '1000000',
+      startingCreditsCents: '100000',
+    });
   });
 
   it('is a no-op on a repeated dedupe key', async () => {

@@ -3,9 +3,7 @@ import { requireApprovedMember } from '@/server/auth/session';
 import { getCustomEventDetail } from '@/server/events/query';
 import { ResolveForm } from './resolve-form';
 
-export default async function ResolveEventPage({
-  params,
-}: PageProps<'/events/[eventId]/resolve'>) {
+export default async function ResolveEventPage({ params }: PageProps<'/events/[eventId]/resolve'>) {
   const { eventId } = await params;
   const member = await requireApprovedMember();
 

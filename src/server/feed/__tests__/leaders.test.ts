@@ -22,7 +22,10 @@ async function seedSeason(balances: bigint[]) {
 }
 
 async function setBalance(membershipId: string, balanceCents: bigint) {
-  await db.update(seasonMemberships).set({ balanceCents }).where(eq(seasonMemberships.id, membershipId));
+  await db
+    .update(seasonMemberships)
+    .set({ balanceCents })
+    .where(eq(seasonMemberships.id, membershipId));
 }
 
 async function leadEvents(seasonId: string) {
@@ -90,7 +93,9 @@ describe('detectLeadChange', () => {
       membershipIds[0],
     ]);
     expect((events[2].payload as LeadChangePayload).sequence).toBe(3);
-    expect((events[2].payload as LeadChangePayload).previousLeaderMembershipId).toBe(membershipIds[1]);
+    expect((events[2].payload as LeadChangePayload).previousLeaderMembershipId).toBe(
+      membershipIds[1],
+    );
     expect(events[2].dedupeKey).toBe(`lead:${seasonId}:3`);
   });
 

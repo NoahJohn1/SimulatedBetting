@@ -37,9 +37,7 @@ export function TabBar() {
             href={tab.href}
             aria-current={active ? 'page' : undefined}
             className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-              active
-                ? 'text-ink'
-                : 'text-ink-muted hover:text-ink-secondary'
+              active ? 'text-ink' : 'text-ink-muted hover:text-ink-secondary'
             }`}
           >
             {tab.label}

@@ -29,20 +29,20 @@
 
 **Created:**
 
-| File | Responsibility |
-|---|---|
-| `src/components/ui/status-screen.tsx` | Centered title / body / actions / digest layout. Used by every error and not-found boundary. |
-| `src/components/ui/loading-screen.tsx` | Neutral pulsing placeholder with an accessible label. Used by every `loading.tsx`. |
-| `src/app/(app)/error.tsx` | Error boundary for all member pages, rendered inside the shell. |
-| `src/app/(app)/not-found.tsx` | Not-found boundary for the four `notFound()` calls. |
-| `src/app/admin/error.tsx` | Error boundary for admin pages. |
-| `src/app/(app)/{games,events,feed,bets,wagers,standings,me}/loading.tsx` | Seven loading boundaries. |
-| `src/app/admin/loading.tsx` | Eighth loading boundary. |
-| `src/app/icon.tsx` | Generated app icon at 192 and 512. |
-| `src/app/apple-icon.tsx` | Generated 180×180 iOS home-screen icon. |
-| `src/app/manifest.ts` | Web app manifest. |
-| `src/app/__tests__/route-conventions.test.ts` | Structural assertions over the route tree. |
-| `docs/mobile-audit.md` | The audit's findings, classified by owning rung. |
+| File                                                                     | Responsibility                                                                               |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `src/components/ui/status-screen.tsx`                                    | Centered title / body / actions / digest layout. Used by every error and not-found boundary. |
+| `src/components/ui/loading-screen.tsx`                                   | Neutral pulsing placeholder with an accessible label. Used by every `loading.tsx`.           |
+| `src/app/(app)/error.tsx`                                                | Error boundary for all member pages, rendered inside the shell.                              |
+| `src/app/(app)/not-found.tsx`                                            | Not-found boundary for the four `notFound()` calls.                                          |
+| `src/app/admin/error.tsx`                                                | Error boundary for admin pages.                                                              |
+| `src/app/(app)/{games,events,feed,bets,wagers,standings,me}/loading.tsx` | Seven loading boundaries.                                                                    |
+| `src/app/admin/loading.tsx`                                              | Eighth loading boundary.                                                                     |
+| `src/app/icon.tsx`                                                       | Generated app icon at 192 and 512.                                                           |
+| `src/app/apple-icon.tsx`                                                 | Generated 180×180 iOS home-screen icon.                                                      |
+| `src/app/manifest.ts`                                                    | Web app manifest.                                                                            |
+| `src/app/__tests__/route-conventions.test.ts`                            | Structural assertions over the route tree.                                                   |
+| `docs/mobile-audit.md`                                                   | The audit's findings, classified by owning rung.                                             |
 
 **Modified:** `src/app/layout.tsx` (metadata + viewport), the eight top-level `page.tsx` files (title metadata), `src/app/error.tsx` and `src/app/global-error.tsx` (`reset` → `retry`), `.env.example` (`NEXT_PUBLIC_SITE_URL`).
 
@@ -55,11 +55,13 @@
 Establishes the test file that every later task extends, and the two components the boundaries render. The test is written first and fails first.
 
 **Files:**
+
 - Create: `src/app/__tests__/route-conventions.test.ts`
 - Create: `src/components/ui/status-screen.tsx`
 - Create: `src/components/ui/loading-screen.tsx`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces:
   - `StatusScreen({ title: string; body: string; digest?: string; children?: ReactNode })` from `@/components/ui/status-screen`
@@ -102,9 +104,7 @@ describe('shared status components', () => {
   });
 
   it('are shared rather than duplicated: every boundary file delegates to one of them', () => {
-    const boundaries = walk(APP).filter((f) =>
-      /(?:^|\/)(error|not-found|loading)\.tsx$/.test(f),
-    );
+    const boundaries = walk(APP).filter((f) => /(?:^|\/)(error|not-found|loading)\.tsx$/.test(f));
     expect(boundaries.length).toBeGreaterThan(0);
 
     for (const file of boundaries) {
@@ -265,11 +265,13 @@ export default function NotFound() {
 ```bash
 npx vitest run src/app/__tests__/route-conventions.test.ts
 ```
+
 Expected: 2 passed.
 
 ```bash
 npm run verify
 ```
+
 Expected: typecheck clean, 0 lint errors, all tests pass (546 + 2 new).
 
 - [ ] **Step 7: Commit**
@@ -294,17 +296,19 @@ MSG
 The gap the roadmap did not name: the only boundaries are at the root, so a throw in `/wagers/[wagerId]` destroys the header, tab bar, and bet slip.
 
 **Files:**
+
 - Create: `src/app/(app)/error.tsx`, `src/app/(app)/not-found.tsx`, `src/app/admin/error.tsx`
 - Modify: `src/app/__tests__/route-conventions.test.ts`
 
 **Interfaces:**
+
 - Consumes: `StatusScreen` from Task 1.
 - Produces: nothing later tasks import. Task 5's test extends the same file.
 
 **Background:** Read `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/error.md` and `not-found.md`. Two behaviors to know and not fight:
 
-1. `redirect()` throws a control-flow error that Next resolves *before* any error boundary. The ten `redirect()` calls in `src/server/auth/session.ts` are unaffected. Do not special-case them.
-2. An error boundary renders *inside* its own segment's layout, so `(app)/error.tsx` cannot catch a throw from `(app)/layout.tsx` itself — including the credits-balance query at `src/app/(app)/layout.tsx:21`. That case correctly falls through to the root boundary. This is why the root boundary stays.
+1. `redirect()` throws a control-flow error that Next resolves _before_ any error boundary. The ten `redirect()` calls in `src/server/auth/session.ts` are unaffected. Do not special-case them.
+2. An error boundary renders _inside_ its own segment's layout, so `(app)/error.tsx` cannot catch a throw from `(app)/layout.tsx` itself — including the credits-balance query at `src/app/(app)/layout.tsx:21`. That case correctly falls through to the root boundary. This is why the root boundary stays.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -340,9 +344,7 @@ describe('error and not-found boundaries', () => {
     expect(callers.length).toBeGreaterThan(0);
 
     for (const page of callers) {
-      const section = SECTION_ROOTS.find((root) =>
-        page.startsWith(join(APP, root) + '/'),
-      );
+      const section = SECTION_ROOTS.find((root) => page.startsWith(join(APP, root) + '/'));
       expect(section, `${page} is outside (app) and admin; extend SECTION_ROOTS`).toBeDefined();
 
       const stopAt = join(APP, section!);
@@ -485,11 +487,13 @@ export default function AdminError({
 ```bash
 npx vitest run src/app/__tests__/route-conventions.test.ts
 ```
+
 Expected: 5 passed.
 
 ```bash
 npm run verify
 ```
+
 Expected: all green.
 
 - [ ] **Step 7: Commit**
@@ -518,14 +522,16 @@ MSG
 Zero exist today. All eighteen pages await database work, so there is no fast route to exempt.
 
 **Files:**
+
 - Create: `src/app/(app)/games/loading.tsx`, `.../events/loading.tsx`, `.../feed/loading.tsx`, `.../bets/loading.tsx`, `.../wagers/loading.tsx`, `.../standings/loading.tsx`, `.../me/loading.tsx`, `src/app/admin/loading.tsx`
 - Modify: `src/app/__tests__/route-conventions.test.ts`
 
 **Interfaces:**
+
 - Consumes: `LoadingScreen` from Task 1.
 - Produces: nothing.
 
-**Background:** Read `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/loading.md`. The key fact driving the file count: a `loading.tsx` covers its segment *and everything nested below it*. `feed/loading.tsx` therefore also serves `feed/[eventId]`, and eight files cover all eighteen pages.
+**Background:** Read `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/loading.md`. The key fact driving the file count: a `loading.tsx` covers its segment _and everything nested below it_. `feed/loading.tsx` therefore also serves `feed/[eventId]`, and eight files cover all eighteen pages.
 
 `/members/[membershipId]` sits directly under `(app)` with no feature segment of its own and gets no loading state — it inherits `(app)`'s error and not-found boundaries, which is what matters, and one file for one route reached only from the feed and standings is not worth it.
 
@@ -576,6 +582,7 @@ describe('loading boundaries', () => {
 ```bash
 npx vitest run src/app/__tests__/route-conventions.test.ts
 ```
+
 Expected: all eight `it.each` cases FAIL with `expected false to be true`. The coverage test may pass or fail depending on ordering — read the output rather than guessing, and if the array ordering differs from `walk`'s traversal order, sort both sides before comparing.
 
 - [ ] **Step 3: Create all eight loading files**
@@ -612,11 +619,13 @@ write_loading 'src/app/admin/loading.tsx'           'admin'
 ```bash
 npx vitest run src/app/__tests__/route-conventions.test.ts
 ```
+
 Expected: all loading tests pass.
 
 ```bash
 npm run verify
 ```
+
 Expected: all green. If lint complains about the generated files' formatting, fix the heredoc rather than adding an eslint-disable.
 
 - [ ] **Step 5: Commit**
@@ -641,12 +650,14 @@ MSG
 The root layout still exports the `create-next-app` default.
 
 **Files:**
+
 - Modify: `src/app/layout.tsx`
 - Modify: `src/app/(app)/{games,events,feed,bets,wagers,standings,me}/page.tsx`, `src/app/admin/page.tsx`
 - Modify: `.env.example`
 - Modify: `src/app/__tests__/route-conventions.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: a `%s · SimulatedBetting` title template, which is why each page exports only its own short title.
 
@@ -702,6 +713,7 @@ describe('metadata', () => {
 ```bash
 npx vitest run src/app/__tests__/route-conventions.test.ts
 ```
+
 Expected: every test in the new block FAILS.
 
 - [ ] **Step 3: Rewrite the root layout's metadata**
@@ -709,39 +721,39 @@ Expected: every test in the new block FAILS.
 Replace the `import` line and the `metadata` export in `src/app/layout.tsx`. The rest of the file — the two Geist fonts and the `RootLayout` component — stays exactly as it is.
 
 ```tsx
-import type { Metadata, Viewport } from "next";
+import type { Metadata, Viewport } from 'next';
 ```
 
 ```tsx
 // Set on the deployment; localhost is the local fallback. Phase 6 supplies the real value.
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
     // Pages export a short title; this appends the app name once, in one place.
-    default: "SimulatedBetting",
-    template: "%s · SimulatedBetting",
+    default: 'SimulatedBetting',
+    template: '%s · SimulatedBetting',
   },
   description:
-    "A play-money sportsbook for a small private group. No real money is involved at any point.",
-  applicationName: "SimulatedBetting",
-  appleWebApp: { capable: true, title: "SimulatedBetting", statusBarStyle: "default" },
+    'A play-money sportsbook for a small private group. No real money is involved at any point.',
+  applicationName: 'SimulatedBetting',
+  appleWebApp: { capable: true, title: 'SimulatedBetting', statusBarStyle: 'default' },
   // A private group behind Google OAuth. Requiring auth on every route is not a reason
   // to skip telling crawlers to stay away.
   robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {
-  width: "device-width",
+  width: 'device-width',
   initialScale: 1,
   // The tab bar is fixed to the bottom; a notched phone needs the whole screen.
-  viewportFit: "cover",
+  viewportFit: 'cover',
   // The two values already defined in globals.css, so browser chrome stops fighting
   // the app's background.
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
   ],
 };
 ```
@@ -760,16 +772,16 @@ NEXT_PUBLIC_SITE_URL=
 
 For each page, add the `Metadata` type import to the existing imports and export a title above the default export. The titles, exactly:
 
-| File | Title |
-|---|---|
-| `src/app/(app)/games/page.tsx` | `'Games'` |
-| `src/app/(app)/events/page.tsx` | `'Events'` |
-| `src/app/(app)/feed/page.tsx` | `'Feed'` |
-| `src/app/(app)/bets/page.tsx` | `'My Bets'` |
-| `src/app/(app)/wagers/page.tsx` | `'Wagers'` |
+| File                               | Title         |
+| ---------------------------------- | ------------- |
+| `src/app/(app)/games/page.tsx`     | `'Games'`     |
+| `src/app/(app)/events/page.tsx`    | `'Events'`    |
+| `src/app/(app)/feed/page.tsx`      | `'Feed'`      |
+| `src/app/(app)/bets/page.tsx`      | `'My Bets'`   |
+| `src/app/(app)/wagers/page.tsx`    | `'Wagers'`    |
 | `src/app/(app)/standings/page.tsx` | `'Standings'` |
-| `src/app/(app)/me/page.tsx` | `'Me'` |
-| `src/app/admin/page.tsx` | `'Admin'` |
+| `src/app/(app)/me/page.tsx`        | `'Me'`        |
+| `src/app/admin/page.tsx`           | `'Admin'`     |
 
 Each addition looks like this — shown for `games`, identical in shape for the rest:
 
@@ -786,11 +798,13 @@ export const metadata: Metadata = { title: 'Games' };
 ```bash
 npx vitest run src/app/__tests__/route-conventions.test.ts
 ```
+
 Expected: all metadata tests pass.
 
 ```bash
 npm run verify
 ```
+
 Expected: all green. If typecheck complains that `viewport` conflicts with `metadata`, re-read `generate-viewport.md` — the two cannot both carry viewport fields.
 
 - [ ] **Step 7: Commit**
@@ -815,11 +829,13 @@ MSG
 ### Task 5: Icons, manifest, and removing the scaffold assets
 
 **Files:**
+
 - Create: `src/app/icon.tsx`, `src/app/apple-icon.tsx`, `src/app/manifest.ts`
 - Delete: `src/app/favicon.ico`, `public/file.svg`, `public/globe.svg`, `public/next.svg`, `public/vercel.svg`, `public/window.svg`
 - Modify: `src/app/__tests__/route-conventions.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: the routes `/icon/192`, `/icon/512`, and `/apple-icon`, which `manifest.ts` references.
 
@@ -869,6 +885,7 @@ describe('icons and manifest', () => {
 ```bash
 npx vitest run src/app/__tests__/route-conventions.test.ts
 ```
+
 Expected: all four FAIL.
 
 - [ ] **Step 3: Write the app icon**
@@ -885,8 +902,18 @@ import { ImageResponse } from 'next/og';
  */
 export function generateImageMetadata() {
   return [
-    { id: '192', contentType: 'image/png', size: { width: 192, height: 192 }, alt: 'SimulatedBetting' },
-    { id: '512', contentType: 'image/png', size: { width: 512, height: 512 }, alt: 'SimulatedBetting' },
+    {
+      id: '192',
+      contentType: 'image/png',
+      size: { width: 192, height: 192 },
+      alt: 'SimulatedBetting',
+    },
+    {
+      id: '512',
+      contentType: 'image/png',
+      size: { width: 512, height: 512 },
+      alt: 'SimulatedBetting',
+    },
   ];
 }
 
@@ -894,24 +921,22 @@ export default async function Icon({ id }: { id: Promise<string | number> }) {
   const side = Number(await id);
 
   return new ImageResponse(
-    (
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#0a0a0a',
-          color: '#fafafa',
-          fontSize: side * 0.44,
-          fontWeight: 700,
-          letterSpacing: side * -0.02,
-        }}
-      >
-        SB
-      </div>
-    ),
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#0a0a0a',
+        color: '#fafafa',
+        fontSize: side * 0.44,
+        fontWeight: 700,
+        letterSpacing: side * -0.02,
+      }}
+    >
+      SB
+    </div>,
     { width: side, height: side },
   );
 }
@@ -929,24 +954,22 @@ export const contentType = 'image/png';
 
 export default function AppleIcon() {
   return new ImageResponse(
-    (
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#0a0a0a',
-          color: '#fafafa',
-          fontSize: 79,
-          fontWeight: 700,
-          letterSpacing: -3,
-        }}
-      >
-        SB
-      </div>
-    ),
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#0a0a0a',
+        color: '#fafafa',
+        fontSize: 79,
+        fontWeight: 700,
+        letterSpacing: -3,
+      }}
+    >
+      SB
+    </div>,
     { ...size },
   );
 }
@@ -994,11 +1017,13 @@ Start the dev server through the preview tooling, then:
 ```bash
 curl -s -o /dev/null -w '%{http_code} %{content_type}\n' http://localhost:3000/icon/512
 ```
+
 Expected: `200 image/png`. Repeat for `/icon/192` and `/apple-icon`.
 
 ```bash
 curl -s http://localhost:3000/manifest.webmanifest
 ```
+
 Expected: the JSON above. If the path 404s, check whether this Next version serves it at `/manifest.json` instead and read `manifest.md` for which.
 
 If `/icon/512` does not resolve, do not paper over it — collapse `icon.tsx` to a single 512 icon without `generateImageMetadata` and point both manifest entries at `/icon`, then re-run these checks.
@@ -1008,6 +1033,7 @@ If `/icon/512` does not resolve, do not paper over it — collapse `icon.tsx` to
 ```bash
 npx vitest run src/app/__tests__/route-conventions.test.ts && npm run verify && npm run build
 ```
+
 Expected: tests pass, verify green, and the build compiles — `next build` is the only thing that exercises the `ImageResponse` routes' module resolution.
 
 - [ ] **Step 9: Commit**
@@ -1034,13 +1060,15 @@ MSG
 The roadmap lists "pending states on every form" as missing. It is not — all twelve client forms already use `useTransition` and disable their submit control. This task asserts that rather than rebuilding it.
 
 **Files:**
+
 - Modify: `src/app/__tests__/route-conventions.test.ts`
 
 **Interfaces:**
+
 - Consumes: `walk` from Task 1.
 - Produces: nothing.
 
-**Background:** This is a characterization test. It passes on the first run, and that is the expected result — the point is that it fails on the *thirteenth* form. Step 2 proves it has teeth by breaking a form on purpose and watching it fail, then reverting.
+**Background:** This is a characterization test. It passes on the first run, and that is the expected result — the point is that it fails on the _thirteenth_ form. Step 2 proves it has teeth by breaking a form on purpose and watching it fail, then reverting.
 
 - [ ] **Step 1: Write the test**
 
@@ -1092,6 +1120,7 @@ Temporarily break one form:
 sed -i '' 's/disabled={pending}/disabled={false}/' "src/app/(app)/events/[eventId]/dispute-form.tsx"
 npx vitest run src/app/__tests__/route-conventions.test.ts
 ```
+
 Expected: FAIL, naming `dispute-form.tsx` in the offenders array.
 
 Revert:
@@ -1105,6 +1134,7 @@ git checkout -- "src/app/(app)/events/[eventId]/dispute-form.tsx"
 ```bash
 npx vitest run src/app/__tests__/route-conventions.test.ts && npm run verify
 ```
+
 Expected: all green, and `git status` clean apart from the test file.
 
 - [ ] **Step 4: Commit**
@@ -1128,10 +1158,12 @@ MSG
 ### Task 7: Migrate the root boundaries from `reset` to `retry`
 
 **Files:**
+
 - Modify: `src/app/error.tsx`, `src/app/global-error.tsx`
 - Modify: `src/app/__tests__/route-conventions.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: nothing.
 
@@ -1150,9 +1182,7 @@ describe('error boundary recovery', () => {
     for (const file of boundaries) {
       const source = readFileSync(file, 'utf8');
       expect(source, `${file} should offer retry()`).toContain('retry');
-      expect(source, `${file} still uses reset(), which does not re-fetch`).not.toContain(
-        'reset',
-      );
+      expect(source, `${file} still uses reset(), which does not re-fetch`).not.toContain('reset');
     }
   });
 });
@@ -1163,6 +1193,7 @@ describe('error boundary recovery', () => {
 ```bash
 npx vitest run src/app/__tests__/route-conventions.test.ts
 ```
+
 Expected: FAIL, naming `src/app/error.tsx` and `src/app/global-error.tsx`. The count assertion should already pass — the four are root `error.tsx`, root `global-error.tsx`, `(app)/error.tsx`, and `admin/error.tsx`.
 
 - [ ] **Step 3: Migrate the root boundary**
@@ -1200,6 +1231,7 @@ export default function GlobalError({ retry }: { error: Error & { digest?: strin
 ```bash
 npx vitest run src/app/__tests__/route-conventions.test.ts && npm run verify
 ```
+
 Expected: all green.
 
 - [ ] **Step 6: Commit**
@@ -1228,6 +1260,7 @@ Structural tests prove the files exist. They cannot prove a boundary renders, th
 **Files:** none created or modified.
 
 **Interfaces:**
+
 - Consumes: everything from Tasks 1–7.
 - Produces: screenshots, and a bug fixed in place if any check fails.
 
@@ -1250,6 +1283,7 @@ throw new Error('7a boundary check');
 ```
 
 Load `/games` and confirm all four:
+
 - the error boundary renders, **with the header, tab bar, and bet slip still on screen**
 - "Try again" is present and clicking it re-renders
 - "Back to games" navigates
@@ -1286,11 +1320,13 @@ Navigate to `/standings` from another tab and confirm the pulsing placeholder ap
 ```bash
 git status --short
 ```
+
 Expected: empty. Every temporary throw and delay removed.
 
 ```bash
 npm run verify
 ```
+
 Expected: all green.
 
 - [ ] **Step 8: Report**
@@ -1302,13 +1338,15 @@ No commit — nothing changed. Report each check as pass or fail with its screen
 ### Task 9: The mobile audit
 
 **Files:**
+
 - Create: `docs/mobile-audit.md`
 
 **Interfaces:**
+
 - Consumes: a running, seeded app.
 - Produces: a document that is 7b's input.
 
-**Background:** The deliverable is the document. Findings are **not** fixed here — an inline-Tailwind screen that reads badly at 375px is going to be rebuilt in 7c anyway, and fixing it twice is waste. The one exception is a finding that makes a screen *unusable* rather than ugly: content trapped under the fixed tab bar, a horizontal scroll on `<body>`, a control that cannot be reached or tapped. Those are the same class of problem as a white screen and are fixed in this task, in a separate commit.
+**Background:** The deliverable is the document. Findings are **not** fixed here — an inline-Tailwind screen that reads badly at 375px is going to be rebuilt in 7c anyway, and fixing it twice is waste. The one exception is a finding that makes a screen _unusable_ rather than ugly: content trapped under the fixed tab bar, a horizontal scroll on `<body>`, a control that cannot be reached or tapped. Those are the same class of problem as a white screen and are fixed in this task, in a separate commit.
 
 - [ ] **Step 1: Set the viewport and walk every screen**
 
@@ -1341,9 +1379,9 @@ fixed: anything that is merely ugly belongs to the rung that rebuilds the screen
 
 ## Findings
 
-| Screen | Finding | Severity | Rung |
-|---|---|---|---|
-| `/games` | <what breaks> | <blocks use / awkward / cosmetic> | 7c |
+| Screen   | Finding       | Severity                          | Rung |
+| -------- | ------------- | --------------------------------- | ---- |
+| `/games` | <what breaks> | <blocks use / awkward / cosmetic> | 7c   |
 
 ## Screens with nothing to report
 
@@ -1359,6 +1397,7 @@ If Step 1 turned up something that makes a screen unusable, fix it now, minimall
 ```bash
 npm run verify
 ```
+
 Expected: all green.
 
 - [ ] **Step 5: Commit**
@@ -1381,6 +1420,7 @@ MSG
 ### Task 10: Close out the phase
 
 **Files:**
+
 - Modify: `docs/roadmap.md`
 - Modify: `README.md`
 
@@ -1397,6 +1437,7 @@ In `docs/roadmap.md`, change the 7a section's status line from **Specified** to 
 ```bash
 npm run verify && npm run build
 ```
+
 Expected: both green.
 
 - [ ] **Step 4: Commit and open the pull request**

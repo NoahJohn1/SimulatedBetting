@@ -21,7 +21,7 @@ semantic tokens, one small set of components with real call sites — so that 7c
 screens against something instead of against nothing, and so a colour decision is a one-line
 change rather than a 63-file sweep.
 
-When 7b is done the app is *recognizably the same app*, rendered from a vocabulary a person can
+When 7b is done the app is _recognizably the same app_, rendered from a vocabulary a person can
 hold in their head.
 
 ### What the roadmap got wrong about this phase
@@ -40,7 +40,7 @@ Recorded here rather than silently re-scoped, following 7a's precedent.
 - **"Design tokens: color, type scale, spacing, radii."** Colour and radii get tokens. Type
   scale and spacing do not, because Tailwind v4 already ships both as theme variables and
   aliasing `--text-body` on top of `text-sm` is a layer with no consumer. What this phase owes
-  on those two is a decision about *which subset is allowed*, which is a spec statement — see
+  on those two is a decision about _which subset is allowed_, which is a spec statement — see
   [The scales that stay Tailwind's](#the-scales-that-stay-tailwinds).
 - **"see [the mobile audit](../mobile-audit.md) for what 7b inherits"** (from the 7a section).
   The audit assigned **no findings to 7b**. Its six findings went 7a (2, fixed), 7c (3), 7d (1).
@@ -84,7 +84,7 @@ this phase's to fix.
   that reads badly at 375px today reads exactly as badly afterward — that is 7c's job, and the
   mobile audit already assigned it there.
 - **A brand colour.** The app stays monochrome. `--accent` resolves to near-black in light and
-  near-white in dark, exactly as today. The token exists so that *choosing* a hue later is a
+  near-white in dark, exactly as today. The token exists so that _choosing_ a hue later is a
   two-line change; picking one before a single screen has been redesigned is a decision made
   with no information.
 - **A dark-mode toggle.** Tokens flip under `prefers-color-scheme`. The `[data-theme]`
@@ -108,7 +108,7 @@ The entire token layer is `src/app/globals.css`. Tailwind v4 is CSS-first — th
 emerald, and amber stops the app already uses, copied in as `--n-*`, `--pos-*`, `--neg-*`,
 `--cau-*`.
 
-They are *copied* rather than referenced. Tailwind v4 only emits a theme variable into `:root`
+They are _copied_ rather than referenced. Tailwind v4 only emits a theme variable into `:root`
 when a generated utility uses it, so `var(--color-zinc-200)` is not guaranteed to resolve at
 runtime. Copying the values is what makes the sweep pixel-neutral rather than approximately
 neutral.
@@ -118,15 +118,15 @@ Tier 2 reads them.
 
 **Tier 2 — semantic tokens.** The only vocabulary the app is allowed to speak.
 
-| Group | Tokens |
-|---|---|
-| Surfaces | `--surface`, `--surface-raised`, `--surface-sunken`, `--surface-muted`, `--surface-skeleton` |
-| Lines | `--line`, `--line-strong`, `--line-hover`, `--line-subtle` |
-| Ink | `--ink`, `--ink-secondary`, `--ink-muted`, `--ink-subtle` |
-| Accent | `--accent`, `--accent-ink` |
+| Group    | Tokens                                                                                                    |
+| -------- | --------------------------------------------------------------------------------------------------------- |
+| Surfaces | `--surface`, `--surface-raised`, `--surface-sunken`, `--surface-muted`, `--surface-skeleton`              |
+| Lines    | `--line`, `--line-strong`, `--line-hover`, `--line-subtle`                                                |
+| Ink      | `--ink`, `--ink-secondary`, `--ink-muted`, `--ink-subtle`                                                 |
+| Accent   | `--accent`, `--accent-ink`                                                                                |
 | Positive | `--positive`, `--positive-surface`, `--positive-surface-soft`, `--positive-line`, `--positive-on-surface` |
 | Negative | `--negative`, `--negative-surface`, `--negative-surface-soft`, `--negative-line`, `--negative-on-surface` |
-| Caution | `--caution`, `--caution-surface`, `--caution-surface-soft`, `--caution-line`, `--caution-on-surface` |
+| Caution  | `--caution`, `--caution-surface`, `--caution-surface-soft`, `--caution-line`, `--caution-on-surface`      |
 
 Thirty tokens. The naming avoids `text-text` and `border-border` — hence `ink` and `line`,
 which read correctly as utilities (`text-ink-muted`, `border-line-strong`) and extend cleanly
@@ -139,7 +139,7 @@ Within a tone, the four roles are distinct and all four are used today:
 - `--negative-surface-soft` — a full-width callout's tint (`bg-red-50` behind a form error),
   which is deliberately weaker than a chip's because it covers far more area
 - `--negative-line` — a tinted border
-- `--negative-on-surface` — the text colour used *on* `--negative-surface`, which is not the
+- `--negative-on-surface` — the text colour used _on_ `--negative-surface`, which is not the
   same value as `--negative`
 
 ### Exposure to Tailwind
@@ -169,11 +169,17 @@ they do not have to become a special case.
 ### Dark mode is a remap, not a variant
 
 ```css
-:root                                            { /* light: Tier 2 → Tier 1 */ }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"])                { /* dark:  Tier 2 → Tier 1 */ }
+:root {
+  /* light: Tier 2 → Tier 1 */
 }
-:root[data-theme="dark"]                         { /* dark:  Tier 2 → Tier 1 */ }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    /* dark:  Tier 2 → Tier 1 */
+  }
+}
+:root[data-theme='dark'] {
+  /* dark:  Tier 2 → Tier 1 */
+}
 ```
 
 Tier 1 never changes. The dark theme is the same thirty names pointed at different ramp stops.
@@ -184,38 +190,38 @@ between a toggle being a drop-in and a toggle being a refactor.
 
 **The mapping.** Light and dark values for all thirty tokens:
 
-| Token | Light | Dark |
-|---|---|---|
-| `--surface` | zinc-50 | black |
-| `--surface-raised` | white | zinc-950 |
-| `--surface-sunken` | zinc-50 | zinc-900 |
-| `--surface-muted` | zinc-100 | zinc-800 |
-| `--surface-skeleton` | zinc-200 | zinc-800 |
-| `--line` | zinc-200 | zinc-800 |
-| `--line-strong` | zinc-300 | zinc-700 |
-| `--line-hover` | zinc-400 | zinc-600 |
-| `--line-subtle` | zinc-100 | zinc-900 |
-| `--ink` | zinc-900 | zinc-50 |
-| `--ink-secondary` | zinc-600 | zinc-300 |
-| `--ink-muted` | zinc-500 | zinc-400 |
-| `--ink-subtle` | zinc-400 | zinc-600 |
-| `--accent` | zinc-900 | zinc-100 |
-| `--accent-ink` | white | zinc-900 |
-| `--positive` | emerald-600 | emerald-400 |
-| `--positive-surface` | emerald-100 | emerald-950 |
-| `--positive-surface-soft` | emerald-50 | emerald-950 @ 30% |
-| `--positive-line` | emerald-500 | emerald-700 |
-| `--positive-on-surface` | emerald-700 | emerald-400 |
-| `--negative` | red-600 | red-400 |
-| `--negative-surface` | red-100 | red-950 |
-| `--negative-surface-soft` | red-50 | red-950 @ 30% |
-| `--negative-line` | red-300 | red-800 |
-| `--negative-on-surface` | red-700 | red-400 |
-| `--caution` | amber-600 | amber-400 |
-| `--caution-surface` | amber-100 | amber-950 |
-| `--caution-surface-soft` | amber-50 | amber-950 @ 20% |
-| `--caution-line` | amber-300 | amber-800 |
-| `--caution-on-surface` | amber-700 | amber-400 |
+| Token                     | Light       | Dark              |
+| ------------------------- | ----------- | ----------------- |
+| `--surface`               | zinc-50     | black             |
+| `--surface-raised`        | white       | zinc-950          |
+| `--surface-sunken`        | zinc-50     | zinc-900          |
+| `--surface-muted`         | zinc-100    | zinc-800          |
+| `--surface-skeleton`      | zinc-200    | zinc-800          |
+| `--line`                  | zinc-200    | zinc-800          |
+| `--line-strong`           | zinc-300    | zinc-700          |
+| `--line-hover`            | zinc-400    | zinc-600          |
+| `--line-subtle`           | zinc-100    | zinc-900          |
+| `--ink`                   | zinc-900    | zinc-50           |
+| `--ink-secondary`         | zinc-600    | zinc-300          |
+| `--ink-muted`             | zinc-500    | zinc-400          |
+| `--ink-subtle`            | zinc-400    | zinc-600          |
+| `--accent`                | zinc-900    | zinc-100          |
+| `--accent-ink`            | white       | zinc-900          |
+| `--positive`              | emerald-600 | emerald-400       |
+| `--positive-surface`      | emerald-100 | emerald-950       |
+| `--positive-surface-soft` | emerald-50  | emerald-950 @ 30% |
+| `--positive-line`         | emerald-500 | emerald-700       |
+| `--positive-on-surface`   | emerald-700 | emerald-400       |
+| `--negative`              | red-600     | red-400           |
+| `--negative-surface`      | red-100     | red-950           |
+| `--negative-surface-soft` | red-50      | red-950 @ 30%     |
+| `--negative-line`         | red-300     | red-800           |
+| `--negative-on-surface`   | red-700     | red-400           |
+| `--caution`               | amber-600   | amber-400         |
+| `--caution-surface`       | amber-100   | amber-950         |
+| `--caution-surface-soft`  | amber-50    | amber-950 @ 20%   |
+| `--caution-line`          | amber-300   | amber-800         |
+| `--caution-on-surface`    | amber-700   | amber-400         |
 
 `--surface` and `--surface-sunken` are the same value in light and diverge in dark. That is not
 an oversight — it is what the code does today, and collapsing them would flatten the dark
@@ -245,16 +251,16 @@ is that it produces none.
 Five new, six upgraded in place. Every one has a call site in the shipped diff — that is the
 selection rule, not a coincidence.
 
-| Component | File | Real call sites today |
-|---|---|---|
-| `Button` | `ui/button.tsx` | 46 button-ish elements. Variants `primary` / `secondary` / `ghost` / `danger`, sizes `sm` / `md`. Owns the `disabled` + pending-label contract that [D51](../decisions.md#d51--ui-conventions-are-tested-structurally-not-with-a-component-test-harness)'s structural test asserts, so that test keeps passing through the sweep. |
-| `Card` | `ui/card.tsx` | The `rounded-xl border bg-white` block on nearly every screen. |
-| `Callout` | `ui/callout.tsx` | Six files hand-roll one: form errors, the overdue-event queue, the void confirmation, the creator-disclosure banner. Tone-scoped, uses `--{tone}-surface-soft`. |
-| `SegmentedControl` | `ui/segmented-control.tsx` | The link-based Bets \| Wagers and Cash \| Credits controls, duplicated across `/bets` and `/wagers`. Link-based, not stateful — these are server-rendered navigations and must stay that way. |
-| `FormField` | `ui/form-field.tsx` *(new)* | Label + control + hint + error, across the twelve forms. |
-| `Badge` | `ui/badge.tsx` *(upgraded)* | Becomes tone-based instead of a fixed five-status map, absorbing the chips `feed-card.tsx` and `market-card.tsx` reimplement inline. The status→tone mapping moves into the component. |
-| `Money` / `Price` / `Line` | `ui/money.tsx` *(upgraded)* | `game-card.tsx` has a private `signed()` duplicating `Price`. `Line` is new and absorbs `selectionLabel`'s line formatting. |
-| `EmptyState`, `StatusScreen`, `LoadingScreen`, `TabBar` | *(retokenized)* | No API change. Classes only. |
+| Component                                               | File                        | Real call sites today                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`                                                | `ui/button.tsx`             | 46 button-ish elements. Variants `primary` / `secondary` / `ghost` / `danger`, sizes `sm` / `md`. Owns the `disabled` + pending-label contract that [D51](../decisions.md#d51--ui-conventions-are-tested-structurally-not-with-a-component-test-harness)'s structural test asserts, so that test keeps passing through the sweep. |
+| `Card`                                                  | `ui/card.tsx`               | The `rounded-xl border bg-white` block on nearly every screen.                                                                                                                                                                                                                                                                    |
+| `Callout`                                               | `ui/callout.tsx`            | Six files hand-roll one: form errors, the overdue-event queue, the void confirmation, the creator-disclosure banner. Tone-scoped, uses `--{tone}-surface-soft`.                                                                                                                                                                   |
+| `SegmentedControl`                                      | `ui/segmented-control.tsx`  | The link-based Bets \| Wagers and Cash \| Credits controls, duplicated across `/bets` and `/wagers`. Link-based, not stateful — these are server-rendered navigations and must stay that way.                                                                                                                                     |
+| `FormField`                                             | `ui/form-field.tsx` _(new)_ | Label + control + hint + error, across the twelve forms.                                                                                                                                                                                                                                                                          |
+| `Badge`                                                 | `ui/badge.tsx` _(upgraded)_ | Becomes tone-based instead of a fixed five-status map, absorbing the chips `feed-card.tsx` and `market-card.tsx` reimplement inline. The status→tone mapping moves into the component.                                                                                                                                            |
+| `Money` / `Price` / `Line`                              | `ui/money.tsx` _(upgraded)_ | `game-card.tsx` has a private `signed()` duplicating `Price`. `Line` is new and absorbs `selectionLabel`'s line formatting.                                                                                                                                                                                                       |
+| `EmptyState`, `StatusScreen`, `LoadingScreen`, `TabBar` | _(retokenized)_             | No API change. Classes only.                                                                                                                                                                                                                                                                                                      |
 
 `Button` is the one with a real decision in it. It renders `<button>` by default and accepts an
 `asChild`-free escape hatch instead: a sibling `buttonClasses(variant, size)` export that
@@ -268,7 +274,7 @@ designed against zero call sites encodes a guess about its API, and the first re
 either bends to the guess or rewrites it.
 
 Toast is the closest call and was considered on its merits: twelve forms currently report
-results as inline text that can scroll out of view, so there *is* a real problem. It still
+results as inline text that can scroll out of view, so there _is_ a real problem. It still
 loses. A toast needs a client provider, a portal, and a dismissal/timing policy — that is a
 design question about how this app reports success, not a styling question, and 7c is where the
 screens that would raise it get rebuilt. Deferring costs nothing that is not already the status
@@ -286,7 +292,7 @@ That restriction is the safety property, and it is the reason a 63-file diff is 
 all: **any visual difference after the sweep is a token bug, not a judgement call.** The browser
 audit can therefore be a diff hunt rather than a taste exercise.
 
-**The sweep matches light/dark *pairs*, not individual classes.** This matters and will
+**The sweep matches light/dark _pairs_, not individual classes.** This matters and will
 silently corrupt the result if missed: `bg-zinc-50` maps to `--surface` when its partner is
 `dark:bg-black` (the page background in the app shell) and to `--surface-sunken` when its
 partner is `dark:bg-zinc-900` (an inset row). The light class alone does not determine the
@@ -297,7 +303,7 @@ token.
 1. `dark:bg-zinc-100` (15×) and `dark:bg-zinc-50` (3×) both become `--accent`. The three
    lighter ones darken by one stop.
 2. The four "creator bet their own event" chips in `feed-card.tsx` are `bg-amber-100
-   text-amber-900` with **no dark variant at all**, so today they burn bright amber on a black
+text-amber-900` with **no dark variant at all**, so today they burn bright amber on a black
    card. They gain a dark treatment.
 3. The bet slip's shadow becomes visible in dark mode, having previously rendered as nothing.
 4. **A control adopted into `Button` takes `Button`'s radius.** Today's buttons are a mix of
@@ -366,20 +372,20 @@ the document, because 7c is the consumer and it needs to know what was checked.
 The tracking obligation of this phase. Everything named as out of scope above has an owner
 recorded in [the roadmap](../roadmap.md#7--the-ui-ladder), not merely a mention here.
 
-| Deferred | Owner | Why not 7b |
-|---|---|---|
-| `Dialog`, `Sheet`, `Table`, `Toast` | 7c | Zero call sites today; built in the commit that first needs one ([D53](../decisions.md#d53--the-shared-component-set-is-scoped-to-call-sites-that-exist)) |
-| Type-scale and spacing normalization on existing screens | 7c | Intentional visual drift inside a sweep whose safety property is producing none |
-| A brand accent colour | 7c or later | `--accent` makes it a two-line change; picking it before any screen is redesigned is a guess |
-| Dark-mode toggle UI (cookie + control) | 7d | The `[data-theme]` selectors ship here; the control is craft |
-| `generateMetadata` on detail routes | 7c | Deferred by [7a](2026-08-22-ui-foundations-design.md), unchanged by this phase |
-| Odds-board density at 375px | 7c | Mobile-audit finding; needs the screen redesigned |
-| `datetime-local` inputs cramped two-up | 7c | Mobile-audit finding; a layout fix |
-| `/admin/events` header running together | 7c | Mobile-audit finding; page-specific markup |
-| Admin section has no shell chrome | 7d | Mobile-audit finding; a structural decision, not a token one |
-| Focus management, keyboard paths, SR labels on the new components | 7d | Tokens carry contrast; behaviour is craft |
-| Skeleton loaders replacing `LoadingScreen` | 7d | Explicitly 7d in the roadmap and in [7a](2026-08-22-ui-foundations-design.md)'s non-goals |
-| A component-test harness | Revisit at 7d | [D54](../decisions.md#d54--a-token-lint-test-is-the-harness-7b-earns-revisiting-d51); the components 7b ships still have no behaviour worth a harness |
+| Deferred                                                          | Owner         | Why not 7b                                                                                                                                                |
+| ----------------------------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Dialog`, `Sheet`, `Table`, `Toast`                               | 7c            | Zero call sites today; built in the commit that first needs one ([D53](../decisions.md#d53--the-shared-component-set-is-scoped-to-call-sites-that-exist)) |
+| Type-scale and spacing normalization on existing screens          | 7c            | Intentional visual drift inside a sweep whose safety property is producing none                                                                           |
+| A brand accent colour                                             | 7c or later   | `--accent` makes it a two-line change; picking it before any screen is redesigned is a guess                                                              |
+| Dark-mode toggle UI (cookie + control)                            | 7d            | The `[data-theme]` selectors ship here; the control is craft                                                                                              |
+| `generateMetadata` on detail routes                               | 7c            | Deferred by [7a](2026-08-22-ui-foundations-design.md), unchanged by this phase                                                                            |
+| Odds-board density at 375px                                       | 7c            | Mobile-audit finding; needs the screen redesigned                                                                                                         |
+| `datetime-local` inputs cramped two-up                            | 7c            | Mobile-audit finding; a layout fix                                                                                                                        |
+| `/admin/events` header running together                           | 7c            | Mobile-audit finding; page-specific markup                                                                                                                |
+| Admin section has no shell chrome                                 | 7d            | Mobile-audit finding; a structural decision, not a token one                                                                                              |
+| Focus management, keyboard paths, SR labels on the new components | 7d            | Tokens carry contrast; behaviour is craft                                                                                                                 |
+| Skeleton loaders replacing `LoadingScreen`                        | 7d            | Explicitly 7d in the roadmap and in [7a](2026-08-22-ui-foundations-design.md)'s non-goals                                                                 |
+| A component-test harness                                          | Revisit at 7d | [D54](../decisions.md#d54--a-token-lint-test-is-the-harness-7b-earns-revisiting-d51); the components 7b ships still have no behaviour worth a harness     |
 
 ## Risks
 

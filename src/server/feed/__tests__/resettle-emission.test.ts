@@ -29,7 +29,10 @@ describe('resettleBet feed emission', () => {
     if (!placed.ok) return;
 
     // Settle on a wrong score: home loses.
-    await db.update(games).set({ status: 'FINAL', homeScore: 17, awayScore: 24 }).where(eq(games.id, game.game.id));
+    await db
+      .update(games)
+      .set({ status: 'FINAL', homeScore: 17, awayScore: 24 })
+      .where(eq(games.id, game.game.id));
     await settleGame(game.game.id);
 
     const [first] = await db.select().from(feedEvents).where(eq(feedEvents.type, 'BET_SETTLED'));
@@ -79,7 +82,10 @@ describe('resettleBet feed emission', () => {
     expect(placed.ok).toBe(true);
     if (!placed.ok) return;
 
-    await db.update(games).set({ status: 'FINAL', homeScore: 27, awayScore: 20 }).where(eq(games.id, game.game.id));
+    await db
+      .update(games)
+      .set({ status: 'FINAL', homeScore: 27, awayScore: 20 })
+      .where(eq(games.id, game.game.id));
     await settleGame(game.game.id);
 
     const firstCards = await db.select().from(feedEvents).where(eq(feedEvents.type, 'BET_SETTLED'));
@@ -98,7 +104,10 @@ describe('resettleBet feed emission', () => {
     if (!result.ok) return;
     expect(result.newStatus).toBe('PENDING');
 
-    const settledCards = await db.select().from(feedEvents).where(eq(feedEvents.type, 'BET_SETTLED'));
+    const settledCards = await db
+      .select()
+      .from(feedEvents)
+      .where(eq(feedEvents.type, 'BET_SETTLED'));
     expect(settledCards).toHaveLength(1);
     expect(settledCards[0].id).toBe(firstCards[0].id);
 

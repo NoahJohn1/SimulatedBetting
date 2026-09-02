@@ -16,7 +16,7 @@
 - **This is Next.js 16.3.1 and Tailwind v4.3.3; both differ from training data.** Read `node_modules/next/dist/docs/01-app/01-getting-started/11-css.md` before touching `globals.css`. There is **no `tailwind.config.ts`** in Tailwind v4 and this phase does not add one — all configuration is CSS.
 - **No new dependencies.** No jsdom, no React Testing Library, no `clsx`, no `tailwind-merge`, no `cva`, no icon library. The runtime dependency list stays at five ([D53](../decisions.md#d53--the-shared-component-set-is-scoped-to-call-sites-that-exist), [D54](../decisions.md#d54--a-token-lint-test-is-the-harness-7b-earns-revisiting-d51)).
 - **No screen redesign.** Layout, spacing, font sizes, and radii on existing markup are not touched. Only colour classes and `dark:` variants change. If you find yourself moving an element, you have left the phase.
-- **The sweep matches light/dark *pairs*, not individual classes.** `bg-zinc-50` is `bg-surface` when paired with `dark:bg-black` and `bg-surface-sunken` when paired with `dark:bg-zinc-900`. Read the partner before choosing the token.
+- **The sweep matches light/dark _pairs_, not individual classes.** `bg-zinc-50` is `bg-surface` when paired with `dark:bg-black` and `bg-surface-sunken` when paired with `dark:bg-zinc-900`. Read the partner before choosing the token.
 - **Only four visual changes are permitted** (spec, "Declared visible changes"): `dark:bg-zinc-50` collapses into `--accent` with `dark:bg-zinc-100`; the four amber chips in `feed-card.tsx` gain a dark treatment they never had; the bet slip's shadow becomes visible in dark mode; and a control adopted into `Button` takes `Button`'s radius. Anything else the browser audit finds is a bug to fix.
 - **Tier 1 is private.** No `.tsx` file may name `--n-*`, `--pos-*`, `--neg-*`, or `--cau-*`. Only Tier 2 reads them, and only inside `globals.css`.
 - **Import alias is `@/`**, mapping to `src/`. Import ordering: external packages, then `@/`, then relative.
@@ -39,16 +39,16 @@ Both were verified by compiling Tailwind 4.3.3 directly. Neither is guessable fr
 
 **Created:**
 
-| File | Responsibility |
-|---|---|
-| `src/components/ui/button.tsx` | `Button` plus the `buttonClasses(variant, size)` export that `<Link>` call sites apply. |
-| `src/components/ui/card.tsx` | The bordered raised surface every screen repeats. |
-| `src/components/ui/callout.tsx` | Tone-scoped notice box over `--{tone}-surface-soft`. |
-| `src/components/ui/segmented-control.tsx` | Link-based two-or-more-way control (Bets \| Wagers, Cash \| Credits). |
-| `src/components/ui/form-field.tsx` | Label + control + hint + error wrapper. |
-| `src/app/__tests__/token-layer.test.ts` | Asserts `globals.css` defines every Tier 2 token in light and both dark blocks, and that the two dark blocks are textually identical. |
-| `src/app/__tests__/token-lint.test.ts` | The ratchet. Fails on raw palette classes and `dark:` variants outside the allowlist and the shrinking baseline. |
-| `docs/design-system-audit.md` | The browser pass: 18 routes × 2 themes × 2 viewports. |
+| File                                      | Responsibility                                                                                                                        |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/ui/button.tsx`            | `Button` plus the `buttonClasses(variant, size)` export that `<Link>` call sites apply.                                               |
+| `src/components/ui/card.tsx`              | The bordered raised surface every screen repeats.                                                                                     |
+| `src/components/ui/callout.tsx`           | Tone-scoped notice box over `--{tone}-surface-soft`.                                                                                  |
+| `src/components/ui/segmented-control.tsx` | Link-based two-or-more-way control (Bets \| Wagers, Cash \| Credits).                                                                 |
+| `src/components/ui/form-field.tsx`        | Label + control + hint + error wrapper.                                                                                               |
+| `src/app/__tests__/token-layer.test.ts`   | Asserts `globals.css` defines every Tier 2 token in light and both dark blocks, and that the two dark blocks are textually identical. |
+| `src/app/__tests__/token-lint.test.ts`    | The ratchet. Fails on raw palette classes and `dark:` variants outside the allowlist and the shrinking baseline.                      |
+| `docs/design-system-audit.md`             | The browser pass: 18 routes × 2 themes × 2 viewports.                                                                                 |
 
 **Modified:** `src/app/globals.css` (becomes the token layer), `src/app/layout.tsx` (`themeColor` values), `src/components/ui/{badge,money,empty-state,status-screen,loading-screen,tab-bar}.tsx`, and all 55 remaining `.tsx` files under `src/app` and `src/components` during the sweep.
 
@@ -61,11 +61,13 @@ Both were verified by compiling Tailwind 4.3.3 directly. Neither is guessable fr
 The whole phase rests on this file. Everything after it is mechanical.
 
 **Files:**
+
 - Modify: `src/app/globals.css` (complete rewrite — the current file is 24 lines of `create-next-app` default)
 - Modify: `src/app/layout.tsx` (the two `themeColor` hex values)
 - Create: `src/app/__tests__/token-layer.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: the Tailwind utilities every later task uses —
   - Backgrounds: `bg-surface`, `bg-surface-raised`, `bg-surface-sunken`, `bg-surface-muted`, `bg-surface-skeleton`
@@ -100,13 +102,36 @@ const CSS = readFileSync(join(process.cwd(), 'src', 'app', 'globals.css'), 'utf8
 
 /** The thirty semantic names, plus the one shadow. Tier 1 ramps are deliberately absent. */
 const TIER_2 = [
-  'surface', 'surface-raised', 'surface-sunken', 'surface-muted', 'surface-skeleton',
-  'line', 'line-strong', 'line-hover', 'line-subtle',
-  'ink', 'ink-secondary', 'ink-muted', 'ink-subtle',
-  'accent', 'accent-ink',
-  'positive', 'positive-surface', 'positive-surface-soft', 'positive-line', 'positive-on-surface',
-  'negative', 'negative-surface', 'negative-surface-soft', 'negative-line', 'negative-on-surface',
-  'caution', 'caution-surface', 'caution-surface-soft', 'caution-line', 'caution-on-surface',
+  'surface',
+  'surface-raised',
+  'surface-sunken',
+  'surface-muted',
+  'surface-skeleton',
+  'line',
+  'line-strong',
+  'line-hover',
+  'line-subtle',
+  'ink',
+  'ink-secondary',
+  'ink-muted',
+  'ink-subtle',
+  'accent',
+  'accent-ink',
+  'positive',
+  'positive-surface',
+  'positive-surface-soft',
+  'positive-line',
+  'positive-on-surface',
+  'negative',
+  'negative-surface',
+  'negative-surface-soft',
+  'negative-line',
+  'negative-on-surface',
+  'caution',
+  'caution-surface',
+  'caution-surface-soft',
+  'caution-line',
+  'caution-on-surface',
   'slip-shadow',
 ];
 
@@ -117,8 +142,9 @@ function declared(block: string): string[] {
 
 /** The two dark palettes, delimited by marker comments so the test can compare them. */
 function darkBlocks(): string[] {
-  return [...CSS.matchAll(/\/\* DARK-PALETTE-START \*\/([\s\S]*?)\/\* DARK-PALETTE-END \*\//g)]
-    .map((m) => m[1]);
+  return [...CSS.matchAll(/\/\* DARK-PALETTE-START \*\/([\s\S]*?)\/\* DARK-PALETTE-END \*\//g)].map(
+    (m) => m[1],
+  );
 }
 
 describe('the token layer', () => {
@@ -155,7 +181,9 @@ describe('the token layer', () => {
         // variable of its own name, so --slip-shadow is exposed as --shadow-slip.
         expect(theme).toContain('--shadow-slip: var(--slip-shadow)');
       } else {
-        expect(theme, `--color-${token} not exposed`).toContain(`--color-${token}: var(--${token})`);
+        expect(theme, `--color-${token} not exposed`).toContain(
+          `--color-${token}: var(--${token})`,
+        );
       }
     }
   });
@@ -186,6 +214,7 @@ describe('the token layer', () => {
 ```bash
 npm test -- src/app/__tests__/token-layer.test.ts
 ```
+
 Expected: FAIL. The current `globals.css` has no palette markers, so `darkBlocks()` returns `[]` and the length assertion fails first.
 
 - [ ] **Step 3: Write the token layer**
@@ -193,7 +222,7 @@ Expected: FAIL. The current `globals.css` has no palette markers, so `darkBlocks
 Replace the entire contents of `src/app/globals.css`:
 
 ```css
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Tier 1 — private ramps (D52).
@@ -206,21 +235,21 @@ Replace the entire contents of `src/app/globals.css`:
    vocabulary the app speaks.
    ═══════════════════════════════════════════════════════════════════════════ */
 :root {
-  --n-0:    #fff;
-  --n-50:   oklch(98.5% 0 none);
-  --n-100:  oklch(96.7% 0.001 286.375);
-  --n-200:  oklch(92% 0.004 286.32);
-  --n-300:  oklch(87.1% 0.006 286.286);
-  --n-400:  oklch(70.5% 0.015 286.067);
-  --n-500:  oklch(55.2% 0.016 285.938);
-  --n-600:  oklch(44.2% 0.017 285.786);
-  --n-700:  oklch(37% 0.013 285.805);
-  --n-800:  oklch(27.4% 0.006 286.033);
-  --n-900:  oklch(21% 0.006 285.885);
-  --n-950:  oklch(14.1% 0.005 285.823);
+  --n-0: #fff;
+  --n-50: oklch(98.5% 0 none);
+  --n-100: oklch(96.7% 0.001 286.375);
+  --n-200: oklch(92% 0.004 286.32);
+  --n-300: oklch(87.1% 0.006 286.286);
+  --n-400: oklch(70.5% 0.015 286.067);
+  --n-500: oklch(55.2% 0.016 285.938);
+  --n-600: oklch(44.2% 0.017 285.786);
+  --n-700: oklch(37% 0.013 285.805);
+  --n-800: oklch(27.4% 0.006 286.033);
+  --n-900: oklch(21% 0.006 285.885);
+  --n-950: oklch(14.1% 0.005 285.823);
   --n-1000: #000;
 
-  --pos-50:  oklch(97.9% 0.021 166.113);
+  --pos-50: oklch(97.9% 0.021 166.113);
   --pos-100: oklch(95% 0.052 163.051);
   --pos-400: oklch(76.5% 0.177 163.223);
   --pos-500: oklch(69.6% 0.17 162.48);
@@ -228,7 +257,7 @@ Replace the entire contents of `src/app/globals.css`:
   --pos-700: oklch(50.8% 0.118 165.612);
   --pos-950: oklch(26.2% 0.051 172.552);
 
-  --neg-50:  oklch(97.1% 0.013 17.38);
+  --neg-50: oklch(97.1% 0.013 17.38);
   --neg-100: oklch(93.6% 0.032 17.717);
   --neg-300: oklch(80.8% 0.114 19.571);
   --neg-400: oklch(70.4% 0.191 22.216);
@@ -237,7 +266,7 @@ Replace the entire contents of `src/app/globals.css`:
   --neg-800: oklch(44.4% 0.177 26.899);
   --neg-950: oklch(25.8% 0.092 26.042);
 
-  --cau-50:  oklch(98.7% 0.022 95.277);
+  --cau-50: oklch(98.7% 0.022 95.277);
   --cau-100: oklch(96.2% 0.059 95.617);
   --cau-300: oklch(87.9% 0.169 91.605);
   --cau-400: oklch(82.8% 0.189 84.429);
@@ -255,42 +284,42 @@ Replace the entire contents of `src/app/globals.css`:
    ═══════════════════════════════════════════════════════════════════════════ */
 :root {
   /* LIGHT-PALETTE-START */
-  --surface:               var(--n-50);
-  --surface-raised:        var(--n-0);
-  --surface-sunken:        var(--n-50);
-  --surface-muted:         var(--n-100);
-  --surface-skeleton:      var(--n-200);
+  --surface: var(--n-50);
+  --surface-raised: var(--n-0);
+  --surface-sunken: var(--n-50);
+  --surface-muted: var(--n-100);
+  --surface-skeleton: var(--n-200);
 
-  --line:                  var(--n-200);
-  --line-strong:           var(--n-300);
-  --line-hover:            var(--n-400);
-  --line-subtle:           var(--n-100);
+  --line: var(--n-200);
+  --line-strong: var(--n-300);
+  --line-hover: var(--n-400);
+  --line-subtle: var(--n-100);
 
-  --ink:                   var(--n-900);
-  --ink-secondary:         var(--n-600);
-  --ink-muted:             var(--n-500);
-  --ink-subtle:            var(--n-400);
+  --ink: var(--n-900);
+  --ink-secondary: var(--n-600);
+  --ink-muted: var(--n-500);
+  --ink-subtle: var(--n-400);
 
-  --accent:                var(--n-900);
-  --accent-ink:            var(--n-0);
+  --accent: var(--n-900);
+  --accent-ink: var(--n-0);
 
-  --positive:              var(--pos-600);
-  --positive-surface:      var(--pos-100);
+  --positive: var(--pos-600);
+  --positive-surface: var(--pos-100);
   --positive-surface-soft: var(--pos-50);
-  --positive-line:         var(--pos-500);
-  --positive-on-surface:   var(--pos-700);
+  --positive-line: var(--pos-500);
+  --positive-on-surface: var(--pos-700);
 
-  --negative:              var(--neg-600);
-  --negative-surface:      var(--neg-100);
+  --negative: var(--neg-600);
+  --negative-surface: var(--neg-100);
   --negative-surface-soft: var(--neg-50);
-  --negative-line:         var(--neg-300);
-  --negative-on-surface:   var(--neg-700);
+  --negative-line: var(--neg-300);
+  --negative-on-surface: var(--neg-700);
 
-  --caution:               var(--cau-600);
-  --caution-surface:       var(--cau-100);
-  --caution-surface-soft:  var(--cau-50);
-  --caution-line:          var(--cau-300);
-  --caution-on-surface:    var(--cau-700);
+  --caution: var(--cau-600);
+  --caution-surface: var(--cau-100);
+  --caution-surface-soft: var(--cau-50);
+  --caution-line: var(--cau-300);
+  --caution-on-surface: var(--cau-700);
 
   --slip-shadow: 0 -8px 24px rgb(0 0 0 / 0.06);
   /* LIGHT-PALETTE-END */
@@ -311,44 +340,44 @@ Replace the entire contents of `src/app/globals.css`:
    a drop-in rather than a restructure.
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-theme='light']) {
     /* DARK-PALETTE-START */
-    --surface:               var(--n-1000);
-    --surface-raised:        var(--n-950);
-    --surface-sunken:        var(--n-900);
-    --surface-muted:         var(--n-800);
-    --surface-skeleton:      var(--n-800);
+    --surface: var(--n-1000);
+    --surface-raised: var(--n-950);
+    --surface-sunken: var(--n-900);
+    --surface-muted: var(--n-800);
+    --surface-skeleton: var(--n-800);
 
-    --line:                  var(--n-800);
-    --line-strong:           var(--n-700);
-    --line-hover:            var(--n-600);
-    --line-subtle:           var(--n-900);
+    --line: var(--n-800);
+    --line-strong: var(--n-700);
+    --line-hover: var(--n-600);
+    --line-subtle: var(--n-900);
 
-    --ink:                   var(--n-50);
-    --ink-secondary:         var(--n-300);
-    --ink-muted:             var(--n-400);
-    --ink-subtle:            var(--n-600);
+    --ink: var(--n-50);
+    --ink-secondary: var(--n-300);
+    --ink-muted: var(--n-400);
+    --ink-subtle: var(--n-600);
 
-    --accent:                var(--n-100);
-    --accent-ink:            var(--n-900);
+    --accent: var(--n-100);
+    --accent-ink: var(--n-900);
 
-    --positive:              var(--pos-400);
-    --positive-surface:      var(--pos-950);
+    --positive: var(--pos-400);
+    --positive-surface: var(--pos-950);
     --positive-surface-soft: color-mix(in oklab, var(--pos-950) 30%, transparent);
-    --positive-line:         var(--pos-700);
-    --positive-on-surface:   var(--pos-400);
+    --positive-line: var(--pos-700);
+    --positive-on-surface: var(--pos-400);
 
-    --negative:              var(--neg-400);
-    --negative-surface:      var(--neg-950);
+    --negative: var(--neg-400);
+    --negative-surface: var(--neg-950);
     --negative-surface-soft: color-mix(in oklab, var(--neg-950) 30%, transparent);
-    --negative-line:         var(--neg-800);
-    --negative-on-surface:   var(--neg-400);
+    --negative-line: var(--neg-800);
+    --negative-on-surface: var(--neg-400);
 
-    --caution:               var(--cau-400);
-    --caution-surface:       var(--cau-950);
-    --caution-surface-soft:  color-mix(in oklab, var(--cau-950) 20%, transparent);
-    --caution-line:          var(--cau-800);
-    --caution-on-surface:    var(--cau-400);
+    --caution: var(--cau-400);
+    --caution-surface: var(--cau-950);
+    --caution-surface-soft: color-mix(in oklab, var(--cau-950) 20%, transparent);
+    --caution-line: var(--cau-800);
+    --caution-on-surface: var(--cau-400);
 
     --slip-shadow: 0 -8px 24px rgb(0 0 0 / 0.5);
     /* DARK-PALETTE-END */
@@ -357,44 +386,44 @@ Replace the entire contents of `src/app/globals.css`:
   }
 }
 
-:root[data-theme="dark"] {
+:root[data-theme='dark'] {
   /* DARK-PALETTE-START */
-  --surface:               var(--n-1000);
-  --surface-raised:        var(--n-950);
-  --surface-sunken:        var(--n-900);
-  --surface-muted:         var(--n-800);
-  --surface-skeleton:      var(--n-800);
+  --surface: var(--n-1000);
+  --surface-raised: var(--n-950);
+  --surface-sunken: var(--n-900);
+  --surface-muted: var(--n-800);
+  --surface-skeleton: var(--n-800);
 
-  --line:                  var(--n-800);
-  --line-strong:           var(--n-700);
-  --line-hover:            var(--n-600);
-  --line-subtle:           var(--n-900);
+  --line: var(--n-800);
+  --line-strong: var(--n-700);
+  --line-hover: var(--n-600);
+  --line-subtle: var(--n-900);
 
-  --ink:                   var(--n-50);
-  --ink-secondary:         var(--n-300);
-  --ink-muted:             var(--n-400);
-  --ink-subtle:            var(--n-600);
+  --ink: var(--n-50);
+  --ink-secondary: var(--n-300);
+  --ink-muted: var(--n-400);
+  --ink-subtle: var(--n-600);
 
-  --accent:                var(--n-100);
-  --accent-ink:            var(--n-900);
+  --accent: var(--n-100);
+  --accent-ink: var(--n-900);
 
-  --positive:              var(--pos-400);
-  --positive-surface:      var(--pos-950);
+  --positive: var(--pos-400);
+  --positive-surface: var(--pos-950);
   --positive-surface-soft: color-mix(in oklab, var(--pos-950) 30%, transparent);
-  --positive-line:         var(--pos-700);
-  --positive-on-surface:   var(--pos-400);
+  --positive-line: var(--pos-700);
+  --positive-on-surface: var(--pos-400);
 
-  --negative:              var(--neg-400);
-  --negative-surface:      var(--neg-950);
+  --negative: var(--neg-400);
+  --negative-surface: var(--neg-950);
   --negative-surface-soft: color-mix(in oklab, var(--neg-950) 30%, transparent);
-  --negative-line:         var(--neg-800);
-  --negative-on-surface:   var(--neg-400);
+  --negative-line: var(--neg-800);
+  --negative-on-surface: var(--neg-400);
 
-  --caution:               var(--cau-400);
-  --caution-surface:       var(--cau-950);
-  --caution-surface-soft:  color-mix(in oklab, var(--cau-950) 20%, transparent);
-  --caution-line:          var(--cau-800);
-  --caution-on-surface:    var(--cau-400);
+  --caution: var(--cau-400);
+  --caution-surface: var(--cau-950);
+  --caution-surface-soft: color-mix(in oklab, var(--cau-950) 20%, transparent);
+  --caution-line: var(--cau-800);
+  --caution-on-surface: var(--cau-400);
 
   --slip-shadow: 0 -8px 24px rgb(0 0 0 / 0.5);
   /* DARK-PALETTE-END */
@@ -414,48 +443,48 @@ Replace the entire contents of `src/app/globals.css`:
    variables exist at runtime. Hand-written CSS must name the Tier 2 variable.
    ═══════════════════════════════════════════════════════════════════════════ */
 @theme inline {
-  --color-surface:               var(--surface);
-  --color-surface-raised:        var(--surface-raised);
-  --color-surface-sunken:        var(--surface-sunken);
-  --color-surface-muted:         var(--surface-muted);
-  --color-surface-skeleton:      var(--surface-skeleton);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-skeleton: var(--surface-skeleton);
 
-  --color-line:                  var(--line);
-  --color-line-strong:           var(--line-strong);
-  --color-line-hover:            var(--line-hover);
-  --color-line-subtle:           var(--line-subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-line-hover: var(--line-hover);
+  --color-line-subtle: var(--line-subtle);
 
-  --color-ink:                   var(--ink);
-  --color-ink-secondary:         var(--ink-secondary);
-  --color-ink-muted:             var(--ink-muted);
-  --color-ink-subtle:            var(--ink-subtle);
+  --color-ink: var(--ink);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
 
-  --color-accent:                var(--accent);
-  --color-accent-ink:            var(--accent-ink);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
 
-  --color-positive:              var(--positive);
-  --color-positive-surface:      var(--positive-surface);
+  --color-positive: var(--positive);
+  --color-positive-surface: var(--positive-surface);
   --color-positive-surface-soft: var(--positive-surface-soft);
-  --color-positive-line:         var(--positive-line);
-  --color-positive-on-surface:   var(--positive-on-surface);
+  --color-positive-line: var(--positive-line);
+  --color-positive-on-surface: var(--positive-on-surface);
 
-  --color-negative:              var(--negative);
-  --color-negative-surface:      var(--negative-surface);
+  --color-negative: var(--negative);
+  --color-negative-surface: var(--negative-surface);
   --color-negative-surface-soft: var(--negative-surface-soft);
-  --color-negative-line:         var(--negative-line);
-  --color-negative-on-surface:   var(--negative-on-surface);
+  --color-negative-line: var(--negative-line);
+  --color-negative-on-surface: var(--negative-on-surface);
 
-  --color-caution:               var(--caution);
-  --color-caution-surface:       var(--caution-surface);
-  --color-caution-surface-soft:  var(--caution-surface-soft);
-  --color-caution-line:          var(--caution-line);
-  --color-caution-on-surface:    var(--caution-on-surface);
+  --color-caution: var(--caution);
+  --color-caution-surface: var(--caution-surface);
+  --color-caution-surface-soft: var(--caution-surface-soft);
+  --color-caution-line: var(--caution-line);
+  --color-caution-on-surface: var(--caution-on-surface);
 
   /* Named for their role, because the codebase's rounded-lg/xl/full mix has never
      meant anything until now. */
   --radius-control: 0.5rem;
-  --radius-card:    0.75rem;
-  --radius-pill:    9999px;
+  --radius-card: 0.75rem;
+  --radius-pill: 9999px;
 
   /* Renamed on the way through: a theme variable may not reference a runtime
      variable of its own name. */
@@ -480,6 +509,7 @@ body {
 ```bash
 npm test -- src/app/__tests__/token-layer.test.ts
 ```
+
 Expected: PASS, 8 tests.
 
 - [ ] **Step 5: Point `themeColor` at the new surfaces**
@@ -501,7 +531,9 @@ In `src/app/layout.tsx`, the `viewport` export currently names the two colours t
 ```bash
 npm run dev
 ```
+
 Open `http://localhost:3000/sign-in`. Confirm two things and then stop the server:
+
 1. The type is **Geist**, not Arial — the lowercase `g` is single-storey and the digits are noticeably rounder. If it still looks like Arial, `body` is naming the wrong variable.
 2. Toggling your OS between light and dark changes the page background.
 
@@ -514,6 +546,7 @@ utilities that throw.
 ```bash
 npm run verify
 ```
+
 Expected: green.
 
 ```bash
@@ -547,13 +580,15 @@ the list, and the list is empty by Task 13.
 The ratchet bites in **both** directions. A file outside the baseline must be clean — that is
 the rule that constrains screen nineteen, and the reason this test exists at all
 ([D54](../decisions.md#d54--a-token-lint-test-is-the-harness-7b-earns-revisiting-d51)). A file
-*inside* the baseline must be dirty — that is what stops the baseline from quietly outliving
+_inside_ the baseline must be dirty — that is what stops the baseline from quietly outliving
 the sweep and turning back into permission.
 
 **Files:**
+
 - Create: `src/app/__tests__/token-lint.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: `BASELINE`, a `string[]` of repo-relative POSIX paths that Tasks 3–13 delete
   entries from. No other task imports from this file.
@@ -561,7 +596,7 @@ the sweep and turning back into permission.
 - [ ] **Step 1: Write the test**
 
 This one is written to pass immediately — the baseline is the current state of the repo, so
-there is nothing to fail. What it does is fail on the *next* file anyone writes.
+there is nothing to fail. What it does is fail on the _next_ file anyone writes.
 
 Create `src/app/__tests__/token-lint.test.ts`:
 
@@ -589,9 +624,28 @@ import { describe, expect, it } from 'vitest';
 const SRC = join(process.cwd(), 'src');
 
 const TAILWIND_PALETTES = [
-  'slate', 'gray', 'zinc', 'neutral', 'stone', 'red', 'orange', 'amber', 'yellow', 'lime',
-  'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia',
-  'pink', 'rose',
+  'slate',
+  'gray',
+  'zinc',
+  'neutral',
+  'stone',
+  'red',
+  'orange',
+  'amber',
+  'yellow',
+  'lime',
+  'green',
+  'emerald',
+  'teal',
+  'cyan',
+  'sky',
+  'blue',
+  'indigo',
+  'violet',
+  'purple',
+  'fuchsia',
+  'pink',
+  'rose',
 ].join('|');
 
 const PROPERTIES =
@@ -743,6 +797,7 @@ describe('token lint', () => {
 ```bash
 npm test -- src/app/__tests__/token-lint.test.ts
 ```
+
 Expected: PASS. The baseline mirrors the repo exactly, so nothing is flagged yet.
 
 - [ ] **Step 3: Prove the ratchet actually bites, then undo the proof**
@@ -755,6 +810,7 @@ Check it both ways before trusting it:
 sed -i 's/className="flex min-h-full flex-col"/className="flex min-h-full flex-col bg-zinc-100"/' src/app/layout.tsx
 npm test -- src/app/__tests__/token-lint.test.ts
 ```
+
 Expected: FAIL — `src/app/layout.tsx contains a raw palette class`.
 
 ```bash
@@ -764,6 +820,7 @@ git checkout src/app/layout.tsx
 sed -i "s|^const BASELINE: string\[\] = \[|const BASELINE: string[] = [\n  'src/app/page.tsx',|" src/app/__tests__/token-lint.test.ts
 npm test -- src/app/__tests__/token-lint.test.ts
 ```
+
 Expected: FAIL — `src/app/page.tsx is clean — delete it from BASELINE in this file`.
 
 ```bash
@@ -775,6 +832,7 @@ git checkout src/app/__tests__/token-lint.test.ts
 ```bash
 npm run verify
 ```
+
 Expected: green.
 
 ```bash
@@ -804,6 +862,7 @@ rewrite. `route-conventions.test.ts` already asserts every boundary delegates to
 and that assertion must keep passing.
 
 **Files:**
+
 - Modify: `src/components/ui/empty-state.tsx`
 - Modify: `src/components/ui/loading-screen.tsx`
 - Modify: `src/components/ui/status-screen.tsx`
@@ -811,6 +870,7 @@ and that assertion must keep passing.
 - Modify: `src/app/__tests__/token-lint.test.ts` (delete eight baseline entries)
 
 **Interfaces:**
+
 - Consumes: the utilities from Task 1.
 - Produces: no API change. `EmptyState({ title, body? })`, `LoadingScreen({ label? })`, and
   `StatusScreen({ title, body, digest?, children? })` keep their exact signatures.
@@ -847,12 +907,11 @@ Leave the file's leading comment about deliberately not being a skeleton exactly
 `src/components/ui/status-screen.tsx` — the body paragraph and the digest line:
 
 ```tsx
-        <p className="mt-3 max-w-sm text-balance text-sm text-ink-muted">
-          {body}
-        </p>
+<p className="mt-3 max-w-sm text-balance text-sm text-ink-muted">{body}</p>
 ```
+
 ```tsx
-        <p className="font-mono text-xs text-ink-subtle">Reference {digest}</p>
+<p className="font-mono text-xs text-ink-subtle">Reference {digest}</p>
 ```
 
 - [ ] **Step 2: Convert the five boundary files**
@@ -863,7 +922,9 @@ Each is a handful of lines wrapping `StatusScreen`. The only colour classes in t
 ```
 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200
 ```
+
 with
+
 ```
 text-ink-muted transition-colors hover:text-ink
 ```
@@ -886,7 +947,7 @@ In `src/app/__tests__/token-lint.test.ts`, remove these lines from `BASELINE`:
   'src/components/ui/status-screen.tsx',
 ```
 
-If the test reports one of them is *still* dirty, a colour class was missed; find it with:
+If the test reports one of them is _still_ dirty, a colour class was missed; find it with:
 
 ```bash
 grep -nE 'dark:|-(zinc|red|emerald|amber)-[0-9]|-(white|black)\b' <the file>
@@ -897,6 +958,7 @@ grep -nE 'dark:|-(zinc|red|emerald|amber)-[0-9]|-(white|black)\b' <the file>
 ```bash
 npm run verify
 ```
+
 Expected: green, including `route-conventions.test.ts` — the boundaries still delegate to the
 shared components, because their imports did not change.
 
@@ -923,11 +985,13 @@ The one component with a design decision in it, and the first that changes how a
 rather than only what colour it is — see the note on radius below.
 
 **Files:**
+
 - Create: `src/components/ui/button.tsx`
 - Modify: `src/app/sign-in/page.tsx`, `src/app/join/page.tsx`, `src/app/pending/page.tsx`, `src/app/no-season/page.tsx`, `src/app/disabled/page.tsx`
 - Modify: `src/app/__tests__/token-lint.test.ts` (delete five baseline entries)
 
 **Interfaces:**
+
 - Consumes: the utilities from Task 1.
 - Produces, from `@/components/ui/button`:
   - `type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'`
@@ -943,7 +1007,7 @@ rather than only what colour it is — see the note on radius below.
    to read, and every link-button in this app is a plain `next/link`.
 2. **`Button` owns its radius, and it is `rounded-control`.** Today's buttons are a mix of
    `rounded-full` and `rounded-lg`, which is exactly the inconsistency this phase exists to
-   remove — but it means adopting `Button` is a *visual* change, not just a colour one, and it
+   remove — but it means adopting `Button` is a _visual_ change, not just a colour one, and it
    is the fourth declared change in the spec. Adopt `Button` deliberately, at the call sites
    each task names. Do **not** convert the odds cells in `game-card.tsx`: those are a
    selection grid that happens to use `<button>`, not buttons, and 7c owns that layout.
@@ -975,10 +1039,7 @@ const SIZES: Record<ButtonSize, string> = {
  * instead of an `asChild` prop: cloning children to forward props is what makes button
  * components hard to read, and every link-button in this app is a plain next/link.
  */
-export function buttonClasses(
-  variant: ButtonVariant = 'primary',
-  size: ButtonSize = 'md',
-): string {
+export function buttonClasses(variant: ButtonVariant = 'primary', size: ButtonSize = 'md'): string {
   return [
     'inline-flex items-center justify-center gap-2 rounded-control font-medium',
     'transition-colors disabled:cursor-not-allowed disabled:opacity-50',
@@ -999,7 +1060,9 @@ export function Button({
   type = 'button',
   ...props
 }: ComponentProps<'button'> & { variant?: ButtonVariant; size?: ButtonSize }) {
-  return <button type={type} className={`${buttonClasses(variant, size)} ${className}`} {...props} />;
+  return (
+    <button type={type} className={`${buttonClasses(variant, size)} ${className}`} {...props} />
+  );
 }
 ```
 
@@ -1021,7 +1084,7 @@ For example, `src/app/sign-in/page.tsx`'s submit control becomes:
 ```tsx
 import { Button } from '@/components/ui/button';
 // …
-        <Button type="submit">Continue with Google</Button>
+<Button type="submit">Continue with Google</Button>;
 ```
 
 and a link-styled action becomes:
@@ -1029,7 +1092,9 @@ and a link-styled action becomes:
 ```tsx
 import { buttonClasses } from '@/components/ui/button';
 // …
-        <Link href="/join" className={buttonClasses('primary')}>Join the season</Link>
+<Link href="/join" className={buttonClasses('primary')}>
+  Join the season
+</Link>;
 ```
 
 Read each file before editing it — the five are not identical, and two of them have no button
@@ -1052,6 +1117,7 @@ Remove from `BASELINE` in `src/app/__tests__/token-lint.test.ts`:
 ```bash
 npm run verify
 ```
+
 Expected: green. If `route-conventions.test.ts` fails on the pending-state assertion, a form's
 submit control lost its `disabled={pending}` in the conversion — put it back; `Button` styles
 the disabled state but does not decide it.
@@ -1061,6 +1127,7 @@ the disabled state but does not decide it.
 ```bash
 npm run dev
 ```
+
 Visit `/sign-in` while signed out. The button should be a filled dark rectangle with 8px
 corners, and legible in both OS themes. Stop the server.
 
@@ -1088,12 +1155,14 @@ Two components, one task: neither is more than fifteen lines, and both are adopt
 screen.
 
 **Files:**
+
 - Create: `src/components/ui/card.tsx`
 - Create: `src/components/ui/callout.tsx`
 - Modify: `src/app/(app)/standings/page.tsx`
 - Modify: `src/app/__tests__/token-lint.test.ts` (delete one baseline entry)
 
 **Interfaces:**
+
 - Consumes: the utilities from Task 1.
 - Produces:
   - `Card({ emphasis?: boolean; className?: string; children: ReactNode })` from
@@ -1184,20 +1253,20 @@ conditional is exactly `emphasis`:
 ```tsx
 import { Card } from '@/components/ui/card';
 // …
-          return (
-            <li key={row.membershipId}>
-              <Card emphasis={isMe} className="flex items-center gap-3 p-3">
-                <span className="w-6 text-sm tabular-nums text-ink-subtle">{i + 1}</span>
-                <Link
-                  href={`/members/${row.membershipId}`}
-                  className="flex-1 truncate text-sm font-medium hover:underline"
-                >
-                  {row.displayName}
-                </Link>
-                <Money cents={row.balanceCents} className="text-sm font-semibold" />
-              </Card>
-            </li>
-          );
+return (
+  <li key={row.membershipId}>
+    <Card emphasis={isMe} className="flex items-center gap-3 p-3">
+      <span className="w-6 text-sm tabular-nums text-ink-subtle">{i + 1}</span>
+      <Link
+        href={`/members/${row.membershipId}`}
+        className="flex-1 truncate text-sm font-medium hover:underline"
+      >
+        {row.displayName}
+      </Link>
+      <Money cents={row.balanceCents} className="text-sm font-semibold" />
+    </Card>
+  </li>
+);
 ```
 
 Note the `<li>` stays and `Card` moves inside it — a `<Card>` rendering an `<li>` would need a
@@ -1215,6 +1284,7 @@ Remove `'src/app/(app)/standings/page.tsx',` from `BASELINE`.
 ```bash
 npm run verify
 ```
+
 Expected: green.
 
 ```bash
@@ -1236,12 +1306,14 @@ MSG
 ### Task 6: `SegmentedControl` and `FormField`
 
 **Files:**
+
 - Create: `src/components/ui/segmented-control.tsx`
 - Create: `src/components/ui/form-field.tsx`
 - Modify: `src/app/(app)/me/feed-preferences/preferences-form.tsx`, `src/app/(app)/me/feed-preferences/page.tsx`
 - Modify: `src/app/__tests__/token-lint.test.ts` (delete two baseline entries)
 
 **Interfaces:**
+
 - Consumes: `buttonClasses` from Task 4.
 - Produces:
   - `interface Segment { href: ComponentProps<typeof Link>['href']; label: string; active: boolean }`
@@ -1372,6 +1444,7 @@ Remove from `BASELINE`:
 ```bash
 npm run verify
 ```
+
 Expected: green.
 
 ```bash
@@ -1394,11 +1467,13 @@ MSG
 ### Task 7: Tone-based `Badge`, and one place that formats money
 
 **Files:**
+
 - Modify: `src/components/ui/badge.tsx`
 - Modify: `src/components/ui/money.tsx`
 - Modify: `src/app/__tests__/token-lint.test.ts` (delete two baseline entries)
 
 **Interfaces:**
+
 - Consumes: the utilities from Task 1.
 - Produces:
   - `type BadgeTone = 'neutral' | 'positive' | 'negative' | 'caution'` and
@@ -1454,9 +1529,7 @@ export function Badge({
   className?: string;
 }) {
   return (
-    <span
-      className={`rounded-pill px-2 py-0.5 text-xs font-medium ${TONES[tone]} ${className}`}
-    >
+    <span className={`rounded-pill px-2 py-0.5 text-xs font-medium ${TONES[tone]} ${className}`}>
       {children}
     </span>
   );
@@ -1496,7 +1569,7 @@ formatter that `game-card.tsx` currently keeps privately:
  * The number a selection's button shows. Lifted out of games/game-card.tsx, which had its own
  * copy of this and its own copy of Price's signing rule.
  */
-export function Line({ value, market }: { value: string; market: 'SPREAD' | 'TOTAL'; }) {
+export function Line({ value, market }: { value: string; market: 'SPREAD' | 'TOTAL' }) {
   const n = Number(value);
   if (market === 'TOTAL') return <span className="tabular-nums">{n}</span>;
   return <span className="tabular-nums">{n > 0 ? `+${n}` : n}</span>;
@@ -1517,6 +1590,7 @@ Remove from `BASELINE`:
 ```bash
 npm run verify
 ```
+
 Expected: green. A TypeScript error naming `Badge` means a `status=` caller was missed in
 Step 2 — the compiler finds them all, so trust it over the grep.
 
@@ -1553,56 +1627,56 @@ group while approving its neighbours.
 5. `npm run verify`.
 6. Commit as `refactor(ui): <group> onto the token vocabulary`.
 
-**The mapping table.** Left column is the *pair* as it appears today. This is the whole sweep;
+**The mapping table.** Left column is the _pair_ as it appears today. This is the whole sweep;
 if a pair is not here, stop and check whether you have misread the partner class.
 
-| Today (light + dark) | Token class |
-|---|---|
-| `bg-zinc-50` + `dark:bg-black` | `bg-surface` |
-| `bg-white` + `dark:bg-zinc-950` | `bg-surface-raised` |
-| `bg-white/90` + `dark:bg-zinc-950/90` | `bg-surface-raised/90` |
-| `bg-white` + `dark:bg-zinc-900` | `bg-surface-raised` — but `bg-surface-sunken` when the control sits inside a `Card` (same dark value as the Card otherwise; see [design-system-audit.md](../design-system-audit.md)) |
-| `bg-zinc-50` + `dark:bg-zinc-900` | `bg-surface-sunken` |
-| `bg-zinc-100` + `dark:bg-zinc-800` | `bg-surface-muted` |
-| `bg-zinc-100` + `dark:bg-zinc-900` | `bg-surface-muted` (not `bg-surface-sunken` — sunken's light value is identical to the page background and would make the box invisible) |
-| `bg-zinc-200` + `dark:bg-zinc-800` | `bg-surface-skeleton` |
-| `bg-zinc-900` + `dark:bg-zinc-100` *or* `dark:bg-zinc-50` | `bg-accent` |
-| `text-white` + `dark:text-zinc-900` | `text-accent-ink` |
-| `border-zinc-200` + `dark:border-zinc-800` | `border-line` |
-| `border-zinc-300` + `dark:border-zinc-700` | `border-line-strong` |
-| `border-zinc-400` (hover) | `border-line-hover` |
-| `border-zinc-100` | `border-line-subtle` |
-| `border-zinc-100` + `dark:border-zinc-800` | `border-line-subtle` |
-| `border-zinc-900` + `dark:border-zinc-100` | `border-accent` |
-| `text-zinc-900` + `dark:text-zinc-50` | `text-ink` |
-| `text-zinc-900` + `dark:text-zinc-100` | `text-ink` |
-| `text-zinc-600` + `dark:text-zinc-300` | `text-ink-secondary` |
-| `text-zinc-600` + `dark:text-zinc-400` | `text-ink-secondary` |
-| `text-zinc-700` + `dark:text-zinc-300` | `text-ink-secondary` |
-| `text-zinc-500` + `dark:text-zinc-400` *or* bare `text-zinc-500` | `text-ink-muted` |
-| `text-zinc-400` + `dark:text-zinc-600` | `text-ink-subtle` |
-| bare `text-zinc-400` (no dark partner) | `text-ink-muted` — NOT `text-ink-subtle`; `-subtle`'s dark value (`zinc-600`) drops a bare zinc-400 from ~8:1 to ~2.6:1 contrast, below WCAG AA. Found and fixed at 15 sites in [design-system-audit.md](../design-system-audit.md). |
-| `text-emerald-600` + `dark:text-emerald-400` | `text-positive` |
-| `bg-emerald-100` + `dark:bg-emerald-950` | `bg-positive-surface` |
-| `bg-emerald-50` | `bg-positive-surface-soft` |
-| `border-emerald-500` + `dark:border-emerald-700` | `border-positive-line` |
-| `text-emerald-700` + `dark:text-emerald-400` | `text-positive-on-surface` |
-| `text-red-600` + `dark:text-red-400` | `text-negative` |
-| `bg-red-100` + `dark:bg-red-950` | `bg-negative-surface` |
-| `bg-red-50` + `dark:bg-red-950/30` | `bg-negative-surface-soft` |
-| `border-red-200/300/400` + `dark:border-red-600/800/900` | `border-negative-line` |
-| `text-red-700` *or* `text-red-800` | `text-negative-on-surface` |
-| `text-red-700` + `dark:text-red-400` | `text-negative-on-surface` (not `text-negative` — 700/400 is the exact on-surface pair, same pattern as the amber-700 fix above) |
-| `text-amber-600` + `dark:text-amber-400` | `text-caution` |
-| `text-amber-600` (bare) | `text-caution` |
-| `bg-amber-100` + `dark:bg-amber-950` | `bg-caution-surface` |
-| `bg-amber-50` + `dark:bg-amber-950/20` | `bg-caution-surface-soft` |
-| `border-amber-200/300/700` + `dark:border-amber-800/900` | `border-caution-line` |
-| `text-amber-700` *or* `text-amber-800` *or* `text-amber-900` | `text-caution-on-surface` |
-| `hover:text-red-600` | `hover:text-negative` |
-| `text-emerald-600` (bare) | `text-positive` |
-| `text-rose-600` (bare) *or* `hover:text-rose-600` | `text-negative` *or* `hover:text-negative` |
-| `shadow-[0_-8px_24px_rgba(0,0,0,0.06)]` | `shadow-slip` |
+| Today (light + dark)                                             | Token class                                                                                                                                                                                                                          |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `bg-zinc-50` + `dark:bg-black`                                   | `bg-surface`                                                                                                                                                                                                                         |
+| `bg-white` + `dark:bg-zinc-950`                                  | `bg-surface-raised`                                                                                                                                                                                                                  |
+| `bg-white/90` + `dark:bg-zinc-950/90`                            | `bg-surface-raised/90`                                                                                                                                                                                                               |
+| `bg-white` + `dark:bg-zinc-900`                                  | `bg-surface-raised` — but `bg-surface-sunken` when the control sits inside a `Card` (same dark value as the Card otherwise; see [design-system-audit.md](../design-system-audit.md))                                                 |
+| `bg-zinc-50` + `dark:bg-zinc-900`                                | `bg-surface-sunken`                                                                                                                                                                                                                  |
+| `bg-zinc-100` + `dark:bg-zinc-800`                               | `bg-surface-muted`                                                                                                                                                                                                                   |
+| `bg-zinc-100` + `dark:bg-zinc-900`                               | `bg-surface-muted` (not `bg-surface-sunken` — sunken's light value is identical to the page background and would make the box invisible)                                                                                             |
+| `bg-zinc-200` + `dark:bg-zinc-800`                               | `bg-surface-skeleton`                                                                                                                                                                                                                |
+| `bg-zinc-900` + `dark:bg-zinc-100` _or_ `dark:bg-zinc-50`        | `bg-accent`                                                                                                                                                                                                                          |
+| `text-white` + `dark:text-zinc-900`                              | `text-accent-ink`                                                                                                                                                                                                                    |
+| `border-zinc-200` + `dark:border-zinc-800`                       | `border-line`                                                                                                                                                                                                                        |
+| `border-zinc-300` + `dark:border-zinc-700`                       | `border-line-strong`                                                                                                                                                                                                                 |
+| `border-zinc-400` (hover)                                        | `border-line-hover`                                                                                                                                                                                                                  |
+| `border-zinc-100`                                                | `border-line-subtle`                                                                                                                                                                                                                 |
+| `border-zinc-100` + `dark:border-zinc-800`                       | `border-line-subtle`                                                                                                                                                                                                                 |
+| `border-zinc-900` + `dark:border-zinc-100`                       | `border-accent`                                                                                                                                                                                                                      |
+| `text-zinc-900` + `dark:text-zinc-50`                            | `text-ink`                                                                                                                                                                                                                           |
+| `text-zinc-900` + `dark:text-zinc-100`                           | `text-ink`                                                                                                                                                                                                                           |
+| `text-zinc-600` + `dark:text-zinc-300`                           | `text-ink-secondary`                                                                                                                                                                                                                 |
+| `text-zinc-600` + `dark:text-zinc-400`                           | `text-ink-secondary`                                                                                                                                                                                                                 |
+| `text-zinc-700` + `dark:text-zinc-300`                           | `text-ink-secondary`                                                                                                                                                                                                                 |
+| `text-zinc-500` + `dark:text-zinc-400` _or_ bare `text-zinc-500` | `text-ink-muted`                                                                                                                                                                                                                     |
+| `text-zinc-400` + `dark:text-zinc-600`                           | `text-ink-subtle`                                                                                                                                                                                                                    |
+| bare `text-zinc-400` (no dark partner)                           | `text-ink-muted` — NOT `text-ink-subtle`; `-subtle`'s dark value (`zinc-600`) drops a bare zinc-400 from ~8:1 to ~2.6:1 contrast, below WCAG AA. Found and fixed at 15 sites in [design-system-audit.md](../design-system-audit.md). |
+| `text-emerald-600` + `dark:text-emerald-400`                     | `text-positive`                                                                                                                                                                                                                      |
+| `bg-emerald-100` + `dark:bg-emerald-950`                         | `bg-positive-surface`                                                                                                                                                                                                                |
+| `bg-emerald-50`                                                  | `bg-positive-surface-soft`                                                                                                                                                                                                           |
+| `border-emerald-500` + `dark:border-emerald-700`                 | `border-positive-line`                                                                                                                                                                                                               |
+| `text-emerald-700` + `dark:text-emerald-400`                     | `text-positive-on-surface`                                                                                                                                                                                                           |
+| `text-red-600` + `dark:text-red-400`                             | `text-negative`                                                                                                                                                                                                                      |
+| `bg-red-100` + `dark:bg-red-950`                                 | `bg-negative-surface`                                                                                                                                                                                                                |
+| `bg-red-50` + `dark:bg-red-950/30`                               | `bg-negative-surface-soft`                                                                                                                                                                                                           |
+| `border-red-200/300/400` + `dark:border-red-600/800/900`         | `border-negative-line`                                                                                                                                                                                                               |
+| `text-red-700` _or_ `text-red-800`                               | `text-negative-on-surface`                                                                                                                                                                                                           |
+| `text-red-700` + `dark:text-red-400`                             | `text-negative-on-surface` (not `text-negative` — 700/400 is the exact on-surface pair, same pattern as the amber-700 fix above)                                                                                                     |
+| `text-amber-600` + `dark:text-amber-400`                         | `text-caution`                                                                                                                                                                                                                       |
+| `text-amber-600` (bare)                                          | `text-caution`                                                                                                                                                                                                                       |
+| `bg-amber-100` + `dark:bg-amber-950`                             | `bg-caution-surface`                                                                                                                                                                                                                 |
+| `bg-amber-50` + `dark:bg-amber-950/20`                           | `bg-caution-surface-soft`                                                                                                                                                                                                            |
+| `border-amber-200/300/700` + `dark:border-amber-800/900`         | `border-caution-line`                                                                                                                                                                                                                |
+| `text-amber-700` _or_ `text-amber-800` _or_ `text-amber-900`     | `text-caution-on-surface`                                                                                                                                                                                                            |
+| `hover:text-red-600`                                             | `hover:text-negative`                                                                                                                                                                                                                |
+| `text-emerald-600` (bare)                                        | `text-positive`                                                                                                                                                                                                                      |
+| `text-rose-600` (bare) _or_ `hover:text-rose-600`                | `text-negative` _or_ `hover:text-negative`                                                                                                                                                                                           |
+| `shadow-[0_-8px_24px_rgba(0,0,0,0.06)]`                          | `shadow-slip`                                                                                                                                                                                                                        |
 
 **One class deliberately absent from the table:** `bg-zinc-800`, which appears twice. Read both
 call sites — each is a dark-mode-only fill whose light partner is `bg-zinc-100`, so both are
@@ -1631,7 +1705,7 @@ nothing downstream needs these, but the reasoning stays useful):**
   ~5.3:1 (light) and ~5.6:1 (dark) and was used instead, trading the original's bold solid-red
   weight for a softer tinted fill that stays legible in both themes.
 - The `admin/events/page.tsx` disputed-queue `<Link>` became `<Link className="block"><Callout
-  tone="caution">…</Callout></Link>` — Callout renders a `<div>`, so the anchor keeps the click
+tone="caution">…</Callout></Link>` — Callout renders a `<div>`, so the anchor keeps the click
   target and `className="block"` keeps it laid out as one. The original's
   `hover:border-amber-300`/`dark:hover:border-amber-700` hover feedback has no semantic
   `-caution-line-hover` token and was dropped rather than invented, matching the brief's
@@ -1667,12 +1741,14 @@ Every member-facing screen renders inside these three files, so a mistake here i
 everywhere. That is the reason they go first rather than last.
 
 **Files:**
+
 - Modify: `src/app/(app)/layout.tsx`
 - Modify: `src/components/ui/tab-bar.tsx`
 - Modify: `src/components/bet-slip/bet-slip.tsx`
 - Modify: `src/app/__tests__/token-lint.test.ts` (delete three baseline entries)
 
 **Interfaces:**
+
 - Consumes: `Button` (Task 4), the utilities from Task 1.
 - Produces: nothing new.
 
@@ -1684,7 +1760,7 @@ everywhere. That is the reason they go first rather than last.
    correct — but if you find yourself editing anything other than a colour class in
    `tab-bar.tsx`, stop.
 2. `bottom-[calc(41px+env(safe-area-inset-bottom))]` is an arbitrary value but not an arbitrary
-   *colour*, so the lint rule does not flag it and it must survive the sweep unchanged. This is
+   _colour_, so the lint rule does not flag it and it must survive the sweep unchanged. This is
    the fix for the mobile audit's blocks-use finding; deleting it makes all six tab links
    untappable whenever a bet is selected.
 
@@ -1712,14 +1788,14 @@ dark:bg-zinc-900` → `border-line-strong bg-surface-raised`. The error and succ
 Then replace the two controls with `Button`, which is what Task 4's radius note was about:
 
 ```tsx
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={slip.clear} className="flex-1">
-              Clear
-            </Button>
-            <Button onClick={submit} disabled={pending} className="flex-[2]">
-              {pending ? 'Placing…' : 'Place bet'}
-            </Button>
-          </div>
+<div className="flex gap-2">
+  <Button variant="secondary" onClick={slip.clear} className="flex-1">
+    Clear
+  </Button>
+  <Button onClick={submit} disabled={pending} className="flex-[2]">
+    {pending ? 'Placing…' : 'Place bet'}
+  </Button>
+</div>
 ```
 
 The `h-11` is now `Button`'s `md` size, and `flex-1` / `flex-[2]` pass through `className`.
@@ -1733,6 +1809,7 @@ Remove `'src/app/(app)/layout.tsx',`, `'src/components/ui/tab-bar.tsx',` and
 ```bash
 npm run verify
 ```
+
 Expected: green.
 
 - [ ] **Step 5: Check the thing that broke last time**
@@ -1740,6 +1817,7 @@ Expected: green.
 ```bash
 npm run dev
 ```
+
 On `/games` at a 375px viewport, select any odds button so the slip appears, then tap each of
 the six tab-bar links. All six must navigate. If any does not, the slip's `bottom-[calc(...)]`
 was altered. Stop the server.
@@ -1764,12 +1842,14 @@ MSG
 ### Task 9: Sweep — games, me, and member profiles
 
 **Files:**
+
 - Modify: `src/app/(app)/games/page.tsx`, `src/app/(app)/games/game-card.tsx`
 - Modify: `src/app/(app)/me/page.tsx`
 - Modify: `src/app/(app)/members/[membershipId]/page.tsx`
 - Modify: `src/app/__tests__/token-lint.test.ts` (delete four baseline entries)
 
 **Interfaces:**
+
 - Consumes: `Card` (Task 5), `Line` and `Price` (Task 7).
 - Produces: nothing new.
 
@@ -1800,6 +1880,7 @@ Remove `'src/app/(app)/games/page.tsx',`, `'src/app/(app)/games/game-card.tsx',`
 ```bash
 npm run verify
 ```
+
 Expected: green.
 
 ```bash
@@ -1822,11 +1903,13 @@ MSG
 Carries declared change 2: the four disclosure chips that have never had a dark treatment.
 
 **Files:**
+
 - Modify: `src/app/(app)/feed/page.tsx`, `src/app/(app)/feed/feed-card.tsx`, `src/app/(app)/feed/feed-list.tsx`
 - Modify: `src/app/(app)/feed/[eventId]/comment-thread.tsx`
 - Modify: `src/app/__tests__/token-lint.test.ts` (delete four baseline entries)
 
 **Interfaces:**
+
 - Consumes: `Badge` and `statusTone` (Task 7), `Card` (Task 5), `Button` (Task 4).
 - Produces: nothing new.
 
@@ -1857,6 +1940,7 @@ and use the grep from the sweep preamble to confirm nothing is left.
 ```bash
 npm run verify
 ```
+
 Expected: green.
 
 ```bash
@@ -1880,11 +1964,13 @@ MSG
 Both `SegmentedControl` call sites live here.
 
 **Files:**
+
 - Modify: `src/app/(app)/bets/page.tsx`
 - Modify: `src/app/(app)/wagers/page.tsx`, `src/app/(app)/wagers/new/wager-form.tsx`, `src/app/(app)/wagers/[wagerId]/page.tsx`, `src/app/(app)/wagers/[wagerId]/wager-actions.tsx`
 - Modify: `src/app/__tests__/token-lint.test.ts` (delete five baseline entries)
 
 **Interfaces:**
+
 - Consumes: `SegmentedControl` and `FormField` (Task 6), `Button` and `buttonClasses` (Task 4),
   `Card` (Task 5), `Badge`/`StatusBadge` (Task 7), `Callout` (Task 5).
 - Produces: nothing new.
@@ -1896,25 +1982,25 @@ Both `SegmentedControl` call sites live here.
 ```tsx
 import { SegmentedControl } from '@/components/ui/segmented-control';
 // …
-  const sectionLinks = (
-    <SegmentedControl
-      label="Bets or wagers"
-      segments={[
-        { href: '/bets', label: 'Bets', active: true },
-        { href: '/wagers', label: 'Wagers', active: false },
-      ]}
-    />
-  );
+const sectionLinks = (
+  <SegmentedControl
+    label="Bets or wagers"
+    segments={[
+      { href: '/bets', label: 'Bets', active: true },
+      { href: '/wagers', label: 'Wagers', active: false },
+    ]}
+  />
+);
 
-  const filterLinks = (
-    <SegmentedControl
-      label="Currency"
-      segments={[
-        { href: '/bets', label: 'Cash', active: filterCurrency === 'CASH' },
-        { href: '/bets?currency=CREDITS', label: 'Credits', active: filterCurrency === 'CREDITS' },
-      ]}
-    />
-  );
+const filterLinks = (
+  <SegmentedControl
+    label="Currency"
+    segments={[
+      { href: '/bets', label: 'Cash', active: filterCurrency === 'CASH' },
+      { href: '/bets?currency=CREDITS', label: 'Credits', active: filterCurrency === 'CREDITS' },
+    ]}
+  />
+);
 ```
 
 - [ ] **Step 2: Replace the mirrored control on `/wagers`**
@@ -1922,13 +2008,13 @@ import { SegmentedControl } from '@/components/ui/segmented-control';
 `src/app/(app)/wagers/page.tsx` has the same pair with `active` reversed:
 
 ```tsx
-    <SegmentedControl
-      label="Bets or wagers"
-      segments={[
-        { href: '/bets', label: 'Bets', active: false },
-        { href: '/wagers', label: 'Wagers', active: true },
-      ]}
-    />
+<SegmentedControl
+  label="Bets or wagers"
+  segments={[
+    { href: '/bets', label: 'Bets', active: false },
+    { href: '/wagers', label: 'Wagers', active: true },
+  ]}
+/>
 ```
 
 Its "Offer a wager" link becomes `className={buttonClasses('primary')}` — note this drops
@@ -1945,6 +2031,7 @@ error block.
 ```bash
 npm run verify
 ```
+
 Expected: green.
 
 ```bash
@@ -1968,12 +2055,14 @@ The largest group: five files, four of them forms, and the densest concentration
 colours in the app.
 
 **Files:**
+
 - Modify: `src/app/(app)/events/page.tsx`, `src/app/(app)/events/new/event-form.tsx`
 - Modify: `src/app/(app)/events/[eventId]/page.tsx`, `src/app/(app)/events/[eventId]/market-card.tsx`, `src/app/(app)/events/[eventId]/dispute-form.tsx`
 - Modify: `src/app/(app)/events/[eventId]/resolve/page.tsx`, `src/app/(app)/events/[eventId]/resolve/resolve-form.tsx`
 - Modify: `src/app/__tests__/token-lint.test.ts` (delete seven baseline entries)
 
 **Interfaces:**
+
 - Consumes: `FormField` (Task 6), `Callout` (Task 5), `Button` (Task 4), `Card` (Task 5),
   `Badge` (Task 7).
 - Produces: nothing new.
@@ -1992,8 +2081,7 @@ const fieldErrorClass =
 become:
 
 ```tsx
-const fieldClass =
-  'rounded-card border border-line-strong bg-surface-raised px-3 py-2 text-sm';
+const fieldClass = 'rounded-card border border-line-strong bg-surface-raised px-3 py-2 text-sm';
 const fieldErrorClass =
   'rounded-card border border-negative-line bg-surface-raised px-3 py-2 text-sm';
 ```
@@ -2022,6 +2110,7 @@ Apply the mapping table. `[eventId]/page.tsx` has the amber disclosure section
 ```bash
 npm run verify
 ```
+
 Expected: green.
 
 ```bash
@@ -2039,10 +2128,12 @@ MSG
 ### Task 13: Sweep — admin, and the baseline reaches zero
 
 **Files:**
+
 - Modify: `src/app/admin/page.tsx`, `src/app/admin/events/page.tsx`, `src/app/admin/events/void-form.tsx`, `src/app/admin/wagers/page.tsx`, `src/app/admin/wagers/arbitration-form.tsx`
 - Modify: `src/app/__tests__/token-lint.test.ts` (delete the last five entries)
 
 **Interfaces:**
+
 - Consumes: `Callout` (Task 5), `Button` (Task 4), `Card` (Task 5), `Badge` (Task 7).
 - Produces: nothing new.
 
@@ -2079,6 +2170,7 @@ than inventing a worse one.
 grep -rnE 'dark:|-(zinc|slate|gray|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-[0-9]{2,3}|-(white|black)\b' src --include=*.tsx \
   | grep -vE 'icon\.tsx|apple-icon\.tsx|global-error\.tsx|token-lint\.test\.ts'
 ```
+
 Expected: **no output.** Any line here is a file the lint should have caught; if the grep finds
 something the test did not, the test's regex has a gap — widen it rather than special-casing
 the file.
@@ -2088,6 +2180,7 @@ the file.
 ```bash
 npm run verify
 ```
+
 Expected: green.
 
 ```bash
@@ -2107,15 +2200,17 @@ MSG
 
 ### Task 14: The browser audit
 
-The token lint cannot see a token used in the wrong *role* — `bg-surface-muted` where
+The token lint cannot see a token used in the wrong _role_ — `bg-surface-muted` where
 `bg-surface-sunken` was meant renders wrong and passes green. This task is what catches that,
 which is why the spec makes it a success criterion rather than a nicety.
 
 **Files:**
+
 - Create: `docs/design-system-audit.md`
 - Modify: whichever files the audit finds bugs in
 
 **Interfaces:**
+
 - Consumes: everything.
 - Produces: `docs/design-system-audit.md`, which 7c reads as its starting point.
 
@@ -2208,6 +2303,7 @@ MSG
 ### Task 15: Close out the phase
 
 **Files:**
+
 - Modify: `docs/roadmap.md`
 - Modify: `docs/README.md`
 - Modify: `README.md`
@@ -2250,6 +2346,7 @@ figures — this phase adds two test files.
 ```bash
 npm run verify && npm run build
 ```
+
 Expected: both green.
 
 - [ ] **Step 6: Commit and push**

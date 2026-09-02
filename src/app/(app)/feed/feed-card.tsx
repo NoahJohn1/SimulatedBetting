@@ -28,7 +28,10 @@ import type { SerializedFeedCard } from './actions';
 /** "Fri 8pm" — a compact close/resolve-by time, matching the copy in the brief's feed table. */
 function formatDeadline(iso: string): string {
   const date = new Date(iso);
-  const weekday = date.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/New_York' });
+  const weekday = date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    timeZone: 'America/New_York',
+  });
   const timeOpts: Intl.DateTimeFormatOptions = { hour: 'numeric', timeZone: 'America/New_York' };
   if (date.getMinutes() !== 0) timeOpts.minute = '2-digit';
   const time = date.toLocaleTimeString('en-US', timeOpts).replace(' ', '').toLowerCase();
@@ -96,8 +99,18 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
       return (
         <div className="flex flex-col gap-1">
           <p className="text-sm">
-            bet <Money cents={BigInt(bet.stakeCents)} currency={bet.currency} className="font-semibold" /> to win{' '}
-            <Money cents={BigInt(bet.potentialPayoutCents)} currency={bet.currency} className="font-semibold" />
+            bet{' '}
+            <Money
+              cents={BigInt(bet.stakeCents)}
+              currency={bet.currency}
+              className="font-semibold"
+            />{' '}
+            to win{' '}
+            <Money
+              cents={BigInt(bet.potentialPayoutCents)}
+              currency={bet.currency}
+              className="font-semibold"
+            />
           </p>
           <ul className="flex flex-col gap-0.5 text-sm text-ink-secondary">
             {bet.legs.map((leg, i) => (
@@ -125,9 +138,17 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
           <p className="text-sm">
             {verb}{' '}
             {bet.outcome === 'LOST' ? (
-              <Money cents={BigInt(bet.stakeCents)} currency={bet.currency} className="font-semibold" />
+              <Money
+                cents={BigInt(bet.stakeCents)}
+                currency={bet.currency}
+                className="font-semibold"
+              />
             ) : (
-              <Money cents={BigInt(bet.payoutCents)} currency={bet.currency} className="font-semibold" />
+              <Money
+                cents={BigInt(bet.payoutCents)}
+                currency={bet.currency}
+                className="font-semibold"
+              />
             )}
             {net !== 0n ? (
               <span className={net > 0n ? 'text-positive' : 'text-negative'}>
@@ -157,7 +178,8 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
       const joined = payload as MemberJoinedPayload;
       return (
         <p className="text-sm">
-          joined with <Money cents={BigInt(joined.startingBankrollCents)} className="font-semibold" />
+          joined with{' '}
+          <Money cents={BigInt(joined.startingBankrollCents)} className="font-semibold" />
         </p>
       );
     }
@@ -206,8 +228,9 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
       const currency = win.currency ?? 'CASH';
       return (
         <p className="text-sm">
-          cashed <span className="font-semibold">{(win.multipleBasisPoints / 10_000).toFixed(1)}×</span>{' '}
-          · <Money cents={BigInt(win.stakeCents)} currency={currency} /> →{' '}
+          cashed{' '}
+          <span className="font-semibold">{(win.multipleBasisPoints / 10_000).toFixed(1)}×</span> ·{' '}
+          <Money cents={BigInt(win.stakeCents)} currency={currency} /> →{' '}
           <Money cents={BigInt(win.payoutCents)} currency={currency} />
         </p>
       );
@@ -275,9 +298,8 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
       const overdue = payload as CustomEventOverduePayload;
       return (
         <p className="text-sm">
-          <EventTitleLink eventId={overdue.eventId} title={overdue.title} /> is past its
-          resolve-by date · {overdue.openBetCount} {overdue.openBetCount === 1 ? 'bet' : 'bets'}{' '}
-          open
+          <EventTitleLink eventId={overdue.eventId} title={overdue.title} /> is past its resolve-by
+          date · {overdue.openBetCount} {overdue.openBetCount === 1 ? 'bet' : 'bets'} open
         </p>
       );
     }
@@ -287,9 +309,17 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
       return (
         <p className="text-sm">
           is offering{' '}
-          <Money cents={BigInt(offered.offererStakeCents)} currency="CREDITS" className="font-semibold" />{' '}
+          <Money
+            cents={BigInt(offered.offererStakeCents)}
+            currency="CREDITS"
+            className="font-semibold"
+          />{' '}
           against{' '}
-          <Money cents={BigInt(offered.acceptorStakeCents)} currency="CREDITS" className="font-semibold" />{' '}
+          <Money
+            cents={BigInt(offered.acceptorStakeCents)}
+            currency="CREDITS"
+            className="font-semibold"
+          />{' '}
           credits — {offered.directed ? 'a direct challenge' : 'open to the season'}:{' '}
           {offered.description ?? offered.subject}
         </p>
@@ -300,7 +330,8 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
       const accepted = payload as P2PAcceptedPayload;
       return (
         <p className="text-sm">
-          took it. <Money cents={BigInt(accepted.potCents)} currency="CREDITS" className="font-semibold" />{' '}
+          took it.{' '}
+          <Money cents={BigInt(accepted.potCents)} currency="CREDITS" className="font-semibold" />{' '}
           credits on the line: {accepted.subject}
         </p>
       );
@@ -315,7 +346,8 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
               Corrected
             </Badge>
           ) : null}
-          took the <Money cents={BigInt(settled.potCents)} currency="CREDITS" className="font-semibold" />{' '}
+          took the{' '}
+          <Money cents={BigInt(settled.potCents)} currency="CREDITS" className="font-semibold" />{' '}
           pot: {settled.subject}
           {settled.byArbitration ? <span className="italic"> — settled by an admin</span> : null}
         </p>
@@ -344,8 +376,12 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
       return (
         <p className="text-sm">
           {voided.subject} was called off — {reasonText};{' '}
-          <Money cents={BigInt(voided.refundedCents)} currency="CREDITS" className="font-semibold" /> credits
-          went back
+          <Money
+            cents={BigInt(voided.refundedCents)}
+            currency="CREDITS"
+            className="font-semibold"
+          />{' '}
+          credits went back
           {voided.attempt > 1 ? (
             <Badge tone="caution" className="ml-2">
               correction

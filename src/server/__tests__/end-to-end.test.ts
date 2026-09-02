@@ -367,12 +367,7 @@ describe('end to end', () => {
         .where(eq(ledgerEntries.betId, creatorBet.bet.id))
         .orderBy(asc(ledgerEntries.createdAt))
     ).map((r) => r.type);
-    expect(creatorEntryTypes).toEqual([
-      'BET_PLACED',
-      'BET_WON',
-      'SETTLEMENT_REVERSAL',
-      'BET_WON',
-    ]);
+    expect(creatorEntryTypes).toEqual(['BET_PLACED', 'BET_WON', 'SETTLEMENT_REVERSAL', 'BET_WON']);
 
     // 7. The feed tells the same story, in order.
     const feedTypes = (
@@ -480,10 +475,7 @@ describe('the peer-to-peer arc', () => {
     expect(await credits(offerer.membership.id)).toBe(50_000n);
     expect(await credits(acceptor.membership.id)).toBe(150_000n);
 
-    const [wager] = await db
-      .select()
-      .from(p2pWagers)
-      .where(eq(p2pWagers.id, offered.wagerId));
+    const [wager] = await db.select().from(p2pWagers).where(eq(p2pWagers.id, offered.wagerId));
     expect(wager.status).toBe('SETTLED');
     expect(wager.verdict).toBe('ACCEPTOR');
     expect(wager.settlementAttempts).toBe(2);

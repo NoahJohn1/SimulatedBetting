@@ -7,42 +7,42 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 
 ### Active
 
-| Document | What's in it |
-|---|---|
-| [Roadmap](roadmap.md) | The master status table — every item, done or not, with who finishes what's left |
-| [Repo health](repo-health.md) | The CI gate, repo hygiene, Claude Code tooling, and issue tracking — with what is deliberately skipped at this project's size |
-| [Mobile audit](mobile-audit.md) | Every screen at 375×812, with each finding assigned to the ladder rung that owns its fix |
-| [Design-system audit](design-system-audit.md) | All 18 routes in both themes at two viewports, after the 7b sweep, with each remaining finding assigned to a rung |
-| [Repo health plan](plans/2026-08-20-repo-health-implementation-plan.md) | The task-by-task plan for the repo health work, written for parallel execution |
-| [Cloud lane spec](specs/2026-09-02-cloud-lane-completion-design.md) | Closing every [CLOUD] item in repo health — the cron guard, the funnel guard test, the CI chore, both hooks, and Prettier |
-| [Cloud lane plan](plans/2026-09-02-cloud-lane-completion-implementation-plan.md) | The task-by-task plan for that work |
-| [Docs status and archive spec](specs/2026-09-02-docs-status-and-archive-design.md) | The owner taxonomy, the roadmap's master table, and what moved to the archive |
-| [Docs status and archive plan](plans/2026-09-02-docs-status-and-archive-implementation-plan.md) | The task-by-task plan for that restructure |
+| Document                                                                                        | What's in it                                                                                                                  |
+| ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| [Roadmap](roadmap.md)                                                                           | The master status table — every item, done or not, with who finishes what's left                                              |
+| [Repo health](repo-health.md)                                                                   | The CI gate, repo hygiene, Claude Code tooling, and issue tracking — with what is deliberately skipped at this project's size |
+| [Mobile audit](mobile-audit.md)                                                                 | Every screen at 375×812, with each finding assigned to the ladder rung that owns its fix                                      |
+| [Design-system audit](design-system-audit.md)                                                   | All 18 routes in both themes at two viewports, after the 7b sweep, with each remaining finding assigned to a rung             |
+| [Repo health plan](plans/2026-08-20-repo-health-implementation-plan.md)                         | The task-by-task plan for the repo health work, written for parallel execution                                                |
+| [Cloud lane spec](specs/2026-09-02-cloud-lane-completion-design.md)                             | Closing every [CLOUD] item in repo health — the cron guard, the funnel guard test, the CI chore, both hooks, and Prettier     |
+| [Cloud lane plan](plans/2026-09-02-cloud-lane-completion-implementation-plan.md)                | The task-by-task plan for that work                                                                                           |
+| [Docs status and archive spec](specs/2026-09-02-docs-status-and-archive-design.md)              | The owner taxonomy, the roadmap's master table, and what moved to the archive                                                 |
+| [Docs status and archive plan](plans/2026-09-02-docs-status-and-archive-implementation-plan.md) | The task-by-task plan for that restructure                                                                                    |
 
 ### Reference
 
-| Document | What's in it |
-|---|---|
-| [Core betting engine spec](specs/2026-08-14-core-betting-engine-design.md) | The v1 build: architecture, data model, odds math, grading rules, jobs, failure handling, screens, testing |
-| [Social layer spec](specs/2026-08-17-social-layer-design.md) | Subsystem 2: the season activity feed, reactions and comments, member profiles, per-viewer feed filters |
-| [Custom events spec](specs/2026-08-17-custom-events-design.md) | Subsystem 3: member-created markets, the credits currency, human resolution and disputes |
-| [Peer-to-peer bets spec](specs/2026-08-19-peer-to-peer-bets-design.md) | Subsystem 4: member-vs-member wagers, escrow, two-party resolution, admin arbitration, head-to-head |
-| [UI foundations spec](specs/2026-08-22-ui-foundations-design.md) | Phase 7a: error, not-found, and loading boundaries inside the app shell; metadata, icons, and the web manifest |
-| [Design system spec](specs/2026-08-24-design-system-design.md) | Phase 7b: the two-tier token layer, dark mode as a remap, the shared component set, and the sweep |
-| [Decision log](decisions.md) | Every design decision, what was rejected, and why |
+| Document                                                                   | What's in it                                                                                                   |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| [Core betting engine spec](specs/2026-08-14-core-betting-engine-design.md) | The v1 build: architecture, data model, odds math, grading rules, jobs, failure handling, screens, testing     |
+| [Social layer spec](specs/2026-08-17-social-layer-design.md)               | Subsystem 2: the season activity feed, reactions and comments, member profiles, per-viewer feed filters        |
+| [Custom events spec](specs/2026-08-17-custom-events-design.md)             | Subsystem 3: member-created markets, the credits currency, human resolution and disputes                       |
+| [Peer-to-peer bets spec](specs/2026-08-19-peer-to-peer-bets-design.md)     | Subsystem 4: member-vs-member wagers, escrow, two-party resolution, admin arbitration, head-to-head            |
+| [UI foundations spec](specs/2026-08-22-ui-foundations-design.md)           | Phase 7a: error, not-found, and loading boundaries inside the app shell; metadata, icons, and the web manifest |
+| [Design system spec](specs/2026-08-24-design-system-design.md)             | Phase 7b: the two-tier token layer, dark mode as a remap, the shared component set, and the sweep              |
+| [Decision log](decisions.md)                                               | Every design decision, what was rejected, and why                                                              |
 
 ### Archive
 
 Finished implementation plans, moved rather than deleted — each is the record of how its
 subsystem was built.
 
-| Document | What shipped |
-|---|---|
-| [Social layer plan](archive/plans/2026-08-17-social-layer-implementation-plan.md) | Subsystem 2 — shipped |
-| [Custom events plan](archive/plans/2026-08-17-custom-events-implementation-plan.md) | Subsystem 3 — shipped |
+| Document                                                                                    | What shipped          |
+| ------------------------------------------------------------------------------------------- | --------------------- |
+| [Social layer plan](archive/plans/2026-08-17-social-layer-implementation-plan.md)           | Subsystem 2 — shipped |
+| [Custom events plan](archive/plans/2026-08-17-custom-events-implementation-plan.md)         | Subsystem 3 — shipped |
 | [Peer-to-peer bets plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md) | Subsystem 4 — shipped |
-| [UI foundations plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) | Phase 7a — shipped |
-| [Design system plan](archive/plans/2026-08-24-design-system-implementation-plan.md) | Phase 7b — shipped |
+| [UI foundations plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md)       | Phase 7a — shipped    |
+| [Design system plan](archive/plans/2026-08-24-design-system-implementation-plan.md)         | Phase 7b — shipped    |
 
 ## The short version
 
@@ -160,41 +160,41 @@ Every open item from [the roadmap](roadmap.md#roadmap) and
 
 #### What a cloud session can pick up now
 
-| Item | Source |
-|---|---|
-| Uncomment the cron `schedule:`, add the empty-secret guard | repo health 3 |
-| Ledger-funnel guard test | repo health 4 |
-| `.nvmrc` | repo health 6 |
-| CI: `build`, `concurrency`, `timeout-minutes` | repo health 7 |
-| Dependabot config | repo health 8 |
-| `.env.test` note in the README | repo health 9 |
-| 7c component work — `Dialog`, `Sheet`, `Table`, `Toast`, `Card`'s element escape hatch | roadmap 7c |
-| 7c layout fixes from the mobile audit | roadmap 7c |
-| Rate limiting, house rules page, the new-member path | roadmap 9 |
+| Item                                                                                   | Source        |
+| -------------------------------------------------------------------------------------- | ------------- |
+| Uncomment the cron `schedule:`, add the empty-secret guard                             | repo health 3 |
+| Ledger-funnel guard test                                                               | repo health 4 |
+| `.nvmrc`                                                                               | repo health 6 |
+| CI: `build`, `concurrency`, `timeout-minutes`                                          | repo health 7 |
+| Dependabot config                                                                      | repo health 8 |
+| `.env.test` note in the README                                                         | repo health 9 |
+| 7c component work — `Dialog`, `Sheet`, `Table`, `Toast`, `Card`'s element escape hatch | roadmap 7c    |
+| 7c layout fixes from the mobile audit                                                  | roadmap 7c    |
+| Rate limiting, house rules page, the new-member path                                   | roadmap 9     |
 
 #### What needs a desktop with Docker
 
-| Item | Source |
-|---|---|
+| Item                                                           | Source        |
+| -------------------------------------------------------------- | ------------- |
 | `session-start` hook — only a laptop can prove the Docker path | repo health 5 |
-| Load sanity at real row counts | roadmap 9 |
+| Load sanity at real row counts                                 | roadmap 9     |
 
 #### What needs Noah
 
-| Item | Source |
-|---|---|
+| Item                                                                                               | Source        |
+| -------------------------------------------------------------------------------------------------- | ------------- |
 | `APP_URL` and `CRON_SECRET` as Actions secrets — **the app is not settling bets until this lands** | repo health 1 |
-| Dispatch both cron jobs by hand, confirm 200 | repo health 2 |
-| Hosted Postgres, Sentry signup, alerting destination | roadmap 6 |
-| Email provider signup and sending-domain DNS | roadmap 8 |
+| Dispatch both cron jobs by hand, confirm 200                                                       | repo health 2 |
+| Hosted Postgres, Sentry signup, alerting destination                                               | roadmap 6     |
+| Email provider signup and sending-domain DNS                                                       | roadmap 8     |
 
 #### What needs a person, either of you
 
-| Item | Source |
-|---|---|
-| **The human test pass** — the gate on phase 5 | both |
-| Merging Dependabot PRs | repo health 8 |
-| Confirming a real email renders | roadmap 8 |
+| Item                                          | Source        |
+| --------------------------------------------- | ------------- |
+| **The human test pass** — the gate on phase 5 | both          |
+| Merging Dependabot PRs                        | repo health 8 |
+| Confirming a real email renders               | roadmap 8     |
 
 ## Conventions
 

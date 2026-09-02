@@ -44,7 +44,10 @@ function single(userId: string, selectionId: string, line: string | null): Place
   };
 }
 
-function parlay(userId: string, legs: { selectionId: string; line: string | null }[]): PlaceBetInput {
+function parlay(
+  userId: string,
+  legs: { selectionId: string; line: string | null }[],
+): PlaceBetInput {
   return {
     userId,
     type: 'PARLAY',

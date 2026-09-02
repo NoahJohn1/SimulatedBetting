@@ -84,7 +84,9 @@ export function quotePlacement(
 
 function isBettable(selection: LoadedSelection, now: Date): boolean {
   const open =
-    selection.kind === 'GAME' ? selection.eventStatus === 'SCHEDULED' : selection.eventStatus === 'OPEN';
+    selection.kind === 'GAME'
+      ? selection.eventStatus === 'SCHEDULED'
+      : selection.eventStatus === 'OPEN';
   return open && selection.eventStartsAt > now;
 }
 
@@ -208,7 +210,11 @@ export function validatePlacement(
 
   // 4. Stake
   if (input.stakeCents < MIN_STAKE_CENTS) {
-    return { code: 'STAKE_BELOW_MINIMUM', stakeCents: input.stakeCents, minimumCents: MIN_STAKE_CENTS };
+    return {
+      code: 'STAKE_BELOW_MINIMUM',
+      stakeCents: input.stakeCents,
+      minimumCents: MIN_STAKE_CENTS,
+    };
   }
   const available =
     derived.currency === 'CASH' ? ctx.membership.balanceCents : ctx.membership.creditsBalanceCents;

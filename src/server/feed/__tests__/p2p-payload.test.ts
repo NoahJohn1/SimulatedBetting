@@ -46,10 +46,7 @@ describe('p2p feed payloads', () => {
       }),
     );
 
-    const [card] = await db
-      .select()
-      .from(feedEvents)
-      .where(eq(feedEvents.type, 'P2P_OFFERED'));
+    const [card] = await db.select().from(feedEvents).where(eq(feedEvents.type, 'P2P_OFFERED'));
 
     expect(card.dedupeKey).toBe(`p2p:${wager.id}:offered`);
     expect(card.payload).toMatchObject({ potCents: '70000', directed: false });

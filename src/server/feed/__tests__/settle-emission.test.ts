@@ -33,10 +33,7 @@ describe('settleGame feed emission', () => {
     await finalize(game.game.id, 27, 20);
     await settleGame(game.game.id);
 
-    const settled = await db
-      .select()
-      .from(feedEvents)
-      .where(eq(feedEvents.type, 'BET_SETTLED'));
+    const settled = await db.select().from(feedEvents).where(eq(feedEvents.type, 'BET_SETTLED'));
 
     expect(settled).toHaveLength(1);
     expect(settled[0].dedupeKey).toBe(`bet:${placed.bet.id}:settled:1`);

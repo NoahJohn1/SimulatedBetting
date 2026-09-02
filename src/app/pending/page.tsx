@@ -19,8 +19,8 @@ export default async function PendingPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Waiting for approval</h1>
         <p className="mt-3 max-w-sm text-balance text-sm text-ink-muted">
-          You&rsquo;re signed in as {user.email}. An admin needs to approve your account before
-          you can place bets.
+          You&rsquo;re signed in as {user.email}. An admin needs to approve your account before you
+          can place bets.
         </p>
       </div>
       <form

@@ -46,8 +46,7 @@ export type CancelOfferError =
   | { code: 'NOT_AUTHORIZED' };
 
 export type CancelOfferResult =
-  | { ok: true; refundedCents: bigint }
-  | { ok: false; error: CancelOfferError };
+  { ok: true; refundedCents: bigint } | { ok: false; error: CancelOfferError };
 
 export interface AcceptWagerInput {
   wagerId: string;
@@ -115,5 +114,4 @@ export type ArbitrateError =
   | { code: 'NOT_ARBITRABLE'; status: P2PWagerStatus };
 
 export type ArbitrateWagerResult =
-  | { ok: true; attempt: number; paidCents: bigint }
-  | { ok: false; error: ArbitrateError };
+  { ok: true; attempt: number; paidCents: bigint } | { ok: false; error: ArbitrateError };

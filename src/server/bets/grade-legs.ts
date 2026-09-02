@@ -1,12 +1,25 @@
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import type { Tx } from '@/db/client';
-import { betLegs, bets, seasonMemberships, type BetStatus, type Currency, type LedgerEntryType } from '@/db/schema';
+import {
+  betLegs,
+  bets,
+  seasonMemberships,
+  type BetStatus,
+  type Currency,
+  type LedgerEntryType,
+} from '@/db/schema';
 import { gradeParlay, settledPayoutCents } from '@/domain/grading';
 import type { LegStatus } from '@/domain/grading';
 import { isBigWin, isParlayHit, multipleBasisPoints, survivingLegCount } from '@/domain/milestones';
 import { emitFeedEvent } from '@/server/feed/emit';
 import { postEntry } from '@/server/money/ledger';
-import type { BetSettledPayload, BigWinPayload, FeedLegSnapshot, LegOutcome, ParlayHitPayload } from '@/server/feed/payload';
+import type {
+  BetSettledPayload,
+  BigWinPayload,
+  FeedLegSnapshot,
+  LegOutcome,
+  ParlayHitPayload,
+} from '@/server/feed/payload';
 
 const ENTRY_TYPE_FOR_STATUS: Partial<Record<BetStatus, LedgerEntryType>> = {
   WON: 'BET_WON',

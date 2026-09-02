@@ -20,8 +20,7 @@ export function gradeCustomLeg(input: {
 }
 
 export type CurrencyForKindsResult =
-  | { ok: true; currency: Currency }
-  | { ok: false; gameIndexes: number[]; customIndexes: number[] };
+  { ok: true; currency: Currency } | { ok: false; gameIndexes: number[]; customIndexes: number[] };
 
 /**
  * Derives the currency a slip must be placed in, from the kinds of its legs.

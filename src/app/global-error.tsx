@@ -4,7 +4,12 @@
 // <html>/<body> rather than relying on layout.tsx — that layout is what would have thrown.
 // Kept dependency-free (no Tailwind classes) since the app's own CSS may be what failed to
 // load in the first place.
-export default function GlobalError({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
+export default function GlobalError({
+  retry,
+}: {
+  error: Error & { digest?: string };
+  retry: () => void;
+}) {
   return (
     <html lang="en">
       <body
@@ -22,7 +27,14 @@ export default function GlobalError({ retry }: { error: Error & { digest?: strin
       >
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Something went wrong</h1>
-          <p style={{ marginTop: '0.75rem', maxWidth: '24rem', fontSize: '0.875rem', color: '#71717a' }}>
+          <p
+            style={{
+              marginTop: '0.75rem',
+              maxWidth: '24rem',
+              fontSize: '0.875rem',
+              color: '#71717a',
+            }}
+          >
             That&rsquo;s on us, not on you. Nothing was lost.
           </p>
         </div>
@@ -30,7 +42,12 @@ export default function GlobalError({ retry }: { error: Error & { digest?: strin
           <button
             type="button"
             onClick={() => retry()}
-            style={{ fontSize: '0.875rem', fontWeight: 500, color: '#71717a', textDecoration: 'underline' }}
+            style={{
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              color: '#71717a',
+              textDecoration: 'underline',
+            }}
           >
             Try again
           </button>
@@ -40,7 +57,12 @@ export default function GlobalError({ retry }: { error: Error & { digest?: strin
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a
             href="/"
-            style={{ fontSize: '0.875rem', fontWeight: 500, color: '#71717a', textDecoration: 'underline' }}
+            style={{
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              color: '#71717a',
+              textDecoration: 'underline',
+            }}
           >
             Back home
           </a>

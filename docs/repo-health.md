@@ -12,18 +12,18 @@ not get re-proposed later.
 
 ## Status at a glance
 
-*Last verified 2026-09-02.*
+_Last verified 2026-09-02._
 
 Every item below carries a **lane** — who or what can actually finish it. The lane is decided by
 what the work needs, not by who can type the file. Four lanes now, not three: `[MANUAL]` splits
 into `[MANUAL]` and `[NOAH]` below, since not every human task needs Noah's specific credentials.
 
-| Lane | Means | Why |
-|---|---|---|
-| **[MANUAL]** | Either of you, by hand | Clicking, reading, judging. No special account needed. |
-| **[NOAH]** | Noah specifically | An account or permission only he holds: GitHub repo settings, the Vercel dashboard, DNS, paid signups. No agent has these credentials, and none should. |
-| **[CLOUD]** | A Claude Code web session, start to finish | Measured 2026-08-25: `npm ci` (21s), `npm run typecheck`, `npm run lint`, `npx next build` and any test that only reads source all run clean in a cloud session. |
-| **[LOCAL]** | Claude on your desktop | Needs Postgres. A cloud session has the `docker` binary but no daemon — `/var/run/docker.sock` does not exist — so anything gated on `npm test` as a whole must run where Docker does. |
+| Lane         | Means                                      | Why                                                                                                                                                                                    |
+| ------------ | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **[MANUAL]** | Either of you, by hand                     | Clicking, reading, judging. No special account needed.                                                                                                                                 |
+| **[NOAH]**   | Noah specifically                          | An account or permission only he holds: GitHub repo settings, the Vercel dashboard, DNS, paid signups. No agent has these credentials, and none should.                                |
+| **[CLOUD]**  | A Claude Code web session, start to finish | Measured 2026-08-25: `npm ci` (21s), `npm run typecheck`, `npm run lint`, `npx next build` and any test that only reads source all run clean in a cloud session.                       |
+| **[LOCAL]**  | Claude on your desktop                     | Needs Postgres. A cloud session has the `docker` binary but no daemon — `/var/run/docker.sock` does not exist — so anything gated on `npm test` as a whole must run where Docker does. |
 
 This document covers repo mechanics. For the product phases — the ESPN adapter, deployment, the
 UI ladder, email, hardening — see [the roadmap's status table](roadmap.md#roadmap).
@@ -31,7 +31,7 @@ UI ladder, email, hardening — see [the roadmap's status table](roadmap.md#road
 One thing that softens the [LOCAL] lane: **CI has Postgres.** A cloud session that opens a pull
 request gets the full suite run against a real database by the `verify` job. So "cloud writes it,
 CI proves it" covers most of what used to need a laptop; the local lane is for work that has to be
-*exercised* locally, like a session hook.
+_exercised_ locally, like a session hook.
 
 These map onto the H / C / L lanes in the
 [implementation plan](plans/2026-08-20-repo-health-implementation-plan.md) — H is [MANUAL], C is
@@ -41,33 +41,33 @@ assumption that every test needs a database. It does not, and the table above mo
 
 ### Done
 
-| # | Item | Lane | Landed |
-|---|---|---|---|
-| 1 | Branch protection on `main` requiring `verify` ([1.4](#14-cheap-improvements)) | **[NOAH]** | Re-verified 2026-08-25 — `main` is protected |
-| 2 | Five milestones, and the `bug` / `money` / `ui` / `from-test-pass` / `phase-5`–`phase-9` labels ([4](#4-issues-and-milestones)) | **[NOAH]** | Spot-checked present; GitHub settings, not files |
-| 3 | Bug issue template ([2](#2-hygiene)) | [CLOUD] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
-| 4 | `decision-log` skill ([3.4](#34-decision-log--a-skill)) | [CLOUD] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
-| 5 | `money-invariants` skill ([3.3](#33-money-invariants--all-three-layers)) | [CLOUD] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
-| 6 | `engines.node: ">=22"` — half the Node-pinning item ([1.4](#14-cheap-improvements)) | [CLOUD] | [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8), incidentally, not from this plan |
-| 7 | `cron.yml` restored to valid YAML, schedule off ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken)) | [CLOUD] | This branch — a holding position, not the fix |
+| #   | Item                                                                                                                            | Lane       | Landed                                                                                       |
+| --- | ------------------------------------------------------------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------- |
+| 1   | Branch protection on `main` requiring `verify` ([1.4](#14-cheap-improvements))                                                  | **[NOAH]** | Re-verified 2026-08-25 — `main` is protected                                                 |
+| 2   | Five milestones, and the `bug` / `money` / `ui` / `from-test-pass` / `phase-5`–`phase-9` labels ([4](#4-issues-and-milestones)) | **[NOAH]** | Spot-checked present; GitHub settings, not files                                             |
+| 3   | Bug issue template ([2](#2-hygiene))                                                                                            | [CLOUD]    | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7)                                   |
+| 4   | `decision-log` skill ([3.4](#34-decision-log--a-skill))                                                                         | [CLOUD]    | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7)                                   |
+| 5   | `money-invariants` skill ([3.3](#33-money-invariants--all-three-layers))                                                        | [CLOUD]    | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7)                                   |
+| 6   | `engines.node: ">=22"` — half the Node-pinning item ([1.4](#14-cheap-improvements))                                             | [CLOUD]    | [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8), incidentally, not from this plan |
+| 7   | `cron.yml` restored to valid YAML, schedule off ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken))                  | [CLOUD]    | This branch — a holding position, not the fix                                                |
 
 ### Outstanding
 
 Ordered by what should happen first. Rows 1–3 are one job: the cron workflow.
 
-| # | Item | Owner | Notes |
-|---|---|---|---|
-| 1 | **Add `APP_URL` and `CRON_SECRET` as Actions secrets** | **[NOAH]** | The only production item on this list. [Step by step](#what-you-must-do--the-cron-fix-step-by-step) |
-| 2 | **Dispatch both cron jobs by hand and confirm 200** | **[NOAH]** | Proves the secrets before a timer depends on them, with a [symptom table](#what-you-must-do--the-cron-fix-step-by-step) for when it is red |
-| 3 | **Uncomment the `schedule:` block, add the empty-secret guard** | [CLOUD] | Three commented lines in `cron.yml` plus one `test -n` per job |
-| 4 | Ledger-funnel guard test ([3.3](#33-money-invariants--all-three-layers)) | [CLOUD] | Proven runnable in a cloud session — see that section |
-| 5 | `session-start` hook ([3.6](#36-session-start--a-hook)) | **[LOCAL]** | Cloud can draft it; only a desktop can prove the Docker path |
-| 6 | `.nvmrc` — the other half of Node pinning ([1.4](#14-cheap-improvements)) | [CLOUD] | One file, one line |
-| 7 | CI: `build` step, `concurrency`, `timeout-minutes` ([1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), [1.4](#14-cheap-improvements)) | [CLOUD] | The build was re-measured in a cloud session today |
-| 8 | Dependabot, monthly, grouped ([1.4](#14-cheap-improvements)) | [CLOUD] to write · **[MANUAL]** to merge its PRs | Writing the file is cloud work; merging its PRs is manual |
-| 9 | `.env.test` note in the README ([3.6](#36-session-start--a-hook)) | [CLOUD] | One paragraph; makes item 5 land properly |
-| 10 | `db-migration` skill ([3.5](#35-db-migration--a-skill)) | [CLOUD] | Still marginal — add it if a migration goes wrong, not before |
-| 11 | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | The gate on phase 5. Nothing else here substitutes for it. |
+| #   | Item                                                                                                                                                    | Owner                                            | Notes                                                                                                                                      |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | **Add `APP_URL` and `CRON_SECRET` as Actions secrets**                                                                                                  | **[NOAH]**                                       | The only production item on this list. [Step by step](#what-you-must-do--the-cron-fix-step-by-step)                                        |
+| 2   | **Dispatch both cron jobs by hand and confirm 200**                                                                                                     | **[NOAH]**                                       | Proves the secrets before a timer depends on them, with a [symptom table](#what-you-must-do--the-cron-fix-step-by-step) for when it is red |
+| 3   | **Uncomment the `schedule:` block, add the empty-secret guard**                                                                                         | [CLOUD]                                          | Three commented lines in `cron.yml` plus one `test -n` per job                                                                             |
+| 4   | Ledger-funnel guard test ([3.3](#33-money-invariants--all-three-layers))                                                                                | [CLOUD]                                          | Proven runnable in a cloud session — see that section                                                                                      |
+| 5   | `session-start` hook ([3.6](#36-session-start--a-hook))                                                                                                 | **[LOCAL]**                                      | Cloud can draft it; only a desktop can prove the Docker path                                                                               |
+| 6   | `.nvmrc` — the other half of Node pinning ([1.4](#14-cheap-improvements))                                                                               | [CLOUD]                                          | One file, one line                                                                                                                         |
+| 7   | CI: `build` step, `concurrency`, `timeout-minutes` ([1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), [1.4](#14-cheap-improvements)) | [CLOUD]                                          | The build was re-measured in a cloud session today                                                                                         |
+| 8   | Dependabot, monthly, grouped ([1.4](#14-cheap-improvements))                                                                                            | [CLOUD] to write · **[MANUAL]** to merge its PRs | Writing the file is cloud work; merging its PRs is manual                                                                                  |
+| 9   | `.env.test` note in the README ([3.6](#36-session-start--a-hook))                                                                                       | [CLOUD]                                          | One paragraph; makes item 5 land properly                                                                                                  |
+| 10  | `db-migration` skill ([3.5](#35-db-migration--a-skill))                                                                                                 | [CLOUD]                                          | Still marginal — add it if a migration goes wrong, not before                                                                              |
+| 11  | The human test pass, and the issues it produces ([4](#4-issues-and-milestones))                                                                         | **[MANUAL]**                                     | The gate on phase 5. Nothing else here substitutes for it.                                                                                 |
 
 ### What changed underneath all of this
 
@@ -89,7 +89,7 @@ Ordered by what should happen first. Rows 1–3 are one job: the cron workflow.
   not, and three different test totals had accumulated in three places by the time anyone
   looked. They are corrected below and the promise is not repeated. That branch also added
   [D51](decisions.md#d51--ui-conventions-are-tested-structurally-not-with-a-component-test-harness),
-  *UI conventions are tested structurally, not with a component-test harness* — which is
+  _UI conventions are tested structurally, not with a component-test harness_ — which is
   [3.2](#32-the-layering-rule) applied without being asked: a convention that could have been a
   code-review habit was made a test instead.
 
@@ -178,7 +178,7 @@ unchanged.** The repo now has a second workflow that legitimately needs two Acti
 `APP_URL` and `CRON_SECRET` — because it calls the deployed app over HTTP. That is an
 operational credential, not a build credential: it lets Actions invoke a route that is already
 public, guarded by a token the app itself checks. The distinction worth keeping is that nothing
-in the *gate* needs a secret, so nothing in the gate should have one. See
+in the _gate_ needs a secret, so nothing in the gate should have one. See
 [1.5](#15-the-cron-workflow--the-only-thing-actually-broken) for what happens when those two
 secrets do not exist.
 
@@ -216,10 +216,10 @@ handlers over HTTP with the same bearer token Vercel Cron would have sent. `allo
 
 **What the two jobs actually do**, since it is not written down anywhere else:
 
-| Job | Cadence | What it does |
-|---|---|---|
-| `sync-odds` | every 15 min | `syncOdds` pulls the slate and prices; `syncResults` applies reported scores and marks games `FINAL`; `suspendStaleMarkets` suspends anything whose price has gone stale so nobody can bet into a dead line. Both providers are still the **fixture** ones, so on the deployed app this moves fixture data, not real games — that is phase 5's job. |
-| `settle` | every 10 min | `settleFinalGames` grades every pending leg on a finished game from the line and price frozen at placement, settles the bets those legs belong to, and pays out — batched to fit the invocation limit, with the remainder picked up next run. Then `detectLeadChange` emits a feed event if the standings lead changed, `sweepOverdueEvents` flags custom events past their resolve-by time, and `sweepP2PWagers` makes three passes: expire unaccepted offers and refund their escrow, settle market-backed wagers whose game has finished, flag overdue ones for arbitration. Returns 207 rather than 200 if an individual game or wager errored, so one bad row is reported without failing the rest. |
+| Job         | Cadence      | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ----------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sync-odds` | every 15 min | `syncOdds` pulls the slate and prices; `syncResults` applies reported scores and marks games `FINAL`; `suspendStaleMarkets` suspends anything whose price has gone stale so nobody can bet into a dead line. Both providers are still the **fixture** ones, so on the deployed app this moves fixture data, not real games — that is phase 5's job.                                                                                                                                                                                                                                                                                                                                                      |
+| `settle`    | every 10 min | `settleFinalGames` grades every pending leg on a finished game from the line and price frozen at placement, settles the bets those legs belong to, and pays out — batched to fit the invocation limit, with the remainder picked up next run. Then `detectLeadChange` emits a feed event if the standings lead changed, `sweepOverdueEvents` flags custom events past their resolve-by time, and `sweepP2PWagers` makes three passes: expire unaccepted offers and refund their escrow, settle market-backed wagers whose game has finished, flag overdue ones for arbitration. Returns 207 rather than 200 if an individual game or wager errored, so one bad row is reported without failing the rest. |
 
 `allowance` (weekly) and `reconcile` (daily) are unaffected by any of this — they are native Vercel
 crons and run from [`vercel.json`](../vercel.json). But if `CRON_SECRET` is missing from the Vercel
@@ -274,7 +274,7 @@ secrets exist. Step 6 is **[MANUAL]** — either of you, and it is just looking.
 
 1. **[NOAH] Get the `CRON_SECRET` value out of Vercel.** Vercel → the project → Settings →
    Environment Variables → `CRON_SECRET`. If it is not there, the deployed app is currently
-   rejecting *every* cron call with `500 CRON_SECRET is not configured`
+   rejecting _every_ cron call with `500 CRON_SECRET is not configured`
    ([`src/server/cron/auth.ts`](../src/server/cron/auth.ts) fails closed on purpose), including
    the two native Vercel crons. In that case generate one — `openssl rand -hex 32` — add it to
    all environments, and redeploy so the running app picks it up.
@@ -282,19 +282,19 @@ secrets exist. Step 6 is **[MANUAL]** — either of you, and it is just looking.
    `https://<project>.vercel.app`, or the custom domain if one is attached. A trailing slash
    produces `//api/cron/settle`, which will 404.
 3. **[NOAH] Add both as Actions secrets.** GitHub → the repo → Settings → Secrets and variables
-   → Actions → *New repository secret*. Add `APP_URL`, then `CRON_SECRET` with the **same value**
+   → Actions → _New repository secret_. Add `APP_URL`, then `CRON_SECRET` with the **same value**
    Vercel holds. Repository secrets, not environment secrets — the workflow reads them as
    `secrets.APP_URL` and `secrets.CRON_SECRET` with no environment declared.
-4. **[NOAH] Run both jobs by hand.** Actions → *Sportsbook cron jobs* → Run workflow. Both
+4. **[NOAH] Run both jobs by hand.** Actions → _Sportsbook cron jobs_ → Run workflow. Both
    `sync-odds` and `settle` fire on a manual dispatch. Green means the whole path works. If it is
    red, the exit code says which side is wrong:
 
-   | Symptom | What it means |
-   |---|---|
-   | exit 3, `APP_URL:` blank in the log | The Actions secret is missing or misnamed — step 3 |
-   | HTTP 500, `CRON_SECRET is not configured` | Vercel does not have the variable — step 1 |
-   | HTTP 401, `unauthorized` | Both sides have a secret and they do not match |
-   | HTTP 404 | `APP_URL` has a trailing slash or the wrong domain — step 2 |
+   | Symptom                                   | What it means                                               |
+   | ----------------------------------------- | ----------------------------------------------------------- |
+   | exit 3, `APP_URL:` blank in the log       | The Actions secret is missing or misnamed — step 3          |
+   | HTTP 500, `CRON_SECRET is not configured` | Vercel does not have the variable — step 1                  |
+   | HTTP 401, `unauthorized`                  | Both sides have a secret and they do not match              |
+   | HTTP 404                                  | `APP_URL` has a trailing slash or the wrong domain — step 2 |
 
 5. **[CLOUD] Turn the schedule back on.** Uncomment the three `schedule:` lines in
    [`cron.yml`](../.github/workflows/cron.yml) and add a guard before each `curl` —
@@ -315,8 +315,8 @@ green cron run does not mean live odds.
 
 **And the part that is not a workflow problem at all.** Two days of failing jobs produced no
 signal anyone acted on until the noise itself became annoying. That is precisely the gap phase 6
-names — *"a `settle` run that throws is invisible: no bet settles, no one is told, and the first
-signal is a member asking why Sunday never graded"*
+names — _"a `settle` run that throws is invisible: no bet settles, no one is told, and the first
+signal is a member asking why Sunday never graded"_
 ([roadmap](roadmap.md#6--production-deployment)). This incident is the argument for that item,
 already paid for once.
 
@@ -330,7 +330,7 @@ already paid for once.
   generator — reformatting churn shows up in review as if it were real change. ESLint is
   configured but does not format.
 - **One issue template**, for bugs found in the human test pass, with a project-specific field:
-  *does `reconcileBalances` / `reconcileEscrow` still pass?* For a money app that question
+  _does `reconcileBalances` / `reconcileEscrow` still pass?_ For a money app that question
   separates "annoying" from "drop everything."
 
 ### Not worth adding
@@ -350,11 +350,11 @@ enforcement without the substance.
 
 ### 3.1 The three mechanisms, and which is which
 
-| Mechanism | Lives in | How it fires | Guaranteed? |
-|---|---|---|---|
-| **Skill** | `.claude/skills/<name>/SKILL.md` | Claude reads its `description` and decides it applies; or `/name` | **No** — a judgment call |
-| **Subagent** | `.claude/agents/<name>.md` | Claude spawns it, or you name it. Runs in its own context window | **No** — a judgment call |
-| **Hook** | `.claude/settings.json` | The harness runs it on an event (`SessionStart`, `PostToolUse`, `Stop`) | **Yes** — not a judgment call |
+| Mechanism    | Lives in                         | How it fires                                                            | Guaranteed?                   |
+| ------------ | -------------------------------- | ----------------------------------------------------------------------- | ----------------------------- |
+| **Skill**    | `.claude/skills/<name>/SKILL.md` | Claude reads its `description` and decides it applies; or `/name`       | **No** — a judgment call      |
+| **Subagent** | `.claude/agents/<name>.md`       | Claude spawns it, or you name it. Runs in its own context window        | **No** — a judgment call      |
+| **Hook**     | `.claude/settings.json`          | The harness runs it on an event (`SessionStart`, `PostToolUse`, `Stop`) | **Yes** — not a judgment call |
 
 The fourteen skills already in `.claude/skills/` are the first row. `test-driven-development`
 loads because its description matched the task at hand, not because anything compelled it.
@@ -426,10 +426,10 @@ someone disables it.
 subagent: the built-in `/code-review` and `/security-review` already supply the reviewing
 machinery, and what they lack is this project's specific knowledge. Packaging that knowledge as
 a skill those reviews can pull in gets the value without maintaining a parallel review path. It
-covers what a test cannot read: *is this idempotency key actually
-deterministic, or does it close over a timestamp?* *Does this new balance write share the
-entry's transaction?* *Does this credits path stay non-convertible under
-[D31](decisions.md#d31--custom-events-are-bet-in-credits-a-second-non-convertible-currency)?*
+covers what a test cannot read: _is this idempotency key actually
+deterministic, or does it close over a timestamp?_ _Does this new balance write share the
+entry's transaction?_ _Does this credits path stay non-convertible under
+[D31](decisions.md#d31--custom-events-are-bet-in-credits-a-second-non-convertible-currency)?_
 Run it before committing money-path work, or invoke it directly as `/money-invariants`.
 
 ### 3.4 `decision-log` — a skill
@@ -538,7 +538,7 @@ behind the order, kept because the reasoning is the part that goes stale slowly.
 1. **The cron workflow first, because it is the only item that is costing anything right now.**
    Everything else on the list makes future work safer. This one is a deployed app that does not
    grade bets. It is also the cheapest: two secrets and a manual run.
-2. **Then the `session-start` hook**, because it is the item that makes every *other* item easier
+2. **Then the `session-start` hook**, because it is the item that makes every _other_ item easier
    to finish — and it is the one thing on the list that a cloud session cannot close for you, so
    it is worth spending desktop time on rather than saving desktop time for things a cloud
    session could have done.

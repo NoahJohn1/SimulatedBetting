@@ -1,6 +1,6 @@
 # Closing the cloud lane in repo health — design
 
-*Written 2026-09-02.*
+_Written 2026-09-02._
 
 **The problem.** [`docs/repo-health.md`](../repo-health.md) sorts its outstanding work into four
 lanes, and seven of the eleven rows sit in `[CLOUD]` — work a Claude Code web session can finish
@@ -21,17 +21,17 @@ list of things only Noah, a desktop, or a person can do.
 
 Nine items land. Each is independently useful and independently revertible.
 
-| # | Item | Repo-health row | Files |
-|---|---|---|---|
-| 1 | Empty-secret guards on both cron jobs | Outstanding 3 (partial) | `.github/workflows/cron.yml` |
-| 2 | Ledger-funnel guard test | Outstanding 4 | `src/server/money/__tests__/ledger-funnel.test.ts` |
-| 3 | `.nvmrc` | Outstanding 6 | `.nvmrc` |
-| 4 | CI `build`, `concurrency`, `timeout-minutes` | Outstanding 7 | `.github/workflows/ci.yml` |
-| 5 | Dependabot — monthly, grouped | Outstanding 8 | `.github/dependabot.yml` |
-| 6 | `.env.test` note | Outstanding 9 | `README.md` |
-| 7 | `session-start` hook | Outstanding 5 (retagged) | `.claude/hooks/session-start.sh`, `.claude/settings.json` |
-| 8 | `PostToolUse` money-path hook | §3.3 layer 2 — not previously tracked | `.claude/hooks/money-touch.sh`, `.claude/settings.json` |
-| 9 | Prettier | §2, re-opened in the closing section | `.prettierrc`, `.prettierignore`, `package.json`, `eslint.config.mjs`, then every source file |
+| #   | Item                                         | Repo-health row                       | Files                                                                                         |
+| --- | -------------------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------- |
+| 1   | Empty-secret guards on both cron jobs        | Outstanding 3 (partial)               | `.github/workflows/cron.yml`                                                                  |
+| 2   | Ledger-funnel guard test                     | Outstanding 4                         | `src/server/money/__tests__/ledger-funnel.test.ts`                                            |
+| 3   | `.nvmrc`                                     | Outstanding 6                         | `.nvmrc`                                                                                      |
+| 4   | CI `build`, `concurrency`, `timeout-minutes` | Outstanding 7                         | `.github/workflows/ci.yml`                                                                    |
+| 5   | Dependabot — monthly, grouped                | Outstanding 8                         | `.github/dependabot.yml`                                                                      |
+| 6   | `.env.test` note                             | Outstanding 9                         | `README.md`                                                                                   |
+| 7   | `session-start` hook                         | Outstanding 5 (retagged)              | `.claude/hooks/session-start.sh`, `.claude/settings.json`                                     |
+| 8   | `PostToolUse` money-path hook                | §3.3 layer 2 — not previously tracked | `.claude/hooks/money-touch.sh`, `.claude/settings.json`                                       |
+| 9   | Prettier                                     | §2, re-opened in the closing section  | `.prettierrc`, `.prettierignore`, `package.json`, `eslint.config.mjs`, then every source file |
 
 Item 10 is the documentation reconciliation that records all of the above, described in §7.
 
@@ -40,14 +40,14 @@ Item 10 is the documentation reconciliation that records all of the above, descr
 Taken 2026-09-02 in the cloud session that wrote this document, not carried over from an earlier
 revision:
 
-| Claim | Measured |
-|---|---|
-| Node in a cloud session | v22.22.2, npm 10.9.7 |
-| `node_modules` on session start | Absent |
-| Docker | Binary at `/usr/bin/docker`; `docker info` fails; `/var/run/docker.sock` does not exist |
-| `npm ci` | Runs clean |
-| `DATABASE_URL=postgres://x npx next build` | Exit 0 — **32 routes, 28 ƒ dynamic, 4 prerendered** |
-| The ledger funnel | Exactly one `.insert(ledgerEntries)` outside tests, at `src/server/money/ledger.ts:69`; direct inserts only in `src/db/__tests__/`; zero `.update(` or `.delete(` against `ledgerEntries` anywhere; 28 files reference `postEntry` |
+| Claim                                      | Measured                                                                                                                                                                                                                           |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Node in a cloud session                    | v22.22.2, npm 10.9.7                                                                                                                                                                                                               |
+| `node_modules` on session start            | Absent                                                                                                                                                                                                                             |
+| Docker                                     | Binary at `/usr/bin/docker`; `docker info` fails; `/var/run/docker.sock` does not exist                                                                                                                                            |
+| `npm ci`                                   | Runs clean                                                                                                                                                                                                                         |
+| `DATABASE_URL=postgres://x npx next build` | Exit 0 — **32 routes, 28 ƒ dynamic, 4 prerendered**                                                                                                                                                                                |
+| The ledger funnel                          | Exactly one `.insert(ledgerEntries)` outside tests, at `src/server/money/ledger.ts:69`; direct inserts only in `src/db/__tests__/`; zero `.update(` or `.delete(` against `ledgerEntries` anywhere; 28 files reference `postEntry` |
 
 **Two corrections fall out of this.** The route count in
 [§1.1](../repo-health.md#11-it-never-builds--worth-adding-but-narrower-than-it-looks) says 30
@@ -79,8 +79,8 @@ missing secret — which makes Noah's step 4 diagnostic instead of cryptic, and 
 
 **The `schedule:` block stays commented.** Uncommenting it before the secrets exist recreates the
 exact failure the document was written about — a timer firing every ten minutes into a guard that
-exits 1. The document's own instruction is *"Do not skip step 4 by uncommenting the schedule
-first,"* and this design obeys it. Uncommenting becomes a one-line `[CLOUD]` follow-up whose
+exits 1. The document's own instruction is _"Do not skip step 4 by uncommenting the schedule
+first,"_ and this design obeys it. Uncommenting becomes a one-line `[CLOUD]` follow-up whose
 blocker is named in the Outstanding table.
 
 ---
@@ -119,21 +119,21 @@ Repo-health tags this `[LOCAL]`. The tag is right about one branch and wrong abo
 
 The hook has four documented requirements: idempotent, never fails the session, tests the daemon
 rather than the binary, honest about cost. **A cloud session is the better place to prove three
-of them**, because a cloud session *is* the degraded environment: binary on `PATH`, no daemon, no
+of them**, because a cloud session _is_ the degraded environment: binary on `PATH`, no daemon, no
 socket, no `node_modules`. What a cloud session cannot prove is `docker compose up -d --wait`
 succeeding and the test database migrating.
 
 So the split is:
 
-| Branch | Proven where |
-|---|---|
-| `npm ci` runs when `node_modules` is absent | [CLOUD] |
-| Re-running is a no-op when everything is up | [CLOUD] |
-| `docker info` failing prints instructions and exits 0 | [CLOUD] — this is the cloud session's own state |
-| `command -v docker` succeeding is not mistaken for a working daemon | [CLOUD] |
-| `docker compose up -d --wait` brings Postgres up and migrations apply | **[LOCAL]** |
+| Branch                                                                | Proven where                                    |
+| --------------------------------------------------------------------- | ----------------------------------------------- |
+| `npm ci` runs when `node_modules` is absent                           | [CLOUD]                                         |
+| Re-running is a no-op when everything is up                           | [CLOUD]                                         |
+| `docker info` failing prints instructions and exits 0                 | [CLOUD] — this is the cloud session's own state |
+| `command -v docker` succeeding is not mistaken for a working daemon   | [CLOUD]                                         |
+| `docker compose up -d --wait` brings Postgres up and migrations apply | **[LOCAL]**                                     |
 
-Item 5 moves from `[LOCAL]` to `[CLOUD]` *written and three-quarters proven*, with one `[LOCAL]`
+Item 5 moves from `[LOCAL]` to `[CLOUD]` _written and three-quarters proven_, with one `[LOCAL]`
 verification row remaining. That row is real and stays on the table until a desktop session
 signs it off — this design does not claim the hook works end to end.
 
@@ -151,9 +151,9 @@ A `PostToolUse` hook matching `Edit|Write`, reading the tool input as JSON on st
 the file path, and printing one line if it falls under `src/server/money/`, `src/server/bets/`,
 `src/server/p2p/`, `src/server/events/resolve.ts`, or `src/db/schema/money.ts`.
 
-**A flag, not a review.** The document is explicit: *"A hook that spawns a full agent review on
+**A flag, not a review.** The document is explicit: _"A hook that spawns a full agent review on
 every save of a money file is slow and interrupts mid-edit, and the reliable outcome of that is
-that someone disables it."* The output is one line pointing at `/money-invariants`. It never
+that someone disables it."_ The output is one line pointing at `/money-invariants`. It never
 blocks, never fails a tool call, and exits 0 always.
 
 One mechanical constraint the document already records and the implementation must respect: **a
@@ -185,10 +185,10 @@ trailingComma: all
 
 **Measured 2026-09-02, and the gap is the whole argument.** Against 231 TypeScript files:
 
-| Config | Files reformatted |
-|---|---|
-| Matched to existing style, above | **86** |
-| Prettier defaults (double quotes, 80 columns) | **230** |
+| Config                                        | Files reformatted |
+| --------------------------------------------- | ----------------- |
+| Matched to existing style, above              | **86**            |
+| Prettier defaults (double quotes, 80 columns) | **230**           |
 
 A config picked without looking at the code would rewrite essentially every file in the
 repository. The point of adopting a formatter is to stop diff noise; defaults here would
@@ -198,7 +198,7 @@ conflicts. Matching the config to the code cuts the reformat by 63%.
 ### The coordination cost, which the document does not account for
 
 Repo-health retired its own objection to Prettier on the grounds that the conflict argument died
-with PR #10's merge. That reasoning is about a *branch*. It misses a laptop:
+with PR #10's merge. That reasoning is about a _branch_. It misses a laptop:
 [the roadmap](../roadmap.md#roadmap) records that Noah's ESPN adapter work "exists only on his
 machine" and nothing is pushed. **A repo-wide reformat landing on `main` means Noah rebases into
 a conflict in every file he has touched.**
@@ -218,8 +218,8 @@ This does not change the decision, but it changes the packaging:
 ## 6. Deliberately not in this design
 
 - **Uncommenting the cron `schedule:`.** §2. Blocked on Noah's steps 1–4, recorded as a row.
-- **The `db-migration` skill.** Repo-health sets an explicit trigger — *"add it if a migration
-  goes wrong, not before"* — and it has not fired. Recorded with its trigger condition so the
+- **The `db-migration` skill.** Repo-health sets an explicit trigger — _"add it if a migration
+  goes wrong, not before"_ — and it has not fired. Recorded with its trigger condition so the
   next reader does not have to re-derive why a `[CLOUD]` item was left undone.
 - **`format:check` in CI.** §5.
 - **Anything `[NOAH]`, `[MANUAL]`, or requiring a Docker daemon to execute.** The cron secrets
@@ -256,25 +256,25 @@ and building the layer-2 hook as a flag rather than a review. Both are decisions
 would otherwise have to reconstruct from a diff.
 
 Counts get corrected in the same pass rather than left to update themselves. The document already
-records what happens otherwise: *"An earlier revision left those counts to update themselves when
+records what happens otherwise: _"An earlier revision left those counts to update themselves when
 it merges; they did not, and three different test totals had accumulated in three places by the
-time anyone looked."*
+time anyone looked."_
 
 ---
 
 ## 8. Verification
 
-| Level | What |
-|---|---|
-| Per commit | `npm run typecheck` and `npm run lint` clean |
-| Item 1, 4, 5 | Both workflow files and the Dependabot file parse as YAML before commit |
-| Item 2 | The test passes; and it is proven able to fail by temporarily violating the property |
-| Item 4 | `DATABASE_URL=postgres://x npx next build` exits 0 locally before the step is added to CI |
-| Item 7 | Run the script directly; run it twice for idempotency; confirm exit 0 with the daemon down |
-| Item 8 | Feed the script a money path and a non-money path on stdin; confirm one fires and one does not |
-| Item 9 | `npm run format:check` clean after the reformat; `npm run lint` still clean with `eslint-config-prettier` in place |
-| Item 10 | The link-and-anchor checker from [the docs-status plan](../plans/2026-09-02-docs-status-and-archive-implementation-plan.md) reports `LINKS OK` |
-| The whole branch | CI's `verify` job on the pull request — the full suite against a real Postgres |
+| Level            | What                                                                                                                                           |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Per commit       | `npm run typecheck` and `npm run lint` clean                                                                                                   |
+| Item 1, 4, 5     | Both workflow files and the Dependabot file parse as YAML before commit                                                                        |
+| Item 2           | The test passes; and it is proven able to fail by temporarily violating the property                                                           |
+| Item 4           | `DATABASE_URL=postgres://x npx next build` exits 0 locally before the step is added to CI                                                      |
+| Item 7           | Run the script directly; run it twice for idempotency; confirm exit 0 with the daemon down                                                     |
+| Item 8           | Feed the script a money path and a non-money path on stdin; confirm one fires and one does not                                                 |
+| Item 9           | `npm run format:check` clean after the reformat; `npm run lint` still clean with `eslint-config-prettier` in place                             |
+| Item 10          | The link-and-anchor checker from [the docs-status plan](../plans/2026-09-02-docs-status-and-archive-implementation-plan.md) reports `LINKS OK` |
+| The whole branch | CI's `verify` job on the pull request — the full suite against a real Postgres                                                                 |
 
 **`npm test` is not run to completion in the authoring session.** The suite needs Postgres, which
 a cloud session cannot reach. This is the documented split: cloud writes it, CI proves it. The

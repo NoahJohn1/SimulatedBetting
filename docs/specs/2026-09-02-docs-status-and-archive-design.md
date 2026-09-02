@@ -1,6 +1,6 @@
 # Documentation status tracking and archive — design
 
-*Written 2026-09-02.*
+_Written 2026-09-02._
 
 **The problem.** Two people are working this repo from different places — one in Claude Code
 cloud sessions, one on a laptop with Docker and the credentials — and there is no single place
@@ -18,12 +18,12 @@ left, and who can do it — and cut the browsable documentation to the part that
 
 Four tags. The line between the last two is **credentials**, not difficulty.
 
-| Tag | Means | Test |
-|---|---|---|
-| **[CLOUD]** | A Claude Code web session finishes it start to finish | Needs no database and no secrets. CI proves it on the pull request. |
-| **[LOCAL]** | Claude on a desktop with Docker | Needs Postgres. A cloud session has the `docker` binary but no daemon — `/var/run/docker.sock` does not exist. |
-| **[MANUAL]** | Human hands, either person | Clicking, reading, judging. No special account needed. |
-| **[NOAH]** | An account or permission only Noah holds | GitHub repo settings, the Vercel dashboard, DNS records, paid signups. |
+| Tag          | Means                                                 | Test                                                                                                           |
+| ------------ | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **[CLOUD]**  | A Claude Code web session finishes it start to finish | Needs no database and no secrets. CI proves it on the pull request.                                            |
+| **[LOCAL]**  | Claude on a desktop with Docker                       | Needs Postgres. A cloud session has the `docker` binary but no daemon — `/var/run/docker.sock` does not exist. |
+| **[MANUAL]** | Human hands, either person                            | Clicking, reading, judging. No special account needed.                                                         |
+| **[NOAH]**   | An account or permission only Noah holds              | GitHub repo settings, the Vercel dashboard, DNS records, paid signups.                                         |
 
 This **splits the existing `[MANUAL]` lane** in `docs/repo-health.md`. Every item currently
 tagged `[MANUAL]` is re-sorted: the cron secrets and the manual workflow dispatch become
@@ -38,7 +38,7 @@ detail table below the phase says which part is which.
 **The roadmap records what is in the repository, not what is on somebody's laptop.** Phase 5 is
 the live case: Noah is working on the ESPN adapter, but as of 2026-09-02 there is no `espn`
 reference anywhere in `src/`, and `origin` carries only `main` and the current working branch.
-So phase 5 reads *"In progress — Noah, local only; nothing pushed as of 2026-09-02"* rather
+So phase 5 reads _"In progress — Noah, local only; nothing pushed as of 2026-09-02"_ rather
 than claiming a completion state the repo cannot show. When a status cannot be verified from
 the repo, the doc says so and dates the observation.
 
@@ -60,21 +60,21 @@ they exist — which is what allows a completed item to have no body section at 
 varies by row and that is informative: subsystem 1 has a spec but no plan, because plans only
 start with the social layer.
 
-| # | Item | Status | Who | Reference |
-|---|---|---|---|---|
-| 1 | Core betting engine | ✅ Complete | — | spec |
-| 2 | Social layer | ✅ Complete | — | spec · plan |
-| 3 | Custom events | ✅ Complete | — | spec · plan |
-| 4 | Peer-to-peer bets | ✅ Complete | — | spec · plan |
-| — | Human test pass — gates 5+ | 🔲 Backlog | [MANUAL] | — |
-| 5 | ESPN adapter | 🔄 In progress — Noah, local only | [CLOUD] [LOCAL] | spec pending |
-| 6 | Production deployment | 🔄 Partial | [NOAH] mostly | — |
-| 7a | UI foundations | ✅ Complete | — | spec · plan · mobile audit |
-| 7b | Design system | ✅ Complete | — | spec · plan · design-system audit |
-| 7c | Screen-by-screen rebuild | 🔲 Backlog | [CLOUD] | — |
-| 7d | Craft | 🔲 Backlog | [CLOUD] | — |
-| 8 | Email notifications | 🔲 Backlog | [CLOUD] [NOAH] | — |
-| 9 | Hardening | 🔲 Backlog | [CLOUD] [LOCAL] [MANUAL] | — |
+| #   | Item                       | Status                            | Who                      | Reference                         |
+| --- | -------------------------- | --------------------------------- | ------------------------ | --------------------------------- |
+| 1   | Core betting engine        | ✅ Complete                       | —                        | spec                              |
+| 2   | Social layer               | ✅ Complete                       | —                        | spec · plan                       |
+| 3   | Custom events              | ✅ Complete                       | —                        | spec · plan                       |
+| 4   | Peer-to-peer bets          | ✅ Complete                       | —                        | spec · plan                       |
+| —   | Human test pass — gates 5+ | 🔲 Backlog                        | [MANUAL]                 | —                                 |
+| 5   | ESPN adapter               | 🔄 In progress — Noah, local only | [CLOUD] [LOCAL]          | spec pending                      |
+| 6   | Production deployment      | 🔄 Partial                        | [NOAH] mostly            | —                                 |
+| 7a  | UI foundations             | ✅ Complete                       | —                        | spec · plan · mobile audit        |
+| 7b  | Design system              | ✅ Complete                       | —                        | spec · plan · design-system audit |
+| 7c  | Screen-by-screen rebuild   | 🔲 Backlog                        | [CLOUD]                  | —                                 |
+| 7d  | Craft                      | 🔲 Backlog                        | [CLOUD]                  | —                                 |
+| 8   | Email notifications        | 🔲 Backlog                        | [CLOUD] [NOAH]           | —                                 |
+| 9   | Hardening                  | 🔲 Backlog                        | [CLOUD] [LOCAL] [MANUAL] | —                                 |
 
 Immediately under it, the one live sentence from the current part-one prose: every subsystem
 passes `npm run verify` against fixture data, and none of it has been through a human test
@@ -124,31 +124,31 @@ The structure is sound and stays. Three categories of change.
 
 ### Stale facts, corrected
 
-| Line | Currently claims | Reality |
-|---|---|---|
-| 77–90 | "`main` is not where the current UI work lives"; PR #10 open, carrying 7a and 7b | PR #10 merged at `584a4ac`, PR #11 merged on top at `2d8dc91`. `main` carries both rungs. |
-| 82–86 | The 546-test and route-count lines "update themselves when it merges" | They did not. 76 test files confirmed on this branch; the root `README.md` already carries 76 files / 814 tests. |
-| 106 | "`npm run verify` (typecheck, lint, 578 tests)" | Stale third count, in a third place. |
-| 553–556 | The Prettier argument rests on PR #10 being a long-lived open branch | That branch is merged, so the conflict argument no longer holds. The conclusion may still stand, but it needs a current reason. |
+| Line    | Currently claims                                                                 | Reality                                                                                                                         |
+| ------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 77–90   | "`main` is not where the current UI work lives"; PR #10 open, carrying 7a and 7b | PR #10 merged at `584a4ac`, PR #11 merged on top at `2d8dc91`. `main` carries both rungs.                                       |
+| 82–86   | The 546-test and route-count lines "update themselves when it merges"            | They did not. 76 test files confirmed on this branch; the root `README.md` already carries 76 files / 814 tests.                |
+| 106     | "`npm run verify` (typecheck, lint, 578 tests)"                                  | Stale third count, in a third place.                                                                                            |
+| 553–556 | The Prettier argument rests on PR #10 being a long-lived open branch             | That branch is merged, so the conflict argument no longer holds. The conclusion may still stand, but it needs a current reason. |
 
 ### Owner column added
 
 The Done and Outstanding tables gain an owner tag alongside the existing lane. Retagged per the
 credentials rule, the Outstanding table becomes:
 
-| # | Item | Owner |
-|---|---|---|
-| 1 | Add `APP_URL` and `CRON_SECRET` as Actions secrets | **[NOAH]** |
-| 2 | Dispatch both cron jobs by hand, confirm 200 | **[NOAH]** |
-| 3 | Uncomment `schedule:`, add the empty-secret guard | [CLOUD] |
-| 4 | Ledger-funnel guard test | [CLOUD] |
-| 5 | `session-start` hook | [LOCAL] |
-| 6 | `.nvmrc` | [CLOUD] |
-| 7 | CI: `build`, `concurrency`, `timeout-minutes` | [CLOUD] |
-| 8 | Dependabot config | [CLOUD] to write · [MANUAL] to merge its PRs |
-| 9 | `.env.test` note in the README | [CLOUD] |
-| 10 | `db-migration` skill | [CLOUD] |
-| 11 | The human test pass | **[MANUAL]** |
+| #   | Item                                               | Owner                                        |
+| --- | -------------------------------------------------- | -------------------------------------------- |
+| 1   | Add `APP_URL` and `CRON_SECRET` as Actions secrets | **[NOAH]**                                   |
+| 2   | Dispatch both cron jobs by hand, confirm 200       | **[NOAH]**                                   |
+| 3   | Uncomment `schedule:`, add the empty-secret guard  | [CLOUD]                                      |
+| 4   | Ledger-funnel guard test                           | [CLOUD]                                      |
+| 5   | `session-start` hook                               | [LOCAL]                                      |
+| 6   | `.nvmrc`                                           | [CLOUD]                                      |
+| 7   | CI: `build`, `concurrency`, `timeout-minutes`      | [CLOUD]                                      |
+| 8   | Dependabot config                                  | [CLOUD] to write · [MANUAL] to merge its PRs |
+| 9   | `.env.test` note in the README                     | [CLOUD]                                      |
+| 10  | `db-migration` skill                               | [CLOUD]                                      |
+| 11  | The human test pass                                | **[MANUAL]**                                 |
 
 ### Cross-reference to the roadmap
 
@@ -185,18 +185,18 @@ written to prevent.
 
 `git mv` five finished plans to `docs/archive/plans/`:
 
-| Plan | Lines |
-|---|---|
-| `2026-08-17-social-layer-implementation-plan.md` | 5,038 |
-| `2026-08-17-custom-events-implementation-plan.md` | 6,431 |
+| Plan                                                  | Lines |
+| ----------------------------------------------------- | ----- |
+| `2026-08-17-social-layer-implementation-plan.md`      | 5,038 |
+| `2026-08-17-custom-events-implementation-plan.md`     | 6,431 |
 | `2026-08-19-peer-to-peer-bets-implementation-plan.md` | 7,235 |
-| `2026-08-22-ui-foundations-implementation-plan.md` | 1,414 |
-| `2026-08-24-design-system-implementation-plan.md` | 2,286 |
+| `2026-08-22-ui-foundations-implementation-plan.md`    | 1,414 |
+| `2026-08-24-design-system-implementation-plan.md`     | 2,286 |
 
 `2026-08-20-repo-health-implementation-plan.md` **stays in `docs/plans/`** — it is the only plan
 with open tasks.
 
-Specs stay where they are: they describe what the system *is*, and the master table's Reference
+Specs stay where they are: they describe what the system _is_, and the master table's Reference
 column links them constantly. Both audits stay: they carry live 7c/7d findings.
 
 `git mv` rather than delete — the plans are the record of how each subsystem was built, and git

@@ -10,7 +10,7 @@ A play-money sportsbook for a small private group, covering NFL and college foot
 Members receive simulated currency, bet against real sportsbook lines, and compete on a
 season-long leaderboard. No real money is involved at any point.
 
-The product goal is that betting *feels* like ESPN Bet or DraftKings on a phone. The
+The product goal is that betting _feels_ like ESPN Bet or DraftKings on a phone. The
 engineering goal is that every simulated dollar is accounted for.
 
 ## Success criteria
@@ -83,42 +83,45 @@ touches a balance. All timestamps are `TIMESTAMPTZ`. Primary keys are UUIDv7 (ti
 ### Identity and league
 
 **`users`**
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid | PK |
-| `provider` | enum | `GOOGLE` |
-| `provider_account_id` | text | unique with `provider` |
-| `email` | text | from OAuth |
-| `display_name` | text | editable |
-| `avatar_url` | text | nullable |
-| `role` | enum | `USER` · `ADMIN` |
-| `status` | enum | `PENDING` · `APPROVED` · `DISABLED` |
-| `created_at` | timestamptz | |
+
+| Column                | Type        | Notes                               |
+| --------------------- | ----------- | ----------------------------------- |
+| `id`                  | uuid        | PK                                  |
+| `provider`            | enum        | `GOOGLE`                            |
+| `provider_account_id` | text        | unique with `provider`              |
+| `email`               | text        | from OAuth                          |
+| `display_name`        | text        | editable                            |
+| `avatar_url`          | text        | nullable                            |
+| `role`                | enum        | `USER` · `ADMIN`                    |
+| `status`              | enum        | `PENDING` · `APPROVED` · `DISABLED` |
+| `created_at`          | timestamptz |                                     |
 
 New OAuth sign-ins land in `PENDING`. A `PENDING` user can sign in and see a holding
 screen, and nothing else. This gate exists because Google sign-in means anyone with a
 Google account can reach the login page.
 
 **`seasons`**
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid | PK |
-| `name` | text | e.g. "2026 Football Season" |
-| `starts_at` / `ends_at` | timestamptz | |
-| `starting_bankroll_cents` | bigint | default 1,000,000 ($10,000) |
-| `weekly_allowance_cents` | bigint | default 50,000 ($500) |
-| `allowance_weekday` | smallint | 0–6, default Tuesday |
-| `status` | enum | `UPCOMING` · `ACTIVE` · `COMPLETED` |
+
+| Column                    | Type        | Notes                               |
+| ------------------------- | ----------- | ----------------------------------- |
+| `id`                      | uuid        | PK                                  |
+| `name`                    | text        | e.g. "2026 Football Season"         |
+| `starts_at` / `ends_at`   | timestamptz |                                     |
+| `starting_bankroll_cents` | bigint      | default 1,000,000 ($10,000)         |
+| `weekly_allowance_cents`  | bigint      | default 50,000 ($500)               |
+| `allowance_weekday`       | smallint    | 0–6, default Tuesday                |
+| `status`                  | enum        | `UPCOMING` · `ACTIVE` · `COMPLETED` |
 
 Exactly one season may be `ACTIVE` at a time; enforced by a partial unique index.
 
 **`season_memberships`**
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid | PK |
-| `user_id` / `season_id` | uuid | unique together |
-| `balance_cents` | bigint | cached; see [Balance integrity](#balance-integrity) |
-| `joined_at` | timestamptz | |
+
+| Column                  | Type        | Notes                                               |
+| ----------------------- | ----------- | --------------------------------------------------- |
+| `id`                    | uuid        | PK                                                  |
+| `user_id` / `season_id` | uuid        | unique together                                     |
+| `balance_cents`         | bigint      | cached; see [Balance integrity](#balance-integrity) |
+| `joined_at`             | timestamptz |                                                     |
 
 Joining writes the `SEASON_STARTING_GRANT` entry with idempotency key
 `grant:<membership_id>`, so a retried join cannot mint a second bankroll.
@@ -130,18 +133,18 @@ new membership, fresh grant, and the prior season's ledger stays intact forever.
 
 **`ledger_entries`** — append-only. Never updated, never deleted.
 
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid | PK |
-| `membership_id` | uuid | FK |
-| `amount_cents` | bigint | signed; negative = money out |
-| `type` | enum | see below |
-| `balance_after_cents` | bigint | snapshot for auditability |
-| `bet_id` | uuid | nullable FK |
-| `actor_user_id` | uuid | nullable; set for admin actions |
-| `note` | text | required for admin types |
-| `idempotency_key` | text | **unique** |
-| `created_at` | timestamptz | |
+| Column                | Type        | Notes                           |
+| --------------------- | ----------- | ------------------------------- |
+| `id`                  | uuid        | PK                              |
+| `membership_id`       | uuid        | FK                              |
+| `amount_cents`        | bigint      | signed; negative = money out    |
+| `type`                | enum        | see below                       |
+| `balance_after_cents` | bigint      | snapshot for auditability       |
+| `bet_id`              | uuid        | nullable FK                     |
+| `actor_user_id`       | uuid        | nullable; set for admin actions |
+| `note`                | text        | required for admin types        |
+| `idempotency_key`     | text        | **unique**                      |
+| `created_at`          | timestamptz |                                 |
 
 Entry types: `SEASON_STARTING_GRANT` · `WEEKLY_ALLOWANCE` · `BET_PLACED` · `BET_WON` ·
 `BET_PUSHED` · `BET_VOIDED` · `ADMIN_CREDIT` · `ADMIN_DEBIT` · `SETTLEMENT_REVERSAL`.
@@ -193,6 +196,7 @@ added later without touching the ledger. See [../roadmap.md](../roadmap.md).
 American prices are converted to an exact **rational** decimal multiplier, never a float.
 
 For price `p`:
+
 - `p > 0` → numerator `p + 100`, denominator `100`
 - `p < 0` → numerator `100 + |p|`, denominator `|p|`
 
@@ -215,11 +219,11 @@ of `-110 / -110 / +150` on $100 returns $911.16 — `(210/110) × (210/110) × (
 
 ### Single leg
 
-| Market | Won | Lost | Push |
-|---|---|---|---|
-| Moneyline | chosen team wins | chosen team loses | game ends tied (possible in the NFL after overtime; college football has no ties) |
-| Spread | `score + line` beats opponent's score | it doesn't | `score + line` equals opponent's score |
-| Total | combined score clears the line in your direction | it doesn't | combined score equals the line |
+| Market    | Won                                              | Lost              | Push                                                                              |
+| --------- | ------------------------------------------------ | ----------------- | --------------------------------------------------------------------------------- |
+| Moneyline | chosen team wins                                 | chosen team loses | game ends tied (possible in the NFL after overtime; college football has no ties) |
+| Spread    | `score + line` beats opponent's score            | it doesn't        | `score + line` equals opponent's score                                            |
+| Total     | combined score clears the line in your direction | it doesn't        | combined score equals the line                                                    |
 
 Half-point lines cannot push. That is the entire purpose of the hook.
 
@@ -292,12 +296,12 @@ to `SETTLED`. Partial progress persists; the next run continues.
 
 Payout entry amounts, given that `BET_PLACED` already debited the full stake:
 
-| Bet outcome | Entry | Amount |
-|---|---|---|
-| Won | `BET_WON` | full return — stake **plus** profit, recomputed from surviving legs |
-| Pushed / all legs void | `BET_PUSHED` | stake returned in full |
-| Voided (canceled game, admin) | `BET_VOIDED` | stake returned in full |
-| Lost | none | the `BET_PLACED` debit already stands |
+| Bet outcome                   | Entry        | Amount                                                              |
+| ----------------------------- | ------------ | ------------------------------------------------------------------- |
+| Won                           | `BET_WON`    | full return — stake **plus** profit, recomputed from surviving legs |
+| Pushed / all legs void        | `BET_PUSHED` | stake returned in full                                              |
+| Voided (canceled game, admin) | `BET_VOIDED` | stake returned in full                                              |
+| Lost                          | none         | the `BET_PLACED` debit already stands                               |
 
 A losing bet writes no entry at settlement — the money left the balance when the bet was
 placed. Only its status changes.
@@ -327,17 +331,17 @@ always be replayed to explain how a balance came to be — including the mistake
 
 ## Failure handling
 
-| Failure | Behavior |
-|---|---|
+| Failure                                   | Behavior                                                                                                                                |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | Odds provider unavailable or rate-limited | Serve last-known odds with a staleness indicator; suspend markets stale beyond 30 minutes. The app does not go down because a feed did. |
-| Settlement interrupted mid-batch | Per-game transactions; completed work persists, remainder retries next run. |
-| Cron double-fires | Unique idempotency keys make the second write a no-op. |
-| Concurrent bets from two devices | `FOR UPDATE` lock on the membership row; the second bet is rejected for insufficient funds. |
-| Score reported incorrectly | Admin re-settles; reversing entries plus corrected ones. |
-| Line moves between slip and placement | `409` with the new price; UI requires re-confirmation. |
-| Game postponed or canceled | Pending legs `VOIDED`. Singles refunded in full; parlay legs dropped and odds recomputed. |
-| Cached balance drifts | Daily reconciliation job raises on mismatch. |
-| `PENDING` user calls an API | `403`. Authorization is checked server-side on every request, not by hiding UI. |
+| Settlement interrupted mid-batch          | Per-game transactions; completed work persists, remainder retries next run.                                                             |
+| Cron double-fires                         | Unique idempotency keys make the second write a no-op.                                                                                  |
+| Concurrent bets from two devices          | `FOR UPDATE` lock on the membership row; the second bet is rejected for insufficient funds.                                             |
+| Score reported incorrectly                | Admin re-settles; reversing entries plus corrected ones.                                                                                |
+| Line moves between slip and placement     | `409` with the new price; UI requires re-confirmation.                                                                                  |
+| Game postponed or canceled                | Pending legs `VOIDED`. Singles refunded in full; parlay legs dropped and odds recomputed.                                               |
+| Cached balance drifts                     | Daily reconciliation job raises on mismatch.                                                                                            |
+| `PENDING` user calls an API               | `403`. Authorization is checked server-side on every request, not by hiding UI.                                                         |
 
 ## Screens
 
@@ -363,18 +367,20 @@ it and you see why.
 ## Testing
 
 **Unit, table-driven, no I/O** — the domain layer:
+
 - American-to-rational conversion across positive, negative, and boundary prices
 - Payout rounding at the half-cent boundary
 - Every push case for all three market types
 - Parlay grading: all-win, any-loss, one push, one void, all push
 
 **Integration, against fixtures:**
-1. *Settlement correctness* — seed a season, place known bets on fixture games, mark them
+
+1. _Settlement correctness_ — seed a season, place known bets on fixture games, mark them
    final, assert exact ledger entries and exact resulting balances.
-2. *Idempotency* — run every job twice; assert the ledger is identical after the second run.
-3. *Reconciliation as a property* — after any sequence of operations,
+2. _Idempotency_ — run every job twice; assert the ledger is identical after the second run.
+3. _Reconciliation as a property_ — after any sequence of operations,
    `balance = SUM(ledger)` holds for every membership.
-4. *Concurrency* — two simultaneous placements against a balance that only covers one;
+4. _Concurrency_ — two simultaneous placements against a balance that only covers one;
    assert exactly one succeeds.
 
 The fixture-backed `OddsProvider` is what makes these deterministic. A live feed would make

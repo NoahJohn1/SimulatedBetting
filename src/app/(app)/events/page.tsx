@@ -34,7 +34,11 @@ export default async function EventsPage() {
         <EmptyState title="No events yet" body="Be the first to put an event on the board." />
       ) : (
         (['OPEN', 'AWAITING', 'SETTLED'] as const).map((section) => (
-          <Section key={section} title={SECTION_TITLES[section]} rows={bySection.get(section) ?? []} />
+          <Section
+            key={section}
+            title={SECTION_TITLES[section]}
+            rows={bySection.get(section) ?? []}
+          />
         ))
       )}
     </div>

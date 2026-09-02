@@ -12,7 +12,7 @@
 
 Copied from [the design](../specs/2026-09-02-cloud-lane-completion-design.md):
 
-- **The cron `schedule:` block stays commented.** Only the guards land. Uncommenting before Noah's secrets exist recreates the failure the document was written about. The design is explicit: *"Do not skip step 4 by uncommenting the schedule first."*
+- **The cron `schedule:` block stays commented.** Only the guards land. Uncommenting before Noah's secrets exist recreates the failure the document was written about. The design is explicit: _"Do not skip step 4 by uncommenting the schedule first."_
 - **`format:check` does not go into `verify` or CI** in this batch. Noah's ESPN adapter is unpushed; a formatting gate would convert his merge conflict into a red build.
 - **Every hook exits 0 on every path**, including every failure. A `SessionStart` hook that blocks a session start is worse than no hook, and a hook people find obstructive gets disabled.
 - **Hook `matcher` fields match tool names, not paths.** `Edit`, `Write` — never `src/server/money/**`, which silently matches nothing. Path filtering happens inside the script.
@@ -25,15 +25,15 @@ Copied from [the design](../specs/2026-09-02-cloud-lane-completion-design.md):
 
 Measured 2026-09-02 in the session that wrote this plan. Do not re-derive these; do re-run anything you are about to depend on.
 
-| Fact | Value |
-|---|---|
-| Node / npm | v22.22.2 / 10.9.7 |
-| `node_modules` at session start | Absent — run `npm ci` first (~21s) |
-| Docker | Binary at `/usr/bin/docker`; `docker info` **fails**; no `/var/run/docker.sock` |
-| `npm test` (whole suite) | **Cannot run here** — needs Postgres. CI proves it on the PR. |
-| `npm run typecheck`, `npm run lint`, `npx next build` | All run clean |
-| `next build` output | 32 routes — 28 ƒ dynamic, 4 prerendered |
-| `jq` | Present here, but **not assumed** — hooks use `node` for JSON |
+| Fact                                                  | Value                                                                           |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Node / npm                                            | v22.22.2 / 10.9.7                                                               |
+| `node_modules` at session start                       | Absent — run `npm ci` first (~21s)                                              |
+| Docker                                                | Binary at `/usr/bin/docker`; `docker info` **fails**; no `/var/run/docker.sock` |
+| `npm test` (whole suite)                              | **Cannot run here** — needs Postgres. CI proves it on the PR.                   |
+| `npm run typecheck`, `npm run lint`, `npx next build` | All run clean                                                                   |
+| `next build` output                                   | 32 routes — 28 ƒ dynamic, 4 prerendered                                         |
+| `jq`                                                  | Present here, but **not assumed** — hooks use `node` for JSON                   |
 
 ## The link checker
 
@@ -41,7 +41,7 @@ Task 8 ends by running this. Save it once to `/tmp/linkcheck.py`.
 
 **It checks the five live documents only — not `docs/specs/` or `docs/plans/`.** That is a
 deliberate narrowing from the version in the docs-status plan, which checked plans too and
-produced dozens of false positives: a plan that *quotes* markdown destined for another document
+produced dozens of false positives: a plan that _quotes_ markdown destined for another document
 carries that document's relative links, and the checker resolves them against the plan's own
 directory. This plan quotes repo-health tables extensively, so the wider check is pure noise
 here. Verified 2026-09-02: the five live documents pass clean.
@@ -74,19 +74,19 @@ the heading itself is what is wrong.
 
 ## File structure
 
-| File | Responsibility | Task |
-|---|---|---|
-| `.github/workflows/cron.yml` | Guards that name the missing secret | 1 |
-| `src/server/money/__tests__/ledger-funnel.test.ts` | Layer 1 — the funnel property, enforced | 2 |
-| `.nvmrc` | The half of Node pinning that switches a version manager | 3 |
-| `.github/workflows/ci.yml` | Build step, concurrency, timeout | 3 |
-| `.github/dependabot.yml` | Monthly grouped updates | 3 |
-| `.claude/hooks/session-start.sh` | Get a session runnable, or say what is missing | 4 |
-| `.claude/settings.json` | Hook registration — **created in Task 4, extended in Task 5** | 4, 5 |
-| `.claude/hooks/money-touch.sh` | Layer 2 — flag a money-path edit | 5 |
-| `README.md` | `.env.test`, the undocumented prerequisite | 6 |
-| `.prettierrc`, `.prettierignore`, `package.json`, `eslint.config.mjs` | Formatter | 7 |
-| `docs/*` | The record | 8 |
+| File                                                                  | Responsibility                                                | Task |
+| --------------------------------------------------------------------- | ------------------------------------------------------------- | ---- |
+| `.github/workflows/cron.yml`                                          | Guards that name the missing secret                           | 1    |
+| `src/server/money/__tests__/ledger-funnel.test.ts`                    | Layer 1 — the funnel property, enforced                       | 2    |
+| `.nvmrc`                                                              | The half of Node pinning that switches a version manager      | 3    |
+| `.github/workflows/ci.yml`                                            | Build step, concurrency, timeout                              | 3    |
+| `.github/dependabot.yml`                                              | Monthly grouped updates                                       | 3    |
+| `.claude/hooks/session-start.sh`                                      | Get a session runnable, or say what is missing                | 4    |
+| `.claude/settings.json`                                               | Hook registration — **created in Task 4, extended in Task 5** | 4, 5 |
+| `.claude/hooks/money-touch.sh`                                        | Layer 2 — flag a money-path edit                              | 5    |
+| `README.md`                                                           | `.env.test`, the undocumented prerequisite                    | 6    |
+| `.prettierrc`, `.prettierignore`, `package.json`, `eslint.config.mjs` | Formatter                                                     | 7    |
+| `docs/*`                                                              | The record                                                    | 8    |
 
 ---
 
@@ -95,9 +95,11 @@ the heading itself is what is wrong.
 Today a manual dispatch with missing secrets fails with `curl` exit 3 and no explanation — that is what 130 scheduled runs did. After this it fails with a line naming the secret, which is what makes Noah's step 4 diagnostic.
 
 **Files:**
+
 - Modify: `.github/workflows/cron.yml` — the `run:` block of both jobs
 
 **Interfaces:**
+
 - Produces: nothing later tasks consume. Fully independent.
 
 - [ ] **Step 1: Add the guard to the `sync-odds` job**
@@ -105,11 +107,11 @@ Today a manual dispatch with missing secrets fails with `curl` exit 3 and no exp
 Replace the `run:` block of the `sync-odds` step with:
 
 ```yaml
-        run: |
-          [ -n "$APP_URL" ] || { echo "APP_URL secret is not set — see docs/repo-health.md section 1.5"; exit 1; }
-          [ -n "$CRON_SECRET" ] || { echo "CRON_SECRET secret is not set — see docs/repo-health.md section 1.5"; exit 1; }
-          curl -sf -X GET "$APP_URL/api/cron/sync-odds" \
-            -H "Authorization: Bearer $CRON_SECRET"
+run: |
+  [ -n "$APP_URL" ] || { echo "APP_URL secret is not set — see docs/repo-health.md section 1.5"; exit 1; }
+  [ -n "$CRON_SECRET" ] || { echo "CRON_SECRET secret is not set — see docs/repo-health.md section 1.5"; exit 1; }
+  curl -sf -X GET "$APP_URL/api/cron/sync-odds" \
+    -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 - [ ] **Step 2: Add the guard to the `settle` job**
@@ -117,11 +119,11 @@ Replace the `run:` block of the `sync-odds` step with:
 Replace the `run:` block of the `settle` step with:
 
 ```yaml
-        run: |
-          [ -n "$APP_URL" ] || { echo "APP_URL secret is not set — see docs/repo-health.md section 1.5"; exit 1; }
-          [ -n "$CRON_SECRET" ] || { echo "CRON_SECRET secret is not set — see docs/repo-health.md section 1.5"; exit 1; }
-          curl -sf -X GET "$APP_URL/api/cron/settle" \
-            -H "Authorization: Bearer $CRON_SECRET"
+run: |
+  [ -n "$APP_URL" ] || { echo "APP_URL secret is not set — see docs/repo-health.md section 1.5"; exit 1; }
+  [ -n "$CRON_SECRET" ] || { echo "CRON_SECRET secret is not set — see docs/repo-health.md section 1.5"; exit 1; }
+  curl -sf -X GET "$APP_URL/api/cron/settle" \
+    -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 - [ ] **Step 3: Confirm the `schedule:` block is still commented**
@@ -191,9 +193,11 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 Layer 1 of the three-layer money defence. The property holds today, so this locks in a property rather than fixing anything.
 
 **Files:**
+
 - Create: `src/server/money/__tests__/ledger-funnel.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: the test file path, which Task 8 cites in repo-health §3.3.
 
@@ -355,11 +359,13 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 Repo-health groups these as one commit and it is right to: individually trivial, collectively the difference between a gate and a suggestion.
 
 **Files:**
+
 - Create: `.nvmrc`
 - Create: `.github/dependabot.yml`
 - Modify: `.github/workflows/ci.yml`
 
 **Interfaces:**
+
 - Produces: a CI `build` step whose behaviour Task 8 describes in repo-health §1.1.
 
 - [ ] **Step 1: Pin Node for version managers**
@@ -387,11 +393,11 @@ concurrency:
 Then add `timeout-minutes: 15` to the `verify` job, immediately after `runs-on: ubuntu-latest`:
 
 ```yaml
-  verify:
-    runs-on: ubuntu-latest
-    # The default is six hours. A Postgres service container that never reports healthy
-    # otherwise hangs that long.
-    timeout-minutes: 15
+verify:
+  runs-on: ubuntu-latest
+  # The default is six hours. A Postgres service container that never reports healthy
+  # otherwise hangs that long.
+  timeout-minutes: 15
 ```
 
 - [ ] **Step 3: Add the build step**
@@ -399,11 +405,11 @@ Then add `timeout-minutes: 15` to the `verify` job, immediately after `runs-on: 
 Append to the end of the `steps:` list in `.github/workflows/ci.yml`, after `- run: npm run verify`:
 
 ```yaml
-      # Deliberately here rather than in the `verify` script: verify is what a developer runs
-      # in a loop, and a 10-second build on every local run is a tax for no local benefit.
-      # DATABASE_URL is already exported above; src/db/client.ts throws at import without it,
-      # but nothing connects during a build.
-      - run: npm run build
+# Deliberately here rather than in the `verify` script: verify is what a developer runs
+# in a loop, and a 10-second build on every local run is a tax for no local benefit.
+# DATABASE_URL is already exported above; src/db/client.ts throws at import without it,
+# but nothing connects during a build.
+- run: npm run build
 ```
 
 - [ ] **Step 4: Add Dependabot**
@@ -486,13 +492,15 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ## Task 4: The `session-start` hook
 
-Repo-health tags this `[LOCAL]`. That tag is right about one branch and wrong about the other four — and a cloud session is the *better* place to prove those four, because it is the degraded environment.
+Repo-health tags this `[LOCAL]`. That tag is right about one branch and wrong about the other four — and a cloud session is the _better_ place to prove those four, because it is the degraded environment.
 
 **Files:**
+
 - Create: `.claude/hooks/session-start.sh`
 - Create: `.claude/settings.json` — **this file does not exist yet**
 
 **Interfaces:**
+
 - Produces: `.claude/settings.json` with a `hooks` object. Task 5 adds a second key to it and must not overwrite this one.
 
 - [ ] **Step 1: Write the hook script**
@@ -666,10 +674,12 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 [Repo-health §3.3](../repo-health.md#33-money-invariants--all-three-layers) designs three layers. Layers 1 and 3 exist after Task 2. Layer 2 was never built and, unlike the deliberately-skipped items, was never decided against.
 
 **Files:**
+
 - Create: `.claude/hooks/money-touch.sh`
 - Modify: `.claude/settings.json` — **add a key, do not replace the file**
 
 **Interfaces:**
+
 - Consumes: `.claude/settings.json` created by Task 4. The `SessionStart` key must survive.
 
 - [ ] **Step 1: Write the hook script**
@@ -822,10 +832,12 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 The suite reads `DATABASE_URL` from `.env.test` and nowhere else, the file is gitignored, and **nothing in the repository tells anyone to create it**. A fresh checkout that follows the README exactly cannot run the tests.
 
 **Files:**
+
 - Modify: `README.md` — the `### Testing` section
 - Modify: `.env.example` — one comment line
 
 **Interfaces:**
+
 - Consumes: the `.env.test` contents written by the Task 4 hook. The two must agree.
 
 - [ ] **Step 1: Add the `.env.test` paragraph to the README**
@@ -846,7 +858,6 @@ echo 'DATABASE_URL=postgres://simbet:simbet@localhost:5433/simbet_test' > .env.t
 
 The `SessionStart` hook in `.claude/hooks/session-start.sh` writes this file for you if it is
 missing, so a Claude Code session handles it automatically.
-
 ````
 
 - [ ] **Step 2: Mark the dead variable in `.env.example`**
@@ -890,11 +901,13 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 **This task produces two commits: configuration, then the reformat.** Keep them separate. The reformat commit must contain nothing but formatting, so that dropping it is one operation.
 
 **Files:**
+
 - Create: `.prettierrc`, `.prettierignore`
 - Modify: `package.json` (devDependencies + two scripts), `eslint.config.mjs`
 - Modify: ~86 source files (the reformat commit, generated by a command)
 
 **Interfaces:**
+
 - Produces: `npm run format` and `npm run format:check`. Task 8 records that `format:check` is deliberately **not** wired into `verify` or CI.
 
 - [ ] **Step 1: Install Prettier and the ESLint bridge**
@@ -950,10 +963,10 @@ In `package.json`, add to `scripts`, after `"lint"`:
 In `eslint.config.mjs`, import the config and append it **last** in the array — order matters, it only disables:
 
 ```javascript
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
-import prettier from "eslint-config-prettier";
+import { defineConfig, globalIgnores } from 'eslint/config';
+import nextVitals from 'eslint-config-next/core-web-vitals';
+import nextTs from 'eslint-config-next/typescript';
+import prettier from 'eslint-config-prettier';
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -961,13 +974,13 @@ const eslintConfig = defineConfig([
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
+    '.next/**',
+    'out/**',
+    'build/**',
+    'next-env.d.ts',
     // Not part of this project's source:
-    ".claude/**",
-    ".superpowers/**",
+    '.claude/**',
+    '.superpowers/**',
   ]),
   // Last on purpose: this only turns rules off, and it must win over everything above.
   prettier,
@@ -1054,9 +1067,10 @@ The two commits must be distinct, with the reformat second. If anything non-form
 
 ## Task 8: Reconcile the documentation
 
-Run last, alone, when the facts are complete. Repo-health records what happens otherwise: *"An earlier revision left those counts to update themselves when it merges; they did not, and three different test totals had accumulated in three places by the time anyone looked."*
+Run last, alone, when the facts are complete. Repo-health records what happens otherwise: _"An earlier revision left those counts to update themselves when it merges; they did not, and three different test totals had accumulated in three places by the time anyone looked."_
 
 **Files:**
+
 - Modify: `docs/repo-health.md` — Done table, Outstanding table, §1.1, §1.4, §2, §3.3, §3.6, the closing Prettier paragraph
 - Modify: `docs/README.md` — the three "What is left" tables, plus rows for the new spec and plan
 - Modify: `docs/roadmap.md` — the repo-health cross-references
@@ -1076,17 +1090,17 @@ Every row that landed moves to **Done** with `This branch` as its reference. The
 Nothing here is `[CLOUD]` work that is not blocked on somebody else. Every row names its lane
 and what it is waiting on.
 
-| # | Item | Owner | Blocked on |
-|---|---|---|---|
-| 1 | **Add `APP_URL` and `CRON_SECRET` as Actions secrets** | **[NOAH]** | Nothing — this is the only thing stopping the deployed app from settling bets. [Step by step](#what-you-must-do--the-cron-fix-step-by-step) |
-| 2 | **Dispatch both cron jobs by hand and confirm 200** | **[NOAH]** | Row 1. The jobs now name the missing secret instead of exiting 3, so a red run says which side is wrong |
-| 3 | Uncomment the three `schedule:` lines in `cron.yml` | [CLOUD] | Rows 1 and 2. One line of work; the guard it needs already landed |
-| 4 | Verify the `session-start` hook's Docker path | **[LOCAL]** | A desktop. The other four branches are proven — see [3.6](#36-session-start--a-hook) |
-| 5 | Tell Noah before the Prettier reformat merges | **[NOAH]** | Nothing. His unpushed adapter work conflicts in every file the reformat touches |
-| 6 | Add `format:check` to `verify` and CI | [CLOUD] | Row 5, and the adapter landing. A formatting gate now turns a merge conflict into a red build |
-| 7 | Merge Dependabot's monthly PR | **[MANUAL]** | Its first fire |
-| 8 | `db-migration` skill ([3.5](#35-db-migration--a-skill)) | [CLOUD] | Deliberately deferred. The trigger is a migration going wrong; it has not fired |
-| 9 | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | Nothing. The gate on phase 5, and nothing here substitutes for it |
+| #   | Item                                                                            | Owner        | Blocked on                                                                                                                                  |
+| --- | ------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Add `APP_URL` and `CRON_SECRET` as Actions secrets**                          | **[NOAH]**   | Nothing — this is the only thing stopping the deployed app from settling bets. [Step by step](#what-you-must-do--the-cron-fix-step-by-step) |
+| 2   | **Dispatch both cron jobs by hand and confirm 200**                             | **[NOAH]**   | Row 1. The jobs now name the missing secret instead of exiting 3, so a red run says which side is wrong                                     |
+| 3   | Uncomment the three `schedule:` lines in `cron.yml`                             | [CLOUD]      | Rows 1 and 2. One line of work; the guard it needs already landed                                                                           |
+| 4   | Verify the `session-start` hook's Docker path                                   | **[LOCAL]**  | A desktop. The other four branches are proven — see [3.6](#36-session-start--a-hook)                                                        |
+| 5   | Tell Noah before the Prettier reformat merges                                   | **[NOAH]**   | Nothing. His unpushed adapter work conflicts in every file the reformat touches                                                             |
+| 6   | Add `format:check` to `verify` and CI                                           | [CLOUD]      | Row 5, and the adapter landing. A formatting gate now turns a merge conflict into a red build                                               |
+| 7   | Merge Dependabot's monthly PR                                                   | **[MANUAL]** | Its first fire                                                                                                                              |
+| 8   | `db-migration` skill ([3.5](#35-db-migration--a-skill))                         | [CLOUD]      | Deliberately deferred. The trigger is a migration going wrong; it has not fired                                                             |
+| 9   | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | Nothing. The gate on phase 5, and nothing here substitutes for it                                                                           |
 ```
 
 - [ ] **Step 3: Move the landed rows into the Done table**
@@ -1125,7 +1139,7 @@ page code for four routes, so a prerender-time throw in any of them is a failure
 
 **3. §1.4.** Strike through the `.nvmrc` and Dependabot bullets in the house style already used for branch protection: `~~**Dependabot, monthly, grouped.**~~ **Done.** ...`.
 
-**4. §3.3.** Record that all three layers now exist — layer 1 landed in Task 2, layer 2 in Task 5, layer 3 since [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) — and that the funnel property was re-verified 2026-09-02: exactly one `.insert(ledgerEntries)` outside tests at `ledger.ts:69`, zero updates or deletes anywhere, 28 files referencing `postEntry`. Replace the closing sentence *"Two rounds of verification five days apart is not the same as a test"* with the observation that it is a test now.
+**4. §3.3.** Record that all three layers now exist — layer 1 landed in Task 2, layer 2 in Task 5, layer 3 since [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) — and that the funnel property was re-verified 2026-09-02: exactly one `.insert(ledgerEntries)` outside tests at `ledger.ts:69`, zero updates or deletes anywhere, 28 files referencing `postEntry`. Replace the closing sentence _"Two rounds of verification five days apart is not the same as a test"_ with the observation that it is a test now.
 
 - [ ] **Step 5: Rewrite §3.6's lane header**
 
@@ -1133,16 +1147,16 @@ Replace the `**Lane: [LOCAL].**` header with the split, and record what each lan
 
 ```markdown
 **Lane: [CLOUD] to write and mostly prove, [LOCAL] to finish.** The original `[LOCAL]` tag was
-broader than the work. A cloud session is the *better* place to prove four of the hook's five
+broader than the work. A cloud session is the _better_ place to prove four of the hook's five
 branches, because a cloud session is the degraded environment the hook exists to handle.
 
-| Branch | Proven where | Status |
-|---|---|---|
-| `npm ci` when `node_modules` is absent | [CLOUD] | ✅ |
-| Re-running is a no-op | [CLOUD] | ✅ |
-| No daemon → prints instructions, exits 0 | [CLOUD] | ✅ |
-| A `docker` binary on `PATH` is not mistaken for a daemon | [CLOUD] | ✅ |
-| `docker compose up -d --wait` and both migrations | **[LOCAL]** | 🔲 Outstanding — row 4 |
+| Branch                                                   | Proven where | Status                 |
+| -------------------------------------------------------- | ------------ | ---------------------- |
+| `npm ci` when `node_modules` is absent                   | [CLOUD]      | ✅                     |
+| Re-running is a no-op                                    | [CLOUD]      | ✅                     |
+| No daemon → prints instructions, exits 0                 | [CLOUD]      | ✅                     |
+| A `docker` binary on `PATH` is not mistaken for a daemon | [CLOUD]      | ✅                     |
+| `docker compose up -d --wait` and both migrations        | **[LOCAL]**  | 🔲 Outstanding — row 4 |
 ```
 
 - [ ] **Step 6: Replace the closing Prettier paragraph with the decision**
@@ -1153,8 +1167,8 @@ The final paragraph currently says the conclusion "is now an open question again
 
 Use the `decision-log` skill — it handles the next-number lookup, the house format (`### D<n> — <title>`, an `*Added <date> during the <x> session.*` line, body, then `*Rejected:*` paragraphs), and GitHub's anchor slugs.
 
-- **Prettier adopted with a config matched to the existing code.** *Rejected:* Prettier's defaults (230 files rather than 86, for no property anyone chose); adding `format:check` to `verify` now (turns Noah's merge conflict into a red build).
-- **The money-path hook is a flag, not a review.** One line pointing at `/money-invariants`. *Rejected:* spawning an agent review on every save — slow enough to interrupt an edit, and the reliable outcome of that is that someone disables it, which enforces nothing.
+- **Prettier adopted with a config matched to the existing code.** _Rejected:_ Prettier's defaults (230 files rather than 86, for no property anyone chose); adding `format:check` to `verify` now (turns Noah's merge conflict into a red build).
+- **The money-path hook is a flag, not a review.** One line pointing at `/money-invariants`. _Rejected:_ spawning an agent review on every save — slow enough to interrupt an edit, and the reliable outcome of that is that someone disables it, which enforces nothing.
 
 - [ ] **Step 8: Update the three "What is left" tables in `docs/README.md`**
 

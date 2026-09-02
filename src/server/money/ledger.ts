@@ -1,11 +1,6 @@
 import { eq } from 'drizzle-orm';
 import type { Tx } from '@/db/client';
-import {
-  ledgerEntries,
-  seasonMemberships,
-  type Currency,
-  type LedgerEntryType,
-} from '@/db/schema';
+import { ledgerEntries, seasonMemberships, type Currency, type LedgerEntryType } from '@/db/schema';
 import { MoneyError } from './errors';
 
 const ADMIN_TYPES: ReadonlySet<LedgerEntryType> = new Set(['ADMIN_CREDIT', 'ADMIN_DEBIT']);
@@ -88,11 +83,7 @@ export async function postEntry(tx: Tx, input: PostEntryInput): Promise<PostEntr
 
   await tx
     .update(seasonMemberships)
-    .set(
-      currency === 'CASH'
-        ? { balanceCents: nextBalance }
-        : { creditsBalanceCents: nextBalance },
-    )
+    .set(currency === 'CASH' ? { balanceCents: nextBalance } : { creditsBalanceCents: nextBalance })
     .where(eq(seasonMemberships.id, input.membershipId));
 
   return { applied: true, balanceCents: nextBalance, entryId: inserted[0].id };

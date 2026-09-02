@@ -30,7 +30,10 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
         </Link>
         <div className="flex items-center gap-3">
           {member.role === 'ADMIN' ? (
-            <Link href="/admin" className="text-xs font-medium text-ink-muted transition-colors hover:text-ink">
+            <Link
+              href="/admin"
+              className="text-xs font-medium text-ink-muted transition-colors hover:text-ink"
+            >
               Admin
             </Link>
           ) : null}

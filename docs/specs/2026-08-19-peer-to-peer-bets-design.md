@@ -22,7 +22,7 @@ same side of the wall — including the market-backed kind, which is graded obje
 not worth splitting the rule for
 ([D40](../decisions.md#d40--every-peer-to-peer-wager-moves-credits-including-the-market-backed-kind)).
 
-The engineering goal is that this subsystem *adds* rather than *modifies*. It writes one new
+The engineering goal is that this subsystem _adds_ rather than _modifies_. It writes one new
 table and reuses `postEntry`, `emitFeedEvent`, `gradeLeg`, `gradeCustomLeg` and the `settle`
 cron unchanged. It does not touch `bets`, `bet_legs`, `placeBet`, `settleGame`, or
 `resettleBet` at all — so it structurally cannot regress the money paths subsystems 1 and 3
@@ -30,7 +30,7 @@ are built on.
 
 This subsystem also finally defines **head-to-head**, which
 [D27](../decisions.md#d27--head-to-head-is-deferred-to-subsystem-4) deferred here on the
-grounds that nobody bets *against* anybody until peer-to-peer exists. Now they do.
+grounds that nobody bets _against_ anybody until peer-to-peer exists. Now they do.
 
 ## Success criteria
 
@@ -113,11 +113,11 @@ no changes to any existing table beyond one nullable foreign key.
 
 ### 1. A wager is its own table, not a pair of bets
 
-`p2p_wagers` owns its own lifecycle. It is deliberately *not* modelled as two rows in `bets`
+`p2p_wagers` owns its own lifecycle. It is deliberately _not_ modelled as two rows in `bets`
 tied by a link table, and not as a two-outcome custom event with exactly two bets
 ([D42](../decisions.md#d42--a-wager-is-its-own-table-not-two-bets-and-not-a-two-person-custom-event)).
 
-What is reused is *machinery*, not tables: `postEntry` for every credit movement,
+What is reused is _machinery_, not tables: `postEntry` for every credit movement,
 `emitFeedEvent` for every card, and the pure graders for market-backed verdicts. That is the
 same distinction [D33](../decisions.md#d33--events-is-a-true-supertype-not-a-pair-of-nullable-foreign-keys)
 drew when it made `events` a supertype instead of bolting nullable keys onto `markets`: share
@@ -129,7 +129,7 @@ the mechanism, not the shape.
 positive). All three always move `CREDITS`.
 
 This does not contradict [D34](../decisions.md#d34--currency-is-a-dimension-on-the-existing-ledger-not-a-second-ledger)'s
-"no new entry types". D34 refused to double the enum along the *currency* axis, because a
+"no new entry types". D34 refused to double the enum along the _currency_ axis, because a
 `BET_WON` means precisely the same thing in either denomination. Escrow is a genuinely new
 movement — value leaving a balance to sit in a pot owned by nobody — and it has no existing
 name.
@@ -146,7 +146,7 @@ mapping over a leg status the engine already computes:
 export function verdictForLegStatus(status: 'WON' | 'LOST' | 'PUSHED' | 'VOIDED'): Verdict {
   if (status === 'WON') return 'OFFERER';
   if (status === 'LOST') return 'ACCEPTOR';
-  return 'VOID';               // PUSHED or VOIDED — refund both
+  return 'VOID'; // PUSHED or VOIDED — refund both
 }
 ```
 
@@ -174,36 +174,41 @@ computed.
 ```ts
 export const p2pWagerKind = pgEnum('p2p_wager_kind', ['MARKET', 'FREEFORM']);
 export const p2pWagerStatus = pgEnum('p2p_wager_status', [
-  'OFFERED', 'ACCEPTED', 'SETTLED', 'VOIDED', 'CANCELED', 'EXPIRED',
+  'OFFERED',
+  'ACCEPTED',
+  'SETTLED',
+  'VOIDED',
+  'CANCELED',
+  'EXPIRED',
 ]);
 export const p2pVerdict = pgEnum('p2p_verdict', ['OFFERER', 'ACCEPTOR', 'VOID']);
 ```
 
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid pk | |
-| `season_id` | uuid → `seasons` | the visibility boundary, as everywhere else ([D21](../decisions.md#d21--no-social-graph-the-season-is-the-graph)) |
-| `kind` | `p2p_wager_kind` | `MARKET` or `FREEFORM` |
-| `status` | `p2p_wager_status` | default `OFFERED` |
-| `offerer_membership_id` | uuid → `season_memberships` | |
-| `acceptor_membership_id` | uuid → `season_memberships`, null | null until accepted |
-| `opponent_membership_id` | uuid → `season_memberships`, null | **null = open to the season**; set = a directed challenge |
-| `offerer_stake_cents` | bigint | |
-| `acceptor_stake_cents` | bigint | |
-| `selection_id` | uuid → `selections`, null | `MARKET` only |
-| `line_at_offer` | numeric(5,2), null | frozen at offer, `MARKET` only |
-| `description` | text, null | `FREEFORM` only |
-| `expires_at` | timestamptz | when an unaccepted offer dies |
-| `resolves_by` | timestamptz | when a missing claim becomes overdue |
-| `offerer_claim` | `p2p_verdict`, null | who the offerer says won |
-| `acceptor_claim` | `p2p_verdict`, null | who the acceptor says won |
-| `offerer_cancel_proposed` | boolean | mutual-cancel half-signal |
-| `acceptor_cancel_proposed` | boolean | mutual-cancel half-signal |
-| `verdict` | `p2p_verdict`, null | the final answer |
-| `settlement_attempts` | integer | plays `bets.settlement_attempts`' exact role |
-| `resolved_by_user_id` | uuid → `users`, null | set only on admin arbitration |
-| `resolution_note` | text, null | mandatory on arbitration |
-| `accepted_at`, `settled_at`, `created_at` | timestamptz | |
+| Column                                    | Type                              | Notes                                                                                                             |
+| ----------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `id`                                      | uuid pk                           |                                                                                                                   |
+| `season_id`                               | uuid → `seasons`                  | the visibility boundary, as everywhere else ([D21](../decisions.md#d21--no-social-graph-the-season-is-the-graph)) |
+| `kind`                                    | `p2p_wager_kind`                  | `MARKET` or `FREEFORM`                                                                                            |
+| `status`                                  | `p2p_wager_status`                | default `OFFERED`                                                                                                 |
+| `offerer_membership_id`                   | uuid → `season_memberships`       |                                                                                                                   |
+| `acceptor_membership_id`                  | uuid → `season_memberships`, null | null until accepted                                                                                               |
+| `opponent_membership_id`                  | uuid → `season_memberships`, null | **null = open to the season**; set = a directed challenge                                                         |
+| `offerer_stake_cents`                     | bigint                            |                                                                                                                   |
+| `acceptor_stake_cents`                    | bigint                            |                                                                                                                   |
+| `selection_id`                            | uuid → `selections`, null         | `MARKET` only                                                                                                     |
+| `line_at_offer`                           | numeric(5,2), null                | frozen at offer, `MARKET` only                                                                                    |
+| `description`                             | text, null                        | `FREEFORM` only                                                                                                   |
+| `expires_at`                              | timestamptz                       | when an unaccepted offer dies                                                                                     |
+| `resolves_by`                             | timestamptz                       | when a missing claim becomes overdue                                                                              |
+| `offerer_claim`                           | `p2p_verdict`, null               | who the offerer says won                                                                                          |
+| `acceptor_claim`                          | `p2p_verdict`, null               | who the acceptor says won                                                                                         |
+| `offerer_cancel_proposed`                 | boolean                           | mutual-cancel half-signal                                                                                         |
+| `acceptor_cancel_proposed`                | boolean                           | mutual-cancel half-signal                                                                                         |
+| `verdict`                                 | `p2p_verdict`, null               | the final answer                                                                                                  |
+| `settlement_attempts`                     | integer                           | plays `bets.settlement_attempts`' exact role                                                                      |
+| `resolved_by_user_id`                     | uuid → `users`, null              | set only on admin arbitration                                                                                     |
+| `resolution_note`                         | text, null                        | mandatory on arbitration                                                                                          |
+| `accepted_at`, `settled_at`, `created_at` | timestamptz                       |                                                                                                                   |
 
 A CHECK constraint enforces the discriminator: `MARKET` requires `selection_id` and forbids
 `description`; `FREEFORM` requires `description` and forbids `selection_id`. Both stakes must
@@ -224,15 +229,15 @@ The two partial indexes exist for the same reason `bet_legs_pending_idx` and
 `custom_events_overdue_idx` do: the sweep runs every ten minutes forever and must not scan the
 settled bulk of the table.
 
-### What is deliberately *not* a column
+### What is deliberately _not_ a column
 
 **There is no `DISPUTED` status and no `OVERDUE` status.** Both are predicates over an
 `ACCEPTED` row:
 
 ```ts
-isDisputed(w)  =  w.offererClaim !== null && w.acceptorClaim !== null
-                  && w.offererClaim !== w.acceptorClaim
-isOverdue(w, now)  =  w.resolvesBy < now && !agreed(w)
+isDisputed(w) =
+  w.offererClaim !== null && w.acceptorClaim !== null && w.offererClaim !== w.acceptorClaim;
+isOverdue(w, now) = w.resolvesBy < now && !agreed(w);
 ```
 
 This is [D37](../decisions.md#d37--events-carry-a-resolve-by-date-overdue-is-derived-and-swept-to-admins)
@@ -273,14 +278,14 @@ cannot collide with the payout it is correcting
 
 ### Where credits go
 
-| Moment | Entries written |
-|---|---|
-| Offer posted | `P2P_ESCROW` −offerer stake |
-| Offer accepted | `P2P_ESCROW` −acceptor stake |
-| Offer canceled or expired | `P2P_REFUND` +offerer stake |
-| Settled, verdict `OFFERER`/`ACCEPTOR` | `P2P_WON` +pot to the winner |
-| Settled, verdict `VOID` | `P2P_REFUND` +each stake to its owner |
-| Admin correction | `SETTLEMENT_REVERSAL` reversing every entry from the prior attempt, then the new attempt's entries |
+| Moment                                | Entries written                                                                                    |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Offer posted                          | `P2P_ESCROW` −offerer stake                                                                        |
+| Offer accepted                        | `P2P_ESCROW` −acceptor stake                                                                       |
+| Offer canceled or expired             | `P2P_REFUND` +offerer stake                                                                        |
+| Settled, verdict `OFFERER`/`ACCEPTOR` | `P2P_WON` +pot to the winner                                                                       |
+| Settled, verdict `VOID`               | `P2P_REFUND` +each stake to its owner                                                              |
+| Admin correction                      | `SETTLEMENT_REVERSAL` reversing every entry from the prior attempt, then the new attempt's entries |
 
 ### The new invariant, and the check that proves it
 
@@ -290,14 +295,14 @@ ledger entries. Escrow breaks that: credits sitting in a live pot have left a ba
 arrived nowhere.
 
 `reconcileBalances` itself stays correct and unchanged — a member's cache and their ledger sum
-still agree, both already net of escrow. What is no longer implied is that the *system* total
+still agree, both already net of escrow. What is no longer implied is that the _system_ total
 is conserved. So a second check runs beside it in the same `reconcile` cron:
 
 ```ts
 export interface EscrowDiscrepancy {
   wagerId: string;
-  expectedHeldCents: bigint;   // from the wager's own stakes and status
-  actualHeldCents: bigint;     // escrow entries minus payouts and refunds
+  expectedHeldCents: bigint; // from the wager's own stakes and status
+  actualHeldCents: bigint; // escrow entries minus payouts and refunds
 }
 
 export async function reconcileEscrow(): Promise<EscrowDiscrepancy[]>;
@@ -338,7 +343,7 @@ Escrowing at offer rather than at acceptance is a deliberate departure from what
 assumed, recorded as
 [D46](../decisions.md#d46--the-offerers-stake-escrows-at-offer-not-at-acceptance). Once offers
 can sit open, an offerer with 1,000 credits could otherwise post five 1,000-credit offers, four
-of which are promises they cannot keep. Escrow at offer makes a live offer *always good*: an
+of which are promises they cannot keep. Escrow at offer makes a live offer _always good_: an
 acceptance can never fail because of the offerer's balance.
 
 Validation rejects: a stake ≤ 0, a stake exceeding the offerer's credits, an opponent who is
@@ -452,13 +457,13 @@ it says.
 
 Five new `feed_event_type` values:
 
-| Type | Subject | Dedupe key |
-|---|---|---|
-| `P2P_OFFERED` | offerer | `p2p:{id}:offered` |
-| `P2P_ACCEPTED` | acceptor | `p2p:{id}:accepted` |
-| `P2P_SETTLED` | winner, or offerer on `VOID` | `p2p:{id}:settled:{attempt}` |
-| `P2P_DISPUTED` | the party who claimed second | `p2p:{id}:disputed:{attempt}` |
-| `P2P_VOIDED` | none — a void is about the wager | `p2p:{id}:voided:{attempt}` |
+| Type           | Subject                          | Dedupe key                    |
+| -------------- | -------------------------------- | ----------------------------- |
+| `P2P_OFFERED`  | offerer                          | `p2p:{id}:offered`            |
+| `P2P_ACCEPTED` | acceptor                         | `p2p:{id}:accepted`           |
+| `P2P_SETTLED`  | winner, or offerer on `VOID`     | `p2p:{id}:settled:{attempt}`  |
+| `P2P_DISPUTED` | the party who claimed second     | `p2p:{id}:disputed:{attempt}` |
+| `P2P_VOIDED`   | none — a void is about the wager | `p2p:{id}:voided:{attempt}`   |
 
 Payloads follow the existing conventions exactly: money is a decimal string
 ([D25](../decisions.md#d25--money-inside-a-feed-payload-is-a-decimal-string)), facts freeze and
@@ -483,14 +488,14 @@ Reactions and comments come for free: they attach to `feed_events`, and these ar
 exactly this moment — a segmented control rather than another tab — so `/bets` gains a
 **Bets | Wagers** toggle, which is also where a member would look for them.
 
-| Route | Contents |
-|---|---|
-| `/bets` | existing bets list, plus a Bets \| Wagers segmented control |
-| `/wagers` | four sections: open offers, offers directed at you, your live wagers, and awaiting your claim |
-| `/wagers/new` | kind toggle; opponent picker or "open to the season"; both stakes; selection picker or description; expiry and resolve-by |
-| `/wagers/[wagerId]` | terms, status, the counterparty, and whichever of accept / decline / cancel / claim / propose-cancel the viewer is entitled to |
-| `/admin/wagers` | the two derived queues — disputed and overdue — with the arbitration form |
-| `/members/[membershipId]` | gains a head-to-head block against the viewing member |
+| Route                     | Contents                                                                                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `/bets`                   | existing bets list, plus a Bets \| Wagers segmented control                                                                    |
+| `/wagers`                 | four sections: open offers, offers directed at you, your live wagers, and awaiting your claim                                  |
+| `/wagers/new`             | kind toggle; opponent picker or "open to the season"; both stakes; selection picker or description; expiry and resolve-by      |
+| `/wagers/[wagerId]`       | terms, status, the counterparty, and whichever of accept / decline / cancel / claim / propose-cancel the viewer is entitled to |
+| `/admin/wagers`           | the two derived queues — disputed and overdue — with the arbitration form                                                      |
+| `/members/[membershipId]` | gains a head-to-head block against the viewing member                                                                          |
 
 Every action is authorized server-side through `requireApprovedMemberOrThrow` or
 `requireAdmin`, never by hiding UI. A member who is not a party to a wager can read it — the
@@ -498,18 +503,18 @@ season is the visibility boundary — but every mutation checks membership again
 
 ## Failure handling
 
-| Failure | Handling |
-|---|---|
-| Two members accept one open offer at once | Row lock plus `status = 'OFFERED'` re-check; the loser gets `WAGER_NOT_OPEN` |
-| Accept races the expiry sweep | Same lock; whichever commits first wins, the other sees the moved status |
-| Both parties claim simultaneously | Row lock; the second write sees the first claim and deterministically agrees or disputes |
-| Offerer's credits spent between offer and accept | Impossible — the stake is already escrowed |
-| Cron invocation times out mid-sweep | Each wager settles in its own transaction; the next run resumes |
-| Sweep runs twice | Idempotency keys make every duplicate write a no-op |
-| Underlying game postponed after acceptance | Sweep sees the status and voids the wager, refunding both |
-| Custom event voided after a wager on it | Same path — verdict `VOID` |
+| Failure                                            | Handling                                                                                      |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Two members accept one open offer at once          | Row lock plus `status = 'OFFERED'` re-check; the loser gets `WAGER_NOT_OPEN`                  |
+| Accept races the expiry sweep                      | Same lock; whichever commits first wins, the other sees the moved status                      |
+| Both parties claim simultaneously                  | Row lock; the second write sees the first claim and deterministically agrees or disputes      |
+| Offerer's credits spent between offer and accept   | Impossible — the stake is already escrowed                                                    |
+| Cron invocation times out mid-sweep                | Each wager settles in its own transaction; the next run resumes                               |
+| Sweep runs twice                                   | Idempotency keys make every duplicate write a no-op                                           |
+| Underlying game postponed after acceptance         | Sweep sees the status and voids the wager, refunding both                                     |
+| Custom event voided after a wager on it            | Same path — verdict `VOID`                                                                    |
 | Admin arbitrates a wager the sweep already settled | `settlement_attempts` increments; reversal entries undo attempt 1 before attempt 2 is written |
-| Escrow written but payout never made | `reconcileEscrow` reports it on the next daily run |
+| Escrow written but payout never made               | `reconcileEscrow` reports it on the next daily run                                            |
 
 ## Testing
 
