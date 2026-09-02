@@ -212,7 +212,7 @@ entry, no redesign.
 
 *Added 2026-08-17 during the subsystem 2 design session.*
 
-Supersedes the "friend or follow graph" sketched in [the roadmap](roadmap.md#2-social-layer).
+Supersedes the "friend or follow graph" sketched in [the roadmap](roadmap.md#roadmap).
 Season membership defines who can see whom. There is no follow, no friend request, no accept.
 
 Every member is already admin-approved into a small private league, so a graph would mostly
@@ -687,7 +687,7 @@ fair call for it.
 Posting an offer escrows the offerer's stake immediately. Accepting escrows the acceptor's. An
 unaccepted offer refunds on cancellation or expiry.
 
-[The roadmap](roadmap.md#4-peer-to-peer-bets) assumed both stakes escrow at acceptance, and that
+[The roadmap](roadmap.md#roadmap) assumed both stakes escrow at acceptance, and that
 was right for the model it had in mind — a directed challenge, accepted or not. It stops being
 right once an offer can sit open to the season: an offerer with 1,000 credits could post five
 1,000-credit offers, four of which are promises they cannot keep. Escrowing at offer makes a live

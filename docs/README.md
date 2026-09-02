@@ -14,6 +14,8 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Mobile audit](mobile-audit.md) | Every screen at 375×812, with each finding assigned to the ladder rung that owns its fix |
 | [Design-system audit](design-system-audit.md) | All 18 routes in both themes at two viewports, after the 7b sweep, with each remaining finding assigned to a rung |
 | [Repo health plan](plans/2026-08-20-repo-health-implementation-plan.md) | The task-by-task plan for the repo health work, written for parallel execution |
+| [Cloud lane spec](specs/2026-09-02-cloud-lane-completion-design.md) | Closing every [CLOUD] item in repo health — the cron guard, the funnel guard test, the CI chore, both hooks, and Prettier |
+| [Cloud lane plan](plans/2026-09-02-cloud-lane-completion-implementation-plan.md) | The task-by-task plan for that work |
 | [Docs status and archive spec](specs/2026-09-02-docs-status-and-archive-design.md) | The owner taxonomy, the roadmap's master table, and what moved to the archive |
 | [Docs status and archive plan](plans/2026-09-02-docs-status-and-archive-implementation-plan.md) | The task-by-task plan for that restructure |
 
