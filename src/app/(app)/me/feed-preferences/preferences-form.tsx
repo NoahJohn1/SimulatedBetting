@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import type { FeedEventType } from '@/db/schema';
+import { Button } from '@/components/ui/button';
 import { saveFeedPreferencesAction } from '../../feed/actions';
 
 export interface PreferenceOption {
@@ -45,7 +46,7 @@ export function PreferencesForm({
         return (
           <label
             key={option.type}
-            className="flex items-start gap-3 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950"
+            className="flex items-start gap-3 rounded-xl border border-line bg-surface-raised p-3"
           >
             <input
               type="checkbox"
@@ -55,22 +56,17 @@ export function PreferencesForm({
             />
             <span className="flex flex-col gap-0.5">
               <span className="text-sm font-medium">{option.label}</span>
-              <span className="text-xs text-zinc-500">{option.description}</span>
+              <span className="text-xs text-ink-muted">{option.description}</span>
             </span>
           </label>
         );
       })}
 
       <div className="flex items-center justify-end gap-3 pt-2">
-        {saved ? <span className="text-xs text-emerald-600">Saved</span> : null}
-        <button
-          type="button"
-          onClick={save}
-          disabled={pending}
-          className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-        >
+        {saved ? <span className="text-xs text-positive">Saved</span> : null}
+        <Button onClick={save} disabled={pending}>
           {pending ? 'Saving…' : 'Save'}
-        </button>
+        </Button>
       </div>
     </div>
   );

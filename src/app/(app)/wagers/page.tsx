@@ -1,8 +1,13 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+import { buttonClasses } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Money } from '@/components/ui/money';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import { requireApprovedMember } from '@/server/auth/session';
 import { loadWagerBoard, type WagerSummary } from '@/server/p2p/query';
+
+export const metadata: Metadata = { title: 'Wagers' };
 
 function WagerRow({ wager }: { wager: WagerSummary }) {
   const parties = wager.acceptorDisplayName
@@ -12,18 +17,18 @@ function WagerRow({ wager }: { wager: WagerSummary }) {
   return (
     <Link
       href={`/wagers/${wager.id}`}
-      className="flex flex-col gap-1 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800"
+      className="flex flex-col gap-1 rounded-lg border border-line p-3"
     >
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-medium">{wager.subject}</span>
         <Money cents={wager.potCents} currency="CREDITS" />
       </div>
-      <div className="flex items-center gap-2 text-xs text-zinc-500">
+      <div className="flex items-center gap-2 text-xs text-ink-muted">
         <span>{parties}</span>
-        {wager.disputed && <span className="font-medium text-amber-600">disputed</span>}
-        {wager.overdue && <span className="font-medium text-amber-600">overdue</span>}
+        {wager.disputed && <span className="font-medium text-caution">disputed</span>}
+        {wager.overdue && <span className="font-medium text-caution">overdue</span>}
       </div>
-      <div className="text-xs text-zinc-400">
+      <div className="text-xs text-ink-muted">
         <Money cents={wager.offererStakeCents} currency="CREDITS" /> against{' '}
         <Money cents={wager.acceptorStakeCents} currency="CREDITS" />
       </div>
@@ -35,7 +40,7 @@ function Section({ title, wagers }: { title: string; wagers: WagerSummary[] }) {
   if (wagers.length === 0) return null;
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">{title}</h2>
+      <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">{title}</h2>
       {wagers.map((w) => (
         <WagerRow key={w.id} wager={w} />
       ))}
@@ -56,22 +61,15 @@ export default async function WagersPage() {
 
   return (
     <div className="flex flex-col gap-4 px-4 py-4">
-      <div className="flex gap-2 px-1">
-        <Link
-          href="/bets"
-          className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
-        >
-          Bets
-        </Link>
-        <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
-          Wagers
-        </span>
-      </div>
+      <SegmentedControl
+        label="Bets or wagers"
+        segments={[
+          { href: '/bets', label: 'Bets', active: false },
+          { href: '/wagers', label: 'Wagers', active: true },
+        ]}
+      />
 
-      <Link
-        href="/wagers/new"
-        className="rounded-lg bg-zinc-900 px-4 py-2 text-center text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
-      >
+      <Link href="/wagers/new" className={buttonClasses('primary')}>
         Offer a wager
       </Link>
 

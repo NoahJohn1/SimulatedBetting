@@ -22,9 +22,9 @@ export interface WagerActionsProps {
 }
 
 const BUTTON =
-  'rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium disabled:opacity-50 dark:border-zinc-700';
+  'rounded-lg border border-line-strong px-3 py-2 text-sm font-medium disabled:opacity-50';
 const PRIMARY =
-  'rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900';
+  'rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-ink disabled:opacity-50';
 
 export function WagerActions(props: WagerActionsProps) {
   const router = useRouter();
@@ -90,7 +90,7 @@ export function WagerActions(props: WagerActionsProps) {
 
       {actions.canClaim && (
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          <span className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
             Who won?
           </span>
           <div className="flex flex-wrap gap-2">
@@ -119,7 +119,7 @@ export function WagerActions(props: WagerActionsProps) {
               Nobody — refund us
             </button>
           </div>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-ink-muted">
             It pays out as soon as you both say the same thing. If you disagree, an admin
             settles it.
           </p>
@@ -136,13 +136,13 @@ export function WagerActions(props: WagerActionsProps) {
           >
             {props.youProposedCancel ? 'Waiting on them to agree' : 'Propose calling it off'}
           </button>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-ink-muted">
             Both of you have to agree. Then you each get your own stake back.
           </p>
         </div>
       )}
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-negative">{error}</p>}
     </div>
   );
 }

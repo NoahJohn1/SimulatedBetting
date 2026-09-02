@@ -246,27 +246,99 @@ rollback covers what staging would, at a fraction of the setup.
 Four rungs, ordered so the app is shippable after each one. Climb until it looks good enough
 and stop there — nothing later in the ladder is a prerequisite for anything outside it.
 
+| Rung | What it is | Status |
+|---|---|---|
+| [7a](#7a--foundations) | Foundations — boundaries, loading states, app identity | **Built** ([spec](specs/2026-08-22-ui-foundations-design.md), [plan](plans/2026-08-22-ui-foundations-implementation-plan.md), [mobile audit](mobile-audit.md)) |
+| [7b](#7b--design-system) | Design system — tokens, dark mode, the shared set | **Built** ([spec](specs/2026-08-24-design-system-design.md), [plan](plans/2026-08-24-design-system-implementation-plan.md), [design-system audit](design-system-audit.md)) |
+| [7c](#7c--screen-by-screen-rebuild) | Screen-by-screen rebuild | Not started — carries an [inherited backlog](#what-7c-inherits) |
+| [7d](#7d--craft) | Craft — motion, accessibility, copy, density | Not started — carries an [inherited backlog](#what-7d-inherits) |
+
+Each rung's inherited backlog is the record of what an earlier rung deliberately did not do.
+Nothing is dropped silently; if a phase declines an item, it lands in the rung that owns it.
+
 ### 7a — Foundations
 
-Not optional, and small. The app currently has **zero** `error.tsx`, `loading.tsx`, or
-`not-found.tsx` files, so any thrown error in any route is a white screen with no way back.
-The root layout still reports itself as "Create Next App," and `public/` is the five stock
-Next.js SVGs.
+**Built** — see [the spec](specs/2026-08-22-ui-foundations-design.md) for the full design and
+[the mobile audit](mobile-audit.md) for the findings it left to later rungs. That audit assigned
+7b nothing: its six findings went 7a (two, fixed on the spot), 7c (three), and 7d (one), and they
+are now listed under those rungs below. The original description below got two
+things wrong, recorded in the spec rather than silently re-scoped: root-level `error.tsx`,
+`global-error.tsx`, and `not-found.tsx` had already landed with the deploy groundwork, and
+pending states were already on all twelve forms — both needed a regression test, not a rebuild.
 
-- Error, loading, and not-found boundaries on every route segment
-- Real metadata, favicon, app icons, and a PWA manifest so it installs to a phone home screen
-- Pending states on every form — bets, offers, resolutions, admin actions
-- A mobile viewport audit; this is a phone app that happens to run in a browser
+- Error and not-found boundaries inside the `(app)` shell and `admin`, so a throw or a bad id
+  keeps the header, tab bar, and bet slip instead of replacing them; the two root boundaries
+  now call `retry()` instead of `reset()`, so "Try again" actually re-fetches
+- `loading.tsx` on every top-level feature segment (eight files cover all eighteen pages)
+- Real metadata, a title template, generated app icons, and a web manifest, so the browser tab,
+  the app switcher, and an installed home-screen icon all say SimulatedBetting; search engines
+  are told not to index it
+- A regression test asserting all twelve forms' pending states, and a structural test that fails
+  the day a route ships without a boundary
+- A mobile audit at 375×812 across all eighteen routes, which caught and fixed two genuine
+  blocks-use bugs in passing: the bet slip's collapsed bar occluding the entire tab bar, and a
+  mobile keyboard with no minus key blocking negative odds entry on custom events
 
 ### 7b — Design system
 
-There are four shared components today ([`src/components/ui/`](../src/components/ui/)); every
-other screen is inline Tailwind, which is why the app looks like four different apps.
+**Built** — see [the spec](specs/2026-08-24-design-system-design.md),
+[the plan](plans/2026-08-24-design-system-implementation-plan.md), and
+[the design-system audit](design-system-audit.md).
 
-- Design tokens: color, type scale, spacing, radii
-- Dark mode, defined once at the token layer
-- The shared set: button, card, sheet, dialog, table, tabs, toast, form field
-- Odds and money display consolidated into components rather than repeated formatting
+Before 7b there were six shared components ([`src/components/ui/`](../src/components/ui/)) — not
+the four this section originally counted, since 7a added two — and every other screen was inline
+Tailwind. That is why the app looked like four different apps: 474 `className` attributes, 144 of
+them carrying a hand-written `dark:` variant, over a raw zinc scale used eleven different ways.
+
+7b replaced the vocabulary rather than the screens. The app looks *the same* as it did before —
+apart from the two contrast/fill bugs the audit caught and fixed, and the switch to Geist — it is
+simply written in something a person can hold in their head, which is what 7c needs in order to
+rebuild against anything at all.
+
+**What it does.**
+
+- **A two-tier token layer** landed in `src/app/globals.css` — private colour ramps underneath,
+  thirty semantic tokens (`--surface-raised`, `--ink-muted`, `--negative-line`) on top, exposed
+  through `@theme inline`
+  ([D52](decisions.md#d52--semantic-tokens-in-two-tiers-dark-mode-is-a-remap-not-a-variant-sweep))
+- **Dark mode defined once**, as a remap of those thirty names. All 144 hand-written `dark:`
+  variants were deleted; the token-lint test now keeps that true. The `[data-theme]` selectors
+  ship with no way to set them, so a toggle later is a drop-in rather than a CSS restructure
+- **The shared set, scoped to call sites that existed** — `Button`, `Card`, `Callout`,
+  `SegmentedControl`, `FormField`, plus tone-based `Badge` and consolidated `Money`/`Price`/`Line`
+  ([D53](decisions.md#d53--the-shared-component-set-is-scoped-to-call-sites-that-exist))
+- **A mechanical sweep** carried all 63 `.tsx` files onto the vocabulary — colour and `dark:`
+  only, so any visual difference afterward was provably a token bug rather than a judgement call
+- **A token-lint test** now fails when a future file reaches for raw zinc
+  ([D54](decisions.md#d54--a-token-lint-test-is-the-harness-7b-earns-revisiting-d51))
+- **A browser audit** — 18 routes × two themes × two viewports, before and after, written up as
+  [`docs/design-system-audit.md`](design-system-audit.md) — caught what the mechanical sweep and
+  the lint test structurally couldn't see: two systemic mapping bugs, both fixed in the audit's
+  own commit. `bg-white`/no-fill + `dark:bg-zinc-900` had mapped to `bg-surface-raised`, whose
+  dark value is the same `zinc-950` as the `Card` sitting behind it — eleven controls (every form
+  input on a card, both odds grids) lost their fill in dark mode and read as hairline outlines on
+  black; fixed to `bg-surface-sunken`. Bare `text-zinc-400` (no dark partner) had mapped to
+  `text-ink-subtle`, whose dark value is `zinc-600` — contrast against `--surface-raised` fell
+  from ~8.6:1 to ~2.6:1, below WCAG AA, at fifteen sites including all five inactive bottom-tab
+  labels; fixed to `text-ink-muted`
+- **The font.** `globals.css` had ended with `body { font-family: Arial, … }`, overriding the
+  Geist the root layout loads — the app had never once rendered in Geist. That override is gone;
+  every glyph on every screen now renders in Geist, the single largest visual difference the
+  audit captured, and the reason all 108 before/after image pairs differ
+
+**What this section originally got wrong.** Two of its four bullets, corrected rather than
+quietly re-scoped:
+
+- **"There are four shared components today."** Six. 7a added `status-screen` and
+  `loading-screen`.
+- **"The shared set: button, card, sheet, dialog, table, tabs, toast, form field."** Four of
+  those eight have no call site anywhere in the app — zero `<table>` elements, zero dialogs, zero
+  sheets across 63 files. They are deferred to 7c rather than designed against guesses.
+
+**What 7b defers**, each item carried below rather than dropped: `Dialog`, `Sheet`, `Table`, and
+`Toast`; type-scale and spacing normalization on existing screens; a brand accent colour (→ 7c);
+the dark-mode toggle UI, focus management on the new components, and the component-test harness
+question (→ 7d).
 
 ### 7c — Screen-by-screen rebuild
 
@@ -274,6 +346,34 @@ Every screen rebuilt against 7b, hot path first, so the rungs pay off in the ord
 actually feel them:
 
 Games and the bet slip → Feed → Standings → Bets and Wagers → Events → Me → Admin.
+
+#### What 7c inherits
+
+Deferred here by an earlier rung. This is a backlog, not a wish list — each line has a phase
+that declined it and a reason.
+
+| Item | Deferred by | Why it landed here |
+|---|---|---|
+| Build `Dialog`, `Sheet`, `Table`, and `Toast` | 7b | No call sites existed; each is built in the commit that first needs one ([D53](decisions.md#d53--the-shared-component-set-is-scoped-to-call-sites-that-exist)) |
+| Normalize the type scale and spacing on existing screens | 7b | 7b's sweep was colour-only so that any visual change was provably a bug; normalizing is intentional drift and belongs with a redesign |
+| Choose a brand accent colour, if the app wants one | 7b | `--accent` makes it a two-line change; picking a hue before any screen is redesigned is a guess |
+| `generateMetadata` on detail routes, for per-entity titles | 7a | Those screens are rebuilt here anyway |
+| Odds-board density at 375px — the SPREAD/MONEY/TOTAL grid is tight | 7a (mobile audit) | Needs the screen redesigned, not restyled |
+| `datetime-local` inputs cramped two-up on `/events/new` and `/wagers/new` | 7a (mobile audit) | A layout fix |
+| `/admin/events` header runs together as "Event queueBack to admin" | 7a (mobile audit) | Page-specific markup |
+| Controls adopted into `Button` grew 6–8px taller — `Button`'s `md` size is `h-11`; the call sites had been `py-2`, `h-9`, or `h-12` | 7b (design-system audit) | The spec declared the radius change, not the height. It is a better tap target, so it is recorded rather than reverted |
+| `FormField` restyles labels from `text-sm font-medium` to `text-xs font-medium text-ink-secondary` — smaller and quieter than before | 7b (design-system audit) | Cosmetic consequence of adoption, not a bug; changing it back is a design call for the rebuild |
+| `Card` adoption gives `/me`'s ledger rows and `/standings`' rank rows a 1px `border-line` and `rounded-card` (12px), where they had a bare fill and `rounded-lg` (8px) | 7b (design-system audit) | Cosmetic consequence of adoption, not a bug |
+| "Create an event" on `/events` lost its 1px border — `Button`'s `primary` variant has none. The old border was the same colour as the fill, so the control is 2px smaller and otherwise unchanged | 7b (design-system audit) | Consequence of adoption; not reverted since it reads as unchanged |
+| No screen has a desktop layout at 1280×800 — outside `/admin*`'s `max-w-2xl`, every list runs edge to edge | 7b (design-system audit) | Existing design, not a 7b regression, but it needs the screen redesigned, not restyled |
+| The bet slip's dark-mode shadow (`shadow-slip`) is measurable but not perceptible — the shadow colour and `--surface` are both pure black in dark mode | 7b (design-system audit) | Needs a non-black shadow colour or a `--surface` that isn't pure black to read; both are Task 1 token-layer decisions, outside the audit's remit |
+| `/admin/events` and `/admin/wagers` share `/admin`'s `mx-auto` (no `w-full`) container pattern — didn't overflow with current fixture content, but carries the same latent bug | 7b (design-system audit) | Not fixed since it wasn't observed to break; worth the same `w-full` fix if content grows |
+| `Card` adoption is unfinished — 11 call sites (`bets/page.tsx`, `events/page.tsx`, `dispute-form.tsx` ×2, `market-card.tsx`, `events/[eventId]/page.tsx`, `comment-thread.tsx` ×2, `feed-card.tsx`, `game-card.tsx`, `preferences-form.tsx`) still hand-write the byte-identical `rounded-xl border border-line bg-surface-raised` that `Card` renders | 7b (final review) | Seven of the eleven are semantic elements (`<article>`/`<section>`/`<li>`), and `Card` hard-codes `<div>` with no element-type escape hatch |
+| The radius vocabulary (`rounded-card`/`rounded-control`/`rounded-pill`) is adopted at only 10 uses across `src/`, against 45 raw `rounded-xl`/`rounded-lg`/`rounded-full` | 7b (final review) | The phase's "no radii on existing markup" constraint correctly left this alone, but it isn't tracked anywhere |
+
+If a third screen in a row hand-rolls the same missing component, lift it immediately rather
+than at the end — see the consequence noted on
+[D53](decisions.md#d53--the-shared-component-set-is-scoped-to-call-sites-that-exist).
 
 ### 7d — Craft
 
@@ -283,6 +383,16 @@ Games and the bet slip → Feed → Standings → Bets and Wagers → Events →
 - **A density pass on the odds board.** A 60-game CFB Saturday is the layout stress case, and
   [D8](decisions.md#d8--layout-sportsbook-first) already rejected one-game-at-a-time cards on
   exactly these grounds. What replaces them still has to be designed.
+
+#### What 7d inherits
+
+| Item | Deferred by | Why it landed here |
+|---|---|---|
+| A dark-mode toggle — the control, the cookie, and the persistence | 7b | The `[data-theme]` selectors already ship; only the control is missing, and a control is craft |
+| Focus management, keyboard paths, and SR labels on the shared components | 7b | Tokens carry contrast; behaviour is this rung's subject |
+| Revisit the component-test harness question | 7b | [D54](decisions.md#d54--a-token-lint-test-is-the-harness-7b-earns-revisiting-d51) found 7b's components too simple to earn one. `Dialog` and `Toast` are the ones that would, and they arrive in 7c |
+| Skeleton loaders replacing the neutral `LoadingScreen` | 7a | A skeleton that does not match its screen is worse than none, and the screens did not exist yet |
+| The admin section renders with no header or tab bar on mobile | 7a (mobile audit) | A structural decision about whether admin joins the app shell, not a styling one |
 
 ---
 

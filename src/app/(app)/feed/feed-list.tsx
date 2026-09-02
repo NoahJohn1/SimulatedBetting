@@ -26,9 +26,7 @@ function ReactionRow({
             onClick={() => onToggle(emoji)}
             aria-pressed={mine}
             className={`rounded-full border px-2 py-0.5 text-xs transition-colors ${
-              mine
-                ? 'border-zinc-900 bg-zinc-100 dark:border-zinc-100 dark:bg-zinc-800'
-                : 'border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900'
+              mine ? 'border-accent bg-surface-muted' : 'border-line hover:bg-surface-sunken'
             }`}
           >
             {emoji}
@@ -96,7 +94,7 @@ export function FeedList({ initial }: { initial: SerializedFeedPage }) {
           type="button"
           onClick={loadMore}
           disabled={pending}
-          className="mt-2 rounded-xl border border-zinc-200 py-2 text-sm font-medium disabled:opacity-50 dark:border-zinc-800"
+          className="mt-2 rounded-xl border border-line py-2 text-sm font-medium disabled:opacity-50"
         >
           {pending ? 'Loading…' : 'Load more'}
         </button>

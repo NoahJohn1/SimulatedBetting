@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { Callout } from '@/components/ui/callout';
 import type { VoidError } from '@/server/events/resolve';
 import { voidEventAction } from './actions';
 
@@ -30,7 +31,7 @@ export function VoidForm({ eventId }: { eventId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="self-start rounded-full border border-red-300 px-3 py-2 text-xs font-medium text-red-700 dark:border-red-800 dark:text-red-400"
+        className="self-start rounded-full border border-negative-line px-3 py-2 text-xs font-medium text-negative-on-surface"
       >
         Void
       </button>
@@ -47,45 +48,47 @@ export function VoidForm({ eventId }: { eventId: string }) {
   }
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        submit();
-      }}
-      className="flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950/30"
-    >
-      <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-red-800 dark:text-red-300">
-          Void this event and refund every bet — a note is required
+    <Callout role={null}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit();
+        }}
+        className="flex flex-col gap-2"
+      >
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-medium">
+            Void this event and refund every bet — a note is required
+          </span>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            required
+            rows={2}
+            placeholder="Why is this event being voided?"
+            className="rounded-xl border border-negative-line bg-surface-sunken px-3 py-2 text-sm"
+          />
+        </label>
+
+        {error ? <p className="text-xs">{errorMessage(error)}</p> : null}
+
+        <span className="flex gap-2">
+          <button
+            type="submit"
+            disabled={pending || note.trim().length === 0}
+            className="rounded-full bg-negative-surface px-3 py-2 text-xs font-semibold text-negative-on-surface disabled:opacity-40"
+          >
+            {pending ? 'Voiding…' : 'Confirm void'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="rounded-full border border-line-strong px-3 py-2 text-xs font-medium"
+          >
+            Cancel
+          </button>
         </span>
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          required
-          rows={2}
-          placeholder="Why is this event being voided?"
-          className="rounded-xl border border-red-300 px-3 py-2 text-sm dark:border-red-800 dark:bg-zinc-900"
-        />
-      </label>
-
-      {error ? <p className="text-xs text-red-700 dark:text-red-400">{errorMessage(error)}</p> : null}
-
-      <span className="flex gap-2">
-        <button
-          type="submit"
-          disabled={pending || note.trim().length === 0}
-          className="rounded-full bg-red-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40 dark:bg-red-800"
-        >
-          {pending ? 'Voiding…' : 'Confirm void'}
-        </button>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="rounded-full border border-zinc-300 px-3 py-2 text-xs font-medium dark:border-zinc-700"
-        >
-          Cancel
-        </button>
-      </span>
-    </form>
+      </form>
+    </Callout>
   );
 }

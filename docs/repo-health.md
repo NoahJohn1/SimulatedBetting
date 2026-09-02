@@ -102,7 +102,7 @@ change plus one uncommented block, and is independent of both branches.
 ## 1. The CI gate
 
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs `npm ci`, applies migrations,
-and runs `npm run verify` (typecheck, lint, 546 tests). That is a good gate with one real
+and runs `npm run verify` (typecheck, lint, 578 tests). That is a good gate with one real
 hole and several cheap improvements.
 
 ### 1.1 It never builds — worth adding, but narrower than it looks
@@ -520,7 +520,7 @@ Recorded so these do not get re-proposed in six months:
 - **Changelog or release automation** — there are no releases; there is a deployed `main`.
 - **`npm audit` as a gate** — for a private four-person app with no untrusted input, it mostly
   produces unactionable transitive advisories. Dependabot covers the part that matters.
-- **Coverage thresholds** — 73 test files against 25k lines, written test-first. A percentage
+- **Coverage thresholds** — 74 test files against 25k lines, written test-first. A percentage
   gate would measure something already being done, and would eventually be gamed.
 
 ---

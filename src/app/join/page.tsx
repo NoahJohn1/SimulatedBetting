@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
+import { Button } from '@/components/ui/button';
 import { db } from '@/db/client';
 import { seasons } from '@/db/schema';
 import { formatCents } from '@/domain/money';
@@ -22,7 +23,7 @@ export default async function JoinPage() {
     <main className="flex min-h-dvh flex-col items-center justify-center gap-8 px-6 text-center">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">{season.name}</h1>
-        <p className="mt-3 max-w-sm text-balance text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-3 max-w-sm text-balance text-sm text-ink-muted">
           Join the season and start with {formatCents(season.startingBankrollCents)}, plus{' '}
           {formatCents(season.weeklyAllowanceCents)} every week.
         </p>
@@ -34,12 +35,7 @@ export default async function JoinPage() {
           redirect('/');
         }}
       >
-        <button
-          type="submit"
-          className="h-12 rounded-full bg-zinc-900 px-8 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
-        >
-          Join season
-        </button>
+        <Button type="submit">Join season</Button>
       </form>
     </main>
   );
