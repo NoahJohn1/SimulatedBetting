@@ -10,56 +10,63 @@ itself against "we could just tell each other," and the ones that fail are liste
 [what is deliberately skipped](#what-is-deliberately-skipped) with the reason, so they do
 not get re-proposed later.
 
-## Status at a glance (2026-08-25)
+## Status at a glance
+
+*Last verified 2026-09-02.*
 
 Every item below carries a **lane** — who or what can actually finish it. The lane is decided by
-what the work needs, not by who can type the file:
+what the work needs, not by who can type the file. Four lanes now, not three: `[MANUAL]` splits
+into `[MANUAL]` and `[NOAH]` below, since not every human task needs Noah's specific credentials.
 
 | Lane | Means | Why |
 |---|---|---|
-| **[MANUAL]** | You, in a browser | GitHub settings, Actions secrets, the Vercel dashboard. No agent has these credentials, and none should. |
-| **[CLOUD AI]** | A Claude Code web session, start to finish | Measured 2026-08-25: `npm ci` (21s), `npm run typecheck`, `npm run lint`, `npx next build` and any test that only reads source all run clean in a cloud session. |
-| **[LOCAL AI]** | Claude on your desktop | Needs Postgres. A cloud session has the `docker` binary but no daemon — `/var/run/docker.sock` does not exist — so anything gated on `npm test` as a whole must run where Docker does. |
+| **[MANUAL]** | Either of you, by hand | Clicking, reading, judging. No special account needed. |
+| **[NOAH]** | Noah specifically | An account or permission only he holds: GitHub repo settings, the Vercel dashboard, DNS, paid signups. No agent has these credentials, and none should. |
+| **[CLOUD]** | A Claude Code web session, start to finish | Measured 2026-08-25: `npm ci` (21s), `npm run typecheck`, `npm run lint`, `npx next build` and any test that only reads source all run clean in a cloud session. |
+| **[LOCAL]** | Claude on your desktop | Needs Postgres. A cloud session has the `docker` binary but no daemon — `/var/run/docker.sock` does not exist — so anything gated on `npm test` as a whole must run where Docker does. |
 
-One thing that softens the [LOCAL AI] lane: **CI has Postgres.** A cloud session that opens a pull
+This document covers repo mechanics. For the product phases — the ESPN adapter, deployment, the
+UI ladder, email, hardening — see [the roadmap's status table](roadmap.md#roadmap).
+
+One thing that softens the [LOCAL] lane: **CI has Postgres.** A cloud session that opens a pull
 request gets the full suite run against a real database by the `verify` job. So "cloud writes it,
 CI proves it" covers most of what used to need a laptop; the local lane is for work that has to be
 *exercised* locally, like a session hook.
 
 These map onto the H / C / L lanes in the
 [implementation plan](plans/2026-08-20-repo-health-implementation-plan.md) — H is [MANUAL], C is
-[CLOUD AI], L was [LOCAL AI] — with one correction. The plan put the guard test in lane L on the
+[CLOUD], L was [LOCAL] — with one correction. The plan put the guard test in lane L on the
 assumption that every test needs a database. It does not, and the table above moves it to
-[CLOUD AI]; see [3.3](#33-money-invariants--all-three-layers) for the measurement.
+[CLOUD]; see [3.3](#33-money-invariants--all-three-layers) for the measurement.
 
 ### Done
 
 | # | Item | Lane | Landed |
 |---|---|---|---|
-| 1 | Branch protection on `main` requiring `verify` ([1.4](#14-cheap-improvements)) | [MANUAL] | Re-verified 2026-08-25 — `main` is protected |
-| 2 | Five milestones, and the `bug` / `money` / `ui` / `from-test-pass` / `phase-5`–`phase-9` labels ([4](#4-issues-and-milestones)) | [MANUAL] | Spot-checked present; GitHub settings, not files |
-| 3 | Bug issue template ([2](#2-hygiene)) | [CLOUD AI] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
-| 4 | `decision-log` skill ([3.4](#34-decision-log--a-skill)) | [CLOUD AI] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
-| 5 | `money-invariants` skill ([3.3](#33-money-invariants--all-three-layers)) | [CLOUD AI] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
-| 6 | `engines.node: ">=22"` — half the Node-pinning item ([1.4](#14-cheap-improvements)) | [CLOUD AI] | [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8), incidentally, not from this plan |
-| 7 | `cron.yml` restored to valid YAML, schedule off ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken)) | [CLOUD AI] | This branch — a holding position, not the fix |
+| 1 | Branch protection on `main` requiring `verify` ([1.4](#14-cheap-improvements)) | **[NOAH]** | Re-verified 2026-08-25 — `main` is protected |
+| 2 | Five milestones, and the `bug` / `money` / `ui` / `from-test-pass` / `phase-5`–`phase-9` labels ([4](#4-issues-and-milestones)) | **[NOAH]** | Spot-checked present; GitHub settings, not files |
+| 3 | Bug issue template ([2](#2-hygiene)) | [CLOUD] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
+| 4 | `decision-log` skill ([3.4](#34-decision-log--a-skill)) | [CLOUD] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
+| 5 | `money-invariants` skill ([3.3](#33-money-invariants--all-three-layers)) | [CLOUD] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
+| 6 | `engines.node: ">=22"` — half the Node-pinning item ([1.4](#14-cheap-improvements)) | [CLOUD] | [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8), incidentally, not from this plan |
+| 7 | `cron.yml` restored to valid YAML, schedule off ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken)) | [CLOUD] | This branch — a holding position, not the fix |
 
 ### Outstanding
 
 Ordered by what should happen first. Rows 1–3 are one job: the cron workflow.
 
-| # | Item | Lane | Notes |
+| # | Item | Owner | Notes |
 |---|---|---|---|
-| 1 | **Add `APP_URL` and `CRON_SECRET` as Actions secrets** | **[MANUAL]** | The only production item on this list. [Step by step](#what-you-must-do--the-cron-fix-step-by-step) |
-| 2 | **Dispatch both cron jobs by hand and confirm 200** | **[MANUAL]** | Proves the secrets before a timer depends on them, with a [symptom table](#what-you-must-do--the-cron-fix-step-by-step) for when it is red |
-| 3 | **Uncomment the `schedule:` block, add the empty-secret guard** | [CLOUD AI] | Three commented lines in `cron.yml` plus one `test -n` per job |
-| 4 | Ledger-funnel guard test ([3.3](#33-money-invariants--all-three-layers)) | [CLOUD AI] | Proven runnable in a cloud session — see that section |
-| 5 | `session-start` hook ([3.6](#36-session-start--a-hook)) | **[LOCAL AI]** | Cloud can draft it; only a desktop can prove the Docker path |
-| 6 | `.nvmrc` — the other half of Node pinning ([1.4](#14-cheap-improvements)) | [CLOUD AI] | One file, one line |
-| 7 | CI: `build` step, `concurrency`, `timeout-minutes` ([1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), [1.4](#14-cheap-improvements)) | [CLOUD AI] | The build was re-measured in a cloud session today |
-| 8 | Dependabot, monthly, grouped ([1.4](#14-cheap-improvements)) | [CLOUD AI] | Writing the file is cloud work; merging its PRs is [MANUAL] |
-| 9 | `.env.test` note in the README ([3.6](#36-session-start--a-hook)) | [CLOUD AI] | One paragraph; makes item 5 land properly |
-| 10 | `db-migration` skill ([3.5](#35-db-migration--a-skill)) | [CLOUD AI] | Still marginal — add it if a migration goes wrong, not before |
+| 1 | **Add `APP_URL` and `CRON_SECRET` as Actions secrets** | **[NOAH]** | The only production item on this list. [Step by step](#what-you-must-do--the-cron-fix-step-by-step) |
+| 2 | **Dispatch both cron jobs by hand and confirm 200** | **[NOAH]** | Proves the secrets before a timer depends on them, with a [symptom table](#what-you-must-do--the-cron-fix-step-by-step) for when it is red |
+| 3 | **Uncomment the `schedule:` block, add the empty-secret guard** | [CLOUD] | Three commented lines in `cron.yml` plus one `test -n` per job |
+| 4 | Ledger-funnel guard test ([3.3](#33-money-invariants--all-three-layers)) | [CLOUD] | Proven runnable in a cloud session — see that section |
+| 5 | `session-start` hook ([3.6](#36-session-start--a-hook)) | **[LOCAL]** | Cloud can draft it; only a desktop can prove the Docker path |
+| 6 | `.nvmrc` — the other half of Node pinning ([1.4](#14-cheap-improvements)) | [CLOUD] | One file, one line |
+| 7 | CI: `build` step, `concurrency`, `timeout-minutes` ([1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), [1.4](#14-cheap-improvements)) | [CLOUD] | The build was re-measured in a cloud session today |
+| 8 | Dependabot, monthly, grouped ([1.4](#14-cheap-improvements)) | [CLOUD] to write · **[MANUAL]** to merge its PRs | Writing the file is cloud work; merging its PRs is manual |
+| 9 | `.env.test` note in the README ([3.6](#36-session-start--a-hook)) | [CLOUD] | One paragraph; makes item 5 land properly |
+| 10 | `db-migration` skill ([3.5](#35-db-migration--a-skill)) | [CLOUD] | Still marginal — add it if a migration goes wrong, not before |
 | 11 | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | The gate on phase 5. Nothing else here substitutes for it. |
 
 ### What changed underneath all of this
@@ -74,20 +81,17 @@ Ordered by what should happen first. Rows 1–3 are one job: the cron workflow.
 - **That second workflow is the one thing in this repo that is actually broken.** It failed
   every scheduled fire for two days, and the fix applied on 2026-08-24 replaced that failure
   with a different one. Written up in [1.5](#15-the-cron-workflow--the-only-thing-actually-broken).
-- **`main` is not where the current UI work lives.** `claude/roadmap-7b-plan-il1opu` (opened as
-  [PR #10](https://github.com/NoahJohn1/SimulatedBetting/pull/10)) carries all of phase 7a
-  *and* 7b, both now **Built** — `roadmap-7` was 7a's branch-off point and is fully superseded
-  (zero commits not already on the PR branch). This is deliberate — the branch is the working
-  surface for the UI ladder — but it means anything in this document measured against `main` (the
-  route count in [1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), the 546
-  tests in [1](#1-the-ci-gate)) is measuring the pre-7a app. Every recommendation here is about
-  repo mechanics rather than app code, so none of them change; the numbers do. The PR branch
-  carries the corrected counts — 814 tests across 76 files — so those two lines update themselves
-  when it merges and should not be edited here in the meantime. That branch also adds
-  D51, *UI conventions are tested structurally, not with a component-test harness* — not linked
-  here because the entry does not exist on `main` yet — which is
-  [3.2](#32-the-layering-rule) being applied without being asked: a convention that could have
-  been a code-review habit was made a test instead.
+- **The UI work is on `main` now.** `claude/roadmap-7b-plan-il1opu` merged as
+  [PR #10](https://github.com/NoahJohn1/SimulatedBetting/pull/10) at `584a4ac`, followed by
+  [PR #11](https://github.com/NoahJohn1/SimulatedBetting/pull/11) at `2d8dc91`, so phases 7a and
+  7b are both on the default branch and every count in this document now measures the post-7b
+  app. An earlier revision left those counts to "update themselves when it merges"; they did
+  not, and three different test totals had accumulated in three places by the time anyone
+  looked. They are corrected below and the promise is not repeated. That branch also added
+  [D51](decisions.md#d51--ui-conventions-are-tested-structurally-not-with-a-component-test-harness),
+  *UI conventions are tested structurally, not with a component-test harness* — which is
+  [3.2](#32-the-layering-rule) applied without being asked: a convention that could have been a
+  code-review habit was made a test instead.
 
 **Where the outstanding work can land.** Every remaining item in this document is repo mechanics
 — `.github/workflows/`, `.claude/`, `.nvmrc`, `package.json`, a test under
@@ -103,8 +107,8 @@ change plus one uncommented block, and is independent of both branches.
 ## 1. The CI gate
 
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs `npm ci`, applies migrations,
-and runs `npm run verify` (typecheck, lint, 578 tests). That is a good gate with one real
-hole and several cheap improvements.
+and runs `npm run verify` (typecheck, lint, 814 tests across 76 files). That is a good gate
+with one real hole and several cheap improvements.
 
 ### 1.1 It never builds — worth adding, but narrower than it looks
 
@@ -144,7 +148,7 @@ in the workflow rather than in `verify` — `verify` is what a developer runs in
 
 **Re-measured 2026-08-25, in a Claude Code cloud session, and two things moved.** The build runs
 there — `npm ci` in 21 seconds, then `next build` green with `DATABASE_URL` pointed at a host
-that is not listening — which makes this item [CLOUD AI] rather than something that has to wait
+that is not listening — which makes this item [CLOUD] rather than something that has to wait
 for a laptop:
 
 ```
@@ -264,24 +268,24 @@ unaffected.
 
 ### What you must do — the cron fix, step by step
 
-Steps 1 through 4 are **[MANUAL]**: they need the Vercel dashboard and GitHub settings, which no
-agent here has or should have. Step 5 is **[CLOUD AI]** — hand it to a Claude session once the
-secrets exist. Step 6 is **[MANUAL]** again, and it is just looking.
+Steps 1 through 4 are **[NOAH]**: they need the Vercel dashboard and GitHub repo settings, which
+only Noah holds. Step 5 is **[CLOUD]** — hand it to a Claude session once the
+secrets exist. Step 6 is **[MANUAL]** — either of you, and it is just looking.
 
-1. **[MANUAL] Get the `CRON_SECRET` value out of Vercel.** Vercel → the project → Settings →
+1. **[NOAH] Get the `CRON_SECRET` value out of Vercel.** Vercel → the project → Settings →
    Environment Variables → `CRON_SECRET`. If it is not there, the deployed app is currently
    rejecting *every* cron call with `500 CRON_SECRET is not configured`
    ([`src/server/cron/auth.ts`](../src/server/cron/auth.ts) fails closed on purpose), including
    the two native Vercel crons. In that case generate one — `openssl rand -hex 32` — add it to
    all environments, and redeploy so the running app picks it up.
-2. **[MANUAL] Write down `APP_URL`.** The production origin, no trailing slash and no path:
+2. **[NOAH] Write down `APP_URL`.** The production origin, no trailing slash and no path:
    `https://<project>.vercel.app`, or the custom domain if one is attached. A trailing slash
    produces `//api/cron/settle`, which will 404.
-3. **[MANUAL] Add both as Actions secrets.** GitHub → the repo → Settings → Secrets and variables
+3. **[NOAH] Add both as Actions secrets.** GitHub → the repo → Settings → Secrets and variables
    → Actions → *New repository secret*. Add `APP_URL`, then `CRON_SECRET` with the **same value**
    Vercel holds. Repository secrets, not environment secrets — the workflow reads them as
    `secrets.APP_URL` and `secrets.CRON_SECRET` with no environment declared.
-4. **[MANUAL] Run both jobs by hand.** Actions → *Sportsbook cron jobs* → Run workflow. Both
+4. **[NOAH] Run both jobs by hand.** Actions → *Sportsbook cron jobs* → Run workflow. Both
    `sync-odds` and `settle` fire on a manual dispatch. Green means the whole path works. If it is
    red, the exit code says which side is wrong:
 
@@ -292,7 +296,7 @@ secrets exist. Step 6 is **[MANUAL]** again, and it is just looking.
    | HTTP 401, `unauthorized` | Both sides have a secret and they do not match |
    | HTTP 404 | `APP_URL` has a trailing slash or the wrong domain — step 2 |
 
-5. **[CLOUD AI] Turn the schedule back on.** Uncomment the three `schedule:` lines in
+5. **[CLOUD] Turn the schedule back on.** Uncomment the three `schedule:` lines in
    [`cron.yml`](../.github/workflows/cron.yml) and add a guard before each `curl` —
    `[ -n "$APP_URL" ] || { echo "APP_URL secret is not set"; exit 1; }` — so the next missing
    secret produces one legible failure instead of 130 illegible ones.
@@ -399,7 +403,7 @@ So a test can assert, by scanning source:
 - No file outside `src/server/money/ledger.ts` and `__tests__/` calls `.insert(ledgerEntries)`
 - No file anywhere calls `.update(ledgerEntries)` or `.delete(ledgerEntries)`
 
-**This is [CLOUD AI] work, which the original plan got wrong.** It was filed under the lane that
+**This is [CLOUD] work, which the original plan got wrong.** It was filed under the lane that
 needs Docker, on the assumption that every test needs Postgres. It does not: a test that only
 reads files touches no database, and `src/test/setup.ts` just loads `.env.test` — it opens no
 connection. Proven 2026-08-25 by running a throwaway version of exactly this test in a cloud
@@ -450,7 +454,7 @@ a code bug and is not.
 
 ### 3.6 `session-start` — a hook
 
-**Lane: [LOCAL AI].** A cloud session can write the script, but only a desktop can prove the
+**Lane: [LOCAL].** A cloud session can write the script, but only a desktop can prove the
 part that matters — see the correction below.
 
 A Claude Code web session starts with no `node_modules` and no Postgres, so it cannot run the
@@ -521,7 +525,7 @@ Recorded so these do not get re-proposed in six months:
 - **Changelog or release automation** — there are no releases; there is a deployed `main`.
 - **`npm audit` as a gate** — for a private four-person app with no untrusted input, it mostly
   produces unactionable transitive advisories. Dependabot covers the part that matters.
-- **Coverage thresholds** — 74 test files against 25k lines, written test-first. A percentage
+- **Coverage thresholds** — 76 test files against 25k lines, written test-first. A percentage
   gate would measure something already being done, and would eventually be gamed.
 
 ---
@@ -541,7 +545,7 @@ behind the order, kept because the reasoning is the part that goes stale slowly.
 3. **Then the guard test**, before phase 5 starts touching settlement paths. It also puts a real
    layer 1 under the `money-invariants` skill, which today rests on nothing mechanical.
 4. **Then the CI chore commit** — `.nvmrc`, `build`, `concurrency`, `timeout-minutes`,
-   Dependabot. One commit, individually small, and every piece of it is now [CLOUD AI].
+   Dependabot. One commit, individually small, and every piece of it is now [CLOUD].
 5. **The `.env.test` README note** rides along with the hook.
 6. **`db-migration` stays last and may never happen.** Still marginal; the README already
    documents the sequence.
@@ -549,8 +553,10 @@ behind the order, kept because the reasoning is the part that goes stale slowly.
 **Not on this list, but the real gate:** the human test pass. Phase 5 is waiting on it, the
 `from-test-pass` label exists for it, and no amount of repo tooling substitutes for it.
 
-**Prettier is dropped**, and the case got stronger. Adopting it means one reformat commit
-touching nearly every file. Phase 7a and 7b are both built on `claude/roadmap-7b-plan-il1opu`
-([PR #10](https://github.com/NoahJohn1/SimulatedBetting/pull/10)), so that commit would now land
-on one side of a long-lived branch carrying thousands of changed lines and guarantee a conflict
-in every file it touched. Revisit after the UI ladder is merged, if at all.
+**Prettier's stated reason for staying dropped has expired.** The argument was that adopting it
+means one reformat commit touching nearly every file, and that commit would have landed on one
+side of the long-lived `claude/roadmap-7b-plan-il1opu` branch
+([PR #10](https://github.com/NoahJohn1/SimulatedBetting/pull/10)), guaranteeing a conflict in
+every file it touched. That branch is merged now, so the conflict argument no longer holds. The
+conclusion is not re-decided here — whether to adopt Prettier is now an open question again,
+not a settled one.
