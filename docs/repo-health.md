@@ -10,16 +10,23 @@ itself against "we could just tell each other," and the ones that fail are liste
 [what is deliberately skipped](#what-is-deliberately-skipped) with the reason, so they do
 not get re-proposed later.
 
-## Status at a glance (2026-08-25)
+## Status at a glance
+
+*Last verified 2026-09-02.*
 
 Every item below carries a **lane** — who or what can actually finish it. The lane is decided by
-what the work needs, not by who can type the file:
+what the work needs, not by who can type the file. Four lanes now, not three: `[MANUAL]` splits
+into `[MANUAL]` and `[NOAH]` below, since not every human task needs Noah's specific credentials.
 
 | Lane | Means | Why |
 |---|---|---|
-| **[MANUAL]** | You, in a browser | GitHub settings, Actions secrets, the Vercel dashboard. No agent has these credentials, and none should. |
+| **[MANUAL]** | Either of you, by hand | Clicking, reading, judging. No special account needed. |
+| **[NOAH]** | Noah specifically | An account or permission only he holds: GitHub repo settings, the Vercel dashboard, DNS, paid signups. No agent has these credentials, and none should. |
 | **[CLOUD AI]** | A Claude Code web session, start to finish | Measured 2026-08-25: `npm ci` (21s), `npm run typecheck`, `npm run lint`, `npx next build` and any test that only reads source all run clean in a cloud session. |
 | **[LOCAL AI]** | Claude on your desktop | Needs Postgres. A cloud session has the `docker` binary but no daemon — `/var/run/docker.sock` does not exist — so anything gated on `npm test` as a whole must run where Docker does. |
+
+This document covers repo mechanics. For the product phases — the ESPN adapter, deployment, the
+UI ladder, email, hardening — see [the roadmap's status table](roadmap.md#roadmap).
 
 One thing that softens the [LOCAL AI] lane: **CI has Postgres.** A cloud session that opens a pull
 request gets the full suite run against a real database by the `verify` job. So "cloud writes it,
@@ -36,8 +43,8 @@ assumption that every test needs a database. It does not, and the table above mo
 
 | # | Item | Lane | Landed |
 |---|---|---|---|
-| 1 | Branch protection on `main` requiring `verify` ([1.4](#14-cheap-improvements)) | [MANUAL] | Re-verified 2026-08-25 — `main` is protected |
-| 2 | Five milestones, and the `bug` / `money` / `ui` / `from-test-pass` / `phase-5`–`phase-9` labels ([4](#4-issues-and-milestones)) | [MANUAL] | Spot-checked present; GitHub settings, not files |
+| 1 | Branch protection on `main` requiring `verify` ([1.4](#14-cheap-improvements)) | **[NOAH]** | Re-verified 2026-08-25 — `main` is protected |
+| 2 | Five milestones, and the `bug` / `money` / `ui` / `from-test-pass` / `phase-5`–`phase-9` labels ([4](#4-issues-and-milestones)) | **[NOAH]** | Spot-checked present; GitHub settings, not files |
 | 3 | Bug issue template ([2](#2-hygiene)) | [CLOUD AI] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
 | 4 | `decision-log` skill ([3.4](#34-decision-log--a-skill)) | [CLOUD AI] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
 | 5 | `money-invariants` skill ([3.3](#33-money-invariants--all-three-layers)) | [CLOUD AI] | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7) |
@@ -48,18 +55,18 @@ assumption that every test needs a database. It does not, and the table above mo
 
 Ordered by what should happen first. Rows 1–3 are one job: the cron workflow.
 
-| # | Item | Lane | Notes |
+| # | Item | Owner | Notes |
 |---|---|---|---|
-| 1 | **Add `APP_URL` and `CRON_SECRET` as Actions secrets** | **[MANUAL]** | The only production item on this list. [Step by step](#what-you-must-do--the-cron-fix-step-by-step) |
-| 2 | **Dispatch both cron jobs by hand and confirm 200** | **[MANUAL]** | Proves the secrets before a timer depends on them, with a [symptom table](#what-you-must-do--the-cron-fix-step-by-step) for when it is red |
-| 3 | **Uncomment the `schedule:` block, add the empty-secret guard** | [CLOUD AI] | Three commented lines in `cron.yml` plus one `test -n` per job |
-| 4 | Ledger-funnel guard test ([3.3](#33-money-invariants--all-three-layers)) | [CLOUD AI] | Proven runnable in a cloud session — see that section |
-| 5 | `session-start` hook ([3.6](#36-session-start--a-hook)) | **[LOCAL AI]** | Cloud can draft it; only a desktop can prove the Docker path |
-| 6 | `.nvmrc` — the other half of Node pinning ([1.4](#14-cheap-improvements)) | [CLOUD AI] | One file, one line |
-| 7 | CI: `build` step, `concurrency`, `timeout-minutes` ([1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), [1.4](#14-cheap-improvements)) | [CLOUD AI] | The build was re-measured in a cloud session today |
-| 8 | Dependabot, monthly, grouped ([1.4](#14-cheap-improvements)) | [CLOUD AI] | Writing the file is cloud work; merging its PRs is [MANUAL] |
-| 9 | `.env.test` note in the README ([3.6](#36-session-start--a-hook)) | [CLOUD AI] | One paragraph; makes item 5 land properly |
-| 10 | `db-migration` skill ([3.5](#35-db-migration--a-skill)) | [CLOUD AI] | Still marginal — add it if a migration goes wrong, not before |
+| 1 | **Add `APP_URL` and `CRON_SECRET` as Actions secrets** | **[NOAH]** | The only production item on this list. [Step by step](#what-you-must-do--the-cron-fix-step-by-step) |
+| 2 | **Dispatch both cron jobs by hand and confirm 200** | **[NOAH]** | Proves the secrets before a timer depends on them, with a [symptom table](#what-you-must-do--the-cron-fix-step-by-step) for when it is red |
+| 3 | **Uncomment the `schedule:` block, add the empty-secret guard** | [CLOUD] | Three commented lines in `cron.yml` plus one `test -n` per job |
+| 4 | Ledger-funnel guard test ([3.3](#33-money-invariants--all-three-layers)) | [CLOUD] | Proven runnable in a cloud session — see that section |
+| 5 | `session-start` hook ([3.6](#36-session-start--a-hook)) | **[LOCAL]** | Cloud can draft it; only a desktop can prove the Docker path |
+| 6 | `.nvmrc` — the other half of Node pinning ([1.4](#14-cheap-improvements)) | [CLOUD] | One file, one line |
+| 7 | CI: `build` step, `concurrency`, `timeout-minutes` ([1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), [1.4](#14-cheap-improvements)) | [CLOUD] | The build was re-measured in a cloud session today |
+| 8 | Dependabot, monthly, grouped ([1.4](#14-cheap-improvements)) | [CLOUD] to write · **[MANUAL]** to merge its PRs | Writing the file is cloud work; merging its PRs is manual |
+| 9 | `.env.test` note in the README ([3.6](#36-session-start--a-hook)) | [CLOUD] | One paragraph; makes item 5 land properly |
+| 10 | `db-migration` skill ([3.5](#35-db-migration--a-skill)) | [CLOUD] | Still marginal — add it if a migration goes wrong, not before |
 | 11 | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | The gate on phase 5. Nothing else here substitutes for it. |
 
 ### What changed underneath all of this
@@ -74,20 +81,17 @@ Ordered by what should happen first. Rows 1–3 are one job: the cron workflow.
 - **That second workflow is the one thing in this repo that is actually broken.** It failed
   every scheduled fire for two days, and the fix applied on 2026-08-24 replaced that failure
   with a different one. Written up in [1.5](#15-the-cron-workflow--the-only-thing-actually-broken).
-- **`main` is not where the current UI work lives.** `claude/roadmap-7b-plan-il1opu` (opened as
-  [PR #10](https://github.com/NoahJohn1/SimulatedBetting/pull/10)) carries all of phase 7a
-  *and* 7b, both now **Built** — `roadmap-7` was 7a's branch-off point and is fully superseded
-  (zero commits not already on the PR branch). This is deliberate — the branch is the working
-  surface for the UI ladder — but it means anything in this document measured against `main` (the
-  route count in [1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), the 546
-  tests in [1](#1-the-ci-gate)) is measuring the pre-7a app. Every recommendation here is about
-  repo mechanics rather than app code, so none of them change; the numbers do. The PR branch
-  carries the corrected counts — 814 tests across 76 files — so those two lines update themselves
-  when it merges and should not be edited here in the meantime. That branch also adds
-  D51, *UI conventions are tested structurally, not with a component-test harness* — not linked
-  here because the entry does not exist on `main` yet — which is
-  [3.2](#32-the-layering-rule) being applied without being asked: a convention that could have
-  been a code-review habit was made a test instead.
+- **The UI work is on `main` now.** `claude/roadmap-7b-plan-il1opu` merged as
+  [PR #10](https://github.com/NoahJohn1/SimulatedBetting/pull/10) at `584a4ac`, followed by
+  [PR #11](https://github.com/NoahJohn1/SimulatedBetting/pull/11) at `2d8dc91`, so phases 7a and
+  7b are both on the default branch and every count in this document now measures the post-7b
+  app. An earlier revision left those counts to "update themselves when it merges"; they did
+  not, and three different test totals had accumulated in three places by the time anyone
+  looked. They are corrected below and the promise is not repeated. That branch also added
+  [D51](decisions.md#d51--ui-conventions-are-tested-structurally-not-with-a-component-test-harness),
+  *UI conventions are tested structurally, not with a component-test harness* — which is
+  [3.2](#32-the-layering-rule) applied without being asked: a convention that could have been a
+  code-review habit was made a test instead.
 
 **Where the outstanding work can land.** Every remaining item in this document is repo mechanics
 — `.github/workflows/`, `.claude/`, `.nvmrc`, `package.json`, a test under
@@ -103,8 +107,8 @@ change plus one uncommented block, and is independent of both branches.
 ## 1. The CI gate
 
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs `npm ci`, applies migrations,
-and runs `npm run verify` (typecheck, lint, 578 tests). That is a good gate with one real
-hole and several cheap improvements.
+and runs `npm run verify` (typecheck, lint, 814 tests across 76 files). That is a good gate
+with one real hole and several cheap improvements.
 
 ### 1.1 It never builds — worth adding, but narrower than it looks
 
@@ -521,7 +525,7 @@ Recorded so these do not get re-proposed in six months:
 - **Changelog or release automation** — there are no releases; there is a deployed `main`.
 - **`npm audit` as a gate** — for a private four-person app with no untrusted input, it mostly
   produces unactionable transitive advisories. Dependabot covers the part that matters.
-- **Coverage thresholds** — 74 test files against 25k lines, written test-first. A percentage
+- **Coverage thresholds** — 76 test files against 25k lines, written test-first. A percentage
   gate would measure something already being done, and would eventually be gamed.
 
 ---
@@ -549,8 +553,10 @@ behind the order, kept because the reasoning is the part that goes stale slowly.
 **Not on this list, but the real gate:** the human test pass. Phase 5 is waiting on it, the
 `from-test-pass` label exists for it, and no amount of repo tooling substitutes for it.
 
-**Prettier is dropped**, and the case got stronger. Adopting it means one reformat commit
-touching nearly every file. Phase 7a and 7b are both built on `claude/roadmap-7b-plan-il1opu`
-([PR #10](https://github.com/NoahJohn1/SimulatedBetting/pull/10)), so that commit would now land
-on one side of a long-lived branch carrying thousands of changed lines and guarantee a conflict
-in every file it touched. Revisit after the UI ladder is merged, if at all.
+**Prettier's stated reason for staying dropped has expired.** The argument was that adopting it
+means one reformat commit touching nearly every file, and that commit would have landed on one
+side of the long-lived `claude/roadmap-7b-plan-il1opu` branch
+([PR #10](https://github.com/NoahJohn1/SimulatedBetting/pull/10)), guaranteeing a conflict in
+every file it touched. That branch is merged now, so the conflict argument no longer holds. The
+conclusion is not re-decided here — whether to adopt Prettier is now an open question again,
+not a settled one.
