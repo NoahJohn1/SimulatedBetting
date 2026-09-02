@@ -7,7 +7,7 @@
 **Goal:** Make the app able to tell you it is broken before a member does, and make starting a
 season a screen rather than a shell.
 
-**Architecture:** One new server directory, `src/server/ops/`, holding four small modules — a pure
+**Architecture:** Eleven tasks. One new server directory, `src/server/ops/`, holding four small modules — a pure
 alert-suppression rule, an alert transport, a `runJob` wrapper the three touchable cron routes call,
 and the health reads. One new table, `job_runs`. Two new admin screens. Sentry wired through
 `instrumentation.ts` and inert without a DSN.
@@ -2776,20 +2776,10 @@ And add a line under the table recording the deploy-order fact, so it is not red
 > the migration degrades `/admin/health` to "never run" rather than stopping settlement. See the
 > spec's §9.
 
-- [ ] **Step 3: Move the plan to the archive**
+The plan and spec stay where they are for now — Task 11 still edits documents alongside them, and
+archiving is its last step.
 
-Per this repo's convention that a plan whose work has shipped moves to `archive/plans/` and stays
-listed:
-
-```bash
-git mv docs/plans/2026-09-02-production-deployment-implementation-plan.md docs/archive/plans/
-```
-
-Then in `docs/README.md`: move its row from **Active** to the **Archive** table with
-"Phase 6 cloud half — shipped", and update the path. Move the spec's row from Active to
-**Reference**, since it becomes the authority on what the subsystem does rather than a live plan.
-
-- [ ] **Step 4: Verify the documentation**
+- [ ] **Step 3: Verify the documentation**
 
 ```bash
 npm run format
@@ -2799,7 +2789,7 @@ grep -rn "production-deployment" docs/README.md docs/roadmap.md
 
 Confirm every path in those links resolves after the `git mv`.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add .env.example README.md docs/
@@ -2815,10 +2805,146 @@ dropped, and moves the plan to archive/plans/ per the convention."
 
 ---
 
+### Task 11 [CLOUD]: The post-merge handoff
+
+**Files:**
+
+- Modify: `docs/roadmap.md`, `docs/repo-health.md`, `docs/README.md`
+
+Task 10 recorded what shipped. This task records **what is still owed once the pull request
+merges**, in the three documents that are the project's canonical by-lane lists. It is separate
+because it is a different claim: Task 10 says "this is built," and this says "this is built and
+still does nothing until somebody does these seven things."
+
+This has to live in the repo's own documents rather than only in this plan, because this plan moves
+to `archive/plans/` the moment the work ships, and a handoff nobody will re-open is not a handoff.
+
+- [ ] **Step 1: Add the handoff section to the roadmap**
+
+In `docs/roadmap.md`, immediately after the `## 6 — Production deployment` task table and before
+the "Deliberately skipped" paragraph, add:
+
+````markdown
+### After this merges — what is still owed
+
+The `[CLOUD]` half is code on `main`. **None of it does anything until the rows below happen.**
+They can be done in any order, at any time, against the running app — none needs a redeploy of
+code, and only row 1 gates anything at all.
+
+| #   | Do this                                                                                                                                          | Lane         | Until it is done                                                                                                                                                                                                                 |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Apply the `job_runs` migration** to the production database                                                                                    | **[NOAH]**   | `/admin/health` shows every job as never-run and says so in a banner, and no alert can fire. Nothing else changes: a failed `job_runs` write is logged and swallowed, so settlement, allowance and reconciliation are unaffected |
+| 2   | Create a Discord or Slack incoming webhook and set **`ALERT_WEBHOOK_URL`** in Vercel                                                             | **[NOAH]**   | Every alert is written to the Vercel function log and sent nowhere. The webhook is what makes the alarm audible                                                                                                                  |
+| 3   | Sign up for Sentry's free tier and set **`SENTRY_DSN`** and **`NEXT_PUBLIC_SENTRY_DSN`**                                                         | **[NOAH]**   | `Sentry.init` is never called and nothing reports ([D62](decisions.md#d62--sentry-is-inert-without-a-dsn))                                                                                                                       |
+| 4   | Optionally set **`SENTRY_AUTH_TOKEN`**, `SENTRY_ORG`, `SENTRY_PROJECT`                                                                           | **[NOAH]**   | Sentry works, but its stack traces point at minified bundle lines because no source maps were uploaded at build time                                                                                                             |
+| 5   | **Break a cron on purpose and confirm the alert arrives** — e.g. dispatch `settle` with a wrong `CRON_SECRET`, or watch the first real reconcile | **[MANUAL]** | The alarm is untested, which for practical purposes is the same as not having one. Belongs in the [phase 9](#9--hardening) smoke checklist                                                                                       |
+| 6   | Run the full suite once on a desktop with Docker                                                                                                 | **[LOCAL]**  | CI is the only thing that has ever executed `job-runs.test.ts`, `health-reads.test.ts` and `activate.test.ts` — they were written in a cloud session with no Postgres                                                            |
+| 7   | Create and activate the real season from `/admin/seasons`                                                                                        | **[MANUAL]** | `src/db/bootstrap-season.ts` remains the only way to start a season, which is the problem this screen was built to remove                                                                                                        |
+
+**How to do row 1.** Migrations are applied by hand until the migrations-on-deploy row above
+lands. From a machine with the production connection string:
+
+```bash
+ENV_FILE=.env.production npm run db:migrate
+```
+````
+
+`src/db/migrate.ts` applies one file per transaction and is idempotent — re-running it after the
+fact is safe and applies nothing twice.
+
+**Rows 2 through 4 are environment variables only.** Vercel re-reads them on the next invocation;
+there is nothing to rebuild and nothing in the repository to change.
+
+````
+
+- [ ] **Step 2: Add the rows to repo-health's Outstanding table**
+
+`docs/repo-health.md`'s Outstanding table is the by-lane list people actually check, and its
+opening sentence promises that nothing in it is unblocked `[CLOUD]` work. These three rows keep
+that promise — all three are `[NOAH]` or `[LOCAL]`. Append after row 10:
+
+```markdown
+| 11  | **Apply the `job_runs` migration to production**                                | **[NOAH]**  | Nothing. Until it lands, `/admin/health` reports every job as never-run and no alert can fire — see [roadmap 6](roadmap.md#after-this-merges--what-is-still-owed)                                |
+| 12  | Set `ALERT_WEBHOOK_URL`, and the two Sentry DSNs                                | **[NOAH]**  | Nothing. Vercel environment variables only; the code is inert without them by design ([D59](decisions.md#d59--one-generic-webhook-carrying-both-content-and-text), [D62](decisions.md#d62--sentry-is-inert-without-a-dsn)) |
+| 13  | Run the phase-6 DB-backed tests on a desktop                                    | **[LOCAL]** | A desktop with Docker. `job-runs.test.ts`, `health-reads.test.ts` and `activate.test.ts` were written in a cloud session and have only ever run in CI                                            |
+````
+
+Also update that section's `_Last verified_` date to today.
+
+- [ ] **Step 3: Update the by-lane tables in docs/README.md**
+
+In the **What is left** section of `docs/README.md`:
+
+- Under **What needs Noah**, add:
+  `| Apply the `job_runs`migration; set`ALERT_WEBHOOK_URL` and the Sentry DSNs — **phase 6's alerting does nothing until this lands** | roadmap 6 |`
+- Under **What needs a desktop with Docker**, add:
+  `| Run phase 6's DB-backed tests — they have only ever run in CI | roadmap 6 |`
+- Under **What needs a person, either of you**, add:
+  `| Break a cron on purpose once and confirm the alert arrives | roadmap 6 |`
+- In **What a cloud session can pick up now**, remove the phase-6 row Task 10's predecessor added —
+  it is no longer work anyone can pick up, it is shipped.
+
+Then add a short paragraph to the **Where things stand** section recording what phase 6's cloud
+half added, in the same voice as the four subsystem summaries above it: the `job_runs` record, the
+two-transport alerting with its transition rule, the Sentry wiring, and the two admin screens —
+each with its decision reference.
+
+- [ ] **Step 4: Verify every link and every claim**
+
+```bash
+npm run format
+npm run format:check
+```
+
+Then check by hand:
+
+- Every `decisions.md#dNN--...` anchor added in this task resolves. GitHub lowercases the heading,
+  deletes punctuation, and turns each space into a hyphen — so the em dash with spaces around it
+  becomes a double hyphen.
+- The roadmap's new `#after-this-merges--what-is-still-owed` anchor matches its heading.
+- No row in repo-health's Outstanding table is unblocked `[CLOUD]` work, which is what that
+  table's opening sentence promises.
+
+- [ ] **Step 5: Move the plan to the archive**
+
+Last, because everything above edits documents that reference it. Per this repo's convention that
+a plan whose work has shipped moves to `archive/plans/` and stays listed:
+
+```bash
+git mv docs/plans/2026-09-02-production-deployment-implementation-plan.md docs/archive/plans/
+```
+
+Then in `docs/README.md`: move its row from **Active** to the **Archive** table, described as
+"Phase 6 cloud half — shipped", with the path updated. Move the spec's row from **Active** to
+**Reference**, since it becomes the authority on what the subsystem does rather than a live plan.
+Re-check the roadmap's two links to both documents and update the plan's path there too.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add docs/
+git commit -m "docs: record what is still owed after phase 6's cloud half merges
+
+Seven rows, in the three documents that are this project's by-lane lists
+rather than only in the plan — the plan moves to archive/plans/ when the work
+ships, and a handoff nobody will re-open is not a handoff.
+
+The distinction worth keeping: this code is merged and inert. Only applying the
+job_runs migration gates anything, and even that degrades /admin/health rather
+than stopping settlement. Everything else Noah owns is a Vercel environment
+variable read on the next invocation, with nothing to rebuild."
+```
+
+---
+
 ## Lanes this plan does not close
 
 Nothing below is executable by a cloud session. They are listed so they are not mistaken for
 oversights, and so whoever picks them up has the context.
+
+This table is for whoever executes the plan. **Task 11 is what writes the same handoff into the
+repository's own documents**, where it survives this plan being archived — do not treat the two as
+duplicates and skip one.
 
 | Item                                                     | Lane                   | What it needs                                                                                                                                    |
 | -------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
