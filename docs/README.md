@@ -18,6 +18,7 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Cloud lane plan](plans/2026-09-02-cloud-lane-completion-implementation-plan.md)                | The task-by-task plan for that work                                                                                           |
 | [Docs status and archive spec](specs/2026-09-02-docs-status-and-archive-design.md)              | The owner taxonomy, the roadmap's master table, and what moved to the archive                                                 |
 | [Docs status and archive plan](plans/2026-09-02-docs-status-and-archive-implementation-plan.md) | The task-by-task plan for that restructure                                                                                    |
+| [Production deployment spec](specs/2026-09-02-production-deployment-design.md)                  | Phase 6's cloud half — the run record, alerting on cron failure and drift, Sentry, and the two admin screens                  |
 
 ### Reference
 

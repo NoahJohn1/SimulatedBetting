@@ -1012,3 +1012,138 @@ cheaper half of that trade.
 _Rejected:_ merging them anyway with the failing check overridden, or relaxing `verify` so they
 pass. The red is a true statement about the dependency tree; making it green would make the
 gate lie.
+
+---
+
+### D58 — Cron health is a `job_runs` table, and sync-odds is derived from market freshness
+
+_Added 2026-09-02 during the production-deployment design session._
+
+Every scheduled job records what it did in a `job_runs` table — job name, start, finish, ok, the
+summary object the route already returns, and whether an alert was sent. The admin health page and
+the alerting rule both read it, and the daily reconcile run prunes rows older than 30 days.
+`sync-odds` is the exception: it is not instrumented, and its health is read from
+`max(markets.last_synced_at)` instead.
+
+The table exists because `reconcile` leaves no other trace. A passing reconcile writes no ledger
+entry, changes no status, and touches no timestamp — it is exactly the job whose silence is
+indistinguishable from its absence, and it is the one the roadmap calls the item that earns the
+phase.
+
+Leaving `sync-odds` out is not only conflict avoidance with the unpushed ESPN adapter. A run record
+says the handler returned 200; the freshest market timestamp says the sync actually wrote rows, and
+that stays true through a provider swap that succeeds while yielding an empty slate.
+`suspendStaleMarkets` already treats `last_synced_at` as the source of truth for staleness, so the
+health page reads the same column the same way.
+
+_Rejected:_ deriving every job's health from the traces it already leaves — `bets.settled_at`,
+allowance ledger entries, market freshness. It costs no migration, and it cannot see reconcile at
+all, which loses the one job the phase is for.
+
+_Rejected:_ instrumenting all four routes now. One line in `src/app/api/cron/sync-odds/route.ts`
+buys a uniform data shape and a merge conflict in the file Noah is actively rewriting.
+
+_Consequence to watch:_ when the adapter lands, wrapping `sync-odds` in `runJob` is a one-line
+addition, not a correction. It is recorded as a roadmap row so it is not dropped.
+
+---
+
+### D59 — One generic webhook, carrying both `content` and `text`
+
+_Added 2026-09-02 during the production-deployment design session._
+
+Alerts go to a single `ALERT_WEBHOOK_URL`, POSTed as a JSON body carrying both a `content` key and
+a `text` key with the same message, and in parallel to Sentry as a captured message with a stable
+fingerprint per alert kind. Discord's incoming webhooks read `content` and ignore unknown keys;
+Slack's read `text` and do the same. Whichever kind of URL Noah creates works, with no second
+configuration value naming the service and no adapter layer choosing between them.
+
+Both transports fire every time; neither is the other's fallback. Sentry hitting its free-tier rate
+limit must not silence the money alarm, and a rotated webhook URL must not lose the error history.
+
+_Rejected:_ Sentry as the only alert path, with its alert rules routing to email or chat. It makes
+the money alarm depend on the error tracker being up, correctly configured, and under quota — three
+things nobody checks until the day they matter.
+
+_Rejected:_ a provider field selecting a Discord or Slack payload shape. It is a second
+configuration value that can disagree with the first, to avoid four bytes of redundant JSON.
+
+_What this accepts:_ a webhook host that is neither Discord nor Slack sees one unfamiliar key. No
+service in the intended set rejects unknown fields.
+
+---
+
+### D60 — Alerts fire on transition, not on every failing run
+
+_Added 2026-09-02 during the production-deployment design session._
+
+An alert is raised when the previous recorded run of that job succeeded or does not exist, again
+if six hours pass while it keeps failing, and once more on the first success after a failure. While
+a job is failing continuously it stays quiet in between. The suppression state is the `alerted`
+column on `job_runs` rather than separate state, so the decision and the run history cannot
+disagree. Drift alerts from `reconcile` are exempt: it runs daily, and one message a day about
+money that does not add up is the correct volume rather than noise.
+
+`settle` runs every ten minutes. Alerting per failing run means 144 identical messages a day, and
+the reliable outcome of an alarm that cries constantly is that somebody mutes the channel — at
+which point the money alarm is off and nobody decided to turn it off.
+
+_Rejected:_ alerting on every failing run. See above; the failure mode is silent and permanent.
+
+_Rejected:_ alerting once and never again until recovery. A break that is noticed and then forgotten
+gets no reminder, and six hours is short enough to catch a Sunday morning and long enough to be
+ignorable.
+
+_What this accepts:_ a job that fails, recovers, and fails again inside one run interval produces
+two alerts. That is the correct volume for a flapping money job.
+
+---
+
+### D61 — The season screen creates UPCOMING; activation is a separate, guarded act
+
+_Added 2026-09-02 during the production-deployment design session._
+
+`/admin/seasons` creates seasons as `UPCOMING` through the existing `createSeason`, with the
+economy amounts pre-filled from `defaults.ts` and entered in whole units rather than cents.
+Activation is a second control on the created row, and it refuses while another season is `ACTIVE`,
+naming the season in the way. Ending a season is not on the screen at all.
+
+Creating is harmless — an `UPCOMING` season is joinable by nobody and changes nothing about the
+running app. Activating is the half that changes what every member sees, and `seasons_one_active_idx`
+turns a careless second activation into a raw constraint error surfacing through `admin/error.tsx`.
+Making the check explicit lets the screen explain the situation instead of the boundary catching it.
+
+_Rejected:_ one action that ends the current season, creates the new one and activates it in a
+transaction. Fewest clicks on the one day a year it is used, and otherwise the most destructive
+control in the app sitting on a page with no other dangerous buttons.
+
+_Rejected:_ create only, leaving activation a shell command. It half-solves the problem the roadmap
+states — you would still need database access in September to start the season you just created.
+
+_What this accepts:_ ending a season remains a manual database operation until someone needs it,
+at which point it earns its own design and its own confirmation.
+
+---
+
+### D62 — Sentry is inert without a DSN
+
+_Added 2026-09-02 during the production-deployment design session._
+
+`@sentry/nextjs` is wired through `instrumentation.ts` — `register()` plus `onRequestError`, which
+covers server components, route handlers and server actions in one hook — with `Sentry.init` guarded
+on `SENTRY_DSN` or `NEXT_PUBLIC_SENTRY_DSN` being present. Absent, `init` is never called and
+nothing reports. `withSentryConfig` without `SENTRY_AUTH_TOKEN` skips source-map upload with a
+warning rather than failing. `tracesSampleRate` starts at 0.
+
+The property this buys is that the wiring can merge, deploy, and sit in production before Noah has
+opened a Sentry account, and that CI, the test suite and local development are silent with no
+configuration at all. An error-monitoring integration that reddens the gate or spams a developer's
+console is reverted within a day, and then the app has no monitoring and a closed pull request
+saying it does.
+
+_Rejected:_ holding the wiring until the DSN exists. It makes a `[CLOUD]` task blocked on a
+`[NOAH]` task for no technical reason, and the roadmap already splits this row along exactly that
+line.
+
+_Rejected:_ performance tracing on from the start. Four users generate no performance question the
+free tier's quota is better spent answering than errors are.
