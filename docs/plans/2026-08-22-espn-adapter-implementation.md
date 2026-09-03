@@ -43,10 +43,35 @@ until routed through the proxy with `node --use-env-proxy`. That's purely a quir
 sandbox reaching the internet; Vercel production sits behind no such proxy and needs no code
 change for it.
 
-**Final verification** below and the persistence + reconciliation half of the roadmap's task 7
-(actually writing a slate into `games`/`markets`/`selections` and checking it against reality)
-still require Postgres, which this cloud session doesn't have (the `docker` binary is present
-but no daemon is running) — that part is still local-machine or production-only.
+**Update, same session — the Docker/Postgres blocker above was not fundamental.** This sandbox
+runs as root with passwordless `sudo`; `apt-get install postgresql-16` plus `pg_ctlcluster 16
+main start` gets a real Postgres cluster with no container runtime at all (the project's own
+`db:up`/`docker-compose.yml` need Docker, but Postgres itself doesn't). Pointed at that instance
+(role `simbet`, databases `simbet`/`simbet_test`, migrated with `src/db/migrate.ts`): **`npm run
+verify` passes in full** — typecheck, lint, and all 866 tests across 81 files, including the
+previously-DB-blocked `sync.test.ts`/`results.test.ts`. Beyond that, `syncOdds`/`syncResults`
+were run directly with the real `EspnOddsProvider`/`EspnScoreProvider` against live ESPN data,
+writing into that local database: 194 games, 329 markets, 658 selections, 658 snapshots, 0 games
+skipped, 43 markets skipped (same `"OFF"`-price pattern). Spot-checking the written rows
+(`games`/`markets`/`selections` joined) showed correct teams, correct DraftKings spread and
+moneyline values, correct sides — this is success criterion 2 and the persistence half of
+roadmap task 7, done for real from a cloud session, against a disposable local database.
+
+**A genuine safety finding came out of this, unrelated to the plan itself.** This container's
+environment already has `DATABASE_URL`/`TEST_DATABASE_URL` set to a real hosted Supabase
+project (`aws-0-us-east-1.pooler.supabase.com`) — presumably the phase-6 production database.
+`src/db/migrate.ts` loads env with plain `dotenv` and no `override: true`, so it does not
+override an already-set `DATABASE_URL`; running `npm run db:migrate:test` in this session tried
+to reach that Supabase project instead of the local target in `.env.test`, and only failed to do
+anything because the connection timed out. `src/test/setup.ts` is the one place in this codebase
+that loads `.env.test` with `override: true`, which is why the actual test suite never touched
+it. Worth Noah's attention independently of phase 5 — any cloud session carrying these
+credentials is one un-overridden script away from touching a real database. No production data
+was read or written establishing any of this.
+
+What genuinely remains outside a cloud session's reach: pointing `ODDS_PROVIDER=espn` at
+*production* itself and reconciling what lands there (Noah's credentials, Noah's call), and the
+roadmap's human test pass gate (a person's judgment, not a test result).
 
 ## Global Constraints
 

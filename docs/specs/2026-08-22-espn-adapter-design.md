@@ -1,11 +1,12 @@
 # ESPN Adapter — Design Spec
 
 **Date:** 2026-08-22
-**Status:** Built (code complete on `espn-adapter`, not yet merged to `main`; success
-criteria 1, 3, 4, and 5 verified, including a live run against ESPN's real feed on
-2026-09-03 — criterion 2, a real backfill against a production database with
-reconciliation, is still outstanding, see [roadmap](../roadmap.md#5--real-data-the-espn-adapter)
-task 7)
+**Status:** Built (code complete on `espn-adapter`, not yet merged to `main`). All five success
+criteria are now mechanically verified, including criterion 2 — `syncOdds`/`syncResults` run
+with the real ESPN providers against live data on 2026-09-03, persisting correctly into a real
+Postgres database. Only running that same pipeline against *production* and reconciling it
+there remains, which needs Noah's credentials rather than more verification — see
+[roadmap](../roadmap.md#5--real-data-the-espn-adapter) task 7.
 **Scope:** Phase 5 of the production-readiness roadmap (tasks 2, 3, 5, 6) — see
 [../roadmap.md](../roadmap.md#5--real-data-the-espn-adapter)
 **Depends on:** Subsystem 1 — core betting engine, built

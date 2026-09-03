@@ -54,11 +54,35 @@ routes it through the session's local proxy correctly. This is purely a quirk of
 reaching the internet*, not something the adapter code needs to handle — Vercel production has
 no such proxy in front of it.
 
-What is *still not verifiable from a cloud session*: the DB-backed `sync.test.ts`/
-`results.test.ts` suites, and the persistence + reconciliation half of task 7 below (actually
-writing the slate into `games`/`markets`/`selections` and checking it against reality) — both
-need Postgres, and this sandbox has the `docker` binary but no running daemon, independent of
-network access. That part of task 7 is still local- or production-only.
+**Update, same day:** the "needs Docker" blocker above turned out to be specific to this
+repo's own `db:up` script, not to Postgres itself. This sandbox runs as root with passwordless
+`sudo` and no Docker daemon, but `apt-get install postgresql-16` and `pg_ctlcluster 16 main
+start` gave a real local Postgres with no container runtime involved. Against that: `npm run
+verify` — typecheck, lint, and all 866 tests across 81 files, including the previously-unrunnable
+`sync.test.ts`/`results.test.ts` — passes clean. Further, `syncOdds`/`syncResults` were run for
+real with `EspnOddsProvider`/`EspnScoreProvider` against live ESPN data, writing into that local
+database: 194 games, 329 markets, 658 selections, 658 snapshots, 0 games skipped, 43 markets
+skipped (same `"OFF"`-price pattern as above). A spot check of the written rows (real teams,
+real DraftKings spreads and moneylines, correct sides) confirms the data is right. That is
+spec success criterion 2 and the persistence half of task 7, mechanically exercised end to end
+from a cloud session — against a disposable local database, not Noah's real one.
+
+**A safety finding surfaced doing this, worth recording.** This container's environment already
+carries `DATABASE_URL`/`TEST_DATABASE_URL` pointing at a real hosted Supabase project
+(`aws-0-us-east-1.pooler.supabase.com`) — presumably the phase-6 production database. `src/db/migrate.ts`
+loads env with plain `dotenv` (no `override: true`), so it does *not* override an
+already-set `DATABASE_URL` — an `npm run db:migrate:test` run in this session tried to reach
+that Supabase project instead of the local `.env.test` target, and only failed to do anything on
+a connection timeout. `src/test/setup.ts` is the one file in this codebase that loads `.env.test`
+with `override: true`, which is why the actual test suite stayed safely local throughout this
+session. This is a real footgun for any cloud session with this environment's credentials
+injected and worth Noah's attention independent of phase 5 — see the plan's status note for
+detail. No production data was read or written while establishing this.
+
+**What genuinely still needs Noah or a human, not a cloud AI session:** actually pointing
+`ODDS_PROVIDER=espn` at *production* and reconciling what lands there, and the human test pass
+gate — clicking through the real app and judging it. Neither of those is a technical blocker
+this session can route around; they're Noah's database and a person's judgment, respectively.
 The branch is not yet merged to `main` and has no open PR.
 
 ---
@@ -139,15 +163,16 @@ a variable sync cadence — real work, in service of a worse feed.
 | CFB paging by week and conference group               | ✅ Complete — one request (`groups`/`limit`), not a loop; see spec | —                          |
 | Defensive parsing — a reshaped field skips its market | ✅ Complete                                | —                                                |
 | Kill switch env flag falling back to fixtures         | ✅ Code complete · 🔲 **[NOAH]** still needs to set it in Vercel | **[NOAH]** to set in Vercel        |
-| First real slate — admin backfill plus reconciliation | 🔄 Partial — fetch/parse verified live (2026-09-03, zero game/result skips, NFL+NCAAF); **persisting to a real DB and reconciling still needs Postgres, which no cloud AI session has here** | **[NOAH]** — runs against production, or [LOCAL] against a real DB |
+| First real slate — admin backfill plus reconciliation | 🔄 Mechanically verified (2026-09-03) — `syncOdds`/`syncResults` run for real against live ESPN data, persisted correctly into a scratch Postgres (194 games, 329 markets, 658 selections, spot-checked); **only the actual run against production plus reconciliation is outstanding** | **[NOAH]** — runs against production |
 
-Everything above the last row was built and unit-tested from a Claude Code cloud session, and
-with outbound network opened up, the last row's fetch/parse half was too — see the
+Everything in this table, including the persistence half of the last row, was built and
+verified from a Claude Code cloud session once outbound network was opened up and a local
+Postgres was hand-installed (`apt-get install postgresql-16`, no Docker) — see the
 [plan](plans/2026-08-22-espn-adapter-implementation.md)'s status note for the full detail,
 including why a bare cloud-session `fetch()` call needs `node --use-env-proxy` to reach ESPN
-here (a sandbox networking quirk, not something production needs). What's left needs hands
-beyond a cloud session either way: one needs production credentials only Noah
-holds, the other needs an actual person clicking through the app.
+here (a sandbox networking quirk, not something production needs). What's left is not a
+technical limitation of a cloud session at all: it's Noah's production credentials to run the
+real thing against, and a human's judgment for the test pass gate below.
 
 **The honest risk.** This is an undocumented endpoint with no SLA and no contract. It can
 change shape without notice. The mitigations are tasks 5 and 6 and the fact that this is a
