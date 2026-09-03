@@ -13,20 +13,20 @@ account only Noah holds — GitHub settings, the Vercel dashboard, DNS, paid sig
 **What this table records is what is in the repository**, not what is on somebody's laptop.
 Where a status cannot be verified from the repo, it says so and dates the observation.
 
-| #   | Item                                                          | Status                             | Who finishes what's left | Reference                                                                                                                                                  |
-| --- | ------------------------------------------------------------- | ---------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Core betting engine                                           | ✅ Complete                        | —                        | [spec](specs/2026-08-14-core-betting-engine-design.md)                                                                                                     |
-| 2   | Social layer                                                  | ✅ Complete                        | —                        | [spec](specs/2026-08-17-social-layer-design.md) · [plan](archive/plans/2026-08-17-social-layer-implementation-plan.md)                                     |
-| 3   | Custom events                                                 | ✅ Complete                        | —                        | [spec](specs/2026-08-17-custom-events-design.md) · [plan](archive/plans/2026-08-17-custom-events-implementation-plan.md)                                   |
-| 4   | Peer-to-peer bets                                             | ✅ Complete                        | —                        | [spec](specs/2026-08-19-peer-to-peer-bets-design.md) · [plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md)                           |
-| 5   | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — code complete, PR open, production verification pending | [NOAH]           | [PR #21](https://github.com/NoahJohn1/SimulatedBetting/pull/21) · [spec](specs/2026-08-22-espn-adapter-design.md) · [plan](plans/2026-08-22-espn-adapter-implementation.md) |
-| 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — deployed, unmonitored | [CLOUD] [NOAH]           | [spec](specs/2026-09-02-production-deployment-design.md) · [plan](plans/2026-09-02-production-deployment-implementation-plan.md)                           |
-| 7a  | UI foundations                                                | ✅ Complete                        | —                        | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md)      |
-| 7b  | Design system                                                 | ✅ Complete                        | —                        | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md) |
-| 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | 🔲 Backlog                         | [CLOUD]                  | —                                                                                                                                                          |
-| 7d  | [Craft](#7d--craft)                                           | 🔲 Backlog                         | [CLOUD]                  | —                                                                                                                                                          |
-| 8   | [Email notifications](#8--email-notifications)                | 🔲 Backlog                         | [CLOUD] [NOAH]           | —                                                                                                                                                          |
-| 9   | [Hardening](#9--hardening)                                    | 🔲 Backlog                         | [CLOUD] [LOCAL] [MANUAL] | —                                                                                                                                                          |
+| #   | Item                                                          | Status                                                                   | Who finishes what's left | Reference                                                                                                                                                                   |
+| --- | ------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Core betting engine                                           | ✅ Complete                                                              | —                        | [spec](specs/2026-08-14-core-betting-engine-design.md)                                                                                                                      |
+| 2   | Social layer                                                  | ✅ Complete                                                              | —                        | [spec](specs/2026-08-17-social-layer-design.md) · [plan](archive/plans/2026-08-17-social-layer-implementation-plan.md)                                                      |
+| 3   | Custom events                                                 | ✅ Complete                                                              | —                        | [spec](specs/2026-08-17-custom-events-design.md) · [plan](archive/plans/2026-08-17-custom-events-implementation-plan.md)                                                    |
+| 4   | Peer-to-peer bets                                             | ✅ Complete                                                              | —                        | [spec](specs/2026-08-19-peer-to-peer-bets-design.md) · [plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md)                                            |
+| 5   | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — code complete, PR open, production verification pending | [NOAH]                   | [PR #21](https://github.com/NoahJohn1/SimulatedBetting/pull/21) · [spec](specs/2026-08-22-espn-adapter-design.md) · [plan](plans/2026-08-22-espn-adapter-implementation.md) |
+| 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — deployed, unmonitored                                       | [CLOUD] [NOAH]           | [spec](specs/2026-09-02-production-deployment-design.md) · [plan](plans/2026-09-02-production-deployment-implementation-plan.md)                                            |
+| 7a  | UI foundations                                                | ✅ Complete                                                              | —                        | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md)                       |
+| 7b  | Design system                                                 | ✅ Complete                                                              | —                        | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md)                  |
+| 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | 🔲 Backlog                                                               | [CLOUD]                  | —                                                                                                                                                                           |
+| 7d  | [Craft](#7d--craft)                                           | 🔲 Backlog                                                               | [CLOUD]                  | —                                                                                                                                                                           |
+| 8   | [Email notifications](#8--email-notifications)                | 🔲 Backlog                                                               | [CLOUD] [NOAH]           | —                                                                                                                                                                           |
+| 9   | [Hardening](#9--hardening)                                    | 🔲 Backlog                                                               | [CLOUD] [LOCAL] [MANUAL] | —                                                                                                                                                                           |
 
 All four subsystems pass `npm run verify` and have been exercised end to end against fixture
 data. Phase 5 is no longer gated on a human test pass before it can proceed — automated
@@ -51,8 +51,8 @@ i.e. the defensive-parsing path working exactly as designed, not a bug. One sand
 wrinkle: Node's global `fetch()` doesn't honor `HTTPS_PROXY` by default in this environment,
 so a bare cloud-session request gets a `403` straight from ESPN's own edge (a datacenter-IP
 block, confirmed by comparing a proxied vs. direct `curl`) — running `node --use-env-proxy`
-routes it through the session's local proxy correctly. This is purely a quirk of *this sandbox
-reaching the internet*, not something the adapter code needs to handle — Vercel production has
+routes it through the session's local proxy correctly. This is purely a quirk of _this sandbox
+reaching the internet_, not something the adapter code needs to handle — Vercel production has
 no such proxy in front of it.
 
 **Update, same day:** the "needs Docker" blocker above turned out to be specific to this
@@ -71,7 +71,7 @@ from a cloud session — against a disposable local database, not Noah's real on
 **A safety finding surfaced doing this, worth recording.** This container's environment already
 carries `DATABASE_URL`/`TEST_DATABASE_URL` pointing at a real hosted Supabase project
 (`aws-0-us-east-1.pooler.supabase.com`) — presumably the phase-6 production database. `src/db/migrate.ts`
-loads env with plain `dotenv` (no `override: true`), so it does *not* override an
+loads env with plain `dotenv` (no `override: true`), so it does _not_ override an
 already-set `DATABASE_URL` — an `npm run db:migrate:test` run in this session tried to reach
 that Supabase project instead of the local `.env.test` target, and only failed to do anything on
 a connection timeout. `src/test/setup.ts` is the one file in this codebase that loads `.env.test`
@@ -81,7 +81,7 @@ injected and worth Noah's attention independent of phase 5 — see the plan's st
 detail. No production data was read or written while establishing this.
 
 **What genuinely still needs Noah, not a cloud AI session:** actually pointing
-`ODDS_PROVIDER=espn` at *production* and reconciling what lands there — that needs credentials
+`ODDS_PROVIDER=espn` at _production_ and reconciling what lands there — that needs credentials
 only Noah holds, not more verification.
 
 **[PR #21](https://github.com/NoahJohn1/SimulatedBetting/pull/21) is open** against `main`,
@@ -159,14 +159,14 @@ a variable sync cadence — real work, in service of a worse feed.
 7. **First real slate.** An admin-run backfill that pulls a genuine week into a real season,
    plus reconciliation over it.
 
-| Task                                                  | Status                                     | Owner                                          |
-| ----------------------------------------------------- | ------------------------------------------ | ----------------------------------------------- |
-| Spike the payload — NFL and CFB, both endpoints       | ✅ Complete                                | —                                                |
-| `EspnScoreProvider`                                   | ✅ Complete                                | —                                                |
-| `EspnOddsProvider`                                    | ✅ Complete                                | —                                                |
-| CFB paging by week and conference group               | ✅ Complete — one request (`groups`/`limit`), not a loop; see spec | —                          |
-| Defensive parsing — a reshaped field skips its market | ✅ Complete                                | —                                                |
-| Kill switch env flag falling back to fixtures         | ✅ Code complete · 🔲 **[NOAH]** still needs to set it in Vercel | **[NOAH]** to set in Vercel        |
+| Task                                                  | Status                                                                                                                                                                                                                                                                                  | Owner                                |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Spike the payload — NFL and CFB, both endpoints       | ✅ Complete                                                                                                                                                                                                                                                                             | —                                    |
+| `EspnScoreProvider`                                   | ✅ Complete                                                                                                                                                                                                                                                                             | —                                    |
+| `EspnOddsProvider`                                    | ✅ Complete                                                                                                                                                                                                                                                                             | —                                    |
+| CFB paging by week and conference group               | ✅ Complete — one request (`groups`/`limit`), not a loop; see spec                                                                                                                                                                                                                      | —                                    |
+| Defensive parsing — a reshaped field skips its market | ✅ Complete                                                                                                                                                                                                                                                                             | —                                    |
+| Kill switch env flag falling back to fixtures         | ✅ Code complete · 🔲 **[NOAH]** still needs to set it in Vercel                                                                                                                                                                                                                        | **[NOAH]** to set in Vercel          |
 | First real slate — admin backfill plus reconciliation | 🔄 Mechanically verified (2026-09-03) — `syncOdds`/`syncResults` run for real against live ESPN data, persisted correctly into a scratch Postgres (194 games, 329 markets, 658 selections, spot-checked); **only the actual run against production plus reconciliation is outstanding** | **[NOAH]** — runs against production |
 
 Everything in this table, including the persistence half of the last row, was built and
@@ -378,13 +378,13 @@ smoke test is checking that error states exist, and they do.
   ([`/pending`](../src/app/pending/page.tsx), [`/join`](../src/app/join/page.tsx),
   [`/no-season`](../src/app/no-season/page.tsx)) and have never been looked at as a sequence.
 
-| Task                                                                  | Status     | Owner                                                                          |
-| --------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------ |
-| A written smoke checklist                                             | 🔲 Backlog | [CLOUD] to draft · **[MANUAL]** to validate — it is derived from the test pass |
-| Rate limiting on mutations                                            | 🔲 Backlog | [CLOUD]                                                                        |
+| Task                                                                  | Status      | Owner                                                                          |
+| --------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------ |
+| A written smoke checklist                                             | 🔲 Backlog  | [CLOUD] to draft · **[MANUAL]** to validate — it is derived from the test pass |
+| Rate limiting on mutations                                            | 🔲 Backlog  | [CLOUD]                                                                        |
 | Load sanity — a full CFB Saturday and a season of feed events         | ✅ Complete | —                                                                              |
-| A house rules page                                                    | 🔲 Backlog | [CLOUD]                                                                        |
-| The new-member path — `/pending`, `/join`, `/no-season` as a sequence | 🔲 Backlog | [CLOUD]                                                                        |
+| A house rules page                                                    | 🔲 Backlog  | [CLOUD]                                                                        |
+| The new-member path — `/pending`, `/join`, `/no-season` as a sequence | 🔲 Backlog  | [CLOUD]                                                                        |
 
 ---
 

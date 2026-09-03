@@ -18,8 +18,8 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Cloud lane plan](plans/2026-09-02-cloud-lane-completion-implementation-plan.md)                | The task-by-task plan for that work                                                                                           |
 | [Docs status and archive spec](specs/2026-09-02-docs-status-and-archive-design.md)              | The owner taxonomy, the roadmap's master table, and what moved to the archive                                                 |
 | [Docs status and archive plan](plans/2026-09-02-docs-status-and-archive-implementation-plan.md) | The task-by-task plan for that restructure                                                                                    |
-| [ESPN adapter spec](specs/2026-08-22-espn-adapter-design.md)                                    | Phase 5: `EspnOddsProvider`/`EspnScoreProvider`, the payload spike findings, the kill switch, success criteria               |
-| [ESPN adapter plan](plans/2026-08-22-espn-adapter-implementation.md)                            | The task-by-task plan, plus dated status notes on what was verified from a cloud session and how                             |
+| [ESPN adapter spec](specs/2026-08-22-espn-adapter-design.md)                                    | Phase 5: `EspnOddsProvider`/`EspnScoreProvider`, the payload spike findings, the kill switch, success criteria                |
+| [ESPN adapter plan](plans/2026-08-22-espn-adapter-implementation.md)                            | The task-by-task plan, plus dated status notes on what was verified from a cloud session and how                              |
 | [Production deployment spec](specs/2026-09-02-production-deployment-design.md)                  | Phase 6's cloud half — the run record, alerting on cron failure and drift, Sentry, and the two admin screens                  |
 | [Production deployment plan](plans/2026-09-02-production-deployment-implementation-plan.md)     | The task-by-task plan for that work, lane-tagged, with what a cloud session can and cannot verify                             |
 
@@ -209,12 +209,12 @@ Docker at all, just a database, which a cloud session can now get on its own. Se
 
 #### What needs a person, either of you
 
-| Item                                          | Source        |
-| --------------------------------------------- | ------------- |
-| The human test pass — still useful for phases 6-9, no longer gates phase 5 | both |
-| Merging Dependabot's monthly PR               | repo health 6 |
-| ESLint 10 / TypeScript 7 — blocked upstream   | repo health 7 |
-| Confirming a real email renders               | roadmap 8     |
+| Item                                                                       | Source        |
+| -------------------------------------------------------------------------- | ------------- |
+| The human test pass — still useful for phases 6-9, no longer gates phase 5 | both          |
+| Merging Dependabot's monthly PR                                            | repo health 6 |
+| ESLint 10 / TypeScript 7 — blocked upstream                                | repo health 7 |
+| Confirming a real email renders                                            | roadmap 8     |
 
 ## Conventions
 

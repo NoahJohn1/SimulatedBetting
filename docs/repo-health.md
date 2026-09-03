@@ -18,11 +18,11 @@ Every item below carries a **lane** — who or what can actually finish it. The 
 what the work needs, not by who can type the file. Four lanes now, not three: `[MANUAL]` splits
 into `[MANUAL]` and `[NOAH]` below, since not every human task needs Noah's specific credentials.
 
-| Lane         | Means                                      | Why                                                                                                                                                                                    |
-| ------------ | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **[MANUAL]** | Either of you, by hand                     | Clicking, reading, judging. No special account needed.                                                                                                                                 |
-| **[NOAH]**   | Noah specifically                          | An account or permission only he holds: GitHub repo settings, the Vercel dashboard, DNS, paid signups. No agent has these credentials, and none should.                                |
-| **[CLOUD]**  | A Claude Code web session, start to finish | Measured 2026-08-25: `npm ci` (21s), `npm run typecheck`, `npm run lint`, `npx next build` and any test that only reads source all run clean in a cloud session. As of 2026-09-03, so does the full DB-backed suite — see [3.7](#37-postgres-without-docker-in-a-cloud-session). |
+| Lane         | Means                                      | Why                                                                                                                                                                                                                                                                                                                 |
+| ------------ | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **[MANUAL]** | Either of you, by hand                     | Clicking, reading, judging. No special account needed.                                                                                                                                                                                                                                                              |
+| **[NOAH]**   | Noah specifically                          | An account or permission only he holds: GitHub repo settings, the Vercel dashboard, DNS, paid signups. No agent has these credentials, and none should.                                                                                                                                                             |
+| **[CLOUD]**  | A Claude Code web session, start to finish | Measured 2026-08-25: `npm ci` (21s), `npm run typecheck`, `npm run lint`, `npx next build` and any test that only reads source all run clean in a cloud session. As of 2026-09-03, so does the full DB-backed suite — see [3.7](#37-postgres-without-docker-in-a-cloud-session).                                    |
 | **[LOCAL]**  | Claude on your desktop                     | For work that has to exercise Docker itself — `docker compose up`, the session-start hook's Docker branch — not merely "needs Postgres." A cloud session has the `docker` binary but no daemon (`/var/run/docker.sock` does not exist), so nothing that specifically depends on Docker running can be proven there. |
 
 This document covers repo mechanics. For the product phases — the ESPN adapter, deployment, the
@@ -33,8 +33,8 @@ UI ladder, email, hardening — see [the roadmap's status table](roadmap.md#road
 of this repo's own `db:up` script, false of Postgres itself. A cloud session that installs and
 starts a native Postgres server (no container runtime involved — see
 [3.7](#37-postgres-without-docker-in-a-cloud-session)) runs the entire suite, migrations
-included. What's left in [LOCAL] is narrower and more honest: only the things that test *Docker
-specifically*, not everything that merely needs a database.
+included. What's left in [LOCAL] is narrower and more honest: only the things that test _Docker
+specifically_, not everything that merely needs a database.
 
 Two things soften the [LOCAL] lane further: **CI has Postgres**, so a cloud session that opens a
 pull request gets the full suite run against a real database by the `verify` job regardless; and
@@ -64,7 +64,7 @@ assumption that every test needs a database. It does not, and the table above mo
 | 12  | `money-touch` PostToolUse hook — layer 2 ([3.3](#33-money-invariants--all-three-layers))                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
 | 13  | `.env.test` documented in the README ([3.6](#36-session-start--a-hook))                                                                                                   | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
 | 14  | Prettier plus `eslint-config-prettier` ([2](#2-hygiene))                                                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
-| 15  | Reconcile the ESPN adapter work against the Prettier reformat                                                                                                             | [CLOUD]    | Commit `2722534` on `espn-adapter`, ahead of this branch's own PR                             |
+| 15  | Reconcile the ESPN adapter work against the Prettier reformat                                                                                                             | [CLOUD]    | Commit `2722534` on `espn-adapter`, ahead of this branch's own PR                            |
 
 ### Outstanding
 
@@ -508,17 +508,17 @@ a code bug and is not.
 broader than the work. A cloud session is the _better_ place to prove four of the hook's five
 branches, because a cloud session is the degraded environment the hook exists to handle.
 
-| Branch                                                   | Proven where | Status                 |
-| -------------------------------------------------------- | ------------ | ---------------------- |
-| `npm ci` when `node_modules` is absent                   | [CLOUD]      | ✅                     |
-| Re-running is a no-op                                    | [CLOUD]      | ✅                     |
-| No daemon → prints instructions, exits 0                 | [CLOUD]      | ✅                     |
-| A `docker` binary on `PATH` is not mistaken for a daemon | [CLOUD]      | ✅                     |
-| `docker compose up -d --wait` and both migrations        | **[LOCAL]**  | 🔲 Outstanding — row 4 |
+| Branch                                                   | Proven where | Status                                                         |
+| -------------------------------------------------------- | ------------ | -------------------------------------------------------------- |
+| `npm ci` when `node_modules` is absent                   | [CLOUD]      | ✅                                                             |
+| Re-running is a no-op                                    | [CLOUD]      | ✅                                                             |
+| No daemon → prints instructions, exits 0                 | [CLOUD]      | ✅                                                             |
+| A `docker` binary on `PATH` is not mistaken for a daemon | [CLOUD]      | ✅                                                             |
+| `docker compose up -d --wait` and both migrations        | **[LOCAL]**  | 🔲 Outstanding — row 4                                         |
 | Native Postgres fallback and both migrations, no Docker  | [CLOUD]      | ✅ — see [3.7](#37-postgres-without-docker-in-a-cloud-session) |
 
 A Claude Code web session starts with no `node_modules` and no Postgres reachable on port 5433
-(docker-compose's mapping), so it cannot bring up *that* database. Re-confirmed 2026-08-25:
+(docker-compose's mapping), so it cannot bring up _that_ database. Re-confirmed 2026-08-25:
 `node_modules` absent, port 5433 closed.
 
 **One correction to the original writeup, and a second correction on top of it.** The original
@@ -531,7 +531,7 @@ a cloud session at all." As of 2026-09-03 it can, just not through Docker — se
 and falls back to a native Postgres server running directly in the container, which this specific
 environment's image ships pre-installed. A web session is no longer read-only with respect to
 the tests. This also means the [three-lane
-plan](plans/2026-08-20-repo-health-implementation-plan.md)'s split of *this specific item* is
+plan](plans/2026-08-20-repo-health-implementation-plan.md)'s split of _this specific item_ is
 narrower than it was — see 3.7 for what's still genuinely [LOCAL] versus what moved to [CLOUD].
 
 A `SessionStart` hook fixes it: `npm ci` when `node_modules` is missing, `docker compose up -d
@@ -581,7 +581,7 @@ returning and Postgres actually accepting connections.
 
 **What this does and doesn't change.** Every roadmap or repo-health item tagged `[LOCAL]` purely
 because "it needs a database" should be re-read as `[CLOUD]` — this environment's image already
-carries what that needs. What's still genuinely `[LOCAL]` is anything that tests *Docker itself*
+carries what that needs. What's still genuinely `[LOCAL]` is anything that tests _Docker itself_
 — row 4 above (`docker compose up -d --wait`), and this repo's `db:up`/`docker-compose.yml`
 path specifically — since a cloud session still has no daemon to exercise. A production
 database (Vercel's hosted Postgres) is a separate concern entirely; this is a disposable,
