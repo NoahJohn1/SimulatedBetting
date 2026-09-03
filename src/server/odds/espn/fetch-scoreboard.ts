@@ -63,15 +63,30 @@ export async function fetchScoreboard(
   let skippedMarkets = 0;
 
   for (const event of body.events ?? []) {
+    let game: ProviderGame;
+    let result: ProviderResult;
     try {
-      const game = mapGame(event, sport);
-      const result = mapResult(event);
-      const { markets, skipped } = mapMarkets(event);
-      skippedMarkets += skipped;
-      items.push({ game, markets, result });
+      game = mapGame(event, sport);
+      result = mapResult(event);
     } catch {
       skippedGames += 1;
+      continue;
     }
+
+    // Market parsing is isolated from game/result parsing: a game whose odds block is
+    // malformed in a way mapMarkets's own per-market try/catch doesn't cover must still
+    // sync its schedule and score — losing a game's result because its odds were bad
+    // would silently block that game from ever settling.
+    let markets: ProviderMarket[] = [];
+    try {
+      const mapped = mapMarkets(event);
+      markets = mapped.markets;
+      skippedMarkets += mapped.skipped;
+    } catch {
+      skippedMarkets += 1;
+    }
+
+    items.push({ game, markets, result });
   }
 
   return { items, skippedGames, skippedMarkets };

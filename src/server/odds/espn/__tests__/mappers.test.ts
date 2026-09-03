@@ -202,6 +202,48 @@ describe('mapMarkets', () => {
     expect(skipped).toBe(1);
   });
 
+  it('returns no markets, and no skips, when odds.provider is missing entirely', () => {
+    const broken = {
+      ...withOdds,
+      competitions: [
+        {
+          ...withOdds.competitions[0],
+          odds: [
+            {
+              ...withOdds.competitions[0].odds![0],
+              provider: undefined as never,
+            },
+          ],
+        },
+      ],
+    };
+
+    const { markets, skipped } = mapMarkets(broken);
+    expect(markets).toEqual([]);
+    expect(skipped).toBe(0);
+  });
+
+  it('returns no markets, and no skips, when odds.provider has neither displayName nor name', () => {
+    const broken = {
+      ...withOdds,
+      competitions: [
+        {
+          ...withOdds.competitions[0],
+          odds: [
+            {
+              ...withOdds.competitions[0].odds![0],
+              provider: {} as never,
+            },
+          ],
+        },
+      ],
+    };
+
+    const { markets, skipped } = mapMarkets(broken);
+    expect(markets).toEqual([]);
+    expect(skipped).toBe(0);
+  });
+
   it('skips markets ESPN reports as "OFF" (a pulled book) and keeps the clean one', () => {
     const marketOff = loadFixture('event-market-off.json').events[0];
 

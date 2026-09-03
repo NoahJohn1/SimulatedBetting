@@ -190,7 +190,9 @@ export function mapMarkets(event: EspnEvent): { markets: ProviderMarket[]; skipp
   if (!odds) return { markets: [], skipped: 0 };
 
   const gameExternalId = competition.id;
-  const sourceBook = odds.provider.displayName ?? odds.provider.name;
+  const sourceBook = odds.provider?.displayName ?? odds.provider?.name;
+  if (!sourceBook) return { markets: [], skipped: 0 };
+
   const markets: ProviderMarket[] = [];
   let skipped = 0;
 
