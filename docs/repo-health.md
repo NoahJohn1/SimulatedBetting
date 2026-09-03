@@ -22,16 +22,23 @@ into `[MANUAL]` and `[NOAH]` below, since not every human task needs Noah's spec
 | ------------ | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **[MANUAL]** | Either of you, by hand                     | Clicking, reading, judging. No special account needed.                                                                                                                                 |
 | **[NOAH]**   | Noah specifically                          | An account or permission only he holds: GitHub repo settings, the Vercel dashboard, DNS, paid signups. No agent has these credentials, and none should.                                |
-| **[CLOUD]**  | A Claude Code web session, start to finish | Measured 2026-08-25: `npm ci` (21s), `npm run typecheck`, `npm run lint`, `npx next build` and any test that only reads source all run clean in a cloud session.                       |
-| **[LOCAL]**  | Claude on your desktop                     | Needs Postgres. A cloud session has the `docker` binary but no daemon — `/var/run/docker.sock` does not exist — so anything gated on `npm test` as a whole must run where Docker does. |
+| **[CLOUD]**  | A Claude Code web session, start to finish | Measured 2026-08-25: `npm ci` (21s), `npm run typecheck`, `npm run lint`, `npx next build` and any test that only reads source all run clean in a cloud session. As of 2026-09-03, so does the full DB-backed suite — see [3.7](#37-postgres-without-docker-in-a-cloud-session). |
+| **[LOCAL]**  | Claude on your desktop                     | For work that has to exercise Docker itself — `docker compose up`, the session-start hook's Docker branch — not merely "needs Postgres." A cloud session has the `docker` binary but no daemon (`/var/run/docker.sock` does not exist), so nothing that specifically depends on Docker running can be proven there. |
 
 This document covers repo mechanics. For the product phases — the ESPN adapter, deployment, the
 UI ladder, email, hardening — see [the roadmap's status table](roadmap.md#roadmap).
 
-One thing that softens the [LOCAL] lane: **CI has Postgres.** A cloud session that opens a pull
-request gets the full suite run against a real database by the `verify` job. So "cloud writes it,
-CI proves it" covers most of what used to need a laptop; the local lane is for work that has to be
-_exercised_ locally, like a session hook.
+**Correction, 2026-09-03: the [LOCAL] lane used to be much wider than this.** It previously read
+"needs Postgres... so anything gated on `npm test` as a whole must run where Docker does" — true
+of this repo's own `db:up` script, false of Postgres itself. A cloud session that installs and
+starts a native Postgres server (no container runtime involved — see
+[3.7](#37-postgres-without-docker-in-a-cloud-session)) runs the entire suite, migrations
+included. What's left in [LOCAL] is narrower and more honest: only the things that test *Docker
+specifically*, not everything that merely needs a database.
+
+Two things soften the [LOCAL] lane further: **CI has Postgres**, so a cloud session that opens a
+pull request gets the full suite run against a real database by the `verify` job regardless; and
+now a cloud session can get its own Postgres directly, without waiting on CI at all.
 
 These map onto the H / C / L lanes in the
 [implementation plan](plans/2026-08-20-repo-health-implementation-plan.md) — H is [MANUAL], C is
@@ -508,32 +515,88 @@ branches, because a cloud session is the degraded environment the hook exists to
 | No daemon → prints instructions, exits 0                 | [CLOUD]      | ✅                     |
 | A `docker` binary on `PATH` is not mistaken for a daemon | [CLOUD]      | ✅                     |
 | `docker compose up -d --wait` and both migrations        | **[LOCAL]**  | 🔲 Outstanding — row 4 |
+| Native Postgres fallback and both migrations, no Docker  | [CLOUD]      | ✅ — see [3.7](#37-postgres-without-docker-in-a-cloud-session) |
 
-A Claude Code web session starts with no `node_modules` and no Postgres, so it cannot run the
-suite. Re-confirmed 2026-08-25: `node_modules` absent, port 5433 closed. Every web session is
-still read-only with respect to the tests, which is a bad position from which to trust any
-change.
+A Claude Code web session starts with no `node_modules` and no Postgres reachable on port 5433
+(docker-compose's mapping), so it cannot bring up *that* database. Re-confirmed 2026-08-25:
+`node_modules` absent, port 5433 closed.
 
-**One correction to the original writeup.** It recorded `docker` as "available" in a web session.
-The binary is on `PATH`, but there is no daemon: `/var/run/docker.sock` does not exist, and
-`docker info` fails against it. So a `SessionStart` hook cannot bring Postgres up in a cloud
-session at all — the hook's value there is `npm ci` plus a clear message about what is missing,
-and the full path only works on a laptop. This is also why the [three-lane
-plan](plans/2026-08-20-repo-health-implementation-plan.md) splits the way it does, and that split
-is still correct.
+**One correction to the original writeup, and a second correction on top of it.** The original
+recorded `docker` as "available" in a web session; the binary is on `PATH`, but there is no
+daemon (`/var/run/docker.sock` does not exist, `docker info` fails). That correction still
+holds — `docker compose up` genuinely cannot work in a cloud session. What no longer holds is
+the conclusion drawn from it: that a `SessionStart` hook therefore "cannot bring Postgres up in
+a cloud session at all." As of 2026-09-03 it can, just not through Docker — see
+[3.7](#37-postgres-without-docker-in-a-cloud-session). The hook now tries the Docker path first
+and falls back to a native Postgres server running directly in the container, which this specific
+environment's image ships pre-installed. A web session is no longer read-only with respect to
+the tests. This also means the [three-lane
+plan](plans/2026-08-20-repo-health-implementation-plan.md)'s split of *this specific item* is
+narrower than it was — see 3.7 for what's still genuinely [LOCAL] versus what moved to [CLOUD].
 
 A `SessionStart` hook fixes it: `npm ci` when `node_modules` is missing, `docker compose up -d
---wait`, create and migrate the test database. Four requirements:
+--wait` (or the native fallback below), create and migrate the test database. Five
+requirements:
 
 - **Idempotent** — re-running must be a no-op when everything is already up.
-- **Never fails the session** — if Docker is unavailable it prints what to run by hand and
-  exits zero. A hook that blocks a session start is worse than no hook.
+- **Never fails the session** — if neither Postgres path is available it prints what to run by
+  hand and exits zero. A hook that blocks a session start is worse than no hook.
 - **Tests the daemon, not the binary** — `command -v docker` succeeds in a cloud session where
   `docker compose up` cannot work. The check that matters is `docker info`.
 - **Honest about cost** — a cold `npm ci` is not instant, and the hook should say what it is
   doing rather than appearing to hang.
+- **Docker first, native second** — the hook never installs packages itself (that needs
+  network and is worth a session seeing, not doing silently on every start); it only starts and
+  configures a Postgres server that is already present.
 
 The `session-start-hook` skill in the Claude Code environment covers the mechanics.
+
+### 3.7 Postgres without Docker in a cloud session
+
+**Lane: [CLOUD], proven 2026-09-03.** The `[LOCAL]` tag on "needs Postgres" items always meant
+"needs this repo's own `db:up`," which needs Docker. It was never actually a claim about
+Postgres itself — that assumption just went unchallenged until a cloud session tried apt
+directly instead of accepting the Docker daemon's absence as final.
+
+**What was tried and worked.** This environment's container image ships `postgresql-16` (server,
+not just the `psql` client) pre-installed but uninitialized-into-service — a `pg_lsclusters`
+cluster exists, just not started, and `policy-rc.d` blocks it from auto-starting on package
+install or upgrade. Running as root with passwordless `sudo` (both already true of this
+environment), starting it needs no network at all:
+
+```bash
+pg_ctlcluster 16 main start   # or: sudo apt-get install -y postgresql, if no cluster exists yet
+sudo -u postgres psql -c "CREATE ROLE simbet LOGIN PASSWORD 'simbet'"
+sudo -u postgres createdb -O simbet simbet
+sudo -u postgres createdb -O simbet simbet_test
+```
+
+Pointed at that (`DATABASE_URL=postgres://simbet:simbet@127.0.0.1:5432/simbet_test` in
+`.env.test`, migrated with `npx tsx src/db/migrate.ts`): `npm run verify` passes in full —
+typecheck, lint, and all 866 tests across 81 files, including the DB-backed
+`sync.test.ts`/`results.test.ts` that this document previously called uncloud-able. The
+`session-start` hook (3.6) now does exactly this automatically as its fallback when no Docker
+daemon is running, including a `pg_isready` retry loop for the gap between `pg_ctlcluster`
+returning and Postgres actually accepting connections.
+
+**What this does and doesn't change.** Every roadmap or repo-health item tagged `[LOCAL]` purely
+because "it needs a database" should be re-read as `[CLOUD]` — this environment's image already
+carries what that needs. What's still genuinely `[LOCAL]` is anything that tests *Docker itself*
+— row 4 above (`docker compose up -d --wait`), and this repo's `db:up`/`docker-compose.yml`
+path specifically — since a cloud session still has no daemon to exercise. A production
+database (Vercel's hosted Postgres) is a separate concern entirely; this is a disposable,
+session-local database good for running the suite, not a stand-in for production access.
+
+**A safety note that came out of proving this.** Some cloud environments carry a real
+`DATABASE_URL`/`TEST_DATABASE_URL` already set (a hosted database's credentials, injected as
+container environment variables) — this one does, pointing at a Supabase project. `src/test/setup.ts`
+loads `.env.test` with `override: true`, so the test suite always ignores that ambient value in
+favor of the local target — but `src/db/migrate.ts` did not do the same for `.env.local`/
+`$ENV_FILE` until this was found and fixed (see the plan's status note in
+[the ESPN adapter plan](plans/2026-08-22-espn-adapter-implementation.md) for how). Any script
+that loads env with plain `dotenv` and no `override: true` is one ambient variable away from
+silently targeting whatever database this container's environment happens to carry — worth
+checking before adding another one.
 
 ---
 

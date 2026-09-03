@@ -65,9 +65,14 @@ override an already-set `DATABASE_URL`; running `npm run db:migrate:test` in thi
 to reach that Supabase project instead of the local target in `.env.test`, and only failed to do
 anything because the connection timed out. `src/test/setup.ts` is the one place in this codebase
 that loads `.env.test` with `override: true`, which is why the actual test suite never touched
-it. Worth Noah's attention independently of phase 5 — any cloud session carrying these
-credentials is one un-overridden script away from touching a real database. No production data
-was read or written establishing any of this.
+it. No production data was read or written establishing any of this.
+
+**Fixed, same session:** `src/db/migrate.ts` now loads its env file with `override: true` too,
+matching `setup.ts`'s existing pattern — re-verified by re-running `npm run db:migrate:test`
+with no manual `DATABASE_URL` export and confirming it targets the local database. The
+`session-start` hook (see [repo-health.md 3.7](../repo-health.md#37-postgres-without-docker-in-a-cloud-session))
+also now exports `DATABASE_URL` explicitly rather than relying on any file load for its own
+migration step, as a second layer against the same class of bug.
 
 What genuinely remains outside a cloud session's reach: pointing `ODDS_PROVIDER=espn` at
 *production* itself and reconciling what lands there (Noah's credentials, Noah's call), and the

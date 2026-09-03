@@ -358,7 +358,7 @@ smoke test is checking that error states exist, and they do.
 | --------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------ |
 | A written smoke checklist                                             | 🔲 Backlog | [CLOUD] to draft · **[MANUAL]** to validate — it is derived from the test pass |
 | Rate limiting on mutations                                            | 🔲 Backlog | [CLOUD]                                                                        |
-| Load sanity — a full CFB Saturday and a season of feed events         | 🔲 Backlog | **[LOCAL]** — needs real row counts, so it needs a database                    |
+| Load sanity — a full CFB Saturday and a season of feed events         | 🔲 Backlog | [CLOUD] — needs a database, which no longer means [LOCAL]; see [repo-health.md 3.7](repo-health.md#37-postgres-without-docker-in-a-cloud-session) |
 | A house rules page                                                    | 🔲 Backlog | [CLOUD]                                                                        |
 | The new-member path — `/pending`, `/join`, `/no-season` as a sequence | 🔲 Backlog | [CLOUD]                                                                        |
 

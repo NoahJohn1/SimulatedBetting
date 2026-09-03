@@ -4,7 +4,10 @@ import { readMigrationFiles } from 'drizzle-orm/migrator';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
-config({ path: process.env.ENV_FILE ?? '.env.local' });
+// override: true matches src/test/setup.ts's loading of .env.test — without it, dotenv leaves
+// an already-set process.env.DATABASE_URL alone, so an ambient value (e.g. a cloud session's
+// injected DATABASE_URL) silently wins over the file this script was explicitly pointed at.
+config({ path: process.env.ENV_FILE ?? '.env.local', override: true });
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error('DATABASE_URL is not set');
