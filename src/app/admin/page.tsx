@@ -62,6 +62,10 @@ export default async function AdminPage() {
         Wagers needing a ruling
       </Link>
 
+      <Link href="/admin/seasons" className="text-sm text-ink-muted underline">
+        Seasons
+      </Link>
+
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
           Waiting for approval
