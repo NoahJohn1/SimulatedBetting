@@ -20,7 +20,7 @@ Where a status cannot be verified from the repo, it says so and dates the observ
 | 3   | Custom events                                                 | ✅ Complete                        | —                        | [spec](specs/2026-08-17-custom-events-design.md) · [plan](archive/plans/2026-08-17-custom-events-implementation-plan.md)                                   |
 | 4   | Peer-to-peer bets                                             | ✅ Complete                        | —                        | [spec](specs/2026-08-19-peer-to-peer-bets-design.md) · [plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md)                           |
 | —   | **Human test pass** — the gate on phase 5                     | 🔲 Backlog                         | **[MANUAL]**             | —                                                                                                                                                          |
-| 5   | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — Noah, local only  | [CLOUD] [NOAH]           | spec pending                                                                                                                                               |
+| 5   | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — code complete, production verification pending | [NOAH]           | [spec](specs/2026-08-22-espn-adapter-design.md) · [plan](plans/2026-08-22-espn-adapter-implementation.md) |
 | 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — deployed, unmonitored | **[NOAH]** mostly        | —                                                                                                                                                          |
 | 7a  | UI foundations                                                | ✅ Complete                        | —                        | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md)      |
 | 7b  | Design system                                                 | ✅ Complete                        | —                        | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md) |
@@ -33,9 +33,16 @@ All four subsystems pass `npm run verify` and have been exercised end to end aga
 data. None of it has been through a human test pass — that is the gate on phase 5, and no
 amount of tooling substitutes for it.
 
-**Phase 5 is not verifiable from here.** As of 2026-09-02 there is no `espn` reference anywhere
-in `src/`, and `origin` carries only `main` and the current working branch, so Noah's adapter
-work exists only on his machine. This table will say "in progress" until something is pushed.
+**Phase 5's code is now verifiable from the repo.** As of 2026-09-03 the `espn-adapter` branch
+(16 commits) adds `EspnOddsProvider`/`EspnScoreProvider` behind the `ODDS_PROVIDER` kill
+switch, with a spec and implementation plan. `npm run typecheck` and `npm run lint` are clean
+on that branch, and all 34 pure-logic unit tests pass (mappers, `parseLine`, `fetchScoreboard`,
+providers). What is *not* verifiable from a cloud session: the DB-backed
+`sync.test.ts`/`results.test.ts` suites (need Docker/Postgres — **[LOCAL]**) and a real pull
+against ESPN's live API (the cloud sandbox's egress proxy does not allowlist
+`site.api.espn.com`, confirmed by a direct request failing at the proxy — so task 7 below can
+only happen locally or in production, never from a cloud AI session as currently sandboxed).
+The branch is not yet merged to `main` and has no open PR.
 
 ---
 
@@ -107,15 +114,21 @@ a variable sync cadence — real work, in service of a worse feed.
 7. **First real slate.** An admin-run backfill that pulls a genuine week into a real season,
    plus reconciliation over it.
 
-| Task                                                  | Status         | Owner                                          |
-| ----------------------------------------------------- | -------------- | ---------------------------------------------- |
-| Spike the payload — NFL and CFB, both endpoints       | 🔄 Noah, local | [CLOUD]                                        |
-| `EspnScoreProvider`                                   | 🔲 Backlog     | [CLOUD]                                        |
-| `EspnOddsProvider`                                    | 🔲 Backlog     | [CLOUD]                                        |
-| CFB paging by week and conference group               | 🔲 Backlog     | [CLOUD]                                        |
-| Defensive parsing — a reshaped field skips its market | 🔲 Backlog     | [CLOUD]                                        |
-| Kill switch env flag falling back to fixtures         | 🔲 Backlog     | [CLOUD] to write · **[NOAH]** to set in Vercel |
-| First real slate — admin backfill plus reconciliation | 🔲 Backlog     | **[NOAH]** — runs against production           |
+| Task                                                  | Status                                     | Owner                                          |
+| ----------------------------------------------------- | ------------------------------------------ | ----------------------------------------------- |
+| Spike the payload — NFL and CFB, both endpoints       | ✅ Complete                                | —                                                |
+| `EspnScoreProvider`                                   | ✅ Complete                                | —                                                |
+| `EspnOddsProvider`                                    | ✅ Complete                                | —                                                |
+| CFB paging by week and conference group               | ✅ Complete — one request (`groups`/`limit`), not a loop; see spec | —                          |
+| Defensive parsing — a reshaped field skips its market | ✅ Complete                                | —                                                |
+| Kill switch env flag falling back to fixtures         | ✅ Code complete · 🔲 **[NOAH]** still needs to set it in Vercel | **[NOAH]** to set in Vercel        |
+| First real slate — admin backfill plus reconciliation | 🔲 Backlog — **cannot be done from a cloud AI session** (needs production DB credentials and a live call to ESPN's API, both outside a cloud sandbox) | **[NOAH]** — runs against production, or [LOCAL] against a real DB with real network access |
+
+Everything above the last row was built and unit-tested from a Claude Code cloud session —
+see the [plan](plans/2026-08-22-espn-adapter-implementation.md)'s status note for exactly what
+was and wasn't verifiable there. The last row and the human test pass gate are the only parts
+of phase 5 that need hands beyond a cloud session: one needs production credentials only Noah
+holds, the other needs an actual person clicking through the app.
 
 **The honest risk.** This is an undocumented endpoint with no SLA and no contract. It can
 change shape without notice. The mitigations are tasks 5 and 6 and the fact that this is a

@@ -1,7 +1,9 @@
 # ESPN Adapter — Design Spec
 
 **Date:** 2026-08-22
-**Status:** Draft
+**Status:** Built (code complete on `espn-adapter`, not yet merged to `main`; success
+criteria 1, 3, 4, and 5 verified — criterion 2, a real backfill against production, is
+still outstanding, see [roadmap](../roadmap.md#5--real-data-the-espn-adapter) task 7)
 **Scope:** Phase 5 of the production-readiness roadmap (tasks 2, 3, 5, 6) — see
 [../roadmap.md](../roadmap.md#5--real-data-the-espn-adapter)
 **Depends on:** Subsystem 1 — core betting engine, built
