@@ -53,24 +53,39 @@ function mapTeam(team: EspnTeamRef): ProviderTeam {
   };
 }
 
-/** A game that hasn't started yet has no meaningful score — ESPN reports "0", we report null. */
+/**
+ * A game that hasn't started yet has no meaningful score regardless of what ESPN sends —
+ * SCHEDULED/POSTPONED/CANCELED always report null. For a status that implies a real score
+ * should exist (IN_PROGRESS/FINAL), the raw value must be a genuine integer string.
+ * `Number(null)`, `Number("")`, and `Number(" ")` are all `0` without throwing — silently
+ * treating a missing score as a real 0 would let a FINAL game with no actual score reach
+ * settlement as a fabricated 0-0 result. Throwing instead lets the per-game catch in
+ * `fetchScoreboard` skip the whole game, so it's retried next cron tick instead of settled
+ * on fabricated data.
+ */
 function mapScore(status: GameStatus, raw: string | undefined): number | null {
   if (status === 'SCHEDULED' || status === 'POSTPONED' || status === 'CANCELED') return null;
-  if (raw === undefined) return null;
-  const value = Number(raw);
-  return Number.isFinite(value) ? value : null;
+  if (raw === undefined || !/^-?\d+$/.test(raw)) {
+    throw new Error(`Unparseable ESPN score for a ${status} game: ${JSON.stringify(raw)}`);
+  }
+  return Number(raw);
 }
 
 export function mapGame(event: EspnEvent, sport: Sport): ProviderGame {
   const competition = event.competitions[0];
   const { home, away } = competitors(competition);
 
+  const startsAt = new Date(event.date);
+  if (Number.isNaN(startsAt.getTime())) {
+    throw new Error(`Unparseable ESPN event date: ${JSON.stringify(event.date)}`);
+  }
+
   return {
     externalId: competition.id,
     sport,
     home: mapTeam(home.team),
     away: mapTeam(away.team),
-    startsAt: new Date(event.date),
+    startsAt,
     seasonYear: event.season.year,
     week: event.week?.number ?? null,
     status: mapStatus(competition.status.type),

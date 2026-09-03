@@ -51,6 +51,11 @@ describe('mapGame', () => {
     };
     expect(() => mapGame(broken, 'NFL')).toThrow();
   });
+
+  it('throws when event.date is unparseable, instead of returning an Invalid Date', () => {
+    const broken = { ...withOdds, date: 'garbage' };
+    expect(() => mapGame(broken, 'NFL')).toThrow();
+  });
 });
 
 describe('mapResult', () => {
@@ -72,6 +77,38 @@ describe('mapResult', () => {
       homeScore: 20,
       awayScore: 22,
     });
+  });
+
+  it('throws instead of fabricating a 0 when a FINAL game has a null score', () => {
+    const broken = {
+      ...final,
+      competitions: [
+        {
+          ...final.competitions[0],
+          competitors: [
+            { ...final.competitions[0].competitors[0], score: null as unknown as string },
+            final.competitions[0].competitors[1],
+          ],
+        },
+      ],
+    };
+    expect(() => mapResult(broken)).toThrow();
+  });
+
+  it('throws instead of fabricating a 0 when a FINAL game has an empty-string score', () => {
+    const broken = {
+      ...final,
+      competitions: [
+        {
+          ...final.competitions[0],
+          competitors: [
+            { ...final.competitions[0].competitors[0], score: '' },
+            final.competitions[0].competitors[1],
+          ],
+        },
+      ],
+    };
+    expect(() => mapResult(broken)).toThrow();
   });
 });
 
