@@ -22,6 +22,7 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [ESPN adapter plan](plans/2026-08-22-espn-adapter-implementation.md)                            | The task-by-task plan, plus dated status notes on what was verified from a cloud session and how                              |
 | [Production deployment spec](specs/2026-09-02-production-deployment-design.md)                  | Phase 6's cloud half — the run record, alerting on cron failure and drift, Sentry, and the two admin screens                  |
 | [Production deployment plan](plans/2026-09-02-production-deployment-implementation-plan.md)     | The task-by-task plan for that work, lane-tagged, with what a cloud session can and cannot verify                             |
+| [Email notifications spec](specs/2026-09-03-email-notifications-design.md)                      | Phase 8: the notification outbox, keyed sends from the feed emit points, per-type preferences, and one-click unsubscribe      |
 
 ### Reference
 
