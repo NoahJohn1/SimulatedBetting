@@ -64,6 +64,7 @@ assumption that every test needs a database. It does not, and the table above mo
 | 12  | `money-touch` PostToolUse hook — layer 2 ([3.3](#33-money-invariants--all-three-layers))                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
 | 13  | `.env.test` documented in the README ([3.6](#36-session-start--a-hook))                                                                                                   | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
 | 14  | Prettier plus `eslint-config-prettier` ([2](#2-hygiene))                                                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
+| 15  | Reconcile the ESPN adapter work against the Prettier reformat                                                                                                             | [CLOUD]    | Commit `2722534` on `espn-adapter`, ahead of this branch's own PR                             |
 
 ### Outstanding
 
@@ -76,12 +77,11 @@ and what it is waiting on.
 | 2   | **Dispatch both cron jobs by hand and confirm 200**                             | **[NOAH]**   | Row 1. The jobs now name the missing secret instead of exiting 3, so a red run says which side is wrong                                                                                                                                                                                                                                      |
 | 3   | Uncomment the three `schedule:` lines in `cron.yml`                             | [CLOUD]      | Rows 1 and 2. One line of work; the guard it needs already landed                                                                                                                                                                                                                                                                            |
 | 4   | Verify the `session-start` hook's Docker path                                   | **[LOCAL]**  | A desktop. The other four branches are proven — see [3.6](#36-session-start--a-hook)                                                                                                                                                                                                                                                         |
-| 5   | Reconcile the unpushed ESPN adapter work against the Prettier reformat          | **[NOAH]**   | Nothing. The reformat merged in [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13), so this is now a conflict to resolve rather than a warning to give                                                                                                                                                                             |
-| 6   | Add `format:check` to `verify` and CI                                           | [CLOUD]      | Row 5. A formatting gate before the adapter lands turns that conflict into a red build                                                                                                                                                                                                                                                       |
-| 7   | Merge Dependabot's monthly PR                                                   | **[MANUAL]** | Nothing — standing monthly task. First fire 2026-09-02: [#14](https://github.com/NoahJohn1/SimulatedBetting/pull/14) and [#15](https://github.com/NoahJohn1/SimulatedBetting/pull/15) merged, [#16](https://github.com/NoahJohn1/SimulatedBetting/pull/16) and [#17](https://github.com/NoahJohn1/SimulatedBetting/pull/17) closed per row 8 |
-| 8   | ESLint 10 and TypeScript 7 majors                                               | **[MANUAL]** | Upstream. See [1.6](#16-the-dependency-majors-that-cannot-land-yet) — Dependabot re-proposes monthly, and a green run is the signal to merge                                                                                                                                                                                                 |
-| 9   | `db-migration` skill ([3.5](#35-db-migration--a-skill))                         | [CLOUD]      | Deliberately deferred. The trigger is a migration going wrong; it has not fired                                                                                                                                                                                                                                                              |
-| 10  | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | Nothing. The gate on phase 5, and nothing here substitutes for it                                                                                                                                                                                                                                                                            |
+| 5   | Add `format:check` to `verify` and CI                                           | [CLOUD]      | Nothing — [Done row 15](#done) landed, so this is no longer blocked on the ESPN adapter reconciliation it was waiting for                                                                                                                                                                                                                    |
+| 6   | Merge Dependabot's monthly PR                                                   | **[MANUAL]** | Nothing — standing monthly task. First fire 2026-09-02: [#14](https://github.com/NoahJohn1/SimulatedBetting/pull/14) and [#15](https://github.com/NoahJohn1/SimulatedBetting/pull/15) merged, [#16](https://github.com/NoahJohn1/SimulatedBetting/pull/16) and [#17](https://github.com/NoahJohn1/SimulatedBetting/pull/17) closed per row 7 |
+| 7   | ESLint 10 and TypeScript 7 majors                                               | **[MANUAL]** | Upstream. See [1.6](#16-the-dependency-majors-that-cannot-land-yet) — Dependabot re-proposes monthly, and a green run is the signal to merge                                                                                                                                                                                                 |
+| 8   | `db-migration` skill ([3.5](#35-db-migration--a-skill))                         | [CLOUD]      | Deliberately deferred. The trigger is a migration going wrong; it has not fired                                                                                                                                                                                                                                                              |
+| 9   | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | Nothing. The gate on phase 5, and nothing here substitutes for it                                                                                                                                                                                                                                                                            |
 
 ### What changed underneath all of this
 
@@ -121,7 +121,7 @@ change plus one uncommented block, and is independent of both branches.
 ## 1. The CI gate
 
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs `npm ci`, applies migrations,
-and runs `npm run verify` (typecheck, lint, 814 tests across 76 files). That is a good gate
+and runs `npm run verify` (typecheck, lint, 866 tests across 81 files). That is a good gate
 with one real hole and several cheap improvements.
 
 ### 1.1 It never builds — worth adding, but narrower than it looks
@@ -214,7 +214,7 @@ later tries to automate it into CI and burns a weekend on it.
 - ~~**Dependabot, monthly, grouped.**~~ **Done.** Weekly, ungrouped, on a two-person project
   is noise you will train yourself to ignore, which is worse than not having it. Monthly with
   minor and patch grouped into one PR is roughly one PR a month that CI can prove safe; it
-  landed on this branch, and its first PR is [Outstanding row 7](#outstanding).
+  landed on this branch, and its first PR is [Outstanding row 6](#outstanding).
 - ~~**Branch protection on `main`** requiring CI to pass.~~ **Done.** A settings change rather
   than a file: Settings → Branches → require status checks. This is what makes the gate a gate.
 
@@ -640,7 +640,7 @@ Recorded so these do not get re-proposed in six months:
 - **Changelog or release automation** — there are no releases; there is a deployed `main`.
 - **`npm audit` as a gate** — for a private four-person app with no untrusted input, it mostly
   produces unactionable transitive advisories. Dependabot covers the part that matters.
-- **Coverage thresholds** — 76 test files against 25k lines, written test-first. A percentage
+- **Coverage thresholds** — 81 test files against a larger codebase now, written test-first. A percentage
   gate would measure something already being done, and would eventually be gamed.
 
 ---

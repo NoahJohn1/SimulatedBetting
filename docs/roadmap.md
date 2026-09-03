@@ -345,8 +345,20 @@ smoke test is checking that error states exist, and they do.
   every balance. Repeatable before every deploy.
 - **Rate limiting on mutations.** Bet placement, offers, comments, reactions. Small group, low
   risk, but every one of these writes to the ledger or the feed.
-- **Load sanity.** A full CFB Saturday board and a season's worth of feed events, checked for
-  the queries that only get slow with real row counts.
+- **Load sanity.** ✅ Done 2026-09-03, from a cloud session against a local database (see
+  [repo-health.md 3.7](repo-health.md#37-postgres-without-docker-in-a-cloud-session)). Synced a
+  real 300-game NFL+NCAAF board via live ESPN (`withinDays: 120`), then drove 25 users through
+  the real `placeBet`/`toggleReaction`/`addComment`/`settleFinalGames` services: 1,500 bets (0
+  rejected), 1,703 feed events, 291 reactions, 92 comments, 178 bets settled for real payouts.
+  `getSeasonFeed` and `getMemberProfile` stayed at 10-19ms throughout. The one real finding:
+  `EXPLAIN ANALYZE` on the feed query showed a sequential scan immediately after a bulk data
+  load, which looked like a missing index — it wasn't. `feed_events_season_idx` already covers
+  exactly `(season_id, occurred_at desc, id desc)`; the planner just hadn't run `ANALYZE` yet
+  against the freshly inserted rows. Running it (bulk-inserting six more synthetic seasons to
+  ~19,700 total rows first) flipped the plan to a bitmap index scan on that exact index, 0.95ms.
+  Real traffic accumulates gradually enough for autovacuum to keep statistics current, so this
+  isn't a concern in production — it only showed up because a script inserted thousands of rows
+  in one burst. No index changes needed; the schema already had this covered.
 - **A house rules page.** Plain language: no real money, how the allowance works, what credits
   are and why they cannot become cash, who arbitrates and how.
 - **The new-member path.** What someone sees before an admin approves them, after approval, and
@@ -358,7 +370,7 @@ smoke test is checking that error states exist, and they do.
 | --------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------ |
 | A written smoke checklist                                             | 🔲 Backlog | [CLOUD] to draft · **[MANUAL]** to validate — it is derived from the test pass |
 | Rate limiting on mutations                                            | 🔲 Backlog | [CLOUD]                                                                        |
-| Load sanity — a full CFB Saturday and a season of feed events         | 🔲 Backlog | [CLOUD] — needs a database, which no longer means [LOCAL]; see [repo-health.md 3.7](repo-health.md#37-postgres-without-docker-in-a-cloud-session) |
+| Load sanity — a full CFB Saturday and a season of feed events         | ✅ Complete | —                                                                              |
 | A house rules page                                                    | 🔲 Backlog | [CLOUD]                                                                        |
 | The new-member path — `/pending`, `/join`, `/no-season` as a sequence | 🔲 Backlog | [CLOUD]                                                                        |
 
