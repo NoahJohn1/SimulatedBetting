@@ -46,6 +46,11 @@ export async function runJob<T>(
       errors = options.partialErrors?.(result) ?? [];
       summary = jsonSafe(result);
     } catch (summarizeErr) {
+      // A throw here is a bug in the caller's own summarization, not evidence about the job —
+      // recorded clean rather than CRON_FAILED, so it can never mask `fn()` actually succeeding.
+      // Residual risk, accepted: if `partialErrors` throws only after having found some real
+      // per-item failures (a bug partway through its own loop), those failures are lost along
+      // with it — `errors` stays at whatever it held before the throw, `[]` in the common case.
       console.error(
         `[job-runs] could not summarize the ${job} run; recording it clean anyway`,
         summarizeErr,
