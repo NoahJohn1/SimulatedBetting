@@ -36,11 +36,14 @@ export class EspnOddsProvider implements OddsProvider {
     const markets: ProviderMarket[] = [];
 
     for (const sport of ALL_SPORTS) {
-      const { items, skippedGames, skippedMarkets } = await fetchScoreboard(sport, {
+      // Only skippedMarkets is accumulated here, deliberately mirroring getUpcomingGames's
+      // opposite omission (it only accumulates skippedGames): this fetch covers the same
+      // window getUpcomingGames already fetched, so re-counting skippedGames here would
+      // double-count the same malformed events.
+      const { items, skippedMarkets } = await fetchScoreboard(sport, {
         daysBack: 0,
         daysForward: this.lastWithinDays,
       });
-      this.skippedGames += skippedGames;
       this.skippedMarkets += skippedMarkets;
 
       for (const item of items) {
@@ -57,15 +60,18 @@ export class EspnOddsProvider implements OddsProvider {
 }
 
 export class EspnScoreProvider implements ScoreProvider {
+  private skippedGames = 0;
+
   async getResults(gameExternalIds: string[]): Promise<ProviderResult[]> {
     const wanted = new Set(gameExternalIds);
     const results: ProviderResult[] = [];
 
     for (const sport of ALL_SPORTS) {
-      const { items } = await fetchScoreboard(sport, {
+      const { items, skippedGames } = await fetchScoreboard(sport, {
         daysBack: SCORE_LOOKBACK_DAYS,
         daysForward: SCORE_LOOKAHEAD_DAYS,
       });
+      this.skippedGames += skippedGames;
 
       for (const item of items) {
         if (wanted.has(item.game.externalId)) results.push(item.result);
@@ -73,5 +79,9 @@ export class EspnScoreProvider implements ScoreProvider {
     }
 
     return results;
+  }
+
+  getSkipped(): { games: number } {
+    return { games: this.skippedGames };
   }
 }

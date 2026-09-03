@@ -101,7 +101,7 @@ describe('EspnOddsProvider', () => {
     await provider.getMarkets([]);
 
     const skipped = provider.getSkipped();
-    expect(skipped.games).toBeGreaterThan(0);
+    expect(skipped).toEqual({ games: 2, markets: 0 });
   });
 });
 
