@@ -177,6 +177,31 @@ describe('mapMarkets', () => {
     expect(markets.map((m) => m.type).sort()).toEqual(['MONEYLINE', 'TOTAL']);
   });
 
+  it('skips a market whose price is finite but not a valid American odds magnitude (e.g. "0")', () => {
+    const broken = {
+      ...withOdds,
+      competitions: [
+        {
+          ...withOdds.competitions[0],
+          odds: [
+            {
+              ...withOdds.competitions[0].odds![0],
+              moneyline: {
+                home: { close: { odds: '0' } },
+                away: { close: { odds: '-102' } },
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    const { markets, skipped } = mapMarkets(broken);
+
+    expect(markets.map((m) => m.type)).not.toContain('MONEYLINE');
+    expect(skipped).toBe(1);
+  });
+
   it('skips markets ESPN reports as "OFF" (a pulled book) and keeps the clean one', () => {
     const marketOff = loadFixture('event-market-off.json').events[0];
 

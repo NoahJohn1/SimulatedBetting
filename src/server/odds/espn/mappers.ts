@@ -105,16 +105,23 @@ export function mapResult(event: EspnEvent): ProviderResult {
   };
 }
 
+const AMERICAN_PRICE_PATTERN = /^[+-]?\d+$/;
+
 /**
- * ESPN reports the literal string "OFF" (not a number) when a book has pulled a market's
- * price — common on lopsided games. `Number("OFF")` is NaN but does NOT throw, so without
- * this check a pulled market's price would silently reach the database as NaN instead of
- * being caught by the per-market try/catch below.
+ * Validates both the shape and the domain `americanToRational` (src/domain/odds.ts) actually
+ * accepts — an integer whose magnitude is >= 100 — not just "parses to a finite number".
+ * `Number("0")`/`Number("-50")` are finite but not valid American prices; letting either
+ * through would insert cleanly and then throw later at bet placement or settlement, far
+ * from the actual cause. ESPN reports the literal string "OFF" (not a number) when a book
+ * has pulled a market's price — common on lopsided games — which this pattern also rejects.
  */
 function parseAmericanPrice(raw: string): number {
-  const value = Number(raw);
-  if (!Number.isFinite(value)) {
+  if (!AMERICAN_PRICE_PATTERN.test(raw)) {
     throw new Error(`Unparseable ESPN price: ${JSON.stringify(raw)}`);
+  }
+  const value = Number(raw);
+  if (value > -100 && value < 100) {
+    throw new Error(`ESPN price out of American-odds range: ${JSON.stringify(raw)}`);
   }
   return value;
 }

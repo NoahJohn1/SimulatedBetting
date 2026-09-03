@@ -25,4 +25,16 @@ describe('parseLine', () => {
   it('throws on ESPN\'s "OFF" (a pulled market, not a line)', () => {
     expect(() => parseLine('OFF')).toThrow();
   });
+
+  it('throws on more than 2 decimal places, matching normalizeLine exactly', () => {
+    expect(() => parseLine('-3.456')).toThrow();
+  });
+
+  it('accepts exactly 2 decimal places', () => {
+    expect(parseLine('-3.45')).toBe('-3.45');
+  });
+
+  it('throws when the magnitude would overflow the numeric(5,2) selections.line column', () => {
+    expect(() => parseLine('o1234.5')).toThrow();
+  });
 });
