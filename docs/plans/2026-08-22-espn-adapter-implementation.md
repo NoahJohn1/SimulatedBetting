@@ -25,13 +25,28 @@ Drizzle ORM (untouched by this plan — no schema changes).
 **Status (2026-09-03):** Tasks 1-6 landed on `espn-adapter` (16 commits) and are checked off
 below on that basis — 34 unit tests across `mappers.test.ts`, `parse-line.test.ts`,
 `fetch-scoreboard.test.ts`, and `provider.test.ts` pass, plus `npm run typecheck` and
-`npm run lint` are clean. This was verified from a Claude Code cloud session, which cannot
-run the DB-backed `sync.test.ts`/`results.test.ts` suites (no Docker/Postgres available
-there) or reach ESPN's live API (the cloud sandbox's egress proxy only allowlists specific
-hosts, and `site.api.espn.com` isn't one — confirmed with a direct `curl`, which failed at
-the proxy with `403`). **Final verification** below and the roadmap's task 7 (a real slate
-against production) both require a local machine with Docker/Postgres, or production itself
-— neither is achievable from a cloud AI session as currently sandboxed.
+`npm run lint` are clean.
+
+This was first verified from a Claude Code cloud session with restricted egress, where ESPN's
+live API was unreachable (a direct `curl` failed at the session's proxy with `403`). With
+outbound network opened up for the session, that changed: `EspnOddsProvider`/
+`EspnScoreProvider` were run directly against ESPN's real live scoreboard (NFL and NCAAF,
+2026-09-03) — no DB required, since `fetchScoreboard`/the mappers are pure functions. Result:
+17 NFL + 177 NCAAF games parsed, **zero game- or result-level skips**, confirming the payload
+shape hasn't moved since the 2026-08-22 spike. 86 of ~415 attempted market legs were skipped,
+all traced to ESPN's `"OFF"`/out-of-range price cases (`parseAmericanPrice` in `mappers.ts`
+correctly rejecting a pulled line) — the defensive-parsing path working as designed, not a
+bug. One sandbox-specific wrinkle worth recording: Node's global `fetch()` doesn't pick up
+`HTTPS_PROXY` on its own in this environment (curl does), so a bare cloud-session call still
+got a `403` — this time straight from ESPN's own edge, blocking the sandbox's raw egress IP —
+until routed through the proxy with `node --use-env-proxy`. That's purely a quirk of this
+sandbox reaching the internet; Vercel production sits behind no such proxy and needs no code
+change for it.
+
+**Final verification** below and the persistence + reconciliation half of the roadmap's task 7
+(actually writing a slate into `games`/`markets`/`selections` and checking it against reality)
+still require Postgres, which this cloud session doesn't have (the `docker` binary is present
+but no daemon is running) — that part is still local-machine or production-only.
 
 ## Global Constraints
 

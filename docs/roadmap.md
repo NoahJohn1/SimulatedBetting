@@ -33,15 +33,32 @@ All four subsystems pass `npm run verify` and have been exercised end to end aga
 data. None of it has been through a human test pass — that is the gate on phase 5, and no
 amount of tooling substitutes for it.
 
-**Phase 5's code is now verifiable from the repo.** As of 2026-09-03 the `espn-adapter` branch
-(16 commits) adds `EspnOddsProvider`/`EspnScoreProvider` behind the `ODDS_PROVIDER` kill
-switch, with a spec and implementation plan. `npm run typecheck` and `npm run lint` are clean
-on that branch, and all 34 pure-logic unit tests pass (mappers, `parseLine`, `fetchScoreboard`,
-providers). What is *not* verifiable from a cloud session: the DB-backed
-`sync.test.ts`/`results.test.ts` suites (need Docker/Postgres — **[LOCAL]**) and a real pull
-against ESPN's live API (the cloud sandbox's egress proxy does not allowlist
-`site.api.espn.com`, confirmed by a direct request failing at the proxy — so task 7 below can
-only happen locally or in production, never from a cloud AI session as currently sandboxed).
+**Phase 5's code is now verifiable from the repo — and, as of 2026-09-03, partly against the
+live feed too.** The `espn-adapter` branch (16 commits) adds `EspnOddsProvider`/
+`EspnScoreProvider` behind the `ODDS_PROVIDER` kill switch, with a spec and implementation
+plan. `npm run typecheck` and `npm run lint` are clean, and all 34 pure-logic unit tests pass
+(mappers, `parseLine`, `fetchScoreboard`, providers).
+
+With outbound network opened up for this session, `EspnOddsProvider`/`EspnScoreProvider` were
+also run directly against ESPN's real live scoreboard (NFL and NCAAF, 2026-09-03) — no
+database involved, since the fetch/parse layer is pure. Results: 17 NFL and 177 NCAAF games
+parsed, **zero game- or result-level skips** on either sport, confirming the payload shape
+hasn't drifted since the 2026-08-22 spike and that the CFB `groups=80&limit=200` paging
+redesign holds at real scale. 86 of ~415 attempted market legs were skipped — all traced to
+ESPN's documented `"OFF"` price / out-of-range price paths (a book pulling a lopsided line),
+i.e. the defensive-parsing path working exactly as designed, not a bug. One sandbox-only
+wrinkle: Node's global `fetch()` doesn't honor `HTTPS_PROXY` by default in this environment,
+so a bare cloud-session request gets a `403` straight from ESPN's own edge (a datacenter-IP
+block, confirmed by comparing a proxied vs. direct `curl`) — running `node --use-env-proxy`
+routes it through the session's local proxy correctly. This is purely a quirk of *this sandbox
+reaching the internet*, not something the adapter code needs to handle — Vercel production has
+no such proxy in front of it.
+
+What is *still not verifiable from a cloud session*: the DB-backed `sync.test.ts`/
+`results.test.ts` suites, and the persistence + reconciliation half of task 7 below (actually
+writing the slate into `games`/`markets`/`selections` and checking it against reality) — both
+need Postgres, and this sandbox has the `docker` binary but no running daemon, independent of
+network access. That part of task 7 is still local- or production-only.
 The branch is not yet merged to `main` and has no open PR.
 
 ---
@@ -122,12 +139,14 @@ a variable sync cadence — real work, in service of a worse feed.
 | CFB paging by week and conference group               | ✅ Complete — one request (`groups`/`limit`), not a loop; see spec | —                          |
 | Defensive parsing — a reshaped field skips its market | ✅ Complete                                | —                                                |
 | Kill switch env flag falling back to fixtures         | ✅ Code complete · 🔲 **[NOAH]** still needs to set it in Vercel | **[NOAH]** to set in Vercel        |
-| First real slate — admin backfill plus reconciliation | 🔲 Backlog — **cannot be done from a cloud AI session** (needs production DB credentials and a live call to ESPN's API, both outside a cloud sandbox) | **[NOAH]** — runs against production, or [LOCAL] against a real DB with real network access |
+| First real slate — admin backfill plus reconciliation | 🔄 Partial — fetch/parse verified live (2026-09-03, zero game/result skips, NFL+NCAAF); **persisting to a real DB and reconciling still needs Postgres, which no cloud AI session has here** | **[NOAH]** — runs against production, or [LOCAL] against a real DB |
 
-Everything above the last row was built and unit-tested from a Claude Code cloud session —
-see the [plan](plans/2026-08-22-espn-adapter-implementation.md)'s status note for exactly what
-was and wasn't verifiable there. The last row and the human test pass gate are the only parts
-of phase 5 that need hands beyond a cloud session: one needs production credentials only Noah
+Everything above the last row was built and unit-tested from a Claude Code cloud session, and
+with outbound network opened up, the last row's fetch/parse half was too — see the
+[plan](plans/2026-08-22-espn-adapter-implementation.md)'s status note for the full detail,
+including why a bare cloud-session `fetch()` call needs `node --use-env-proxy` to reach ESPN
+here (a sandbox networking quirk, not something production needs). What's left needs hands
+beyond a cloud session either way: one needs production credentials only Noah
 holds, the other needs an actual person clicking through the app.
 
 **The honest risk.** This is an undocumented endpoint with no SLA and no contract. It can
