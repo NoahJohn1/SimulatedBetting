@@ -118,6 +118,25 @@ describe('runJob', () => {
     expect(alerts).not.toHaveBeenCalled();
   });
 
+  it('keeps the job’s result clean when the caller’s partialErrors callback throws', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const result = await runJob('SETTLE', async () => ({ gamesSettled: 1 }), {
+      partialErrors: () => {
+        throw new TypeError("cannot read properties of undefined (reading 'map')");
+      },
+    });
+
+    expect(result).toEqual({ gamesSettled: 1 });
+
+    const [row] = await runsFor('SETTLE');
+    expect(row.ok).toBe(true);
+    expect(row.error).toBeNull();
+    // No prior run on record, so the clean result isn't even a "recovery" worth announcing —
+    // and in particular, the summarization bug must never raise CRON_FAILED.
+    expect(alerts).not.toHaveBeenCalled();
+  });
+
   it('keeps the job’s result when recording fails', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     // Stands in for the table not existing yet — the state of a deploy that lands ahead of

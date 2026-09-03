@@ -125,8 +125,7 @@ async function readRunRows(): Promise<RunRow[] | null> {
       SELECT job,
              MAX(started_at) AS last_run_at,
              MAX(started_at) FILTER (WHERE ok) AS last_success_at,
-             (ARRAY_AGG(error ORDER BY started_at DESC)
-                FILTER (WHERE error IS NOT NULL))[1] AS last_error
+             (ARRAY_AGG(error ORDER BY started_at DESC))[1] AS last_error
       FROM job_runs
       WHERE finished_at IS NOT NULL
       GROUP BY job
@@ -177,7 +176,7 @@ async function readLastReconcile(): Promise<ReconcileHealth> {
  */
 async function readLastMarketSync(): Promise<Date | null> {
   const rows = await db.execute<{ last_synced_at: string | null }>(
-    sql`SELECT MAX(last_synced_at) AS last_synced_at FROM markets`,
+    sql`SELECT MAX(last_synced_at) AS last_synced_at FROM markets WHERE source_book IS NOT NULL`,
   );
   const value = Array.from(rows)[0]?.last_synced_at;
   return value ? new Date(value) : null;

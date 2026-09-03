@@ -67,6 +67,20 @@ describe('readHealth', () => {
     expect(settle.freshness).toBe('fresh');
   });
 
+  it('reports the latest run’s error, not the most recent error anywhere in the window', async () => {
+    const now = new Date('2026-09-02T12:00:00Z');
+    const at = (min: number) => new Date(now.getTime() - min * 60_000);
+
+    await db.insert(jobRuns).values([
+      { job: 'SETTLE', startedAt: at(20), finishedAt: at(20), ok: false, error: 'Error: down' },
+      { job: 'SETTLE', startedAt: at(5), finishedAt: at(5), ok: true, error: null },
+    ]);
+
+    const settle = (await readHealth(now)).jobs.find((j) => j.job === 'SETTLE')!;
+
+    expect(settle.lastError).toBeNull();
+  });
+
   it('reads reconcile drift out of the last run’s summary', async () => {
     const observedAt = new Date('2026-09-02T08:00:00Z');
     await db.insert(jobRuns).values({

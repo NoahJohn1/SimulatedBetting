@@ -39,12 +39,24 @@ export async function runJob<T>(
 
   try {
     const result = await fn();
-    const errors = options.partialErrors?.(result) ?? [];
+
+    let errors: string[] = [];
+    let summary: unknown = null;
+    try {
+      errors = options.partialErrors?.(result) ?? [];
+      summary = jsonSafe(result);
+    } catch (summarizeErr) {
+      console.error(
+        `[job-runs] could not summarize the ${job} run; recording it clean anyway`,
+        summarizeErr,
+      );
+    }
+
     const clean = errors.length === 0;
 
     await closeRun(job, runId, {
       ok: clean,
-      summary: jsonSafe(result),
+      summary,
       error: clean ? null : summarizeErrors(errors),
       alert: clean
         ? recoveryAlert(job)
