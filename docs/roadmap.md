@@ -218,19 +218,26 @@ which this phase calls the item that earns it — is absent.
 [production deployment spec](specs/2026-09-02-production-deployment-design.md) and its
 [implementation plan](plans/2026-09-02-production-deployment-implementation-plan.md), which cover
 the four `[CLOUD]` rows below and nothing else — merged 2026-09-03, ready for a session to execute.
-Every row in the task table below is still `🔲 Backlog`: nothing has been built yet, only planned.
-The `[NOAH]` rows are unchanged by any of this, and none of them gates starting the implementation
-— the spec's §9 works through what happens if each stays undone.
+The four `[CLOUD]` rows below are now `✅ Complete`. The `[NOAH]` rows are unchanged by any of
+this, and none of them gated building the four rows above — the spec's §9 works through what
+happens while each stays undone.
 
-| Task                                                                  | Status     | Owner                                 | Evidence                                                                                                            |
-| --------------------------------------------------------------------- | ---------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Hosted Postgres, backups, documented restore                          | 🔲 Backlog | **[NOAH]**                            | Not verifiable from the repo                                                                                        |
-| Vercel wiring — env, `AUTH_URL`, OAuth redirect, migrations on deploy | 🔄 Partial | **[NOAH]**                            | App runs; `CRON_SECRET` presence unconfirmed                                                                        |
-| `CRON_SECRET` on the real invocations                                 | 🔲 Backlog | **[NOAH]**                            | Actions secrets absent — see [repo-health 1.5](repo-health.md#15-the-cron-workflow--the-only-thing-actually-broken) |
-| Error monitoring (Sentry free tier)                                   | 🔲 Backlog | **[NOAH]** signup · [CLOUD] wiring    | No monitoring dependency in `package.json`                                                                          |
-| Alerting on cron failure and reconciliation drift                     | 🔲 Backlog | [CLOUD] code · **[NOAH]** destination | `reconcileBalances`/`reconcileEscrow` are called only from the cron route                                           |
-| Admin health page                                                     | 🔲 Backlog | [CLOUD]                               | `src/app/admin` holds only `page.tsx`, `events/`, `wagers/`                                                         |
-| Admin season-creation screen                                          | 🔲 Backlog | [CLOUD]                               | `createSeason` is reachable only from `seed.ts` and `bootstrap-season.ts`                                           |
+| Task                                                                  | Status      | Owner                                 | Evidence                                                                                                                                                    |
+| --------------------------------------------------------------------- | ----------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hosted Postgres, backups, documented restore                          | 🔲 Backlog  | **[NOAH]**                            | Not verifiable from the repo                                                                                                                                |
+| Vercel wiring — env, `AUTH_URL`, OAuth redirect, migrations on deploy | 🔄 Partial  | **[NOAH]**                            | App runs; `CRON_SECRET` presence unconfirmed                                                                                                                |
+| `CRON_SECRET` on the real invocations                                 | 🔲 Backlog  | **[NOAH]**                            | Actions secrets absent — see [repo-health 1.5](repo-health.md#15-the-cron-workflow--the-only-thing-actually-broken)                                         |
+| Error monitoring (Sentry free tier)                                   | ✅ Complete | **[NOAH]** signup · [CLOUD] wiring    | `@sentry/nextjs` wired via [`src/instrumentation.ts`](../src/instrumentation.ts); `[NOAH]` signup still outstanding                                         |
+| Alerting on cron failure and reconciliation drift                     | ✅ Complete | [CLOUD] code · **[NOAH]** destination | [`src/server/ops/alerts.ts`](../src/server/ops/alerts.ts); `[NOAH]` destination still outstanding                                                           |
+| Admin health page                                                     | ✅ Complete | [CLOUD]                               | [`src/app/admin/health/page.tsx`](../src/app/admin/health/page.tsx)                                                                                         |
+| Admin season-creation screen                                          | ✅ Complete | [CLOUD]                               | [`src/app/admin/seasons/page.tsx`](../src/app/admin/seasons/page.tsx)                                                                                       |
+| Instrument `sync-odds` with `runJob`                                  | 🔲 Backlog  | [CLOUD], after the ESPN adapter       | Deferred by [D58](decisions.md#d58--cron-health-is-a-job_runs-table-and-sync-odds-is-derived-from-market-freshness) — a one-line addition, not a correction |
+
+> **Applying the `job_runs` migration is the only thing this work needs before it is useful.**
+> Every other `[NOAH]` item here is inert when absent — no webhook URL, no DSN, no auth token, all
+> no-ops. A `job_runs` write that fails is logged and swallowed, so a deploy that lands ahead of
+> the migration degrades `/admin/health` to "never run" rather than stopping settlement. See the
+> spec's §9.
 
 **Deliberately skipped.** A staging environment. For a private group, a kill switch plus fast
 rollback covers what staging would, at a fraction of the setup.
