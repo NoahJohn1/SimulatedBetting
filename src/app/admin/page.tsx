@@ -50,6 +50,10 @@ export default async function AdminPage() {
         </Link>
       </div>
 
+      <Link href="/admin/health" className="text-sm text-ink-muted underline">
+        Health — is it working
+      </Link>
+
       <Link href="/admin/events" className="text-sm text-ink-muted underline">
         Overdue &amp; disputed events
       </Link>
