@@ -19,8 +19,7 @@ Where a status cannot be verified from the repo, it says so and dates the observ
 | 2   | Social layer                                                  | ✅ Complete                        | —                        | [spec](specs/2026-08-17-social-layer-design.md) · [plan](archive/plans/2026-08-17-social-layer-implementation-plan.md)                                     |
 | 3   | Custom events                                                 | ✅ Complete                        | —                        | [spec](specs/2026-08-17-custom-events-design.md) · [plan](archive/plans/2026-08-17-custom-events-implementation-plan.md)                                   |
 | 4   | Peer-to-peer bets                                             | ✅ Complete                        | —                        | [spec](specs/2026-08-19-peer-to-peer-bets-design.md) · [plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md)                           |
-| —   | **Human test pass** — the gate on phase 5                     | 🔲 Backlog                         | **[MANUAL]**             | —                                                                                                                                                          |
-| 5   | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — code complete, production verification pending | [NOAH]           | [spec](specs/2026-08-22-espn-adapter-design.md) · [plan](plans/2026-08-22-espn-adapter-implementation.md) |
+| 5   | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — code complete, PR open, production verification pending | [NOAH]           | [PR #21](https://github.com/NoahJohn1/SimulatedBetting/pull/21) · [spec](specs/2026-08-22-espn-adapter-design.md) · [plan](plans/2026-08-22-espn-adapter-implementation.md) |
 | 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — deployed, unmonitored | [CLOUD] [NOAH]           | [spec](specs/2026-09-02-production-deployment-design.md) · [plan](plans/2026-09-02-production-deployment-implementation-plan.md)                           |
 | 7a  | UI foundations                                                | ✅ Complete                        | —                        | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md)      |
 | 7b  | Design system                                                 | ✅ Complete                        | —                        | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md) |
@@ -30,8 +29,10 @@ Where a status cannot be verified from the repo, it says so and dates the observ
 | 9   | [Hardening](#9--hardening)                                    | 🔲 Backlog                         | [CLOUD] [LOCAL] [MANUAL] | —                                                                                                                                                          |
 
 All four subsystems pass `npm run verify` and have been exercised end to end against fixture
-data. None of it has been through a human test pass — that is the gate on phase 5, and no
-amount of tooling substitutes for it.
+data. Phase 5 is no longer gated on a human test pass before it can proceed — automated
+verification (unit tests, a live run against ESPN's real feed, and load sanity at real row
+counts, all detailed below) is the standard now. A human finding a real bug later files a
+ticket, same as any other bug; it does not block work from moving forward in the meantime.
 
 **Phase 5's code is now verifiable from the repo — and, as of 2026-09-03, partly against the
 live feed too.** The `espn-adapter` branch (16 commits) adds `EspnOddsProvider`/
@@ -79,11 +80,13 @@ session. This is a real footgun for any cloud session with this environment's cr
 injected and worth Noah's attention independent of phase 5 — see the plan's status note for
 detail. No production data was read or written while establishing this.
 
-**What genuinely still needs Noah or a human, not a cloud AI session:** actually pointing
-`ODDS_PROVIDER=espn` at *production* and reconciling what lands there, and the human test pass
-gate — clicking through the real app and judging it. Neither of those is a technical blocker
-this session can route around; they're Noah's database and a person's judgment, respectively.
-The branch is not yet merged to `main` and has no open PR.
+**What genuinely still needs Noah, not a cloud AI session:** actually pointing
+`ODDS_PROVIDER=espn` at *production* and reconciling what lands there — that needs credentials
+only Noah holds, not more verification.
+
+**[PR #21](https://github.com/NoahJohn1/SimulatedBetting/pull/21) is open** against `main`,
+merged clean (branch was 6 behind / 20 ahead when opened, 0 behind / 22 ahead now), CI running,
+subscribed for monitoring.
 
 ---
 
@@ -107,9 +110,10 @@ surprise. 7, 8, and 9 are independent of each other and can be taken in any orde
 parallel — though 9 wants 7a done first, since half of what a smoke test checks is that the
 error states exist.
 
-Prerequisite for all of it: **the human test pass**. The suite is green, but no person has
-clicked through placing a parlay, disputing an event, or arbitrating a wager. Bugs found
-there change what these phases contain.
+Phase 5 is no longer gated on a human test pass — see its section below for what was verified
+instead and how. 6 through 9 are unaffected by that change and can still benefit from one: no
+person has clicked through placing a parlay, disputing an event, or arbitrating a wager, and a
+bug found there is filed as a ticket like any other, rather than blocking work in the meantime.
 
 ---
 

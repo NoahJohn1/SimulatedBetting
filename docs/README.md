@@ -75,7 +75,8 @@ custom event carried from creation through a disputed resolution and an admin co
 a peer-to-peer wager carried from offer through a dispute to an admin correction, with both
 balance and escrow reconciliation clean throughout.
 
-**Phase 5 — the ESPN adapter — is also code-complete**, on the `espn-adapter` branch: real
+**Phase 5 — the ESPN adapter — is also code-complete**, in
+[PR #21](https://github.com/NoahJohn1/SimulatedBetting/pull/21): real
 `EspnOddsProvider`/`EspnScoreProvider` behind an `ODDS_PROVIDER` kill switch, verified against
 ESPN's live feed and load-tested at real row counts (300 real games, 1,500 bets, ~20k feed
 events) from a cloud session — see [the spec](specs/2026-08-22-espn-adapter-design.md) and
@@ -210,7 +211,7 @@ Docker at all, just a database, which a cloud session can now get on its own. Se
 
 | Item                                          | Source        |
 | --------------------------------------------- | ------------- |
-| **The human test pass** — the gate on phase 5 | both          |
+| The human test pass — still useful for phases 6-9, no longer gates phase 5 | both |
 | Merging Dependabot's monthly PR               | repo health 6 |
 | ESLint 10 / TypeScript 7 — blocked upstream   | repo health 7 |
 | Confirming a real email renders               | roadmap 8     |

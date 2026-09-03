@@ -81,7 +81,7 @@ and what it is waiting on.
 | 6   | Merge Dependabot's monthly PR                                                   | **[MANUAL]** | Nothing — standing monthly task. First fire 2026-09-02: [#14](https://github.com/NoahJohn1/SimulatedBetting/pull/14) and [#15](https://github.com/NoahJohn1/SimulatedBetting/pull/15) merged, [#16](https://github.com/NoahJohn1/SimulatedBetting/pull/16) and [#17](https://github.com/NoahJohn1/SimulatedBetting/pull/17) closed per row 7 |
 | 7   | ESLint 10 and TypeScript 7 majors                                               | **[MANUAL]** | Upstream. See [1.6](#16-the-dependency-majors-that-cannot-land-yet) — Dependabot re-proposes monthly, and a green run is the signal to merge                                                                                                                                                                                                 |
 | 8   | `db-migration` skill ([3.5](#35-db-migration--a-skill))                         | [CLOUD]      | Deliberately deferred. The trigger is a migration going wrong; it has not fired                                                                                                                                                                                                                                                              |
-| 9   | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | Nothing. The gate on phase 5, and nothing here substitutes for it                                                                                                                                                                                                                                                                            |
+| 9   | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | Nothing — no longer gates phase 5 (2026-09-03), still useful for 6-9 and for whatever it turns up along the way                                                                                                                                                                                                                              |
 
 ### What changed underneath all of this
 
@@ -665,8 +665,9 @@ behind the order, kept because the reasoning is the part that goes stale slowly.
 6. **`db-migration` stays last and may never happen.** Still marginal; the README already
    documents the sequence.
 
-**Not on this list, but the real gate:** the human test pass. Phase 5 is waiting on it, the
-`from-test-pass` label exists for it, and no amount of repo tooling substitutes for it.
+**Not on this list:** the human test pass. It no longer gates phase 5 as of 2026-09-03 — see
+[roadmap 5](roadmap.md#5--real-data-the-espn-adapter) for what replaced it there — but the
+`from-test-pass` label still exists for 6-9 and for whatever a person finds along the way.
 
 **Prettier is adopted, on this branch.** The stated reason for staying dropped — that adopting
 it means one reformat commit touching nearly every file, and that commit would have landed on
