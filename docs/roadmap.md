@@ -21,7 +21,7 @@ Where a status cannot be verified from the repo, it says so and dates the observ
 | 4   | Peer-to-peer bets                                             | ✅ Complete                        | —                        | [spec](specs/2026-08-19-peer-to-peer-bets-design.md) · [plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md)                           |
 | —   | **Human test pass** — the gate on phase 5                     | 🔲 Backlog                         | **[MANUAL]**             | —                                                                                                                                                          |
 | 5   | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — Noah, local only  | [CLOUD] [NOAH]           | spec pending                                                                                                                                               |
-| 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — deployed, unmonitored | **[NOAH]** mostly        | —                                                                                                                                                          |
+| 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — deployed, unmonitored | [CLOUD] [NOAH]           | [spec](specs/2026-09-02-production-deployment-design.md) · [plan](plans/2026-09-02-production-deployment-implementation-plan.md)                           |
 | 7a  | UI foundations                                                | ✅ Complete                        | —                        | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md)      |
 | 7b  | Design system                                                 | ✅ Complete                        | —                        | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md) |
 | 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | 🔲 Backlog                         | [CLOUD]                  | —                                                                                                                                                          |
@@ -152,6 +152,12 @@ private group of friends, not a business — a broken Saturday is an annoyance, 
 
 **Verified against the repo 2026-09-02.** The app is deployed, but the observability half —
 which this phase calls the item that earns it — is absent.
+
+**The `[CLOUD]` half is designed.** See the
+[production deployment spec](specs/2026-09-02-production-deployment-design.md) and its
+[implementation plan](plans/2026-09-02-production-deployment-implementation-plan.md), which cover
+the four `[CLOUD]` rows below and nothing else. The `[NOAH]` rows are unchanged by it, and none of them
+gates merging it — the spec's §9 works through what happens if each stays undone.
 
 | Task                                                                  | Status     | Owner                                 | Evidence                                                                                                            |
 | --------------------------------------------------------------------- | ---------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
