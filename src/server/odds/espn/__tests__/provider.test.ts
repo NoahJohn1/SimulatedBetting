@@ -63,16 +63,14 @@ describe('EspnOddsProvider', () => {
     expect(games).toHaveLength(1);
     expect(games[0].externalId).toBe('1');
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect((fetchMock.mock.calls[0][0] as string)).toContain('/nfl/scoreboard');
+    expect(fetchMock.mock.calls[0][0] as string).toContain('/nfl/scoreboard');
   });
 
   it('getMarkets fans out to both sports and filters by the wanted external IDs', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockImplementation(async (url: string) => {
-        if (url.includes('/nfl/scoreboard')) return scoreboardWith([NFL_EVENT]);
-        return scoreboardWith([NCAAF_EVENT]);
-      });
+    const fetchMock = vi.fn().mockImplementation(async (url: string) => {
+      if (url.includes('/nfl/scoreboard')) return scoreboardWith([NFL_EVENT]);
+      return scoreboardWith([NCAAF_EVENT]);
+    });
     vi.stubGlobal('fetch', fetchMock);
 
     const provider = new EspnOddsProvider();
@@ -88,8 +86,14 @@ describe('EspnOddsProvider', () => {
   });
 
   it('getSkipped accumulates across both getUpcomingGames and getMarkets calls', async () => {
-    const brokenEvent = { ...NFL_EVENT, competitions: [{ ...NFL_EVENT.competitions[0], competitors: [] }] };
-    vi.stubGlobal('fetch', vi.fn().mockImplementation(() => scoreboardWith([brokenEvent])));
+    const brokenEvent = {
+      ...NFL_EVENT,
+      competitions: [{ ...NFL_EVENT.competitions[0], competitors: [] }],
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(() => scoreboardWith([brokenEvent])),
+    );
 
     const provider = new EspnOddsProvider();
     await provider.getUpcomingGames('NFL', 14);

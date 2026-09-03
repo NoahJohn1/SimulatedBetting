@@ -1,5 +1,11 @@
 import type { Sport } from '@/db/schema';
-import type { OddsProvider, ProviderGame, ProviderMarket, ProviderResult, ScoreProvider } from '../types';
+import type {
+  OddsProvider,
+  ProviderGame,
+  ProviderMarket,
+  ProviderResult,
+  ScoreProvider,
+} from '../types';
 import { fetchScoreboard } from './fetch-scoreboard';
 
 const ALL_SPORTS: Sport[] = ['NFL', 'NCAAF'];

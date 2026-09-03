@@ -44,14 +44,14 @@ re-derives them mid-implementation:**
 1. **The spec undercounted ESPN requests per cron tick.** It said "4 requests" (NFL+NCAAF ×
    odds-role + results-role). Actually `EspnOddsProvider.getMarkets` and
    `EspnScoreProvider.getResults` don't receive a `sport` parameter (see Task 4) — they fan out
-   to *both* sports internally to resolve a flat list of external IDs. That's `2` (
+   to _both_ sports internally to resolve a flat list of external IDs. That's `2` (
    `getUpcomingGames` × 2 sports) `+ 2` (`getMarkets` fan-out) `+ 2` (`getResults` fan-out) `= 6`
    requests per tick, not 4. Same accepted tradeoff (independent, uncached fetching) the spec
    already approved — just a corrected count.
 2. **Score syncing needs a backward-looking window, not the forward-looking one odds sync
    uses.** `getUpcomingGames`/`getMarkets` want games from now through `withinDays` out — pure
-   lookahead. But `getResults` needs the status of games that may have *already started or
-   finished* (e.g. it's Monday and Sunday's late game just went final) — a forward-only
+   lookahead. But `getResults` needs the status of games that may have _already started or
+   finished_ (e.g. it's Monday and Sunday's late game just went final) — a forward-only
    `dates=` range would silently never see them again. `fetchScoreboard` therefore takes
    `{daysBack, daysForward}`, not a single `withinDays`: odds calls pass `daysBack: 0`, score
    calls pass a small fixed lookback (`daysBack: 3, daysForward: 1` — enough to span a
@@ -68,10 +68,12 @@ ESPN's spread/total lines aren't in the format `normalizeLine` (in
 against a live ESPN response during the design spike (see the spec's Purpose section).
 
 **Files:**
+
 - Create: `src/server/odds/espn/parse-line.ts`
 - Test: `src/server/odds/espn/__tests__/parse-line.test.ts`
 
 **Interfaces:**
+
 - Produces: `parseLine(raw: string): string` — used by Task 2's `mapMarkets`.
 
 - [ ] **Step 1: Write the failing test**
@@ -146,6 +148,7 @@ nothing reads (tracking/link/logos objects) but otherwise verbatim — same valu
 nesting, same field names.
 
 **Files:**
+
 - Create: `src/server/odds/espn/espn-types.ts`
 - Create: `src/server/odds/espn/mappers.ts`
 - Create: `src/server/odds/espn/__tests__/fixtures/event-with-odds.json`
@@ -154,6 +157,7 @@ nesting, same field names.
 - Test: `src/server/odds/espn/__tests__/mappers.test.ts`
 
 **Interfaces:**
+
 - Consumes: `parseLine(raw: string): string` (Task 1). `ProviderGame`, `ProviderTeam`,
   `ProviderMarket`, `ProviderSelection`, `ProviderResult` from
   [`../types.ts`](../../src/server/odds/types.ts). `Sport`, `GameStatus` from `@/db/schema`.
@@ -324,7 +328,7 @@ other field is identical to `event-with-odds.json`:
 ```
 
 - [ ] **Step 2: Write `espn-types.ts`** — the minimal typed shape of the fields the mappers
-  read (not a full ESPN schema; ESPN's real payload has dozens of fields we never touch):
+      read (not a full ESPN schema; ESPN's real payload has dozens of fields we never touch):
 
 ```ts
 // src/server/odds/espn/espn-types.ts
@@ -550,7 +554,13 @@ import type {
   ProviderTeam,
 } from '../types';
 import { parseLine } from './parse-line';
-import type { EspnCompetition, EspnEvent, EspnOdds, EspnStatusType, EspnTeamRef } from './espn-types';
+import type {
+  EspnCompetition,
+  EspnEvent,
+  EspnOdds,
+  EspnStatusType,
+  EspnTeamRef,
+} from './espn-types';
 
 /**
  * Buckets ESPN's ~10 detailed status names into our 5-value enum, primarily off `state`
@@ -659,7 +669,11 @@ function totalMarket(gameExternalId: string, sourceBook: string, odds: EspnOdds)
   return { gameExternalId, type: 'TOTAL', sourceBook, selections };
 }
 
-function moneylineMarket(gameExternalId: string, sourceBook: string, odds: EspnOdds): ProviderMarket {
+function moneylineMarket(
+  gameExternalId: string,
+  sourceBook: string,
+  odds: EspnOdds,
+): ProviderMarket {
   const selections: ProviderSelection[] = [
     { side: 'HOME', line: null, priceAmerican: Number(odds.moneyline!.home.close.odds) },
     { side: 'AWAY', line: null, priceAmerican: Number(odds.moneyline!.away.close.odds) },
@@ -729,10 +743,12 @@ git commit -m "feat: add ESPN payload mappers with recorded fixtures"
 ### Task 3: `fetchScoreboard` — the shared fetch + per-game defensive parsing
 
 **Files:**
+
 - Create: `src/server/odds/espn/fetch-scoreboard.ts`
 - Test: `src/server/odds/espn/__tests__/fetch-scoreboard.test.ts`
 
 **Interfaces:**
+
 - Consumes: `mapGame`, `mapResult`, `mapMarkets` (Task 2). `Sport` from `@/db/schema`.
   `ProviderGame`, `ProviderMarket`, `ProviderResult` from `../types`.
 - Produces (used by Task 4):
@@ -779,7 +795,9 @@ afterEach(() => {
 
 describe('fetchScoreboard', () => {
   it('requests the NFL scoreboard URL with a forward-only dates range', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(loadFixtureText('event-with-odds.json')));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse(loadFixtureText('event-with-odds.json')));
     vi.stubGlobal('fetch', fetchMock);
 
     await fetchScoreboard('NFL', { daysBack: 0, daysForward: 14 });
@@ -793,7 +811,9 @@ describe('fetchScoreboard', () => {
   });
 
   it('adds groups=80&limit=200 for NCAAF only', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(loadFixtureText('event-with-odds.json')));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse(loadFixtureText('event-with-odds.json')));
     vi.stubGlobal('fetch', fetchMock);
 
     await fetchScoreboard('NCAAF', { daysBack: 0, daysForward: 14 });
@@ -953,7 +973,7 @@ sport. Both providers resolve this by fanning out to `NFL` and `NCAAF` internall
 by the wanted ID set, same as `FixtureOddsProvider`/`FixtureScoreProvider` do against their
 in-memory slate.
 
-`getUpcomingGames(sport, withinDays)` *is* told a `withinDays`, but `getMarkets` isn't told
+`getUpcomingGames(sport, withinDays)` _is_ told a `withinDays`, but `getMarkets` isn't told
 anything — so `EspnOddsProvider` remembers the `withinDays` its own last `getUpcomingGames`
 call used, and reuses it for `getMarkets`'s fan-out. `syncOdds` always calls
 `getUpcomingGames` for every sport before calling `getMarkets` once, so by the time
@@ -962,10 +982,12 @@ this doesn't depend on which sport it was called with, since `syncOdds` passes t
 `withinDays` for every sport in its loop.
 
 **Files:**
+
 - Create: `src/server/odds/espn/provider.ts`
 - Test: `src/server/odds/espn/__tests__/provider.test.ts`
 
 **Interfaces:**
+
 - Consumes: `fetchScoreboard` (Task 3). `OddsProvider`, `ScoreProvider`, `ProviderGame`,
   `ProviderMarket`, `ProviderResult` from `../types`. `Sport` from `@/db/schema`.
 - Produces: `EspnOddsProvider` (implements `OddsProvider`, plus
@@ -1041,16 +1063,14 @@ describe('EspnOddsProvider', () => {
     expect(games).toHaveLength(1);
     expect(games[0].externalId).toBe('1');
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect((fetchMock.mock.calls[0][0] as string)).toContain('/nfl/scoreboard');
+    expect(fetchMock.mock.calls[0][0] as string).toContain('/nfl/scoreboard');
   });
 
   it('getMarkets fans out to both sports and filters by the wanted external IDs', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockImplementation(async (url: string) => {
-        if (url.includes('/nfl/scoreboard')) return scoreboardWith([NFL_EVENT]);
-        return scoreboardWith([NCAAF_EVENT]);
-      });
+    const fetchMock = vi.fn().mockImplementation(async (url: string) => {
+      if (url.includes('/nfl/scoreboard')) return scoreboardWith([NFL_EVENT]);
+      return scoreboardWith([NCAAF_EVENT]);
+    });
     vi.stubGlobal('fetch', fetchMock);
 
     const provider = new EspnOddsProvider();
@@ -1066,7 +1086,10 @@ describe('EspnOddsProvider', () => {
   });
 
   it('getSkipped accumulates across both getUpcomingGames and getMarkets calls', async () => {
-    const brokenEvent = { ...NFL_EVENT, competitions: [{ ...NFL_EVENT.competitions[0], competitors: [] }] };
+    const brokenEvent = {
+      ...NFL_EVENT,
+      competitions: [{ ...NFL_EVENT.competitions[0], competitors: [] }],
+    };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(scoreboardWith([brokenEvent])));
 
     const provider = new EspnOddsProvider();
@@ -1120,7 +1143,13 @@ Expected: FAIL — `Cannot find module '../provider'`
 ```ts
 // src/server/odds/espn/provider.ts
 import type { Sport } from '@/db/schema';
-import type { OddsProvider, ProviderGame, ProviderMarket, ProviderResult, ScoreProvider } from '../types';
+import type {
+  OddsProvider,
+  ProviderGame,
+  ProviderMarket,
+  ProviderResult,
+  ScoreProvider,
+} from '../types';
 import { fetchScoreboard } from './fetch-scoreboard';
 
 const ALL_SPORTS: Sport[] = ['NFL', 'NCAAF'];
@@ -1208,26 +1237,28 @@ git commit -m "feat: add EspnOddsProvider and EspnScoreProvider"
 
 ### Task 5: Skip counters on `SyncOddsSummary`
 
-`OddsProvider` gains an *optional* `getSkipped?()` method — optional so `FixtureOddsProvider`
+`OddsProvider` gains an _optional_ `getSkipped?()` method — optional so `FixtureOddsProvider`
 (which never skips anything) needs no change at all, and no existing test's expectations move.
 
 **Files:**
+
 - Modify: `src/server/odds/types.ts`
 - Modify: `src/server/odds/sync.ts`
 - Test: `src/server/odds/__tests__/sync.test.ts` (add to existing file)
 
 **Interfaces:**
+
 - Consumes: nothing new.
 - Produces: `SyncOddsSummary` gains `gamesSkipped: number` and `marketsSkipped: number`.
   `OddsProvider` gains `getSkipped?(): { games: number; markets: number }`.
 
 - [ ] **Step 1: Write the failing test** — append to the end of
-  `src/server/odds/__tests__/sync.test.ts`, after the existing `describe('syncOdds', ...)`
-  block closes. Do **not** add any new import statements: `OddsProvider`, `ProviderGame`,
-  `ProviderMarket`, `FixtureOddsProvider`, `describe`, `it`, `expect`, `beforeEach`, `syncOdds`,
-  and `resetDb` are all already imported at the top of this file (verify with
-  `grep -n "^import" src/server/odds/__tests__/sync.test.ts` — every name below must appear
-  there before proceeding):
+      `src/server/odds/__tests__/sync.test.ts`, after the existing `describe('syncOdds', ...)`
+      block closes. Do **not** add any new import statements: `OddsProvider`, `ProviderGame`,
+      `ProviderMarket`, `FixtureOddsProvider`, `describe`, `it`, `expect`, `beforeEach`, `syncOdds`,
+      and `resetDb` are all already imported at the top of this file (verify with
+      `grep -n "^import" src/server/odds/__tests__/sync.test.ts` — every name below must appear
+      there before proceeding):
 
 ```ts
 class SkippingProvider implements OddsProvider {
@@ -1295,25 +1326,25 @@ export interface SyncOddsSummary {
 
 ```ts
 // src/server/odds/sync.ts — change the summary initializer inside syncOdds:
-  const summary: SyncOddsSummary = {
-    gamesUpserted: 0,
-    marketsUpserted: 0,
-    selectionsUpserted: 0,
-    snapshotsWritten: 0,
-    gamesSkipped: 0,
-    marketsSkipped: 0,
-  };
+const summary: SyncOddsSummary = {
+  gamesUpserted: 0,
+  marketsUpserted: 0,
+  selectionsUpserted: 0,
+  snapshotsWritten: 0,
+  gamesSkipped: 0,
+  marketsSkipped: 0,
+};
 ```
 
 ```ts
 // src/server/odds/sync.ts — immediately before the final `return summary;`, add:
-  const skipped = options.provider.getSkipped?.();
-  if (skipped) {
-    summary.gamesSkipped = skipped.games;
-    summary.marketsSkipped = skipped.markets;
-  }
+const skipped = options.provider.getSkipped?.();
+if (skipped) {
+  summary.gamesSkipped = skipped.games;
+  summary.marketsSkipped = skipped.markets;
+}
 
-  return summary;
+return summary;
 ```
 
 - [ ] **Step 5: Run tests to verify they pass**
@@ -1339,10 +1370,12 @@ anywhere in this codebase today), so this task is verified by typecheck plus a m
 against the local dev server — consistent with how the rest of `src/app/api` is tested.
 
 **Files:**
+
 - Modify: `src/app/api/cron/sync-odds/route.ts`
 - Modify: `.env.example`
 
 **Interfaces:**
+
 - Consumes: `EspnOddsProvider`, `EspnScoreProvider` (Task 4).
 
 - [ ] **Step 1: Modify `route.ts`**
@@ -1440,4 +1473,4 @@ git commit -m "feat: wire ODDS_PROVIDER kill switch into the sync-odds cron rout
 
 - [ ] Run: `npm run verify`
 - [ ] Expected: typecheck, lint, and the full test suite (including every new file above) all
-  pass, with zero changes to any existing test's expectations.
+      pass, with zero changes to any existing test's expectations.

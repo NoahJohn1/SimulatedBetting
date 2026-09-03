@@ -26,7 +26,7 @@ Findings below come from real requests made against
 
 **What the spike found that changes the roadmap's plan:**
 
-- The scoreboard endpoint returns games, scores, *and* odds in one payload
+- The scoreboard endpoint returns games, scores, _and_ odds in one payload
   (`competition.odds[]`). The separate per-book `sports.core.api.espn.com/.../odds/{providerId}`
   endpoint the roadmap named is unnecessary — it was checked directly and just wraps the same
   single inline book (DraftKings, provider id 100) behind extra `$ref` fetches.
@@ -84,7 +84,7 @@ src/server/odds/espn/
 Promise<{ games: ParsedGame[]; skipped: number }>`. It builds the request URL per sport —
 `dates=` computed from `withinDays`, plus `groups=80&limit=200` appended only for `NCAAF` —
 fetches once, and maps each `event` through `mappers.ts` inside a per-item `try/catch`. A
-`ParsedGame` carries the game/team/status fields *and* the raw `odds[]` block, since both
+`ParsedGame` carries the game/team/status fields _and_ the raw `odds[]` block, since both
 provider classes need the same payload.
 
 `EspnOddsProvider.getUpcomingGames` and `.getMarkets`, and `EspnScoreProvider.getResults`, each
@@ -98,9 +98,10 @@ introducing a shared-instance lifecycle the fixture version never needed.
 once in `sync-odds/route.ts`:
 
 ```ts
-const provider = process.env.ODDS_PROVIDER === 'espn'
-  ? { odds: new EspnOddsProvider(), scores: new EspnScoreProvider() }
-  : { odds: new FixtureOddsProvider(), scores: new FixtureScoreProvider() };
+const provider =
+  process.env.ODDS_PROVIDER === 'espn'
+    ? { odds: new EspnOddsProvider(), scores: new EspnScoreProvider() }
+    : { odds: new FixtureOddsProvider(), scores: new FixtureScoreProvider() };
 
 const odds = await syncOdds({ provider: provider.odds });
 const results = await syncResults({ provider: provider.scores });
@@ -114,33 +115,33 @@ back, not a rollback.
 
 **Games/teams** (`ProviderGame`/`ProviderTeam`), from `competition`:
 
-| Ours | ESPN |
-|---|---|
-| `externalId` | `competition.id` |
+| Ours          | ESPN                                                                         |
+| ------------- | ---------------------------------------------------------------------------- |
+| `externalId`  | `competition.id`                                                             |
 | `home`/`away` | `competitors[].team.{id,abbreviation,displayName,logo}`, split by `homeAway` |
-| `startsAt` | `date` |
-| `seasonYear` | `season.year` |
-| `week` | `week.number`, or `null` if absent |
+| `startsAt`    | `date`                                                                       |
+| `seasonYear`  | `season.year`                                                                |
+| `week`        | `week.number`, or `null` if absent                                           |
 
 **Status** (`GameStatus`), bucketed off `status.type.state` (`pre`/`in`/`post`) rather than
 ESPN's ~10 detailed `name` values, since our enum only has 5:
 
-| ESPN | Ours |
-|---|---|
-| `state: 'pre'` | `SCHEDULED` |
-| `state: 'in'` | `IN_PROGRESS` |
-| `state: 'post'`, `completed: true` | `FINAL` |
-| `state: 'post'`, `completed: false`, `name` is `STATUS_POSTPONED` or `STATUS_CANCELED` | `POSTPONED` / `CANCELED` directly |
-| `state: 'post'`, `completed: false`, anything else | `IN_PROGRESS` (never a silent `FINAL` on a status we don't recognize — that would trigger settlement on bad data) |
+| ESPN                                                                                   | Ours                                                                                                              |
+| -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `state: 'pre'`                                                                         | `SCHEDULED`                                                                                                       |
+| `state: 'in'`                                                                          | `IN_PROGRESS`                                                                                                     |
+| `state: 'post'`, `completed: true`                                                     | `FINAL`                                                                                                           |
+| `state: 'post'`, `completed: false`, `name` is `STATUS_POSTPONED` or `STATUS_CANCELED` | `POSTPONED` / `CANCELED` directly                                                                                 |
+| `state: 'post'`, `completed: false`, anything else                                     | `IN_PROGRESS` (never a silent `FINAL` on a status we don't recognize — that would trigger settlement on bad data) |
 
 **Markets/selections** (`ProviderMarket`/`ProviderSelection`), from `competition.odds[0]`
 only — the single inline book:
 
-| Market | ESPN fields | Selections |
-|---|---|---|
-| `SPREAD` | `pointSpread.{home,away}.close.{line,odds}` | `HOME`/`AWAY` |
-| `TOTAL` | `total.{over,under}.close.{line,odds}` | `OVER`/`UNDER` |
-| `MONEYLINE` | `moneyline.{home,away}.close.odds` | `HOME`/`AWAY`, `line: null` |
+| Market      | ESPN fields                                 | Selections                  |
+| ----------- | ------------------------------------------- | --------------------------- |
+| `SPREAD`    | `pointSpread.{home,away}.close.{line,odds}` | `HOME`/`AWAY`               |
+| `TOTAL`     | `total.{over,under}.close.{line,odds}`      | `OVER`/`UNDER`              |
+| `MONEYLINE` | `moneyline.{home,away}.close.odds`          | `HOME`/`AWAY`, `line: null` |
 
 `sourceBook` = `odds[0].provider.displayName`, read fresh every sync (not hardcoded) — if ESPN
 ever changes which book is inline, this adapter follows without a code change. A game whose

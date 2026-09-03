@@ -7,7 +7,13 @@ import type {
   ProviderTeam,
 } from '../types';
 import { parseLine } from './parse-line';
-import type { EspnCompetition, EspnEvent, EspnOdds, EspnStatusType, EspnTeamRef } from './espn-types';
+import type {
+  EspnCompetition,
+  EspnEvent,
+  EspnOdds,
+  EspnStatusType,
+  EspnTeamRef,
+} from './espn-types';
 
 /**
  * Buckets ESPN's ~10 detailed status names into our 5-value enum, primarily off `state`
@@ -130,10 +136,22 @@ function totalMarket(gameExternalId: string, sourceBook: string, odds: EspnOdds)
   return { gameExternalId, type: 'TOTAL', sourceBook, selections };
 }
 
-function moneylineMarket(gameExternalId: string, sourceBook: string, odds: EspnOdds): ProviderMarket {
+function moneylineMarket(
+  gameExternalId: string,
+  sourceBook: string,
+  odds: EspnOdds,
+): ProviderMarket {
   const selections: ProviderSelection[] = [
-    { side: 'HOME', line: null, priceAmerican: parseAmericanPrice(odds.moneyline!.home.close.odds) },
-    { side: 'AWAY', line: null, priceAmerican: parseAmericanPrice(odds.moneyline!.away.close.odds) },
+    {
+      side: 'HOME',
+      line: null,
+      priceAmerican: parseAmericanPrice(odds.moneyline!.home.close.odds),
+    },
+    {
+      side: 'AWAY',
+      line: null,
+      priceAmerican: parseAmericanPrice(odds.moneyline!.away.close.odds),
+    },
   ];
   return { gameExternalId, type: 'MONEYLINE', sourceBook, selections };
 }

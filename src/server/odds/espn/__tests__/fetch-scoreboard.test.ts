@@ -17,7 +17,9 @@ afterEach(() => {
 
 describe('fetchScoreboard', () => {
   it('requests the NFL scoreboard URL with a forward-only dates range', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(loadFixtureText('event-with-odds.json')));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse(loadFixtureText('event-with-odds.json')));
     vi.stubGlobal('fetch', fetchMock);
 
     await fetchScoreboard('NFL', { daysBack: 0, daysForward: 14 });
@@ -31,7 +33,9 @@ describe('fetchScoreboard', () => {
   });
 
   it('adds groups=80&limit=200 for NCAAF only', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(loadFixtureText('event-with-odds.json')));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse(loadFixtureText('event-with-odds.json')));
     vi.stubGlobal('fetch', fetchMock);
 
     await fetchScoreboard('NCAAF', { daysBack: 0, daysForward: 14 });
