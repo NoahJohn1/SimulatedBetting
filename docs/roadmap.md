@@ -153,11 +153,13 @@ private group of friends, not a business — a broken Saturday is an annoyance, 
 **Verified against the repo 2026-09-02.** The app is deployed, but the observability half —
 which this phase calls the item that earns it — is absent.
 
-**The `[CLOUD]` half is designed.** See the
+**The `[CLOUD]` half is designed, and the design is on `main`.** See the
 [production deployment spec](specs/2026-09-02-production-deployment-design.md) and its
 [implementation plan](plans/2026-09-02-production-deployment-implementation-plan.md), which cover
-the four `[CLOUD]` rows below and nothing else. The `[NOAH]` rows are unchanged by it, and none of them
-gates merging it — the spec's §9 works through what happens if each stays undone.
+the four `[CLOUD]` rows below and nothing else — merged 2026-09-03, ready for a session to execute.
+Every row in the task table below is still `🔲 Backlog`: nothing has been built yet, only planned.
+The `[NOAH]` rows are unchanged by any of this, and none of them gates starting the implementation
+— the spec's §9 works through what happens if each stays undone.
 
 | Task                                                                  | Status     | Owner                                 | Evidence                                                                                                            |
 | --------------------------------------------------------------------- | ---------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
