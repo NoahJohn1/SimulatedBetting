@@ -23,6 +23,7 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Production deployment spec](specs/2026-09-02-production-deployment-design.md)                  | Phase 6's cloud half — the run record, alerting on cron failure and drift, Sentry, and the two admin screens                         |
 | [Production deployment plan](plans/2026-09-02-production-deployment-implementation-plan.md)     | The task-by-task plan for that work, lane-tagged, with what a cloud session can and cannot verify                                    |
 | [Hardening spec](specs/2026-09-03-hardening-design.md)                                          | Phase 9's cloud half — rate limiting on every mutation, the house rules page, the new-member path as a sequence, the smoke checklist |
+| [Hardening plan](plans/2026-09-03-hardening-implementation-plan.md)                             | The task-by-task plan for that work, lane-tagged, with what a cloud session can and cannot verify                                    |
 
 ### Reference
 
