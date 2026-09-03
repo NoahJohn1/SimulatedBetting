@@ -12,7 +12,7 @@ not get re-proposed later.
 
 ## Status at a glance
 
-_Last verified 2026-09-02._
+_Last verified 2026-09-03._
 
 Every item below carries a **lane** — who or what can actually finish it. The lane is decided by
 what the work needs, not by who can type the file. Four lanes now, not three: `[MANUAL]` splits
@@ -82,6 +82,9 @@ and what it is waiting on.
 | 7   | ESLint 10 and TypeScript 7 majors                                               | **[MANUAL]** | Upstream. See [1.6](#16-the-dependency-majors-that-cannot-land-yet) — Dependabot re-proposes monthly, and a green run is the signal to merge                                                                                                                                                                                                 |
 | 8   | `db-migration` skill ([3.5](#35-db-migration--a-skill))                         | [CLOUD]      | Deliberately deferred. The trigger is a migration going wrong; it has not fired                                                                                                                                                                                                                                                              |
 | 9   | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | Nothing — no longer gates phase 5 (2026-09-03), still useful for 6-9 and for whatever it turns up along the way                                                                                                                                                                                                                              |
+| 10  | **Apply the `job_runs` migration to production**                                | **[NOAH]**   | Nothing. Until it lands, `/admin/health` reports every job as never-run and no alert can fire — see [roadmap 6](roadmap.md#after-this-merges--what-is-still-owed)                                                                                                                                                                            |
+| 11  | Set `ALERT_WEBHOOK_URL`, and the two Sentry DSNs                                | **[NOAH]**   | Nothing. Vercel environment variables only; the code is inert without them by design ([D59](decisions.md#d59--one-generic-webhook-carrying-both-content-and-text), [D62](decisions.md#d62--sentry-is-inert-without-a-dsn))                                                                                                                   |
+| 12  | Run the phase-6 DB-backed tests on a desktop                                    | **[LOCAL]**  | A desktop with Docker. `job-runs.test.ts`, `health-reads.test.ts` and `activate.test.ts` were written in a cloud session and have only ever run in CI                                                                                                                                                                                        |
 
 ### What changed underneath all of this
 

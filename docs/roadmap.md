@@ -20,7 +20,7 @@ Where a status cannot be verified from the repo, it says so and dates the observ
 | 3   | Custom events                                                 | ✅ Complete                                                              | —                        | [spec](specs/2026-08-17-custom-events-design.md) · [plan](archive/plans/2026-08-17-custom-events-implementation-plan.md)                                                    |
 | 4   | Peer-to-peer bets                                             | ✅ Complete                                                              | —                        | [spec](specs/2026-08-19-peer-to-peer-bets-design.md) · [plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md)                                            |
 | 5   | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — code complete, PR open, production verification pending | [NOAH]                   | [PR #21](https://github.com/NoahJohn1/SimulatedBetting/pull/21) · [spec](specs/2026-08-22-espn-adapter-design.md) · [plan](plans/2026-08-22-espn-adapter-implementation.md) |
-| 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — deployed, unmonitored                                       | [CLOUD] [NOAH]           | [spec](specs/2026-09-02-production-deployment-design.md) · [plan](plans/2026-09-02-production-deployment-implementation-plan.md)                                            |
+| 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — deployed, unmonitored                                       | [CLOUD] [NOAH]           | [spec](specs/2026-09-02-production-deployment-design.md) · [plan](archive/plans/2026-09-02-production-deployment-implementation-plan.md)                                    |
 | 7a  | UI foundations                                                | ✅ Complete                                                              | —                        | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md)                       |
 | 7b  | Design system                                                 | ✅ Complete                                                              | —                        | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md)                  |
 | 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | 🔲 Backlog                                                               | [CLOUD]                  | —                                                                                                                                                                           |
@@ -216,7 +216,7 @@ which this phase calls the item that earns it — is absent.
 
 **The `[CLOUD]` half is designed, and the design is on `main`.** See the
 [production deployment spec](specs/2026-09-02-production-deployment-design.md) and its
-[implementation plan](plans/2026-09-02-production-deployment-implementation-plan.md), which cover
+[implementation plan](archive/plans/2026-09-02-production-deployment-implementation-plan.md), which cover
 the four `[CLOUD]` rows below and nothing else — merged 2026-09-03, ready for a session to execute.
 The four `[CLOUD]` rows below are now `✅ Complete`. The `[NOAH]` rows are unchanged by any of
 this, and none of them gated building the four rows above — the spec's §9 works through what
@@ -238,6 +238,35 @@ happens while each stays undone.
 > no-ops. A `job_runs` write that fails is logged and swallowed, so a deploy that lands ahead of
 > the migration degrades `/admin/health` to "never run" rather than stopping settlement. See the
 > spec's §9.
+
+### After this merges — what is still owed
+
+The `[CLOUD]` half is code on `main`. **None of it does anything until the rows below happen.**
+They can be done in any order, at any time, against the running app — none needs a redeploy of
+code, and only row 1 gates anything at all.
+
+| #   | Do this                                                                                                                                          | Lane         | Until it is done                                                                                                                                                                                                                 |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Apply the `job_runs` migration** to the production database                                                                                    | **[NOAH]**   | `/admin/health` shows every job as never-run and says so in a banner, and no alert can fire. Nothing else changes: a failed `job_runs` write is logged and swallowed, so settlement, allowance and reconciliation are unaffected |
+| 2   | Create a Discord or Slack incoming webhook and set **`ALERT_WEBHOOK_URL`** in Vercel                                                             | **[NOAH]**   | Every alert is written to the Vercel function log and sent nowhere. The webhook is what makes the alarm audible                                                                                                                  |
+| 3   | Sign up for Sentry's free tier and set **`SENTRY_DSN`** and **`NEXT_PUBLIC_SENTRY_DSN`**                                                         | **[NOAH]**   | `Sentry.init` is never called and nothing reports ([D62](decisions.md#d62--sentry-is-inert-without-a-dsn))                                                                                                                       |
+| 4   | Optionally set **`SENTRY_AUTH_TOKEN`**, `SENTRY_ORG`, `SENTRY_PROJECT`                                                                           | **[NOAH]**   | Sentry works, but its stack traces point at minified bundle lines because no source maps were uploaded at build time                                                                                                             |
+| 5   | **Break a cron on purpose and confirm the alert arrives** — e.g. dispatch `settle` with a wrong `CRON_SECRET`, or watch the first real reconcile | **[MANUAL]** | The alarm is untested, which for practical purposes is the same as not having one. Belongs in the [phase 9](#9--hardening) smoke checklist                                                                                       |
+| 6   | Run the full suite once on a desktop with Docker                                                                                                 | **[LOCAL]**  | CI is the only thing that has ever executed `job-runs.test.ts`, `health-reads.test.ts` and `activate.test.ts` — they were written in a cloud session with no Postgres                                                            |
+| 7   | Create and activate the real season from `/admin/seasons`                                                                                        | **[MANUAL]** | `src/db/bootstrap-season.ts` remains the only way to start a season, which is the problem this screen was built to remove                                                                                                        |
+
+**How to do row 1.** Migrations are applied by hand until the migrations-on-deploy row above
+lands. From a machine with the production connection string:
+
+```bash
+ENV_FILE=.env.production npm run db:migrate
+```
+
+`src/db/migrate.ts` applies one file per transaction and is idempotent — re-running it after the
+fact is safe and applies nothing twice.
+
+**Rows 2 through 4 are environment variables only.** Vercel re-reads them on the next invocation;
+there is nothing to rebuild and nothing in the repository to change.
 
 **Deliberately skipped.** A staging environment. For a private group, a kill switch plus fast
 rollback covers what staging would, at a fraction of the setup.
