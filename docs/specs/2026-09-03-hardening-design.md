@@ -60,19 +60,19 @@ real database with no Docker daemon involved. Measured in the session that wrote
 
 Taken 2026-09-03 in the cloud session that wrote this document.
 
-| Claim                                  | Measured                                                                                                                         |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `node_modules` on session start        | Present — the `session-start` hook installs it before the first turn                                                             |
-| Docker                                 | No daemon, as before. Postgres is native, and both databases are migrated                                                        |
-| `npm test`                             | **86 files / 925 tests pass, 80s.** The whole suite, DB-backed tests included                                                    |
-| `npm run typecheck` / `lint` / `build` | All run in a cloud session                                                                                                       |
-| Decision log                           | Ends at **D62**, so this design's entries are D63–D67                                                                            |
-| Existing rate limiting                 | None. No `middleware.ts` exists; no mutation path counts anything                                                                |
-| Mutation surface                       | 6 action files, 19 exported `*Action` functions (18 of them mutating), plus 5 inline `'use server'` blocks in page files         |
-| Client error rendering                 | Six `switch (error.code)` message maps, every one with a `default` arm                                                           |
-| Prune precedent                        | `pruneJobRuns` runs inside `reconcile`'s handler in its own try/catch ([route.ts:57](../../src/app/api/cron/reconcile/route.ts)) |
-| Gate screens                           | Four, not three — `/disabled` is routed to by the same `requireApprovedMember` switch                                            |
-| Gate screens exporting `metadata`      | Zero of four                                                                                                                     |
+| Claim                                  | Measured                                                                                                                              |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `node_modules` on session start        | Present — the `session-start` hook installs it before the first turn                                                                  |
+| Docker                                 | No daemon, as before. Postgres is native, and both databases are migrated                                                             |
+| `npm test`                             | **86 files / 925 tests pass, 80s.** The whole suite, DB-backed tests included                                                         |
+| `npm run typecheck` / `lint` / `build` | All run in a cloud session                                                                                                            |
+| Decision log                           | Ends at **D62**, so this design's entries are D63–D67                                                                                 |
+| Existing rate limiting                 | None. No `middleware.ts` exists; no mutation path counts anything                                                                     |
+| Mutation surface                       | 6 action files, 19 exported `*Action` functions (18 of them mutating), plus 5 inline `'use server'` blocks in page files              |
+| Client error rendering                 | Eight `switch (error.code)` maps and one `ERRORS[]` lookup, each with a fallback. One path — reactions — discards the result entirely |
+| Prune precedent                        | `pruneJobRuns` runs inside `reconcile`'s handler in its own try/catch ([route.ts:57](../../src/app/api/cron/reconcile/route.ts))      |
+| Gate screens                           | Four, not three — `/disabled` is routed to by the same `requireApprovedMember` switch                                                 |
+| Gate screens exporting `metadata`      | Zero of four                                                                                                                          |
 
 ---
 
@@ -234,10 +234,23 @@ and the money-invariants review above is the whole of it. And the services stay 
 unthrottled from cron routes, `seed.ts`, `bootstrap-season.ts` and the test suite — the load-sanity
 script that drove 1,500 bets through `placeBet` directly would still run today.
 
-Every one of the six client message maps gets an explicit `case 'RATE_LIMITED'` rendering
-"You're doing that too quickly. Try again in N seconds." Each map already has a `default` arm, so
-a map missed by mistake degrades to its generic message rather than crashing — but none are
-missed.
+Nine client renderers surface these errors — eight `switch (error.code)` maps and the `ERRORS[]`
+lookup in [`comment-thread.tsx`](<../../src/app/(app)/feed/[eventId]/comment-thread.tsx>). Each gets
+an explicit `RATE_LIMITED` case rendering "You're doing that too quickly. Try again in N seconds."
+Every one already has a fallback arm, so a renderer missed by mistake degrades to its generic
+message rather than crashing — but none are missed.
+
+**One path needs more than a message.** `toggleReactionAction` is called from
+[`feed-list.tsx:78`](<../../src/app/(app)/feed/feed-list.tsx>) inside a transition that applies an
+optimistic update first and then **discards the action's return value entirely** — there is no
+result check on that call today. Left alone, a refused reaction would leave the card showing a
+reaction that was never written, until something else refreshed the feed. So the reaction handler
+gains the one thing it is missing: it reads the result and rolls the optimistic update back when
+the action did not succeed.
+
+That is a pre-existing gap this work is obliged to close rather than one it creates — the same
+handler would already swallow a `WRONG_SEASON` or an `EVENT_NOT_FOUND`. Rate limiting is simply the
+first error that will actually happen in normal use.
 
 ### 2.8 The guard test
 
