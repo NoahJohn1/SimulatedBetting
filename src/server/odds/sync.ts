@@ -22,6 +22,8 @@ export interface SyncOddsSummary {
   marketsUpserted: number;
   selectionsUpserted: number;
   snapshotsWritten: number;
+  gamesSkipped: number;
+  marketsSkipped: number;
 }
 
 async function upsertTeam(team: ProviderTeam, sport: Sport): Promise<string> {
@@ -118,6 +120,8 @@ export async function syncOdds(options: SyncOddsOptions): Promise<SyncOddsSummar
     marketsUpserted: 0,
     selectionsUpserted: 0,
     snapshotsWritten: 0,
+    gamesSkipped: 0,
+    marketsSkipped: 0,
   };
 
   const eventIdByExternalId = new Map<string, string>();
@@ -129,6 +133,12 @@ export async function syncOdds(options: SyncOddsOptions): Promise<SyncOddsSummar
       eventIdByExternalId.set(game.externalId, upserted.eventId);
       summary.gamesUpserted += 1;
     }
+  }
+
+  const skipped = options.provider.getSkipped?.();
+  if (skipped) {
+    summary.gamesSkipped = skipped.games;
+    summary.marketsSkipped = skipped.markets;
   }
 
   if (eventIdByExternalId.size === 0) return summary;
@@ -209,6 +219,12 @@ export async function syncOdds(options: SyncOddsOptions): Promise<SyncOddsSummar
         summary.snapshotsWritten += 1;
       }
     }
+  }
+
+  const skippedAfterMarkets = options.provider.getSkipped?.();
+  if (skippedAfterMarkets) {
+    summary.gamesSkipped = skippedAfterMarkets.games;
+    summary.marketsSkipped = skippedAfterMarkets.markets;
   }
 
   return summary;

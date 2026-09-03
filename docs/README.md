@@ -18,6 +18,8 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Cloud lane plan](plans/2026-09-02-cloud-lane-completion-implementation-plan.md)                | The task-by-task plan for that work                                                                                           |
 | [Docs status and archive spec](specs/2026-09-02-docs-status-and-archive-design.md)              | The owner taxonomy, the roadmap's master table, and what moved to the archive                                                 |
 | [Docs status and archive plan](plans/2026-09-02-docs-status-and-archive-implementation-plan.md) | The task-by-task plan for that restructure                                                                                    |
+| [ESPN adapter spec](specs/2026-08-22-espn-adapter-design.md)                                    | Phase 5: `EspnOddsProvider`/`EspnScoreProvider`, the payload spike findings, the kill switch, success criteria               |
+| [ESPN adapter plan](plans/2026-08-22-espn-adapter-implementation.md)                            | The task-by-task plan, plus dated status notes on what was verified from a cloud session and how                             |
 | [Production deployment spec](specs/2026-09-02-production-deployment-design.md)                  | Phase 6's cloud half — the run record, alerting on cron failure and drift, Sentry, and the two admin screens                  |
 | [Production deployment plan](plans/2026-09-02-production-deployment-implementation-plan.md)     | The task-by-task plan for that work, lane-tagged, with what a cloud session can and cannot verify                             |
 
@@ -66,12 +68,20 @@ Three properties the design is organized around:
 ## Where things stand
 
 All four subsystems are built end-to-end and verified: `npm run verify` (typecheck, lint,
-76 test files / 814 tests) passes clean, and the app runs, seeds a fixture slate, takes a bet
+81 test files / 866 tests) passes clean, and the app runs, seeds a fixture slate, takes a bet
 through placement and settlement (including a push), reconciles the ledger correctly in both
 currencies, and posts and reads back the feed cards those actions generate — including a
 custom event carried from creation through a disputed resolution and an admin correction, and
 a peer-to-peer wager carried from offer through a dispute to an admin correction, with both
 balance and escrow reconciliation clean throughout.
+
+**Phase 5 — the ESPN adapter — is also code-complete**, in
+[PR #21](https://github.com/NoahJohn1/SimulatedBetting/pull/21): real
+`EspnOddsProvider`/`EspnScoreProvider` behind an `ODDS_PROVIDER` kill switch, verified against
+ESPN's live feed and load-tested at real row counts (300 real games, 1,500 bets, ~20k feed
+events) from a cloud session — see [the spec](specs/2026-08-22-espn-adapter-design.md) and
+[the roadmap](roadmap.md#5--real-data-the-espn-adapter). What is left is Noah-only: running it
+for real against production and reconciling what lands there.
 
 **Subsystem 1 — core betting engine:**
 
@@ -165,22 +175,27 @@ Every open item from [the roadmap](roadmap.md#roadmap) and
 | Item                                                                                   | Source        |
 | -------------------------------------------------------------------------------------- | ------------- |
 | Uncomment the three cron `schedule:` lines                                             | repo health 3 |
-| Add `format:check` to `verify` and CI                                                  | repo health 6 |
+| Add `format:check` to `verify` and CI                                                  | repo health 5 |
 | Phase 6's `[CLOUD]` half — the run record, alerting, Sentry, and the two admin screens | roadmap 6     |
 | 7c component work — `Dialog`, `Sheet`, `Table`, `Toast`, `Card`'s element escape hatch | roadmap 7c    |
 | 7c layout fixes from the mobile audit                                                  | roadmap 7c    |
 | 7d craft — motion, accessibility, a dark-mode toggle                                   | roadmap 7d    |
 | Rate limiting, house rules page, the new-member path                                   | roadmap 9     |
 
-Rows 3 and 6 above are `[CLOUD]` work that is currently blocked, not ready to pick up — see
-their "Blocked on" column in [repo health's Outstanding table](repo-health.md#outstanding).
+Row 3 above is `[CLOUD]` work that is currently blocked, not ready to pick up — see its
+"Blocked on" column in [repo health's Outstanding table](repo-health.md#outstanding). Row 5
+(`format:check`) was blocked on the same thing until the ESPN adapter's Prettier reconciliation
+landed — it is unblocked now.
 
 #### What needs a desktop with Docker
 
 | Item                                          | Source        |
 | --------------------------------------------- | ------------- |
 | Verify the `session-start` hook's Docker path | repo health 4 |
-| Load sanity at real row counts                | roadmap 9     |
+
+Load sanity at real row counts (roadmap 9) used to be listed here — it turned out not to need
+Docker at all, just a database, which a cloud session can now get on its own. See
+[repo health 3.7](repo-health.md#37-postgres-without-docker-in-a-cloud-session).
 
 #### What needs Noah
 
@@ -188,7 +203,7 @@ their "Blocked on" column in [repo health's Outstanding table](repo-health.md#ou
 | -------------------------------------------------------------------------------------------------- | ------------- |
 | `APP_URL` and `CRON_SECRET` as Actions secrets — **the app is not settling bets until this lands** | repo health 1 |
 | Dispatch both cron jobs by hand, confirm 200                                                       | repo health 2 |
-| Reconcile the unpushed ESPN adapter against the merged Prettier reformat                           | repo health 5 |
+| First real ESPN slate — set `ODDS_PROVIDER=espn` against production, backfill, reconcile           | roadmap 5     |
 | Hosted Postgres, Sentry signup, alerting destination                                               | roadmap 6     |
 | Email provider signup and sending-domain DNS                                                       | roadmap 8     |
 
@@ -196,9 +211,9 @@ their "Blocked on" column in [repo health's Outstanding table](repo-health.md#ou
 
 | Item                                          | Source        |
 | --------------------------------------------- | ------------- |
-| **The human test pass** — the gate on phase 5 | both          |
-| Merging Dependabot's monthly PR               | repo health 7 |
-| ESLint 10 / TypeScript 7 — blocked upstream   | repo health 8 |
+| The human test pass — still useful for phases 6-9, no longer gates phase 5 | both |
+| Merging Dependabot's monthly PR               | repo health 6 |
+| ESLint 10 / TypeScript 7 — blocked upstream   | repo health 7 |
 | Confirming a real email renders               | roadmap 8     |
 
 ## Conventions

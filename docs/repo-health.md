@@ -22,16 +22,23 @@ into `[MANUAL]` and `[NOAH]` below, since not every human task needs Noah's spec
 | ------------ | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **[MANUAL]** | Either of you, by hand                     | Clicking, reading, judging. No special account needed.                                                                                                                                 |
 | **[NOAH]**   | Noah specifically                          | An account or permission only he holds: GitHub repo settings, the Vercel dashboard, DNS, paid signups. No agent has these credentials, and none should.                                |
-| **[CLOUD]**  | A Claude Code web session, start to finish | Measured 2026-08-25: `npm ci` (21s), `npm run typecheck`, `npm run lint`, `npx next build` and any test that only reads source all run clean in a cloud session.                       |
-| **[LOCAL]**  | Claude on your desktop                     | Needs Postgres. A cloud session has the `docker` binary but no daemon — `/var/run/docker.sock` does not exist — so anything gated on `npm test` as a whole must run where Docker does. |
+| **[CLOUD]**  | A Claude Code web session, start to finish | Measured 2026-08-25: `npm ci` (21s), `npm run typecheck`, `npm run lint`, `npx next build` and any test that only reads source all run clean in a cloud session. As of 2026-09-03, so does the full DB-backed suite — see [3.7](#37-postgres-without-docker-in-a-cloud-session). |
+| **[LOCAL]**  | Claude on your desktop                     | For work that has to exercise Docker itself — `docker compose up`, the session-start hook's Docker branch — not merely "needs Postgres." A cloud session has the `docker` binary but no daemon (`/var/run/docker.sock` does not exist), so nothing that specifically depends on Docker running can be proven there. |
 
 This document covers repo mechanics. For the product phases — the ESPN adapter, deployment, the
 UI ladder, email, hardening — see [the roadmap's status table](roadmap.md#roadmap).
 
-One thing that softens the [LOCAL] lane: **CI has Postgres.** A cloud session that opens a pull
-request gets the full suite run against a real database by the `verify` job. So "cloud writes it,
-CI proves it" covers most of what used to need a laptop; the local lane is for work that has to be
-_exercised_ locally, like a session hook.
+**Correction, 2026-09-03: the [LOCAL] lane used to be much wider than this.** It previously read
+"needs Postgres... so anything gated on `npm test` as a whole must run where Docker does" — true
+of this repo's own `db:up` script, false of Postgres itself. A cloud session that installs and
+starts a native Postgres server (no container runtime involved — see
+[3.7](#37-postgres-without-docker-in-a-cloud-session)) runs the entire suite, migrations
+included. What's left in [LOCAL] is narrower and more honest: only the things that test *Docker
+specifically*, not everything that merely needs a database.
+
+Two things soften the [LOCAL] lane further: **CI has Postgres**, so a cloud session that opens a
+pull request gets the full suite run against a real database by the `verify` job regardless; and
+now a cloud session can get its own Postgres directly, without waiting on CI at all.
 
 These map onto the H / C / L lanes in the
 [implementation plan](plans/2026-08-20-repo-health-implementation-plan.md) — H is [MANUAL], C is
@@ -57,6 +64,7 @@ assumption that every test needs a database. It does not, and the table above mo
 | 12  | `money-touch` PostToolUse hook — layer 2 ([3.3](#33-money-invariants--all-three-layers))                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
 | 13  | `.env.test` documented in the README ([3.6](#36-session-start--a-hook))                                                                                                   | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
 | 14  | Prettier plus `eslint-config-prettier` ([2](#2-hygiene))                                                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
+| 15  | Reconcile the ESPN adapter work against the Prettier reformat                                                                                                             | [CLOUD]    | Commit `2722534` on `espn-adapter`, ahead of this branch's own PR                             |
 
 ### Outstanding
 
@@ -69,12 +77,11 @@ and what it is waiting on.
 | 2   | **Dispatch both cron jobs by hand and confirm 200**                             | **[NOAH]**   | Row 1. The jobs now name the missing secret instead of exiting 3, so a red run says which side is wrong                                                                                                                                                                                                                                      |
 | 3   | Uncomment the three `schedule:` lines in `cron.yml`                             | [CLOUD]      | Rows 1 and 2. One line of work; the guard it needs already landed                                                                                                                                                                                                                                                                            |
 | 4   | Verify the `session-start` hook's Docker path                                   | **[LOCAL]**  | A desktop. The other four branches are proven — see [3.6](#36-session-start--a-hook)                                                                                                                                                                                                                                                         |
-| 5   | Reconcile the unpushed ESPN adapter work against the Prettier reformat          | **[NOAH]**   | Nothing. The reformat merged in [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13), so this is now a conflict to resolve rather than a warning to give                                                                                                                                                                             |
-| 6   | Add `format:check` to `verify` and CI                                           | [CLOUD]      | Row 5. A formatting gate before the adapter lands turns that conflict into a red build                                                                                                                                                                                                                                                       |
-| 7   | Merge Dependabot's monthly PR                                                   | **[MANUAL]** | Nothing — standing monthly task. First fire 2026-09-02: [#14](https://github.com/NoahJohn1/SimulatedBetting/pull/14) and [#15](https://github.com/NoahJohn1/SimulatedBetting/pull/15) merged, [#16](https://github.com/NoahJohn1/SimulatedBetting/pull/16) and [#17](https://github.com/NoahJohn1/SimulatedBetting/pull/17) closed per row 8 |
-| 8   | ESLint 10 and TypeScript 7 majors                                               | **[MANUAL]** | Upstream. See [1.6](#16-the-dependency-majors-that-cannot-land-yet) — Dependabot re-proposes monthly, and a green run is the signal to merge                                                                                                                                                                                                 |
-| 9   | `db-migration` skill ([3.5](#35-db-migration--a-skill))                         | [CLOUD]      | Deliberately deferred. The trigger is a migration going wrong; it has not fired                                                                                                                                                                                                                                                              |
-| 10  | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | Nothing. The gate on phase 5, and nothing here substitutes for it                                                                                                                                                                                                                                                                            |
+| 5   | Add `format:check` to `verify` and CI                                           | [CLOUD]      | Nothing — [Done row 15](#done) landed, so this is no longer blocked on the ESPN adapter reconciliation it was waiting for                                                                                                                                                                                                                    |
+| 6   | Merge Dependabot's monthly PR                                                   | **[MANUAL]** | Nothing — standing monthly task. First fire 2026-09-02: [#14](https://github.com/NoahJohn1/SimulatedBetting/pull/14) and [#15](https://github.com/NoahJohn1/SimulatedBetting/pull/15) merged, [#16](https://github.com/NoahJohn1/SimulatedBetting/pull/16) and [#17](https://github.com/NoahJohn1/SimulatedBetting/pull/17) closed per row 7 |
+| 7   | ESLint 10 and TypeScript 7 majors                                               | **[MANUAL]** | Upstream. See [1.6](#16-the-dependency-majors-that-cannot-land-yet) — Dependabot re-proposes monthly, and a green run is the signal to merge                                                                                                                                                                                                 |
+| 8   | `db-migration` skill ([3.5](#35-db-migration--a-skill))                         | [CLOUD]      | Deliberately deferred. The trigger is a migration going wrong; it has not fired                                                                                                                                                                                                                                                              |
+| 9   | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | Nothing — no longer gates phase 5 (2026-09-03), still useful for 6-9 and for whatever it turns up along the way                                                                                                                                                                                                                              |
 
 ### What changed underneath all of this
 
@@ -114,7 +121,7 @@ change plus one uncommented block, and is independent of both branches.
 ## 1. The CI gate
 
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs `npm ci`, applies migrations,
-and runs `npm run verify` (typecheck, lint, 814 tests across 76 files). That is a good gate
+and runs `npm run verify` (typecheck, lint, 866 tests across 81 files). That is a good gate
 with one real hole and several cheap improvements.
 
 ### 1.1 It never builds — worth adding, but narrower than it looks
@@ -207,7 +214,7 @@ later tries to automate it into CI and burns a weekend on it.
 - ~~**Dependabot, monthly, grouped.**~~ **Done.** Weekly, ungrouped, on a two-person project
   is noise you will train yourself to ignore, which is worse than not having it. Monthly with
   minor and patch grouped into one PR is roughly one PR a month that CI can prove safe; it
-  landed on this branch, and its first PR is [Outstanding row 7](#outstanding).
+  landed on this branch, and its first PR is [Outstanding row 6](#outstanding).
 - ~~**Branch protection on `main`** requiring CI to pass.~~ **Done.** A settings change rather
   than a file: Settings → Branches → require status checks. This is what makes the gate a gate.
 
@@ -508,32 +515,88 @@ branches, because a cloud session is the degraded environment the hook exists to
 | No daemon → prints instructions, exits 0                 | [CLOUD]      | ✅                     |
 | A `docker` binary on `PATH` is not mistaken for a daemon | [CLOUD]      | ✅                     |
 | `docker compose up -d --wait` and both migrations        | **[LOCAL]**  | 🔲 Outstanding — row 4 |
+| Native Postgres fallback and both migrations, no Docker  | [CLOUD]      | ✅ — see [3.7](#37-postgres-without-docker-in-a-cloud-session) |
 
-A Claude Code web session starts with no `node_modules` and no Postgres, so it cannot run the
-suite. Re-confirmed 2026-08-25: `node_modules` absent, port 5433 closed. Every web session is
-still read-only with respect to the tests, which is a bad position from which to trust any
-change.
+A Claude Code web session starts with no `node_modules` and no Postgres reachable on port 5433
+(docker-compose's mapping), so it cannot bring up *that* database. Re-confirmed 2026-08-25:
+`node_modules` absent, port 5433 closed.
 
-**One correction to the original writeup.** It recorded `docker` as "available" in a web session.
-The binary is on `PATH`, but there is no daemon: `/var/run/docker.sock` does not exist, and
-`docker info` fails against it. So a `SessionStart` hook cannot bring Postgres up in a cloud
-session at all — the hook's value there is `npm ci` plus a clear message about what is missing,
-and the full path only works on a laptop. This is also why the [three-lane
-plan](plans/2026-08-20-repo-health-implementation-plan.md) splits the way it does, and that split
-is still correct.
+**One correction to the original writeup, and a second correction on top of it.** The original
+recorded `docker` as "available" in a web session; the binary is on `PATH`, but there is no
+daemon (`/var/run/docker.sock` does not exist, `docker info` fails). That correction still
+holds — `docker compose up` genuinely cannot work in a cloud session. What no longer holds is
+the conclusion drawn from it: that a `SessionStart` hook therefore "cannot bring Postgres up in
+a cloud session at all." As of 2026-09-03 it can, just not through Docker — see
+[3.7](#37-postgres-without-docker-in-a-cloud-session). The hook now tries the Docker path first
+and falls back to a native Postgres server running directly in the container, which this specific
+environment's image ships pre-installed. A web session is no longer read-only with respect to
+the tests. This also means the [three-lane
+plan](plans/2026-08-20-repo-health-implementation-plan.md)'s split of *this specific item* is
+narrower than it was — see 3.7 for what's still genuinely [LOCAL] versus what moved to [CLOUD].
 
 A `SessionStart` hook fixes it: `npm ci` when `node_modules` is missing, `docker compose up -d
---wait`, create and migrate the test database. Four requirements:
+--wait` (or the native fallback below), create and migrate the test database. Five
+requirements:
 
 - **Idempotent** — re-running must be a no-op when everything is already up.
-- **Never fails the session** — if Docker is unavailable it prints what to run by hand and
-  exits zero. A hook that blocks a session start is worse than no hook.
+- **Never fails the session** — if neither Postgres path is available it prints what to run by
+  hand and exits zero. A hook that blocks a session start is worse than no hook.
 - **Tests the daemon, not the binary** — `command -v docker` succeeds in a cloud session where
   `docker compose up` cannot work. The check that matters is `docker info`.
 - **Honest about cost** — a cold `npm ci` is not instant, and the hook should say what it is
   doing rather than appearing to hang.
+- **Docker first, native second** — the hook never installs packages itself (that needs
+  network and is worth a session seeing, not doing silently on every start); it only starts and
+  configures a Postgres server that is already present.
 
 The `session-start-hook` skill in the Claude Code environment covers the mechanics.
+
+### 3.7 Postgres without Docker in a cloud session
+
+**Lane: [CLOUD], proven 2026-09-03.** The `[LOCAL]` tag on "needs Postgres" items always meant
+"needs this repo's own `db:up`," which needs Docker. It was never actually a claim about
+Postgres itself — that assumption just went unchallenged until a cloud session tried apt
+directly instead of accepting the Docker daemon's absence as final.
+
+**What was tried and worked.** This environment's container image ships `postgresql-16` (server,
+not just the `psql` client) pre-installed but uninitialized-into-service — a `pg_lsclusters`
+cluster exists, just not started, and `policy-rc.d` blocks it from auto-starting on package
+install or upgrade. Running as root with passwordless `sudo` (both already true of this
+environment), starting it needs no network at all:
+
+```bash
+pg_ctlcluster 16 main start   # or: sudo apt-get install -y postgresql, if no cluster exists yet
+sudo -u postgres psql -c "CREATE ROLE simbet LOGIN PASSWORD 'simbet'"
+sudo -u postgres createdb -O simbet simbet
+sudo -u postgres createdb -O simbet simbet_test
+```
+
+Pointed at that (`DATABASE_URL=postgres://simbet:simbet@127.0.0.1:5432/simbet_test` in
+`.env.test`, migrated with `npx tsx src/db/migrate.ts`): `npm run verify` passes in full —
+typecheck, lint, and all 866 tests across 81 files, including the DB-backed
+`sync.test.ts`/`results.test.ts` that this document previously called uncloud-able. The
+`session-start` hook (3.6) now does exactly this automatically as its fallback when no Docker
+daemon is running, including a `pg_isready` retry loop for the gap between `pg_ctlcluster`
+returning and Postgres actually accepting connections.
+
+**What this does and doesn't change.** Every roadmap or repo-health item tagged `[LOCAL]` purely
+because "it needs a database" should be re-read as `[CLOUD]` — this environment's image already
+carries what that needs. What's still genuinely `[LOCAL]` is anything that tests *Docker itself*
+— row 4 above (`docker compose up -d --wait`), and this repo's `db:up`/`docker-compose.yml`
+path specifically — since a cloud session still has no daemon to exercise. A production
+database (Vercel's hosted Postgres) is a separate concern entirely; this is a disposable,
+session-local database good for running the suite, not a stand-in for production access.
+
+**A safety note that came out of proving this.** Some cloud environments carry a real
+`DATABASE_URL`/`TEST_DATABASE_URL` already set (a hosted database's credentials, injected as
+container environment variables) — this one does, pointing at a Supabase project. `src/test/setup.ts`
+loads `.env.test` with `override: true`, so the test suite always ignores that ambient value in
+favor of the local target — but `src/db/migrate.ts` did not do the same for `.env.local`/
+`$ENV_FILE` until this was found and fixed (see the plan's status note in
+[the ESPN adapter plan](plans/2026-08-22-espn-adapter-implementation.md) for how). Any script
+that loads env with plain `dotenv` and no `override: true` is one ambient variable away from
+silently targeting whatever database this container's environment happens to carry — worth
+checking before adding another one.
 
 ---
 
@@ -577,7 +640,7 @@ Recorded so these do not get re-proposed in six months:
 - **Changelog or release automation** — there are no releases; there is a deployed `main`.
 - **`npm audit` as a gate** — for a private four-person app with no untrusted input, it mostly
   produces unactionable transitive advisories. Dependabot covers the part that matters.
-- **Coverage thresholds** — 76 test files against 25k lines, written test-first. A percentage
+- **Coverage thresholds** — 81 test files against a larger codebase now, written test-first. A percentage
   gate would measure something already being done, and would eventually be gamed.
 
 ---
@@ -602,8 +665,9 @@ behind the order, kept because the reasoning is the part that goes stale slowly.
 6. **`db-migration` stays last and may never happen.** Still marginal; the README already
    documents the sequence.
 
-**Not on this list, but the real gate:** the human test pass. Phase 5 is waiting on it, the
-`from-test-pass` label exists for it, and no amount of repo tooling substitutes for it.
+**Not on this list:** the human test pass. It no longer gates phase 5 as of 2026-09-03 — see
+[roadmap 5](roadmap.md#5--real-data-the-espn-adapter) for what replaced it there — but the
+`from-test-pass` label still exists for 6-9 and for whatever a person finds along the way.
 
 **Prettier is adopted, on this branch.** The stated reason for staying dropped — that adopting
 it means one reformat commit touching nearly every file, and that commit would have landed on

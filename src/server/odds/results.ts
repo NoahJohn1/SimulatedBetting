@@ -11,6 +11,7 @@ export interface SyncResultsSummary {
   gamesUpdated: number;
   /** Games whose score changed after already being FINAL — these need re-settlement. */
   corrected: string[];
+  gamesSkipped: number;
 }
 
 /**
@@ -32,12 +33,12 @@ export async function syncResults(options: SyncResultsOptions): Promise<SyncResu
     })
     .from(games);
 
-  if (existing.length === 0) return { gamesUpdated: 0, corrected: [] };
+  if (existing.length === 0) return { gamesUpdated: 0, corrected: [], gamesSkipped: 0 };
 
   const reported = await options.provider.getResults(existing.map((g) => g.externalId));
   const byExternalId = new Map(existing.map((g) => [g.externalId, g]));
 
-  const summary: SyncResultsSummary = { gamesUpdated: 0, corrected: [] };
+  const summary: SyncResultsSummary = { gamesUpdated: 0, corrected: [], gamesSkipped: 0 };
 
   for (const result of reported) {
     const game = byExternalId.get(result.gameExternalId);
@@ -65,6 +66,11 @@ export async function syncResults(options: SyncResultsOptions): Promise<SyncResu
 
     summary.gamesUpdated += 1;
     if (scoreChangedAfterFinal) summary.corrected.push(game.externalId);
+  }
+
+  const skipped = options.provider.getSkipped?.();
+  if (skipped) {
+    summary.gamesSkipped = skipped.games;
   }
 
   return summary;

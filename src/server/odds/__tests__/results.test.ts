@@ -5,6 +5,7 @@ import { games } from '@/db/schema';
 import { FixtureOddsProvider, FixtureScoreProvider } from '@/fixtures/providers';
 import { syncResults } from '@/server/odds/results';
 import { syncOdds } from '@/server/odds/sync';
+import type { ProviderResult, ScoreProvider } from '@/server/odds/types';
 import { resetDb } from '@/test/db';
 
 async function gameByExternalId(externalId: string) {
@@ -60,5 +61,24 @@ describe('syncResults', () => {
     expect(corrected.gamesUpdated).toBe(1);
     expect(corrected.corrected).toEqual(['nfl-2026-w1-gb-chi']);
     expect((await gameByExternalId('nfl-2026-w1-gb-chi')).homeScore).toBe(24);
+  });
+
+  class SkippingScoreProvider implements ScoreProvider {
+    async getResults(): Promise<ProviderResult[]> {
+      return [];
+    }
+    getSkipped(): { games: number } {
+      return { games: 3 };
+    }
+  }
+
+  it('surfaces getSkipped() on the summary when the provider implements it', async () => {
+    const summary = await syncResults({ provider: new SkippingScoreProvider() });
+    expect(summary.gamesSkipped).toBe(3);
+  });
+
+  it('defaults gamesSkipped to zero for a provider that does not implement getSkipped', async () => {
+    const summary = await syncResults({ provider: new FixtureScoreProvider() });
+    expect(summary.gamesSkipped).toBe(0);
   });
 });

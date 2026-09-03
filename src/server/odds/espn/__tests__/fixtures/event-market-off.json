@@ -1,0 +1,93 @@
+{
+  "events": [
+    {
+      "id": "401856767",
+      "date": "2026-09-03T23:00Z",
+      "season": {
+        "year": 2026
+      },
+      "week": {
+        "number": 1
+      },
+      "competitions": [
+        {
+          "id": "401856767",
+          "status": {
+            "type": {
+              "state": "pre",
+              "name": "STATUS_SCHEDULED",
+              "completed": false
+            }
+          },
+          "competitors": [
+            {
+              "homeAway": "home",
+              "score": "0",
+              "team": {
+                "id": "2116",
+                "abbreviation": "UCF",
+                "displayName": "UCF Knights"
+              }
+            },
+            {
+              "homeAway": "away",
+              "score": "0",
+              "team": {
+                "id": "2065",
+                "abbreviation": "BCU",
+                "displayName": "Bethune-Cookman Wildcats"
+              }
+            }
+          ],
+          "odds": [
+            {
+              "provider": {
+                "name": "DraftKings"
+              },
+              "pointSpread": {
+                "home": {
+                  "close": {
+                    "line": "-41.5",
+                    "odds": "-110"
+                  }
+                },
+                "away": {
+                  "close": {
+                    "line": "+41.5",
+                    "odds": "-110"
+                  }
+                }
+              },
+              "total": {
+                "over": {
+                  "close": {
+                    "line": "OFF",
+                    "odds": "-112"
+                  }
+                },
+                "under": {
+                  "close": {
+                    "line": "OFF",
+                    "odds": "OFF"
+                  }
+                }
+              },
+              "moneyline": {
+                "home": {
+                  "close": {
+                    "odds": "OFF"
+                  }
+                },
+                "away": {
+                  "close": {
+                    "odds": "OFF"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

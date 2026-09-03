@@ -19,8 +19,7 @@ Where a status cannot be verified from the repo, it says so and dates the observ
 | 2   | Social layer                                                  | ✅ Complete                        | —                        | [spec](specs/2026-08-17-social-layer-design.md) · [plan](archive/plans/2026-08-17-social-layer-implementation-plan.md)                                     |
 | 3   | Custom events                                                 | ✅ Complete                        | —                        | [spec](specs/2026-08-17-custom-events-design.md) · [plan](archive/plans/2026-08-17-custom-events-implementation-plan.md)                                   |
 | 4   | Peer-to-peer bets                                             | ✅ Complete                        | —                        | [spec](specs/2026-08-19-peer-to-peer-bets-design.md) · [plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md)                           |
-| —   | **Human test pass** — the gate on phase 5                     | 🔲 Backlog                         | **[MANUAL]**             | —                                                                                                                                                          |
-| 5   | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — Noah, local only  | [CLOUD] [NOAH]           | spec pending                                                                                                                                               |
+| 5   | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — code complete, PR open, production verification pending | [NOAH]           | [PR #21](https://github.com/NoahJohn1/SimulatedBetting/pull/21) · [spec](specs/2026-08-22-espn-adapter-design.md) · [plan](plans/2026-08-22-espn-adapter-implementation.md) |
 | 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — deployed, unmonitored | [CLOUD] [NOAH]           | [spec](specs/2026-09-02-production-deployment-design.md) · [plan](plans/2026-09-02-production-deployment-implementation-plan.md)                           |
 | 7a  | UI foundations                                                | ✅ Complete                        | —                        | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md)      |
 | 7b  | Design system                                                 | ✅ Complete                        | —                        | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md) |
@@ -30,12 +29,64 @@ Where a status cannot be verified from the repo, it says so and dates the observ
 | 9   | [Hardening](#9--hardening)                                    | 🔲 Backlog                         | [CLOUD] [LOCAL] [MANUAL] | —                                                                                                                                                          |
 
 All four subsystems pass `npm run verify` and have been exercised end to end against fixture
-data. None of it has been through a human test pass — that is the gate on phase 5, and no
-amount of tooling substitutes for it.
+data. Phase 5 is no longer gated on a human test pass before it can proceed — automated
+verification (unit tests, a live run against ESPN's real feed, and load sanity at real row
+counts, all detailed below) is the standard now. A human finding a real bug later files a
+ticket, same as any other bug; it does not block work from moving forward in the meantime.
 
-**Phase 5 is not verifiable from here.** As of 2026-09-02 there is no `espn` reference anywhere
-in `src/`, and `origin` carries only `main` and the current working branch, so Noah's adapter
-work exists only on his machine. This table will say "in progress" until something is pushed.
+**Phase 5's code is now verifiable from the repo — and, as of 2026-09-03, partly against the
+live feed too.** The `espn-adapter` branch (16 commits) adds `EspnOddsProvider`/
+`EspnScoreProvider` behind the `ODDS_PROVIDER` kill switch, with a spec and implementation
+plan. `npm run typecheck` and `npm run lint` are clean, and all 34 pure-logic unit tests pass
+(mappers, `parseLine`, `fetchScoreboard`, providers).
+
+With outbound network opened up for this session, `EspnOddsProvider`/`EspnScoreProvider` were
+also run directly against ESPN's real live scoreboard (NFL and NCAAF, 2026-09-03) — no
+database involved, since the fetch/parse layer is pure. Results: 17 NFL and 177 NCAAF games
+parsed, **zero game- or result-level skips** on either sport, confirming the payload shape
+hasn't drifted since the 2026-08-22 spike and that the CFB `groups=80&limit=200` paging
+redesign holds at real scale. 86 of ~415 attempted market legs were skipped — all traced to
+ESPN's documented `"OFF"` price / out-of-range price paths (a book pulling a lopsided line),
+i.e. the defensive-parsing path working exactly as designed, not a bug. One sandbox-only
+wrinkle: Node's global `fetch()` doesn't honor `HTTPS_PROXY` by default in this environment,
+so a bare cloud-session request gets a `403` straight from ESPN's own edge (a datacenter-IP
+block, confirmed by comparing a proxied vs. direct `curl`) — running `node --use-env-proxy`
+routes it through the session's local proxy correctly. This is purely a quirk of *this sandbox
+reaching the internet*, not something the adapter code needs to handle — Vercel production has
+no such proxy in front of it.
+
+**Update, same day:** the "needs Docker" blocker above turned out to be specific to this
+repo's own `db:up` script, not to Postgres itself. This sandbox runs as root with passwordless
+`sudo` and no Docker daemon, but `apt-get install postgresql-16` and `pg_ctlcluster 16 main
+start` gave a real local Postgres with no container runtime involved. Against that: `npm run
+verify` — typecheck, lint, and all 866 tests across 81 files, including the previously-unrunnable
+`sync.test.ts`/`results.test.ts` — passes clean. Further, `syncOdds`/`syncResults` were run for
+real with `EspnOddsProvider`/`EspnScoreProvider` against live ESPN data, writing into that local
+database: 194 games, 329 markets, 658 selections, 658 snapshots, 0 games skipped, 43 markets
+skipped (same `"OFF"`-price pattern as above). A spot check of the written rows (real teams,
+real DraftKings spreads and moneylines, correct sides) confirms the data is right. That is
+spec success criterion 2 and the persistence half of task 7, mechanically exercised end to end
+from a cloud session — against a disposable local database, not Noah's real one.
+
+**A safety finding surfaced doing this, worth recording.** This container's environment already
+carries `DATABASE_URL`/`TEST_DATABASE_URL` pointing at a real hosted Supabase project
+(`aws-0-us-east-1.pooler.supabase.com`) — presumably the phase-6 production database. `src/db/migrate.ts`
+loads env with plain `dotenv` (no `override: true`), so it does *not* override an
+already-set `DATABASE_URL` — an `npm run db:migrate:test` run in this session tried to reach
+that Supabase project instead of the local `.env.test` target, and only failed to do anything on
+a connection timeout. `src/test/setup.ts` is the one file in this codebase that loads `.env.test`
+with `override: true`, which is why the actual test suite stayed safely local throughout this
+session. This is a real footgun for any cloud session with this environment's credentials
+injected and worth Noah's attention independent of phase 5 — see the plan's status note for
+detail. No production data was read or written while establishing this.
+
+**What genuinely still needs Noah, not a cloud AI session:** actually pointing
+`ODDS_PROVIDER=espn` at *production* and reconciling what lands there — that needs credentials
+only Noah holds, not more verification.
+
+**[PR #21](https://github.com/NoahJohn1/SimulatedBetting/pull/21) is open** against `main`,
+merged clean (branch was 6 behind / 20 ahead when opened, 0 behind / 22 ahead now), CI running,
+subscribed for monitoring.
 
 ---
 
@@ -59,9 +110,10 @@ surprise. 7, 8, and 9 are independent of each other and can be taken in any orde
 parallel — though 9 wants 7a done first, since half of what a smoke test checks is that the
 error states exist.
 
-Prerequisite for all of it: **the human test pass**. The suite is green, but no person has
-clicked through placing a parlay, disputing an event, or arbitrating a wager. Bugs found
-there change what these phases contain.
+Phase 5 is no longer gated on a human test pass — see its section below for what was verified
+instead and how. 6 through 9 are unaffected by that change and can still benefit from one: no
+person has clicked through placing a parlay, disputing an event, or arbitrating a wager, and a
+bug found there is filed as a ticket like any other, rather than blocking work in the meantime.
 
 ---
 
@@ -107,15 +159,24 @@ a variable sync cadence — real work, in service of a worse feed.
 7. **First real slate.** An admin-run backfill that pulls a genuine week into a real season,
    plus reconciliation over it.
 
-| Task                                                  | Status         | Owner                                          |
-| ----------------------------------------------------- | -------------- | ---------------------------------------------- |
-| Spike the payload — NFL and CFB, both endpoints       | 🔄 Noah, local | [CLOUD]                                        |
-| `EspnScoreProvider`                                   | 🔲 Backlog     | [CLOUD]                                        |
-| `EspnOddsProvider`                                    | 🔲 Backlog     | [CLOUD]                                        |
-| CFB paging by week and conference group               | 🔲 Backlog     | [CLOUD]                                        |
-| Defensive parsing — a reshaped field skips its market | 🔲 Backlog     | [CLOUD]                                        |
-| Kill switch env flag falling back to fixtures         | 🔲 Backlog     | [CLOUD] to write · **[NOAH]** to set in Vercel |
-| First real slate — admin backfill plus reconciliation | 🔲 Backlog     | **[NOAH]** — runs against production           |
+| Task                                                  | Status                                     | Owner                                          |
+| ----------------------------------------------------- | ------------------------------------------ | ----------------------------------------------- |
+| Spike the payload — NFL and CFB, both endpoints       | ✅ Complete                                | —                                                |
+| `EspnScoreProvider`                                   | ✅ Complete                                | —                                                |
+| `EspnOddsProvider`                                    | ✅ Complete                                | —                                                |
+| CFB paging by week and conference group               | ✅ Complete — one request (`groups`/`limit`), not a loop; see spec | —                          |
+| Defensive parsing — a reshaped field skips its market | ✅ Complete                                | —                                                |
+| Kill switch env flag falling back to fixtures         | ✅ Code complete · 🔲 **[NOAH]** still needs to set it in Vercel | **[NOAH]** to set in Vercel        |
+| First real slate — admin backfill plus reconciliation | 🔄 Mechanically verified (2026-09-03) — `syncOdds`/`syncResults` run for real against live ESPN data, persisted correctly into a scratch Postgres (194 games, 329 markets, 658 selections, spot-checked); **only the actual run against production plus reconciliation is outstanding** | **[NOAH]** — runs against production |
+
+Everything in this table, including the persistence half of the last row, was built and
+verified from a Claude Code cloud session once outbound network was opened up and a local
+Postgres was hand-installed (`apt-get install postgresql-16`, no Docker) — see the
+[plan](plans/2026-08-22-espn-adapter-implementation.md)'s status note for the full detail,
+including why a bare cloud-session `fetch()` call needs `node --use-env-proxy` to reach ESPN
+here (a sandbox networking quirk, not something production needs). What's left is not a
+technical limitation of a cloud session at all: it's Noah's production credentials to run the
+real thing against, and a human's judgment for the test pass gate below.
 
 **The honest risk.** This is an undocumented endpoint with no SLA and no contract. It can
 change shape without notice. The mitigations are tasks 5 and 6 and the fact that this is a
@@ -296,8 +357,20 @@ smoke test is checking that error states exist, and they do.
   every balance. Repeatable before every deploy.
 - **Rate limiting on mutations.** Bet placement, offers, comments, reactions. Small group, low
   risk, but every one of these writes to the ledger or the feed.
-- **Load sanity.** A full CFB Saturday board and a season's worth of feed events, checked for
-  the queries that only get slow with real row counts.
+- **Load sanity.** ✅ Done 2026-09-03, from a cloud session against a local database (see
+  [repo-health.md 3.7](repo-health.md#37-postgres-without-docker-in-a-cloud-session)). Synced a
+  real 300-game NFL+NCAAF board via live ESPN (`withinDays: 120`), then drove 25 users through
+  the real `placeBet`/`toggleReaction`/`addComment`/`settleFinalGames` services: 1,500 bets (0
+  rejected), 1,703 feed events, 291 reactions, 92 comments, 178 bets settled for real payouts.
+  `getSeasonFeed` and `getMemberProfile` stayed at 10-19ms throughout. The one real finding:
+  `EXPLAIN ANALYZE` on the feed query showed a sequential scan immediately after a bulk data
+  load, which looked like a missing index — it wasn't. `feed_events_season_idx` already covers
+  exactly `(season_id, occurred_at desc, id desc)`; the planner just hadn't run `ANALYZE` yet
+  against the freshly inserted rows. Running it (bulk-inserting six more synthetic seasons to
+  ~19,700 total rows first) flipped the plan to a bitmap index scan on that exact index, 0.95ms.
+  Real traffic accumulates gradually enough for autovacuum to keep statistics current, so this
+  isn't a concern in production — it only showed up because a script inserted thousands of rows
+  in one burst. No index changes needed; the schema already had this covered.
 - **A house rules page.** Plain language: no real money, how the allowance works, what credits
   are and why they cannot become cash, who arbitrates and how.
 - **The new-member path.** What someone sees before an admin approves them, after approval, and
@@ -309,7 +382,7 @@ smoke test is checking that error states exist, and they do.
 | --------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------ |
 | A written smoke checklist                                             | 🔲 Backlog | [CLOUD] to draft · **[MANUAL]** to validate — it is derived from the test pass |
 | Rate limiting on mutations                                            | 🔲 Backlog | [CLOUD]                                                                        |
-| Load sanity — a full CFB Saturday and a season of feed events         | 🔲 Backlog | **[LOCAL]** — needs real row counts, so it needs a database                    |
+| Load sanity — a full CFB Saturday and a season of feed events         | ✅ Complete | —                                                                              |
 | A house rules page                                                    | 🔲 Backlog | [CLOUD]                                                                        |
 | The new-member path — `/pending`, `/join`, `/no-season` as a sequence | 🔲 Backlog | [CLOUD]                                                                        |
 
