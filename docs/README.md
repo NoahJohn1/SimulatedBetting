@@ -20,6 +20,8 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Docs status and archive plan](plans/2026-09-02-docs-status-and-archive-implementation-plan.md) | The task-by-task plan for that restructure                                                                                    |
 | [ESPN adapter spec](specs/2026-08-22-espn-adapter-design.md)                                    | Phase 5: `EspnOddsProvider`/`EspnScoreProvider`, the payload spike findings, the kill switch, success criteria               |
 | [ESPN adapter plan](plans/2026-08-22-espn-adapter-implementation.md)                            | The task-by-task plan, plus dated status notes on what was verified from a cloud session and how                             |
+| [Production deployment spec](specs/2026-09-02-production-deployment-design.md)                  | Phase 6's cloud half — the run record, alerting on cron failure and drift, Sentry, and the two admin screens                  |
+| [Production deployment plan](plans/2026-09-02-production-deployment-implementation-plan.md)     | The task-by-task plan for that work, lane-tagged, with what a cloud session can and cannot verify                             |
 
 ### Reference
 
@@ -173,6 +175,7 @@ Every open item from [the roadmap](roadmap.md#roadmap) and
 | -------------------------------------------------------------------------------------- | ------------- |
 | Uncomment the three cron `schedule:` lines                                             | repo health 3 |
 | Add `format:check` to `verify` and CI                                                  | repo health 5 |
+| Phase 6's `[CLOUD]` half — the run record, alerting, Sentry, and the two admin screens | roadmap 6     |
 | 7c component work — `Dialog`, `Sheet`, `Table`, `Toast`, `Card`'s element escape hatch | roadmap 7c    |
 | 7c layout fixes from the mobile audit                                                  | roadmap 7c    |
 | 7d craft — motion, accessibility, a dark-mode toggle                                   | roadmap 7d    |
