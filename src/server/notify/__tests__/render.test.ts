@@ -133,4 +133,29 @@ describe('renderDigest', () => {
     // Past 2^53 a JSON number would have lost digits by now.
     expect(email.text).toContain('9007199254740.99');
   });
+
+  it('mentions the weekly credits allowance beside the cash amount, not just the cash', () => {
+    const email = renderDigest(
+      [
+        row({
+          type: 'ALLOWANCE_PAID',
+          channel: 'DIGEST',
+          payload: { amountCents: '50000', creditAmountCents: '10000' },
+        }),
+      ],
+      BASE,
+    );
+
+    expect(email.text).toContain('500.00');
+    expect(email.text).toContain('100.00 credits');
+  });
+
+  it('says nothing about credits when the season grants none', () => {
+    const email = renderDigest(
+      [row({ type: 'ALLOWANCE_PAID', channel: 'DIGEST', payload: { amountCents: '50000' } })],
+      BASE,
+    );
+
+    expect(email.text).not.toContain('credits');
+  });
 });

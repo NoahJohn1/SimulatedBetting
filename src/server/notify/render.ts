@@ -131,7 +131,15 @@ export function renderDigest(rows: NotificationRow[], baseUrl: string): Rendered
       (sum, r) => sum + BigInt(String(r.payload.amountCents ?? '0')),
       0n,
     );
-    lines.push(`Your weekly allowance landed: ${money(total)}.`, '');
+    // Seasons grant a weekly credits top-up alongside the cash allowance (allowance.ts's
+    // creditAmountCents), and it was landing in the payload but never in the email — a real
+    // fact silently missing from the one place members are told what happened to their money.
+    const creditsTotal = allowances.reduce(
+      (sum, r) => sum + BigInt(String(r.payload.creditAmountCents ?? '0')),
+      0n,
+    );
+    const creditsPart = creditsTotal > 0n ? `, plus ${money(creditsTotal)} credits` : '';
+    lines.push(`Your weekly allowance landed: ${money(total)}${creditsPart}.`, '');
   }
 
   if (bets.length > 0) {
