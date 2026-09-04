@@ -1,6 +1,7 @@
 import { and, desc, eq, isNotNull, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { jobRuns, type JobName } from '@/db/schema';
+import { activeTransport } from '@/server/notify/transport';
 
 export type Freshness = 'fresh' | 'stale' | 'never-run';
 
@@ -15,9 +16,12 @@ export const STALE_AFTER_MS: Record<HealthJob, number> = {
   SETTLE: 30 * 60_000, // every 10 min
   RECONCILE: 26 * 60 * 60_000, // daily at 08:00
   ALLOWANCE: 8 * 24 * 60 * 60_000, // weekly, Tuesday
-  // Not yet in RECORDED_JOBS below, so this entry is unreachable until the notify job runner
-  // (a later task in the email-notifications plan) starts writing job_runs rows for it.
-  NOTIFY: 30 * 60_000,
+  // The `/api/cron/notify` route (daily at 13:00 UTC) now writes job_runs rows under this job
+  // name, but NOTIFY is deliberately not in RECORDED_JOBS below — this screen already reports
+  // whether mail is being sent at all via `emailTransport`, and a per-run staleness card for a
+  // once-a-day digest sweep was judged not worth the extra card. This entry stays so the
+  // `Record<HealthJob, ...>` below stays exhaustive if that judgement changes.
+  NOTIFY: 26 * 60 * 60_000, // daily at 13:00, same grace as RECONCILE's daily 08:00
 };
 
 /**
@@ -66,6 +70,8 @@ export interface HealthSnapshot {
   readAt: Date;
   /** True when job_runs could not be read at all — the migration has not been applied yet. */
   runRecordUnavailable: boolean;
+  /** 'console' means RESEND_API_KEY is unset and nothing is actually being sent (D68). */
+  emailTransport: 'resend' | 'console';
 }
 
 const RECORDED_JOBS: JobName[] = ['SETTLE', 'ALLOWANCE', 'RECONCILE'];
@@ -118,6 +124,7 @@ export async function readHealth(now: Date = new Date()): Promise<HealthSnapshot
     escrowHeldCents: await readEscrowHeld(),
     readAt: now,
     runRecordUnavailable: runs === null,
+    emailTransport: activeTransport(),
   };
 }
 

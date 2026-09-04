@@ -1,5 +1,6 @@
 import { authorizeCronRequest, jsonSafe } from '@/server/cron/auth';
 import { reconcileBalances, reconcileEscrow } from '@/server/money/reconcile';
+import { pruneNotifications } from '@/server/notify/deliver';
 import { raiseAlert } from '@/server/ops/alerts';
 import { pruneJobRuns, runJob } from '@/server/ops/job-runs';
 
@@ -57,8 +58,9 @@ export async function GET(request: Request): Promise<Response> {
       // a failed prune is housekeeping and must not fail a reconciliation run.
       try {
         await pruneJobRuns();
+        await pruneNotifications();
       } catch (err) {
-        console.error('[reconcile] pruning job_runs failed', err);
+        console.error('[reconcile] pruning bookkeeping tables failed', err);
       }
 
       const ok = discrepancies.length === 0 && escrowDiscrepancies.length === 0;

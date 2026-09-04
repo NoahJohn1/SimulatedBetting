@@ -15,7 +15,8 @@ const JOB_LABELS: Record<JobHealth['job'], string> = {
   SETTLE: 'Settlement',
   ALLOWANCE: 'Weekly allowance',
   RECONCILE: 'Reconciliation',
-  // Not yet in RECORDED_JOBS, so this label is unreachable until the notify job runner lands.
+  // Not in RECORDED_JOBS (see health.ts), so this label is unreachable — the notify cron's own
+  // health is reported instead via the "Email transport" row below, not a per-run staleness card.
   NOTIFY: 'Notifications',
 };
 
@@ -132,6 +133,11 @@ export default async function HealthPage() {
           <Row label="Markets suspended for stale data">{health.suspendedMarkets}</Row>
           <Row label="Credits locked in wager pots">
             <Money cents={health.escrowHeldCents} currency="CREDITS" />
+          </Row>
+          <Row label="Email transport">
+            {health.emailTransport === 'resend'
+              ? 'Resend'
+              : 'Console — RESEND_API_KEY is not set, so nothing is being sent'}
           </Row>
         </Card>
       </section>
