@@ -94,7 +94,13 @@ export async function deliverPending(
   }
 
   for (const row of sendable.filter((r) => r.channel === 'IMMEDIATE')) {
-    await deliverGroup([row], renderImmediate(toRow(row), baseUrl()), row.email, now, summary);
+    await renderAndDeliver(
+      [row],
+      () => renderImmediate(toRow(row), baseUrl()),
+      row.email,
+      now,
+      summary,
+    );
   }
 
   // One email per recipient, across types (D66).
@@ -106,10 +112,54 @@ export async function deliverPending(
   }
 
   for (const rows of byUser.values()) {
-    await deliverGroup(rows, renderDigest(rows.map(toRow), baseUrl()), rows[0].email, now, summary);
+    await renderAndDeliver(
+      rows,
+      () => renderDigest(rows.map(toRow), baseUrl()),
+      rows[0].email,
+      now,
+      summary,
+    );
   }
 
   return summary;
+}
+
+/**
+ * Rendering reads untyped, unvalidated jsonb (`notifications.payload`), so a single corrupted
+ * row — e.g. a non-numeric `stakeCents` blowing up `money()`'s `BigInt(...)` — must not be able
+ * to throw out of `deliverPending` and abort every other row in the same pass (design spec §5).
+ * A render failure is recorded as a failure for every row in the group, exactly like a
+ * `sendEmail` failure in `deliverGroup`, and the loop moves on.
+ */
+async function renderAndDeliver(
+  rows: PendingRow[],
+  renderFn: () => RenderedEmail,
+  to: string,
+  now: Date,
+  summary: DeliverSummary,
+): Promise<void> {
+  let email: RenderedEmail;
+  try {
+    email = renderFn();
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    const message = `${error.name}: ${error.message}`;
+    summary.failed += rows.length;
+    summary.errors.push(message);
+    for (const row of rows) {
+      const attempts = row.attempts + 1;
+      const exhausted = attempts >= MAX_ATTEMPTS;
+      await stamp(row.id, {
+        attempts,
+        error: message,
+        outcome: exhausted ? 'FAILED' : null,
+        sentAt: exhausted ? now : null,
+      });
+    }
+    return;
+  }
+
+  await deliverGroup(rows, email, to, now, summary);
 }
 
 async function deliverGroup(
@@ -144,6 +194,10 @@ async function deliverGroup(
   }
 }
 
+/**
+ * Never throws. A transient DB error stamping one row's outcome must not sink the rest of the
+ * pass either — the row is simply left as it was and picked up again next pass.
+ */
 async function stamp(
   id: string,
   set: {
@@ -153,7 +207,11 @@ async function stamp(
     error?: string | null;
   },
 ): Promise<void> {
-  await db.update(notifications).set(set).where(eq(notifications.id, id));
+  try {
+    await db.update(notifications).set(set).where(eq(notifications.id, id));
+  } catch (err) {
+    console.error('[notify] failed to stamp notification row', id, err);
+  }
 }
 
 /**

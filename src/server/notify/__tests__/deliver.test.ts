@@ -205,4 +205,36 @@ describe('deliverPending', () => {
     expect(summary).toEqual({ sent: 0, suppressed: 0, failed: 0, errors: [] });
     expect(sends).not.toHaveBeenCalled();
   });
+
+  it('keeps delivering other rows when one row has a payload that makes rendering throw', async () => {
+    const bad = await aUser('bad@example.com');
+    const good = await aUser('good@example.com');
+    // stakeCents is not a numeric string, so render.ts's money() throws a SyntaxError out of
+    // BigInt(String(...)) — before deliverGroup / sendEmail is ever reached for this row.
+    await queue(bad, 'WAGER_OFFERED', 'k-bad', { fromName: 'Dana', stakeCents: 'not-a-number' });
+    await queue(good, 'WAGER_OFFERED', 'k-good', { fromName: 'Pat', subject: 'Chiefs -3.5' });
+
+    const summary = await deliverPending();
+
+    // The well-formed row still went out despite the other row's payload being malformed.
+    expect(summary.sent).toBe(1);
+    expect(sends).toHaveBeenCalledTimes(1);
+    expect(sends.mock.calls[0][0].to).toBe('good@example.com');
+
+    const rows = await db.select().from(notifications);
+    const goodRow = rows.find((r) => r.dedupeKey === 'k-good')!;
+    expect(goodRow.outcome).toBe('SENT');
+    expect(goodRow.sentAt).not.toBeNull();
+
+    // The malformed row is recorded as a failure — not silently dropped, not sunk into the whole
+    // pass — and is left for retry next pass since it hasn't exhausted its attempts.
+    const badRow = rows.find((r) => r.dedupeKey === 'k-bad')!;
+    expect(badRow.attempts).toBe(1);
+    expect(badRow.outcome).toBeNull();
+    expect(badRow.sentAt).toBeNull();
+    expect(badRow.error).toContain('BigInt');
+
+    expect(summary.failed).toBe(1);
+    expect(summary.errors[0]).toContain('BigInt');
+  });
 });
