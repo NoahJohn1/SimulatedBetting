@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-24
 **Status:** Specified
-**Scope:** Phase 7b of the UI ladder (see [../roadmap.md](../roadmap.md#7b--design-system))
+**Scope:** Phase 7b of the UI ladder (see [../roadmap.md](../roadmap.md#roadmap))
 **Depends on:** [7a](2026-08-22-ui-foundations-design.md), which shipped the six shared
 components this phase retokenizes and the structural-test pattern it extends.
 **Blocks:** [7c](../roadmap.md#7c--screen-by-screen-rebuild), which rebuilds every screen

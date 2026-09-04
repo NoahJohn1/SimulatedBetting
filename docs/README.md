@@ -7,21 +7,21 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 
 ### Active
 
-| Document                                                                                        | What's in it                                                                                                                  |
-| ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| [Roadmap](roadmap.md)                                                                           | The master status table — every item, done or not, with who finishes what's left                                              |
-| [Repo health](repo-health.md)                                                                   | The CI gate, repo hygiene, Claude Code tooling, and issue tracking — with what is deliberately skipped at this project's size |
-| [Mobile audit](mobile-audit.md)                                                                 | Every screen at 375×812, with each finding assigned to the ladder rung that owns its fix                                      |
-| [Design-system audit](design-system-audit.md)                                                   | All 18 routes in both themes at two viewports, after the 7b sweep, with each remaining finding assigned to a rung             |
-| [Repo health plan](plans/2026-08-20-repo-health-implementation-plan.md)                         | The task-by-task plan for the repo health work, written for parallel execution                                                |
-| [Cloud lane spec](specs/2026-09-02-cloud-lane-completion-design.md)                             | Closing every [CLOUD] item in repo health — the cron guard, the funnel guard test, the CI chore, both hooks, and Prettier     |
-| [Cloud lane plan](plans/2026-09-02-cloud-lane-completion-implementation-plan.md)                | The task-by-task plan for that work                                                                                           |
-| [Docs status and archive spec](specs/2026-09-02-docs-status-and-archive-design.md)              | The owner taxonomy, the roadmap's master table, and what moved to the archive                                                 |
-| [Docs status and archive plan](plans/2026-09-02-docs-status-and-archive-implementation-plan.md) | The task-by-task plan for that restructure                                                                                    |
-| [ESPN adapter spec](specs/2026-08-22-espn-adapter-design.md)                                    | Phase 5: `EspnOddsProvider`/`EspnScoreProvider`, the payload spike findings, the kill switch, success criteria                |
-| [ESPN adapter plan](plans/2026-08-22-espn-adapter-implementation.md)                            | The task-by-task plan, plus dated status notes on what was verified from a cloud session and how                              |
-| [Email notifications spec](specs/2026-09-03-email-notifications-design.md)                      | Phase 8: the notification outbox, keyed sends from the feed emit points, per-type preferences, and one-click unsubscribe      |
-| [Email notifications plan](plans/2026-09-03-email-notifications-implementation-plan.md)         | The task-by-task plan for that work, lane-tagged, with what still needs Noah and what needs a real inbox                      |
+| Document                                                                                        | What's in it                                                                                                                         |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| [Roadmap](roadmap.md)                                                                           | The master status table — every item, done or not, with who finishes what's left                                                     |
+| [Repo health](repo-health.md)                                                                   | The CI gate, repo hygiene, Claude Code tooling, and issue tracking — with what is deliberately skipped at this project's size        |
+| [Mobile audit](mobile-audit.md)                                                                 | Every screen at 375×812, with each finding assigned to the ladder rung that owns its fix                                             |
+| [Design-system audit](design-system-audit.md)                                                   | All 18 routes in both themes at two viewports, after the 7b sweep, with each remaining finding assigned to a rung                    |
+| [Repo health plan](plans/2026-08-20-repo-health-implementation-plan.md)                         | The task-by-task plan for the repo health work, written for parallel execution                                                       |
+| [Cloud lane spec](specs/2026-09-02-cloud-lane-completion-design.md)                             | Closing every [CLOUD] item in repo health — the cron guard, the funnel guard test, the CI chore, both hooks, and Prettier            |
+| [Cloud lane plan](plans/2026-09-02-cloud-lane-completion-implementation-plan.md)                | The task-by-task plan for that work                                                                                                  |
+| [Docs status and archive spec](specs/2026-09-02-docs-status-and-archive-design.md)              | The owner taxonomy, the roadmap's master table, and what moved to the archive                                                        |
+| [Docs status and archive plan](plans/2026-09-02-docs-status-and-archive-implementation-plan.md) | The task-by-task plan for that restructure                                                                                           |
+| [ESPN adapter spec](specs/2026-08-22-espn-adapter-design.md)                                    | Phase 5: `EspnOddsProvider`/`EspnScoreProvider`, the payload spike findings, the kill switch, success criteria                       |
+| [ESPN adapter plan](plans/2026-08-22-espn-adapter-implementation.md)                            | The task-by-task plan, plus dated status notes on what was verified from a cloud session and how                                     |
+| [Email notifications spec](specs/2026-09-03-email-notifications-design.md)                      | Phase 8: the notification outbox, keyed sends from the feed emit points, per-type preferences, and one-click unsubscribe             |
+| [Email notifications plan](plans/2026-09-03-email-notifications-implementation-plan.md)         | The task-by-task plan for that work, lane-tagged, with what still needs Noah and what needs a real inbox                             |
 | [Hardening spec](specs/2026-09-03-hardening-design.md)                                          | Phase 9's cloud half — rate limiting on every mutation, the house rules page, the new-member path as a sequence, the smoke checklist |
 | [Hardening plan](plans/2026-09-03-hardening-implementation-plan.md)                             | The task-by-task plan for that work, lane-tagged, with what a cloud session can and cannot verify                                    |
 
@@ -72,7 +72,7 @@ Three properties the design is organized around:
 ## Where things stand
 
 All four subsystems are built end-to-end and verified: `npm run verify` (typecheck, lint,
-81 test files / 866 tests) passes clean, and the app runs, seeds a fixture slate, takes a bet
+88 test files / 950 tests as of 2026-09-04) passes clean, and the app runs, seeds a fixture slate, takes a bet
 through placement and settlement (including a push), reconciles the ledger correctly in both
 currencies, and posts and reads back the feed cards those actions generate — including a
 custom event carried from creation through a disputed resolution and an admin correction, and
@@ -186,7 +186,7 @@ phase: `/admin/health` reads the run record and reconciliation drift in one plac
 starting next season no longer requires shell access to the database
 ([D61](decisions.md#d61--the-season-screen-creates-upcoming-activation-is-a-separate-guarded-act)).
 None of it does anything in production until the migration is applied and the environment
-variables are set — see [roadmap 6](roadmap.md#after-this-merges--what-is-still-owed).
+variables are set — see [roadmap 6](roadmap.md#still-owed-now-that-the-cloud-half-has-merged).
 
 ### What is left
 
@@ -195,19 +195,29 @@ Every open item from [the roadmap](roadmap.md#roadmap) and
 
 #### What a cloud session can pick up now
 
-| Item                                                                                   | Source        |
-| -------------------------------------------------------------------------------------- | ------------- |
-| Uncomment the three cron `schedule:` lines                                             | repo health 3 |
-| Add `format:check` to `verify` and CI                                                  | repo health 5 |
-| 7c component work — `Dialog`, `Sheet`, `Table`, `Toast`, `Card`'s element escape hatch | roadmap 7c    |
-| 7c layout fixes from the mobile audit                                                  | roadmap 7c    |
-| 7d craft — motion, accessibility, a dark-mode toggle                                   | roadmap 7d    |
-| Rate limiting, house rules page, the new-member path                                   | roadmap 9     |
+| Item                                                                                   | Source        | Has a plan                                                                    |
+| -------------------------------------------------------------------------------------- | ------------- | ----------------------------------------------------------------------------- |
+| Uncomment the three cron `schedule:` lines                                             | repo health 3 | —                                                                             |
+| Add `format:check` to `verify` and CI                                                  | repo health 5 | —                                                                             |
+| Instrument `sync-odds` with `runJob`                                                   | roadmap 6     | [plan](archive/plans/2026-09-02-production-deployment-implementation-plan.md) |
+| 7c component work — `Dialog`, `Sheet`, `Table`, `Toast`, `Card`'s element escape hatch | roadmap 7c    | —                                                                             |
+| 7c layout fixes from the mobile audit                                                  | roadmap 7c    | —                                                                             |
+| 7d craft — motion, accessibility, a dark-mode toggle                                   | roadmap 7d    | —                                                                             |
+| The whole of phase 8 — the outbox, the transport, preferences, unsubscribe             | roadmap 8     | [plan](plans/2026-09-03-email-notifications-implementation-plan.md)           |
+| Rate limiting, house rules page, the new-member path, the smoke checklist draft        | roadmap 9     | [plan](plans/2026-09-03-hardening-implementation-plan.md)                     |
 
-Row 3 above is `[CLOUD]` work that is currently blocked, not ready to pick up — see its
-"Blocked on" column in [repo health's Outstanding table](repo-health.md#outstanding). Row 5
+Row 1 above is `[CLOUD]` work that is currently blocked, not ready to pick up — see its
+"Blocked on" column in [repo health's Outstanding table](repo-health.md#outstanding). Row 2
 (`format:check`) was blocked on the same thing until the ESPN adapter's Prettier reconciliation
 landed — it is unblocked now.
+
+**The last two rows are the largest pieces of unbuilt work in the repo, and both are fully
+planned.** Phases 8 and 9 were designed in parallel cloud sessions and merged as specs and plans
+only — 16 tasks and 11 tasks respectively, each lane-tagged and each written to be executed by a
+session that has not read this conversation. Neither has a line of implementation code. Their
+decisions are recorded at
+[D63–D68](decisions.md#d63--every-send-is-keyed-but-not-every-send-rides-a-feed-event) and
+[D69–D73](decisions.md#d69--rate-limiting-is-a-postgres-fixed-window-counter-enforced-at-the-action-boundary).
 
 #### What needs a desktop with Docker
 
@@ -230,6 +240,7 @@ Docker at all, just a database, which a cloud session can now get on its own. Se
 | Hosted Postgres, Sentry signup, alerting destination                                                                               | roadmap 6     |
 | Apply the `job_runs` migration; set `ALERT_WEBHOOK_URL` and the Sentry DSNs — **phase 6's alerting does nothing until this lands** | roadmap 6     |
 | Email provider signup and sending-domain DNS                                                                                       | roadmap 8     |
+| Apply the notification migration to production, once phase 8 is built                                                              | roadmap 8     |
 
 #### What needs a person, either of you
 

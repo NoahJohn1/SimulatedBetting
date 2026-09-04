@@ -15,9 +15,9 @@ and the health reads. One new table, `job_runs`. Two new admin screens. Sentry w
 **Tech Stack:** Next.js 16.3.3 (App Router), TypeScript, Drizzle ORM + Postgres, Vitest,
 `@sentry/nextjs` 10.x, Tailwind v4 with this repo's semantic token layer.
 
-**Spec:** [`docs/specs/2026-09-02-production-deployment-design.md`](../specs/2026-09-02-production-deployment-design.md).
-Read it before Task 1. Decisions [D58](../decisions.md#d58--cron-health-is-a-job_runs-table-and-sync-odds-is-derived-from-market-freshness)
-through [D62](../decisions.md#d62--sentry-is-inert-without-a-dsn) are already recorded.
+**Spec:** [`docs/specs/2026-09-02-production-deployment-design.md`](../../specs/2026-09-02-production-deployment-design.md).
+Read it before Task 1. Decisions [D58](../../decisions.md#d58--cron-health-is-a-job_runs-table-and-sync-odds-is-derived-from-market-freshness)
+through [D62](../../decisions.md#d62--sentry-is-inert-without-a-dsn) are already recorded.
 
 ---
 
@@ -37,9 +37,9 @@ These apply to every task. They are not repeated per task.
 - **`npm run verify` cannot run in full either** — it ends in `npm test`. Run
   `npm run typecheck && npm run lint` as the cloud-session stand-in, then `npm run build`.
 - **Run `npm run format` before every commit.** Prettier is adopted
-  ([D55](../decisions.md#d55--prettier-adopted-with-a-config-matched-to-the-existing-code)).
+  ([D55](../../decisions.md#d55--prettier-adopted-with-a-config-matched-to-the-existing-code)).
   `format:check` is deliberately **not** in `verify` or CI — do not add it, that is
-  [repo-health outstanding 6](../repo-health.md#outstanding) and it is blocked on Noah.
+  [repo-health outstanding 6](../../repo-health.md#outstanding) and it is blocked on Noah.
 - **Money is `bigint` cents everywhere.** Never `Number` an amount. `JSON.stringify` throws on
   bigint — route through `jsonSafe` in `src/server/cron/auth.ts`.
 - **No raw colour classes in `.tsx`.** `src/app/__tests__/token-lint.test.ts` fails the build on a
@@ -254,7 +254,7 @@ npm install --save-exact @sentry/nextjs@10.73.0
 ```
 
 Pinned exact because the roadmap's monthly Dependabot run is what moves dependencies here
-([D57](../decisions.md#d57--dependency-majors-blocked-upstream-are-closed-not-ignored)), and a
+([D57](../../decisions.md#d57--dependency-majors-blocked-upstream-are-closed-not-ignored)), and a
 caret on a monitoring SDK is a floating build input for no benefit.
 
 - [ ] **Step 2: The two server-side init modules**
@@ -2728,7 +2728,7 @@ activate.test.ts needs Postgres and was NOT run."
 - Modify: `.env.example`, `README.md`, `docs/README.md`, `docs/roadmap.md`
 
 The spec, this plan, and D58–D62 already exist and are already listed in
-[`docs/README.md`](../README.md) — they landed with the two design-session commits, before any code
+[`docs/README.md`](../../README.md) — they landed with the two design-session commits, before any code
 did. This task records what shipped.
 
 - [ ] **Step 1: Document the four new variables**
@@ -2765,7 +2765,7 @@ In `docs/roadmap.md`, in the `## 6 — Production deployment` table:
 Leave every `[NOAH]` row exactly as it is. Then add one new row:
 
 ```
-| Instrument `sync-odds` with `runJob`                                  | 🔲 Backlog | [CLOUD], after the ESPN adapter        | Deferred by [D58](decisions.md#d58--cron-health-is-a-job_runs-table-and-sync-odds-is-derived-from-market-freshness) — a one-line addition, not a correction |
+| Instrument `sync-odds` with `runJob`                                  | 🔲 Backlog | [CLOUD], after the ESPN adapter        | Deferred by [D58](../../decisions.md#d58--cron-health-is-a-job_runs-table-and-sync-odds-is-derived-from-market-freshness) — a one-line addition, not a correction |
 ```
 
 And add a line under the table recording the deploy-order fact, so it is not rediscovered:
@@ -2835,7 +2835,7 @@ code, and only row 1 gates anything at all.
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | **Apply the `job_runs` migration** to the production database                                                                                    | **[NOAH]**   | `/admin/health` shows every job as never-run and says so in a banner, and no alert can fire. Nothing else changes: a failed `job_runs` write is logged and swallowed, so settlement, allowance and reconciliation are unaffected |
 | 2   | Create a Discord or Slack incoming webhook and set **`ALERT_WEBHOOK_URL`** in Vercel                                                             | **[NOAH]**   | Every alert is written to the Vercel function log and sent nowhere. The webhook is what makes the alarm audible                                                                                                                  |
-| 3   | Sign up for Sentry's free tier and set **`SENTRY_DSN`** and **`NEXT_PUBLIC_SENTRY_DSN`**                                                         | **[NOAH]**   | `Sentry.init` is never called and nothing reports ([D62](decisions.md#d62--sentry-is-inert-without-a-dsn))                                                                                                                       |
+| 3   | Sign up for Sentry's free tier and set **`SENTRY_DSN`** and **`NEXT_PUBLIC_SENTRY_DSN`**                                                         | **[NOAH]**   | `Sentry.init` is never called and nothing reports ([D62](../../decisions.md#d62--sentry-is-inert-without-a-dsn))                                                                                                                 |
 | 4   | Optionally set **`SENTRY_AUTH_TOKEN`**, `SENTRY_ORG`, `SENTRY_PROJECT`                                                                           | **[NOAH]**   | Sentry works, but its stack traces point at minified bundle lines because no source maps were uploaded at build time                                                                                                             |
 | 5   | **Break a cron on purpose and confirm the alert arrives** — e.g. dispatch `settle` with a wrong `CRON_SECRET`, or watch the first real reconcile | **[MANUAL]** | The alarm is untested, which for practical purposes is the same as not having one. Belongs in the [phase 9](#9--hardening) smoke checklist                                                                                       |
 | 6   | Run the full suite once on a desktop with Docker                                                                                                 | **[LOCAL]**  | CI is the only thing that has ever executed `job-runs.test.ts`, `health-reads.test.ts` and `activate.test.ts` — they were written in a cloud session with no Postgres                                                            |
@@ -2864,8 +2864,8 @@ opening sentence promises that nothing in it is unblocked `[CLOUD]` work. These 
 that promise — all three are `[NOAH]` or `[LOCAL]`. Append after row 10:
 
 ```markdown
-| 11  | **Apply the `job_runs` migration to production**                                | **[NOAH]**  | Nothing. Until it lands, `/admin/health` reports every job as never-run and no alert can fire — see [roadmap 6](roadmap.md#after-this-merges--what-is-still-owed)                                |
-| 12  | Set `ALERT_WEBHOOK_URL`, and the two Sentry DSNs                                | **[NOAH]**  | Nothing. Vercel environment variables only; the code is inert without them by design ([D59](decisions.md#d59--one-generic-webhook-carrying-both-content-and-text), [D62](decisions.md#d62--sentry-is-inert-without-a-dsn)) |
+| 11  | **Apply the `job_runs` migration to production**                                | **[NOAH]**  | Nothing. Until it lands, `/admin/health` reports every job as never-run and no alert can fire — see [roadmap 6](../../roadmap.md#still-owed-now-that-the-cloud-half-has-merged)                                |
+| 12  | Set `ALERT_WEBHOOK_URL`, and the two Sentry DSNs                                | **[NOAH]**  | Nothing. Vercel environment variables only; the code is inert without them by design ([D59](../../decisions.md#d59--one-generic-webhook-carrying-both-content-and-text), [D62](../../decisions.md#d62--sentry-is-inert-without-a-dsn)) |
 | 13  | Run the phase-6 DB-backed tests on a desktop                                    | **[LOCAL]** | A desktop with Docker. `job-runs.test.ts`, `health-reads.test.ts` and `activate.test.ts` were written in a cloud session and have only ever run in CI                                            |
 ````
 
@@ -2901,7 +2901,7 @@ Then check by hand:
 - Every `decisions.md#dNN--...` anchor added in this task resolves. GitHub lowercases the heading,
   deletes punctuation, and turns each space into a hyphen — so the em dash with spaces around it
   becomes a double hyphen.
-- The roadmap's new `#after-this-merges--what-is-still-owed` anchor matches its heading.
+- The roadmap's new `#still-owed-now-that-the-cloud-half-has-merged` anchor matches its heading.
 - No row in repo-health's Outstanding table is unblocked `[CLOUD]` work, which is what that
   table's opening sentence promises.
 
@@ -2946,17 +2946,17 @@ This table is for whoever executes the plan. **Task 11 is what writes the same h
 repository's own documents**, where it survives this plan being archived — do not treat the two as
 duplicates and skip one.
 
-| Item                                                     | Lane                   | What it needs                                                                                                                                    |
-| -------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Apply the `job_runs` migration to production             | **[NOAH]**             | `npm run db:migrate` against the production `DATABASE_URL`, or the migrations-on-deploy row                                                      |
-| Create the alert destination and set `ALERT_WEBHOOK_URL` | **[NOAH]**             | A Discord or Slack incoming webhook, then the Vercel env var. No redeploy of code needed                                                         |
-| Sentry signup, `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`    | **[NOAH]**             | The free tier. Optionally `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` for source maps                                                    |
-| Confirm an alert actually arrives                        | **[MANUAL]**           | Fire a failure on purpose once the webhook is set — the phase-9 smoke pass                                                                       |
-| Run this plan's DB tests                                 | **CI**, or **[LOCAL]** | CI runs them on the first push. On a desktop: `npm run db:up && npm run verify`                                                                  |
-| Instrument `sync-odds` with `runJob`                     | **[CLOUD]**, later     | Noah's ESPN adapter must land first ([D58](../decisions.md#d58--cron-health-is-a-job_runs-table-and-sync-odds-is-derived-from-market-freshness)) |
-| Hosted Postgres, Vercel env wiring, `CRON_SECRET`        | **[NOAH]**             | Out of this plan's scope by the brief                                                                                                            |
-| Uncomment the `schedule:` lines in `cron.yml`            | **[CLOUD]**, blocked   | [repo-health outstanding 3](../repo-health.md#outstanding) — needs the Actions secrets first                                                     |
-| Add `format:check` to `verify` and CI                    | **[CLOUD]**, blocked   | [repo-health outstanding 6](../repo-health.md#outstanding) — needs the adapter reconciled first                                                  |
+| Item                                                     | Lane                   | What it needs                                                                                                                                       |
+| -------------------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Apply the `job_runs` migration to production             | **[NOAH]**             | `npm run db:migrate` against the production `DATABASE_URL`, or the migrations-on-deploy row                                                         |
+| Create the alert destination and set `ALERT_WEBHOOK_URL` | **[NOAH]**             | A Discord or Slack incoming webhook, then the Vercel env var. No redeploy of code needed                                                            |
+| Sentry signup, `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`    | **[NOAH]**             | The free tier. Optionally `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` for source maps                                                       |
+| Confirm an alert actually arrives                        | **[MANUAL]**           | Fire a failure on purpose once the webhook is set — the phase-9 smoke pass                                                                          |
+| Run this plan's DB tests                                 | **CI**, or **[LOCAL]** | CI runs them on the first push. On a desktop: `npm run db:up && npm run verify`                                                                     |
+| Instrument `sync-odds` with `runJob`                     | **[CLOUD]**, later     | Noah's ESPN adapter must land first ([D58](../../decisions.md#d58--cron-health-is-a-job_runs-table-and-sync-odds-is-derived-from-market-freshness)) |
+| Hosted Postgres, Vercel env wiring, `CRON_SECRET`        | **[NOAH]**             | Out of this plan's scope by the brief                                                                                                               |
+| Uncomment the `schedule:` lines in `cron.yml`            | **[CLOUD]**, blocked   | [repo-health outstanding 3](../../repo-health.md#outstanding) — needs the Actions secrets first                                                     |
+| Add `format:check` to `verify` and CI                    | **[CLOUD]**, blocked   | [repo-health outstanding 6](../../repo-health.md#outstanding) — needs the adapter reconciled first                                                  |
 
 ---
 

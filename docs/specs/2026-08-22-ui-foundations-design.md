@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-22
 **Status:** Specified
-**Scope:** Phase 7a of the UI ladder (see [../roadmap.md](../roadmap.md#7a--foundations))
+**Scope:** Phase 7a of the UI ladder (see [../roadmap.md](../roadmap.md#roadmap))
 **Depends on:** nothing. 7a touches no server code, no schema, and no money path.
 **Blocks:** [Phase 9 — hardening](../roadmap.md#9--hardening), which wants the error states to
 exist before a smoke checklist can check them.
