@@ -20,6 +20,8 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Docs status and archive plan](plans/2026-09-02-docs-status-and-archive-implementation-plan.md) | The task-by-task plan for that restructure                                                                                    |
 | [ESPN adapter spec](specs/2026-08-22-espn-adapter-design.md)                                    | Phase 5: `EspnOddsProvider`/`EspnScoreProvider`, the payload spike findings, the kill switch, success criteria                |
 | [ESPN adapter plan](plans/2026-08-22-espn-adapter-implementation.md)                            | The task-by-task plan, plus dated status notes on what was verified from a cloud session and how                              |
+| [Email notifications spec](specs/2026-09-03-email-notifications-design.md)                      | Phase 8: the notification outbox, keyed sends from the feed emit points, per-type preferences, and one-click unsubscribe      |
+| [Email notifications plan](plans/2026-09-03-email-notifications-implementation-plan.md)         | The task-by-task plan for that work, lane-tagged, with what still needs Noah and what needs a real inbox                      |
 
 ### Reference
 
