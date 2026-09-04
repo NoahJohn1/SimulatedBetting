@@ -31,6 +31,7 @@ async function settlePass() {
     wagersExpired: wagers.expired,
     wagersSettled: wagers.settled,
     wagersOverdue: wagers.overdueFlagged,
+    wagersExpiring: wagers.expiringFlagged,
     wagerErrors: wagers.errors,
   };
 }
