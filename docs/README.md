@@ -18,35 +18,35 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Cloud lane plan](plans/2026-09-02-cloud-lane-completion-implementation-plan.md)                | The task-by-task plan for that work                                                                                           |
 | [Docs status and archive spec](specs/2026-09-02-docs-status-and-archive-design.md)              | The owner taxonomy, the roadmap's master table, and what moved to the archive                                                 |
 | [Docs status and archive plan](plans/2026-09-02-docs-status-and-archive-implementation-plan.md) | The task-by-task plan for that restructure                                                                                    |
-| [ESPN adapter spec](specs/2026-08-22-espn-adapter-design.md)                                    | Phase 5: `EspnOddsProvider`/`EspnScoreProvider`, the payload spike findings, the kill switch, success criteria               |
-| [ESPN adapter plan](plans/2026-08-22-espn-adapter-implementation.md)                            | The task-by-task plan, plus dated status notes on what was verified from a cloud session and how                             |
-| [Production deployment spec](specs/2026-09-02-production-deployment-design.md)                  | Phase 6's cloud half — the run record, alerting on cron failure and drift, Sentry, and the two admin screens                  |
-| [Production deployment plan](plans/2026-09-02-production-deployment-implementation-plan.md)     | The task-by-task plan for that work, lane-tagged, with what a cloud session can and cannot verify                             |
+| [ESPN adapter spec](specs/2026-08-22-espn-adapter-design.md)                                    | Phase 5: `EspnOddsProvider`/`EspnScoreProvider`, the payload spike findings, the kill switch, success criteria                |
+| [ESPN adapter plan](plans/2026-08-22-espn-adapter-implementation.md)                            | The task-by-task plan, plus dated status notes on what was verified from a cloud session and how                              |
 
 ### Reference
 
-| Document                                                                   | What's in it                                                                                                   |
-| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| [Core betting engine spec](specs/2026-08-14-core-betting-engine-design.md) | The v1 build: architecture, data model, odds math, grading rules, jobs, failure handling, screens, testing     |
-| [Social layer spec](specs/2026-08-17-social-layer-design.md)               | Subsystem 2: the season activity feed, reactions and comments, member profiles, per-viewer feed filters        |
-| [Custom events spec](specs/2026-08-17-custom-events-design.md)             | Subsystem 3: member-created markets, the credits currency, human resolution and disputes                       |
-| [Peer-to-peer bets spec](specs/2026-08-19-peer-to-peer-bets-design.md)     | Subsystem 4: member-vs-member wagers, escrow, two-party resolution, admin arbitration, head-to-head            |
-| [UI foundations spec](specs/2026-08-22-ui-foundations-design.md)           | Phase 7a: error, not-found, and loading boundaries inside the app shell; metadata, icons, and the web manifest |
-| [Design system spec](specs/2026-08-24-design-system-design.md)             | Phase 7b: the two-tier token layer, dark mode as a remap, the shared component set, and the sweep              |
-| [Decision log](decisions.md)                                               | Every design decision, what was rejected, and why                                                              |
+| Document                                                                       | What's in it                                                                                                   |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| [Core betting engine spec](specs/2026-08-14-core-betting-engine-design.md)     | The v1 build: architecture, data model, odds math, grading rules, jobs, failure handling, screens, testing     |
+| [Social layer spec](specs/2026-08-17-social-layer-design.md)                   | Subsystem 2: the season activity feed, reactions and comments, member profiles, per-viewer feed filters        |
+| [Custom events spec](specs/2026-08-17-custom-events-design.md)                 | Subsystem 3: member-created markets, the credits currency, human resolution and disputes                       |
+| [Peer-to-peer bets spec](specs/2026-08-19-peer-to-peer-bets-design.md)         | Subsystem 4: member-vs-member wagers, escrow, two-party resolution, admin arbitration, head-to-head            |
+| [UI foundations spec](specs/2026-08-22-ui-foundations-design.md)               | Phase 7a: error, not-found, and loading boundaries inside the app shell; metadata, icons, and the web manifest |
+| [Design system spec](specs/2026-08-24-design-system-design.md)                 | Phase 7b: the two-tier token layer, dark mode as a remap, the shared component set, and the sweep              |
+| [Production deployment spec](specs/2026-09-02-production-deployment-design.md) | Phase 6's cloud half — the run record, alerting on cron failure and drift, Sentry, and the two admin screens   |
+| [Decision log](decisions.md)                                                   | Every design decision, what was rejected, and why                                                              |
 
 ### Archive
 
 Finished implementation plans, moved rather than deleted — each is the record of how its
 subsystem was built.
 
-| Document                                                                                    | What shipped          |
-| ------------------------------------------------------------------------------------------- | --------------------- |
-| [Social layer plan](archive/plans/2026-08-17-social-layer-implementation-plan.md)           | Subsystem 2 — shipped |
-| [Custom events plan](archive/plans/2026-08-17-custom-events-implementation-plan.md)         | Subsystem 3 — shipped |
-| [Peer-to-peer bets plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md) | Subsystem 4 — shipped |
-| [UI foundations plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md)       | Phase 7a — shipped    |
-| [Design system plan](archive/plans/2026-08-24-design-system-implementation-plan.md)         | Phase 7b — shipped    |
+| Document                                                                                            | What shipped                 |
+| --------------------------------------------------------------------------------------------------- | ---------------------------- |
+| [Social layer plan](archive/plans/2026-08-17-social-layer-implementation-plan.md)                   | Subsystem 2 — shipped        |
+| [Custom events plan](archive/plans/2026-08-17-custom-events-implementation-plan.md)                 | Subsystem 3 — shipped        |
+| [Peer-to-peer bets plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md)         | Subsystem 4 — shipped        |
+| [UI foundations plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md)               | Phase 7a — shipped           |
+| [Design system plan](archive/plans/2026-08-24-design-system-implementation-plan.md)                 | Phase 7b — shipped           |
+| [Production deployment plan](archive/plans/2026-09-02-production-deployment-implementation-plan.md) | Phase 6 cloud half — shipped |
 
 ## The short version
 
@@ -165,6 +165,25 @@ for a real correlated-subquery bug the profile stats query's own test caught mid
 - Four screens — the wagers board, the offer form, wager detail, and the admin arbitration
   queue — reached from a Bets \| Wagers control on `/bets` rather than a seventh bottom tab
 
+**Phase 6 — production deployment, the cloud half — is also merged.** A `job_runs` table records
+every scheduled job's start, finish, and result, with `sync-odds` read instead from market
+freshness since it stays uninstrumented until the ESPN adapter lands
+([D58](decisions.md#d58--cron-health-is-a-job_runs-table-and-sync-odds-is-derived-from-market-freshness)).
+Alerting fires on both a Discord/Slack-compatible webhook and Sentry in parallel, on transition
+rather than on every failing run, so a job stuck failing for hours does not spam and a job stuck
+failing forever does not go silent
+([D59](decisions.md#d59--one-generic-webhook-carrying-both-content-and-text),
+[D60](decisions.md#d60--alerts-fire-on-transition-not-on-every-failing-run)). `@sentry/nextjs` is
+wired through `instrumentation.ts` but stays inert with no DSN configured, so it merged and
+shipped ahead of the signup that makes it report
+([D62](decisions.md#d62--sentry-is-inert-without-a-dsn)). Two new admin screens close out the
+phase: `/admin/health` reads the run record and reconciliation drift in one place, and
+`/admin/seasons` creates a season as `UPCOMING` with activation as a separate, guarded action, so
+starting next season no longer requires shell access to the database
+([D61](decisions.md#d61--the-season-screen-creates-upcoming-activation-is-a-separate-guarded-act)).
+None of it does anything in production until the migration is applied and the environment
+variables are set — see [roadmap 6](roadmap.md#after-this-merges--what-is-still-owed).
+
 ### What is left
 
 Every open item from [the roadmap](roadmap.md#roadmap) and
@@ -176,7 +195,6 @@ Every open item from [the roadmap](roadmap.md#roadmap) and
 | -------------------------------------------------------------------------------------- | ------------- |
 | Uncomment the three cron `schedule:` lines                                             | repo health 3 |
 | Add `format:check` to `verify` and CI                                                  | repo health 5 |
-| Phase 6's `[CLOUD]` half — the run record, alerting, Sentry, and the two admin screens | roadmap 6     |
 | 7c component work — `Dialog`, `Sheet`, `Table`, `Toast`, `Card`'s element escape hatch | roadmap 7c    |
 | 7c layout fixes from the mobile audit                                                  | roadmap 7c    |
 | 7d craft — motion, accessibility, a dark-mode toggle                                   | roadmap 7d    |
@@ -189,9 +207,10 @@ landed — it is unblocked now.
 
 #### What needs a desktop with Docker
 
-| Item                                          | Source        |
-| --------------------------------------------- | ------------- |
-| Verify the `session-start` hook's Docker path | repo health 4 |
+| Item                                                          | Source        |
+| ------------------------------------------------------------- | ------------- |
+| Verify the `session-start` hook's Docker path                 | repo health 4 |
+| Run phase 6's DB-backed tests — they have only ever run in CI | roadmap 6     |
 
 Load sanity at real row counts (roadmap 9) used to be listed here — it turned out not to need
 Docker at all, just a database, which a cloud session can now get on its own. See
@@ -199,22 +218,24 @@ Docker at all, just a database, which a cloud session can now get on its own. Se
 
 #### What needs Noah
 
-| Item                                                                                               | Source        |
-| -------------------------------------------------------------------------------------------------- | ------------- |
-| `APP_URL` and `CRON_SECRET` as Actions secrets — **the app is not settling bets until this lands** | repo health 1 |
-| Dispatch both cron jobs by hand, confirm 200                                                       | repo health 2 |
-| First real ESPN slate — set `ODDS_PROVIDER=espn` against production, backfill, reconcile           | roadmap 5     |
-| Hosted Postgres, Sentry signup, alerting destination                                               | roadmap 6     |
-| Email provider signup and sending-domain DNS                                                       | roadmap 8     |
+| Item                                                                                                                               | Source        |
+| ---------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `APP_URL` and `CRON_SECRET` as Actions secrets — **the app is not settling bets until this lands**                                 | repo health 1 |
+| Dispatch both cron jobs by hand, confirm 200                                                                                       | repo health 2 |
+| First real ESPN slate — set `ODDS_PROVIDER=espn` against production, backfill, reconcile                                           | roadmap 5     |
+| Hosted Postgres, Sentry signup, alerting destination                                                                               | roadmap 6     |
+| Apply the `job_runs` migration; set `ALERT_WEBHOOK_URL` and the Sentry DSNs — **phase 6's alerting does nothing until this lands** | roadmap 6     |
+| Email provider signup and sending-domain DNS                                                                                       | roadmap 8     |
 
 #### What needs a person, either of you
 
-| Item                                          | Source        |
-| --------------------------------------------- | ------------- |
-| The human test pass — still useful for phases 6-9, no longer gates phase 5 | both |
-| Merging Dependabot's monthly PR               | repo health 6 |
-| ESLint 10 / TypeScript 7 — blocked upstream   | repo health 7 |
-| Confirming a real email renders               | roadmap 8     |
+| Item                                                                       | Source        |
+| -------------------------------------------------------------------------- | ------------- |
+| The human test pass — still useful for phases 6-9, no longer gates phase 5 | both          |
+| Merging Dependabot's monthly PR                                            | repo health 6 |
+| ESLint 10 / TypeScript 7 — blocked upstream                                | repo health 7 |
+| Confirming a real email renders                                            | roadmap 8     |
+| Break a cron on purpose once and confirm the alert arrives                 | roadmap 6     |
 
 ## Conventions
 

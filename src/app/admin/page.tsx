@@ -50,12 +50,20 @@ export default async function AdminPage() {
         </Link>
       </div>
 
+      <Link href="/admin/health" className="text-sm text-ink-muted underline">
+        Health — is it working
+      </Link>
+
       <Link href="/admin/events" className="text-sm text-ink-muted underline">
         Overdue &amp; disputed events
       </Link>
 
       <Link href="/admin/wagers" className="text-sm text-ink-muted underline">
         Wagers needing a ruling
+      </Link>
+
+      <Link href="/admin/seasons" className="text-sm text-ink-muted underline">
+        Seasons
       </Link>
 
       <section className="flex flex-col gap-2">
