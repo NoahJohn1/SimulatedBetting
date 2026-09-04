@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { asc, eq } from 'drizzle-orm';
 import type { Metadata } from 'next';
@@ -5,8 +6,10 @@ import Link from 'next/link';
 import { db } from '@/db/client';
 import { users } from '@/db/schema';
 import { Card } from '@/components/ui/card';
+import { Callout } from '@/components/ui/callout';
 import { EmptyState } from '@/components/ui/empty-state';
 import { requireAdmin } from '@/server/auth/session';
+import { consume } from '@/server/limits/consume';
 
 export const metadata: Metadata = { title: 'Admin' };
 
@@ -17,8 +20,10 @@ export const metadata: Metadata = { title: 'Admin' };
  * requireAdmin runs server-side on every request; the tab is hidden for non-admins as a
  * convenience, never as the control.
  */
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: PageProps<'/admin'>) {
   await requireAdmin();
+  const params = await searchParams;
+  const limitedFor = typeof params.limited === 'string' ? params.limited : null;
 
   const pending = await db
     .select()
@@ -28,7 +33,12 @@ export default async function AdminPage() {
 
   async function setStatus(formData: FormData) {
     'use server';
-    await requireAdmin();
+    const actor = await requireAdmin();
+
+    const limited = await consume(actor.userId, 'ADMIN_ACTION');
+    // A FormData action has no return channel to the form, so the refusal travels as a query
+    // parameter and the page renders it. Silently doing nothing would be the worse failure.
+    if (limited) redirect(`/admin?limited=${limited.retryAfterSeconds}`);
 
     const userId = String(formData.get('userId'));
     const status = String(formData.get('status'));
@@ -65,6 +75,12 @@ export default async function AdminPage() {
       <Link href="/admin/seasons" className="text-sm text-ink-muted underline">
         Seasons
       </Link>
+
+      {limitedFor ? (
+        <Callout tone="caution">
+          That went through too quickly and was not applied. Try again in {limitedFor} seconds.
+        </Callout>
+      ) : null}
 
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">

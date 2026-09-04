@@ -3,10 +3,13 @@
 import { useState, useTransition } from 'react';
 import { Callout } from '@/components/ui/callout';
 import type { VoidError } from '@/server/events/resolve';
+import type { RateLimited } from '@/server/limits/types';
 import { voidEventAction } from './actions';
 
-function errorMessage(error: VoidError): string {
+function errorMessage(error: VoidError | RateLimited): string {
   switch (error.code) {
+    case 'RATE_LIMITED':
+      return `You're doing that too quickly. Try again in ${error.retryAfterSeconds} seconds.`;
     case 'NOTE_REQUIRED':
       return 'A void moves money — say why.';
     case 'ALREADY_VOIDED':
@@ -23,7 +26,7 @@ function errorMessage(error: VoidError): string {
 export function VoidForm({ eventId }: { eventId: string }) {
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState('');
-  const [error, setError] = useState<VoidError | null>(null);
+  const [error, setError] = useState<VoidError | RateLimited | null>(null);
   const [pending, startTransition] = useTransition();
 
   if (!open) {

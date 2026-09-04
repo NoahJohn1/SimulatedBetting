@@ -3,10 +3,13 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ArbitrateError } from '@/server/p2p/types';
+import type { RateLimited } from '@/server/limits/types';
 import { arbitrateWagerAction } from './actions';
 
-function errorMessage(error: ArbitrateError): string {
+function errorMessage(error: ArbitrateError | RateLimited): string {
   switch (error.code) {
+    case 'RATE_LIMITED':
+      return `You're doing that too quickly. Try again in ${error.retryAfterSeconds} seconds.`;
     case 'NOTE_REQUIRED':
       return 'An arbitration moves money — say why.';
     case 'WAGER_NOT_FOUND':
@@ -31,7 +34,7 @@ export function ArbitrationForm({
 }) {
   const router = useRouter();
   const [note, setNote] = useState('');
-  const [error, setError] = useState<ArbitrateError | null>(null);
+  const [error, setError] = useState<ArbitrateError | RateLimited | null>(null);
   const [pending, startTransition] = useTransition();
 
   function submit(verdict: 'OFFERER' | 'ACCEPTOR' | 'VOID') {
