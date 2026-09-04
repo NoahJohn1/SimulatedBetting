@@ -8,6 +8,8 @@ import { lineToNumber } from '@/domain/line';
 import { isOverdue, verdictForLegStatus } from '@/domain/p2p';
 import { emitFeedEvent } from '@/server/feed/emit';
 import type { P2PDisputedPayload } from '@/server/feed/payload';
+import { enqueueNotification } from '@/server/notify/enqueue';
+import { adminUserIds } from '@/server/notify/recipients';
 import { postEntry } from '@/server/money/ledger';
 import { settleWagerInTx } from './settle-wager';
 import { loadSelectionSubject } from './subject';
@@ -213,16 +215,29 @@ async function overduePass(now: Date, summary: SweepP2PSummary): Promise<void> {
         attempt: wager.settlementAttempts + 1,
       };
 
-      const emitted = await db.transaction((tx) =>
-        emitFeedEvent(tx, {
+      const emitted = await db.transaction(async (tx) => {
+        const result = await emitFeedEvent(tx, {
           seasonId: wager.seasonId,
           type: 'P2P_DISPUTED',
           subjectMembershipId: wager.offererMembershipId,
           dedupeKey: `p2p:${wager.id}:overdue:${wager.settlementAttempts + 1}`,
           payload,
           occurredAt: now,
-        }),
-      );
+        });
+
+        // An overdue wager is a dispute nobody filed. The admin queue treats the two
+        // identically, so the notification does too.
+        for (const adminUserId of await adminUserIds(tx)) {
+          await enqueueNotification(tx, {
+            userId: adminUserId,
+            type: 'DISPUTE_NEEDS_RULING',
+            dedupeKey: `p2p:${wager.id}:overdue:${wager.settlementAttempts + 1}:${adminUserId}`,
+            payload: { wagerId: wager.id, subject, kind: 'P2P_OVERDUE' },
+          });
+        }
+
+        return result;
+      });
 
       if (emitted.applied) summary.overdueFlagged += 1;
     } catch (err) {

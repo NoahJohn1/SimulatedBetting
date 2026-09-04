@@ -1,9 +1,12 @@
 import { and, eq } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { p2pWagers, seasonMemberships, seasons } from '@/db/schema';
+import { p2pWagers, seasonMemberships, seasons, users } from '@/db/schema';
 import { potCents } from '@/domain/p2p';
 import { emitFeedEvent } from '@/server/feed/emit';
 import type { P2POfferedPayload } from '@/server/feed/payload';
+import { flushSoon } from '@/server/notify/deliver';
+import { enqueueNotification } from '@/server/notify/enqueue';
+import { userIdForMembership } from '@/server/notify/recipients';
 import { postEntry } from '@/server/money/ledger';
 import { loadSelectionSubject } from './subject';
 import type {
@@ -55,7 +58,7 @@ export async function offerWager(input: OfferWagerInput): Promise<OfferWagerResu
   }
 
   try {
-    return await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       const [activeSeason] = await tx
         .select({ id: seasons.id })
         .from(seasons)
@@ -68,8 +71,10 @@ export async function offerWager(input: OfferWagerInput): Promise<OfferWagerResu
         .select({
           id: seasonMemberships.id,
           creditsBalanceCents: seasonMemberships.creditsBalanceCents,
+          displayName: users.displayName,
         })
         .from(seasonMemberships)
+        .innerJoin(users, eq(users.id, seasonMemberships.userId))
         .where(
           and(
             eq(seasonMemberships.userId, input.actorUserId),
@@ -167,8 +172,34 @@ export async function offerWager(input: OfferWagerInput): Promise<OfferWagerResu
         occurredAt: now,
       });
 
+      // Directed offers only. `P2P_OFFERED` fires for open offers too, but the notification is
+      // "a wager was offered to YOU" — mailing the whole season every time somebody posts an
+      // open offer is the noise that gets the feature muted wholesale.
+      if (opponentId !== null) {
+        const opponentUserId = await userIdForMembership(tx, opponentId);
+        if (opponentUserId) {
+          await enqueueNotification(tx, {
+            userId: opponentUserId,
+            type: 'WAGER_OFFERED',
+            // The feed event's own key with the recipient appended (D63).
+            dedupeKey: `p2p:${wager.id}:offered:${opponentUserId}`,
+            payload: {
+              wagerId: wager.id,
+              fromName: membership.displayName,
+              subject,
+              stakeCents: input.offererStakeCents.toString(),
+              expiresAt: input.expiresAt.toISOString(),
+            },
+          });
+        }
+      }
+
       return { ok: true as const, wagerId: wager.id, creditsBalanceCents: posted.balanceCents };
     });
+
+    // Outside the transaction: a send must never be able to roll an escrow write back.
+    if (result.ok) flushSoon();
+    return result;
   } catch (err) {
     if (err instanceof OfferRejected) return { ok: false, error: err.error };
     throw err;
