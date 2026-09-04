@@ -6,11 +6,22 @@ import { db } from '@/db/client';
 import { seasons } from '@/db/schema';
 import { formatAmount } from '@/domain/money';
 import {
+  DEFAULT_ALLOWANCE_WEEKDAY,
   DEFAULT_STARTING_BANKROLL_CENTS,
   DEFAULT_STARTING_CREDITS_CENTS,
   DEFAULT_WEEKLY_ALLOWANCE_CENTS,
   DEFAULT_WEEKLY_CREDIT_ALLOWANCE_CENTS,
 } from '@/server/seasons/defaults';
+
+const WEEKDAY_NAMES = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
 
 export const metadata: Metadata = { title: 'House rules' };
 
@@ -30,6 +41,7 @@ export default async function RulesPage() {
   const weekly = season?.weeklyAllowanceCents ?? DEFAULT_WEEKLY_ALLOWANCE_CENTS;
   const credits = season?.startingCreditsCents ?? DEFAULT_STARTING_CREDITS_CENTS;
   const weeklyCredits = season?.weeklyCreditAllowanceCents ?? DEFAULT_WEEKLY_CREDIT_ALLOWANCE_CENTS;
+  const weekday = WEEKDAY_NAMES[season?.allowanceWeekday ?? DEFAULT_ALLOWANCE_WEEKDAY];
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 px-4 py-8">
@@ -66,8 +78,8 @@ export default async function RulesPage() {
 
       <Section heading="The weekly allowance">
         <p>
-          The allowance lands once a week, automatically, for everyone in the season. It is not a
-          reward and it is not affected by how you are doing — a member who is up and a member who
+          The allowance lands every {weekday}, automatically, for everyone in the season. It is not
+          a reward and it is not affected by how you are doing — a member who is up and a member who
           is broke get the same amount on the same day.
         </p>
       </Section>

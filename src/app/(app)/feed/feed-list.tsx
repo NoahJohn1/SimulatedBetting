@@ -56,6 +56,7 @@ export function FeedList({ initial }: { initial: SerializedFeedPage }) {
 
   function toggle(eventId: string, emoji: string) {
     const previous = cards;
+    setError(null);
 
     // Optimistic: the reaction row is the one place in the app where a round trip would be
     // felt, and the worst case is a count that corrects itself on the next render.
