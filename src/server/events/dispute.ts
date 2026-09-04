@@ -3,6 +3,9 @@ import { db } from '@/db/client';
 import { customEventDisputes, customEvents, events, seasonMemberships } from '@/db/schema';
 import { emitFeedEvent } from '@/server/feed/emit';
 import type { CustomEventDisputedPayload } from '@/server/feed/payload';
+import { flushSoon } from '@/server/notify/deliver';
+import { enqueueNotification } from '@/server/notify/enqueue';
+import { adminUserIds } from '@/server/notify/recipients';
 
 export const MAX_DISPUTE_REASON_LENGTH = 500;
 
@@ -38,7 +41,7 @@ export async function disputeResolution(
 
   const now = input.now ?? new Date();
 
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const [custom] = await tx
       .select()
       .from(customEvents)
@@ -97,6 +100,22 @@ export async function disputeResolution(
       occurredAt: now,
     });
 
+    for (const adminUserId of await adminUserIds(tx)) {
+      await enqueueNotification(tx, {
+        userId: adminUserId,
+        type: 'DISPUTE_NEEDS_RULING',
+        // Per disputing member, matching the feed key: a second member disputing the same
+        // event is a genuinely new fact and worth a second email.
+        dedupeKey: `customevent:${input.eventId}:disputed:${input.membershipId}:${adminUserId}`,
+        payload: { eventId: input.eventId, subject: event.title, kind: 'CUSTOM_EVENT' },
+      });
+    }
+
     return { ok: true as const, disputeId: inserted[0].id, created: true };
   });
+
+  // Outside the transaction: a send must never be able to roll a dispute write back. This
+  // runs from a user action, so it flushes rather than waiting for the digest window.
+  if (result.ok) flushSoon();
+  return result;
 }
