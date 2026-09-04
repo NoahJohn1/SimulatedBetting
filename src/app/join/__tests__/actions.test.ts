@@ -55,4 +55,36 @@ describe('joinSeasonAction', () => {
       .where(eq(seasonMemberships.seasonId, other.id));
     expect(memberships).toHaveLength(0);
   });
+
+  it('refuses a PENDING account — an admin has not approved it yet', async () => {
+    const user = await makeUser({ status: 'PENDING' });
+    vi.mocked(getSessionUser).mockResolvedValue({ id: user.id, email: user.email });
+    await makeSeason({ status: 'ACTIVE' });
+
+    const result = await joinSeasonAction();
+
+    expect(result).toEqual({ ok: false, error: 'FAILED' });
+
+    const memberships = await db
+      .select()
+      .from(seasonMemberships)
+      .where(eq(seasonMemberships.userId, user.id));
+    expect(memberships).toHaveLength(0);
+  });
+
+  it('refuses a DISABLED account', async () => {
+    const user = await makeUser({ status: 'DISABLED' });
+    vi.mocked(getSessionUser).mockResolvedValue({ id: user.id, email: user.email });
+    await makeSeason({ status: 'ACTIVE' });
+
+    const result = await joinSeasonAction();
+
+    expect(result).toEqual({ ok: false, error: 'FAILED' });
+
+    const memberships = await db
+      .select()
+      .from(seasonMemberships)
+      .where(eq(seasonMemberships.userId, user.id));
+    expect(memberships).toHaveLength(0);
+  });
 });
