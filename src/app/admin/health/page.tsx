@@ -15,6 +15,8 @@ const JOB_LABELS: Record<JobHealth['job'], string> = {
   SETTLE: 'Settlement',
   ALLOWANCE: 'Weekly allowance',
   RECONCILE: 'Reconciliation',
+  // Not yet in RECORDED_JOBS, so this label is unreachable until the notify job runner lands.
+  NOTIFY: 'Notifications',
 };
 
 const FRESHNESS: Record<Freshness, { tone: BadgeTone; label: string }> = {

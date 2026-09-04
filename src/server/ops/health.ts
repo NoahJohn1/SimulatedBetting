@@ -15,6 +15,9 @@ export const STALE_AFTER_MS: Record<HealthJob, number> = {
   SETTLE: 30 * 60_000, // every 10 min
   RECONCILE: 26 * 60 * 60_000, // daily at 08:00
   ALLOWANCE: 8 * 24 * 60 * 60_000, // weekly, Tuesday
+  // Not yet in RECORDED_JOBS below, so this entry is unreachable until the notify job runner
+  // (a later task in the email-notifications plan) starts writing job_runs rows for it.
+  NOTIFY: 30 * 60_000,
 };
 
 /**
