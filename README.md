@@ -13,7 +13,7 @@ files / 814 tests, 0 lint errors), and `npm run build` compiles every route. See
 
 The odds board is still fixture data and nothing is deployed yet. The work between here and a
 production deployment — a real data source, hosting, UI polish, notifications, and hardening —
-is [part two of the roadmap](docs/roadmap.md#part-two--production-readiness).
+is [the rest of the roadmap](docs/roadmap.md#roadmap), rows 5-9.
 
 ## What it does
 

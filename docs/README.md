@@ -186,7 +186,7 @@ phase: `/admin/health` reads the run record and reconciliation drift in one plac
 starting next season no longer requires shell access to the database
 ([D61](decisions.md#d61--the-season-screen-creates-upcoming-activation-is-a-separate-guarded-act)).
 None of it does anything in production until the migration is applied and the environment
-variables are set — see [roadmap 6](roadmap.md#still-owed-now-that-the-cloud-half-has-merged).
+variables are set — see [roadmap 6](roadmap.md#6--production-deployment).
 
 ### What is left
 
