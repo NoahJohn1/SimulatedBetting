@@ -79,6 +79,11 @@ Fill in `.env.local`:
   called and nothing reports.
 - `SENTRY_AUTH_TOKEN` — only for source-map upload at build time. Without it the build warns
   and succeeds.
+- `RESEND_API_KEY` — transactional email provider key. Unset means the console transport: every
+  message is logged and not sent, which is the expected state in CI, in the test suite, and in
+  local development.
+- `EMAIL_FROM` — the From header on every message. Defaults to Resend's `onboarding@resend.dev`,
+  which only delivers to the account owner.
 
 Then:
 
