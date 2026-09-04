@@ -1316,3 +1316,158 @@ handshake on every serverless invocation.
 
 _What this accepts:_ a production deploy that forgets the key logs silently instead of sending, and
 nothing breaks to say so. `/admin/health` therefore names the live transport.
+
+### D69 — Rate limiting is a Postgres fixed-window counter, enforced at the action boundary
+
+_Added 2026-09-03 during the hardening design session._
+
+Every mutating server action consumes from a `rate_limits` table before it calls its service: one
+row per `(subject_id, bucket, window_start)`, incremented by a single `INSERT … ON CONFLICT DO
+UPDATE … RETURNING count`. The subject is the session's user id, never an IP and never anything the
+client sends. Enforcement lives in `src/app/**/actions.ts`, so `src/server/money/`,
+`src/server/bets/` and `src/server/p2p/` take no diff at all — the ledger-funnel guard and the
+`money-touch` hook stay quiet, and cron routes, `seed.ts` and the test suite keep calling the
+services unthrottled. A structural test asserts every exported `*Action` and every inline
+`'use server'` block in a page file either consumes or is a documented exemption.
+
+Windows are fixed, one per bucket, minute-scale. The buckets are `BET_PLACE` and `P2P_OFFER` at
+10/min, `EVENT_WRITE` and `COMMENT` at 10/min, `P2P_RESPOND` at 20/min, and `REACTION`,
+`ADMIN_ACTION` and `DEFAULT` at 30/min.
+
+_Rejected:_ an in-memory counter. Vercel runs several instances, so the real limit would be N times
+the configured one and would reset on every cold start. Cheap, and dishonest as a written guarantee.
+
+_Rejected:_ Vercel KV or Upstash. A paid dependency and a second piece of state for a four-person
+app that already has a database one query away.
+
+_Rejected:_ enforcing inside the services. It catches every caller including future ones, but puts
+a transport concern inside money code, trips the money-path hook on every edit, and would throttle
+the cron and seeding paths that legitimately loop.
+
+_Rejected:_ an hourly tier alongside the minute one. It doubles the query count on every mutation to
+address a member spamming steadily for an hour — which in a private group of four is a social
+problem with a social fix.
+
+_What this accepts:_ a fixed window lets a member issue up to twice a bucket's limit across a window
+boundary. At ten bets a minute that is twenty in a two-second straddle, which is not the failure
+this guards against. A sliding-window log buys the precision at the cost of one row per hit.
+
+---
+
+### D70 — The rate limiter fails open and counts attempts, not successes
+
+_Added 2026-09-03 during the hardening design session._
+
+If the `rate_limits` statement throws, `consume` logs, reports to Sentry, and allows the mutation.
+And the counter increments on the attempt, before the service runs, and is never refunded when the
+service rejects the request.
+
+Both halves follow from what the limiter is for. It guards against a nuisance — a runaway render
+loop, an impatient double-tap — so making it a hard dependency in front of bet placement means one
+exhausted connection pool or one mid-deploy migration takes the app's ability to act with it. Phase
+6 settled this shape for alerting ([D60](#d60--alerts-fire-on-transition-not-on-every-failing-run)
+and that plan's "alerting can never be the outage"), and it applies with more force here, because
+this sits in the request path of every mutation rather than beside one. Refunding on failure means a
+second write and a path that can leak; counting the request rather than the outcome means there is
+one write and one meaning.
+
+_Rejected:_ failing closed. It makes the limiter table a single point of failure for placing a bet,
+offering a wager, and commenting — to prevent, at worst, a burst of writes that the group would
+notice and mention to each other the same day.
+
+_Rejected:_ refunding the token when the service rejects. It reads fairer, and it hands anyone with
+a rejected-request loop an unlimited retry budget, which is precisely the case the limit exists for.
+
+_What this accepts:_ a member who submits ten slips that all bounce off `LINE_MOVED` has spent their
+minute. At ten a minute that is a wait, not a wall, and the alternative is a limiter that does not
+limit the one behaviour worth limiting.
+
+---
+
+### D71 — The four gate screens are one sequence on one component
+
+_Added 2026-09-03 during the hardening design session._
+
+`/pending`, `/join`, `/no-season` and `/disabled` render one new `GateScreen` — title, body, an
+optional step indicator, a control slot and a footer slot — instead of four hand-rolled copies of
+the same centering block. Each exports a `metadata.title`. Each offers at least one control and a
+link to the house rules. `/pending` gains a "check again" control, and `/join`'s inline submit
+becomes a real action with a typed error and a pending state. The step indicator makes the sequence
+explicit: sign in, then 1 of 2 waiting for approval, then 2 of 2 joining the season. `/no-season`
+and `/disabled` are branches off that line and carry no step number.
+
+There are four of these screens, not the three the roadmap names. `/disabled` is reached by the same
+`requireApprovedMember` switch as the other three and had been left out of the count.
+
+_Rejected:_ widening `StatusScreen` with a full-viewport variant. Its doc comment documents a
+specific contract — sized to render inside the shell, where a header and a tab bar are already
+taking space — and gate screens have no shell and need a footer. One component answering to two
+contracts would falsify that comment.
+
+_Rejected:_ leaving `/no-season` and `/disabled` alone as rare states. They are the two with no
+control of any kind on them today, so a member who lands there can only close the tab. Rare is the
+argument for making them self-explanatory, not for skipping them.
+
+_What this accepts:_ the step indicator hard-codes a two-step sequence. If approval is ever
+automated away, or a third step appears, the numbers are wrong until someone changes them — which is
+a visible wrongness on the screen rather than a silent one.
+
+---
+
+### D72 — The house rules page is public and lives outside the app shell
+
+_Added 2026-09-03 during the hardening design session._
+
+`/rules` is a root-level route, rendered without a session, linked from `/sign-in`, all four gate
+screens and `/me`. Its figures — starting bankroll, starting credits, the weekly top-up of each —
+are read from the active season and fall back to `defaults.ts` when none is running, so the rules
+page and `/join` cannot quote different numbers to the same person on the same day.
+
+Outside the shell because that is where its readers are. A member on `/pending` or `/no-season` is
+not inside `(app)`, and those are the people who most need to be told that this is play money, that
+credits cannot become cash, and who rules on a disputed event. Public because the one moment a
+person decides whether to hand over a Google account is before they have signed in. The root layout
+already sets `index: false`, so readable does not mean indexed.
+
+_Rejected:_ `(app)/rules`, inside the shell. It inherits the header, balance and nav for free, and
+is invisible to exactly the pending and no-season members this phase is for — which would mean a
+second copy of the rules for them, and two copies drift.
+
+_Rejected:_ requiring a session on the root route. It keeps the app fully closed to strangers, at
+the cost of the `/sign-in` link, which is the placement that does the most work.
+
+_Rejected:_ hard-coding the amounts in the copy. They live in `defaults.ts` and are overridable per
+season, so hard-coded prose is wrong the first time a season is created with different numbers.
+
+---
+
+### D73 — The smoke checklist ships unvalidated, with a run log
+
+_Added 2026-09-03 during the hardening design session._
+
+`docs/smoke-checklist.md` is written from reading the implementation, not from a completed human
+pass, and says so in its first paragraph. It carries a machine half anyone can run, a hands half
+that is one continuous path from a new account's first sign-in through arbitration, a run-log table
+that is empty on delivery, and a closing section naming what the document cannot know until a person
+runs it. The first `[MANUAL]` run's job is to correct the document, and its corrections matter more
+than its pass or fail.
+
+The roadmap already splits this row `[CLOUD]` to draft and `[MANUAL]` to validate. Writing the draft
+now is what makes the pass cheap to run; claiming the draft is finished is what would make the pass
+feel redundant and quietly not happen.
+
+_Rejected:_ waiting for the human pass before writing anything. It is the same deadlock the roadmap
+broke for phase 5 — the pass is easier to schedule when there is a list to follow, and a list
+derived from the code is a better starting point than a blank page.
+
+_Rejected:_ shipping it without the caveat. An unmarked checklist is indistinguishable from a
+validated one six months later, and the first person to hit a step that cannot be performed as
+written concludes the app is broken rather than the document.
+
+_Rejected:_ a `scripts/smoke.ts` automating the machine half. `npm run verify` and `/admin/health`
+already are that command, and a second artifact would need to stay in sync with the document for no
+coverage that does not already exist.
+
+_Consequence to watch:_ if the pass keeps not happening, this document ages into a description of an
+app that has changed underneath it. The run log is empty on purpose so that its emptiness is the
+signal.

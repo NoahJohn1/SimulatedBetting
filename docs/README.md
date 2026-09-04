@@ -22,6 +22,8 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [ESPN adapter plan](plans/2026-08-22-espn-adapter-implementation.md)                            | The task-by-task plan, plus dated status notes on what was verified from a cloud session and how                              |
 | [Email notifications spec](specs/2026-09-03-email-notifications-design.md)                      | Phase 8: the notification outbox, keyed sends from the feed emit points, per-type preferences, and one-click unsubscribe      |
 | [Email notifications plan](plans/2026-09-03-email-notifications-implementation-plan.md)         | The task-by-task plan for that work, lane-tagged, with what still needs Noah and what needs a real inbox                      |
+| [Hardening spec](specs/2026-09-03-hardening-design.md)                                          | Phase 9's cloud half — rate limiting on every mutation, the house rules page, the new-member path as a sequence, the smoke checklist |
+| [Hardening plan](plans/2026-09-03-hardening-implementation-plan.md)                             | The task-by-task plan for that work, lane-tagged, with what a cloud session can and cannot verify                                    |
 
 ### Reference
 
