@@ -7,6 +7,7 @@ import { Callout } from '@/components/ui/callout';
 import { FormField } from '@/components/ui/form-field';
 import { dollarsToCents, formatAmount } from '@/domain/money';
 import type { OfferWagerError } from '@/server/p2p/types';
+import type { RateLimited } from '@/server/limits/types';
 import { offerWagerAction } from '../actions';
 
 export interface MemberOption {
@@ -28,8 +29,10 @@ function toCents(input: string): string {
   }
 }
 
-function describe(error: OfferWagerError): string {
+function describe(error: OfferWagerError | RateLimited): string {
   switch (error.code) {
+    case 'RATE_LIMITED':
+      return `You're posting offers too quickly. Try again in ${error.retryAfterSeconds} seconds.`;
     case 'NOT_A_MEMBER':
       return 'You are not a member of the active season.';
     case 'INSUFFICIENT_CREDITS':
