@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/server/auth/session';
 import { consume } from '@/server/limits/consume';
+import type { RateLimited } from '@/server/limits/types';
 import { activateSeason, type ActivateResult } from '@/server/seasons/activate';
 import { createSeason } from '@/server/seasons/service';
 import { parseAmountToCents } from './parse';
@@ -74,12 +75,11 @@ export async function createSeasonAction(
 /** The real gate is requireAdmin here, never the page hiding the control. */
 export async function activateSeasonAction(
   seasonId: string,
-): Promise<ActivateResult | { ok: false; code: 'RATE_LIMITED'; retryAfterSeconds: number }> {
+): Promise<ActivateResult | ({ ok: false } & RateLimited)> {
   const admin = await requireAdmin();
 
   const limited = await consume(admin.userId, 'ADMIN_ACTION');
-  if (limited)
-    return { ok: false, code: 'RATE_LIMITED', retryAfterSeconds: limited.retryAfterSeconds };
+  if (limited) return { ok: false, ...limited };
 
   const result = await activateSeason(seasonId);
   if (result.ok) revalidatePath('/admin/seasons');
