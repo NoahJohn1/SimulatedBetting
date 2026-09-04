@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/server/auth/session';
+import { consume } from '@/server/limits/consume';
 import { activateSeason, type ActivateResult } from '@/server/seasons/activate';
 import { createSeason } from '@/server/seasons/service';
 import { parseAmountToCents } from './parse';
@@ -20,7 +21,15 @@ export interface CreateSeasonFields {
 export async function createSeasonAction(
   fields: CreateSeasonFields,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  await requireAdmin();
+  const admin = await requireAdmin();
+
+  const limited = await consume(admin.userId, 'ADMIN_ACTION');
+  if (limited) {
+    return {
+      ok: false,
+      error: `That went through too quickly. Try again in ${limited.retryAfterSeconds} seconds.`,
+    };
+  }
 
   const name = fields.name.trim();
   if (!name) return { ok: false, error: 'A season needs a name.' };
@@ -63,8 +72,15 @@ export async function createSeasonAction(
 }
 
 /** The real gate is requireAdmin here, never the page hiding the control. */
-export async function activateSeasonAction(seasonId: string): Promise<ActivateResult> {
-  await requireAdmin();
+export async function activateSeasonAction(
+  seasonId: string,
+): Promise<ActivateResult | { ok: false; code: 'RATE_LIMITED'; retryAfterSeconds: number }> {
+  const admin = await requireAdmin();
+
+  const limited = await consume(admin.userId, 'ADMIN_ACTION');
+  if (limited)
+    return { ok: false, code: 'RATE_LIMITED', retryAfterSeconds: limited.retryAfterSeconds };
+
   const result = await activateSeason(seasonId);
   if (result.ok) revalidatePath('/admin/seasons');
   return result;
