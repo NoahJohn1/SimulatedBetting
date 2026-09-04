@@ -41,7 +41,7 @@ export default async function JoinPage() {
         </Link>
       }
     >
-      <JoinForm seasonId={season.id} />
+      <JoinForm />
     </GateScreen>
   );
 }

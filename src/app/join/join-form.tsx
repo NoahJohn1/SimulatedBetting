@@ -14,7 +14,7 @@ function message(error: string, retryAfterSeconds?: number): string {
   return 'Could not join the season. Try again.';
 }
 
-export function JoinForm({ seasonId }: { seasonId: string }) {
+export function JoinForm() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +22,7 @@ export function JoinForm({ seasonId }: { seasonId: string }) {
   function submit() {
     setError(null);
     startTransition(async () => {
-      const result = await joinSeasonAction(seasonId);
+      const result = await joinSeasonAction();
       if (result.ok) router.push('/');
       else setError(message(result.error, result.retryAfterSeconds));
     });

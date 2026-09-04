@@ -1,5 +1,8 @@
 'use server';
 
+import { eq } from 'drizzle-orm';
+import { db } from '@/db/client';
+import { seasons } from '@/db/schema';
 import { getSessionUser } from '@/server/auth/session';
 import { consume } from '@/server/limits/consume';
 import { joinSeason } from '@/server/seasons/service';
@@ -16,8 +19,16 @@ export type JoinActionResult =
  *
  * `requireApprovedMemberOrThrow` is deliberately NOT used: the whole point of this screen is a
  * member who is approved but has not joined, which that helper rejects.
+ *
+ * Deliberately takes no `seasonId` argument. The inline action this replaced closed over a
+ * server-computed `season.id`, which a client could never tamper with; an exported action's
+ * arguments are ordinary client-suppliable values, so accepting a caller-passed season id here
+ * would let anyone who still knows an old season's id (a returning member with a bookmarked
+ * link, say) join and grant themselves that season's starting bankroll long after it ended. The
+ * active season is always looked up fresh, exactly as `authorizeMember` does, so there is no id
+ * for a caller to tamper with in the first place.
  */
-export async function joinSeasonAction(seasonId: string): Promise<JoinActionResult> {
+export async function joinSeasonAction(): Promise<JoinActionResult> {
   const user = await getSessionUser();
   if (!user) return { ok: false, error: 'FAILED' };
 
@@ -26,8 +37,11 @@ export async function joinSeasonAction(seasonId: string): Promise<JoinActionResu
     return { ok: false, error: 'RATE_LIMITED', retryAfterSeconds: limited.retryAfterSeconds };
   }
 
+  const [season] = await db.select().from(seasons).where(eq(seasons.status, 'ACTIVE'));
+  if (!season) return { ok: false, error: 'NO_SEASON' };
+
   try {
-    await joinSeason(user.id, seasonId);
+    await joinSeason(user.id, season.id);
     return { ok: true };
   } catch {
     // joinSeason throws only when the season has gone — which is exactly the race this exists
