@@ -13,20 +13,20 @@ account only Noah holds — GitHub settings, the Vercel dashboard, DNS, paid sig
 **What this table records is what is in the repository**, not what is on somebody's laptop.
 Where a status cannot be verified from the repo, it says so and dates the observation.
 
-| #   | Item                                                          | Status                             | Who finishes what's left | Reference                                                                                                                                                  |
-| --- | ------------------------------------------------------------- | ---------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Core betting engine                                           | ✅ Complete                        | —                        | [spec](specs/2026-08-14-core-betting-engine-design.md)                                                                                                     |
-| 2   | Social layer                                                  | ✅ Complete                        | —                        | [spec](specs/2026-08-17-social-layer-design.md) · [plan](archive/plans/2026-08-17-social-layer-implementation-plan.md)                                     |
-| 3   | Custom events                                                 | ✅ Complete                        | —                        | [spec](specs/2026-08-17-custom-events-design.md) · [plan](archive/plans/2026-08-17-custom-events-implementation-plan.md)                                   |
-| 4   | Peer-to-peer bets                                             | ✅ Complete                        | —                        | [spec](specs/2026-08-19-peer-to-peer-bets-design.md) · [plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md)                           |
-| 5   | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — code complete, PR open, production verification pending | [NOAH]           | [PR #21](https://github.com/NoahJohn1/SimulatedBetting/pull/21) · [spec](specs/2026-08-22-espn-adapter-design.md) · [plan](plans/2026-08-22-espn-adapter-implementation.md) |
-| 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — deployed, unmonitored | [CLOUD] [NOAH]           | [spec](specs/2026-09-02-production-deployment-design.md) · [plan](plans/2026-09-02-production-deployment-implementation-plan.md)                           |
-| 7a  | UI foundations                                                | ✅ Complete                        | —                        | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md)      |
-| 7b  | Design system                                                 | ✅ Complete                        | —                        | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md) |
-| 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | 🔲 Backlog                         | [CLOUD]                  | —                                                                                                                                                          |
-| 7d  | [Craft](#7d--craft)                                           | 🔲 Backlog                         | [CLOUD]                  | —                                                                                                                                                          |
-| 8   | [Email notifications](#8--email-notifications)                | 🔲 Backlog                         | [CLOUD] [NOAH]           | —                                                                                                                                                          |
-| 9   | [Hardening](#9--hardening)                                    | 🔲 Backlog                         | [CLOUD] [LOCAL] [MANUAL] | —                                                                                                                                                          |
+| #   | Item                                                          | Status                                                                               | Who finishes what's left            | Reference                                                                                                                                                                                                       |
+| --- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Core betting engine                                           | ✅ Complete                                                                          | —                                   | [spec](specs/2026-08-14-core-betting-engine-design.md)                                                                                                                                                          |
+| 2   | Social layer                                                  | ✅ Complete                                                                          | —                                   | [spec](specs/2026-08-17-social-layer-design.md) · [plan](archive/plans/2026-08-17-social-layer-implementation-plan.md)                                                                                          |
+| 3   | Custom events                                                 | ✅ Complete                                                                          | —                                   | [spec](specs/2026-08-17-custom-events-design.md) · [plan](archive/plans/2026-08-17-custom-events-implementation-plan.md)                                                                                        |
+| 4   | Peer-to-peer bets                                             | ✅ Complete                                                                          | —                                   | [spec](specs/2026-08-19-peer-to-peer-bets-design.md) · [plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md)                                                                                |
+| 5   | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — merged to `main`, production cutover pending                        | **[NOAH]**                          | [PR #21](https://github.com/NoahJohn1/SimulatedBetting/pull/21) (merged) · [spec](specs/2026-08-22-espn-adapter-design.md) · [plan](plans/2026-08-22-espn-adapter-implementation.md)                            |
+| 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — cloud half built; nothing is live until the migration and env vars land | [CLOUD] **[NOAH]** [LOCAL] [MANUAL] | [spec](specs/2026-09-02-production-deployment-design.md) · [plan](archive/plans/2026-09-02-production-deployment-implementation-plan.md) · [what is still owed](#still-owed-now-that-the-cloud-half-has-merged) |
+| 7a  | UI foundations                                                | ✅ Complete                                                                          | —                                   | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md)                                                           |
+| 7b  | Design system                                                 | ✅ Complete                                                                          | —                                   | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md)                                                      |
+| 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | 🔲 Backlog                                                                           | [CLOUD]                             | —                                                                                                                                                                                                               |
+| 7d  | [Craft](#7d--craft)                                           | 🔲 Backlog                                                                           | [CLOUD]                             | —                                                                                                                                                                                                               |
+| 8   | [Email notifications](#8--email-notifications)                | 🔲 Backlog — spec and plan on `main`, nothing built                                  | [CLOUD] **[NOAH]** [MANUAL]         | [spec](specs/2026-09-03-email-notifications-design.md) · [plan](plans/2026-09-03-email-notifications-implementation-plan.md)                                                                                    |
+| 9   | [Hardening](#9--hardening)                                    | 🔲 Backlog — spec and plan on `main`, nothing built                                  | [CLOUD] [MANUAL]                    | [spec](specs/2026-09-03-hardening-design.md) · [plan](plans/2026-09-03-hardening-implementation-plan.md)                                                                                                        |
 
 All four subsystems pass `npm run verify` and have been exercised end to end against fixture
 data. Phase 5 is no longer gated on a human test pass before it can proceed — automated
@@ -51,8 +51,8 @@ i.e. the defensive-parsing path working exactly as designed, not a bug. One sand
 wrinkle: Node's global `fetch()` doesn't honor `HTTPS_PROXY` by default in this environment,
 so a bare cloud-session request gets a `403` straight from ESPN's own edge (a datacenter-IP
 block, confirmed by comparing a proxied vs. direct `curl`) — running `node --use-env-proxy`
-routes it through the session's local proxy correctly. This is purely a quirk of *this sandbox
-reaching the internet*, not something the adapter code needs to handle — Vercel production has
+routes it through the session's local proxy correctly. This is purely a quirk of _this sandbox
+reaching the internet_, not something the adapter code needs to handle — Vercel production has
 no such proxy in front of it.
 
 **Update, same day:** the "needs Docker" blocker above turned out to be specific to this
@@ -71,7 +71,7 @@ from a cloud session — against a disposable local database, not Noah's real on
 **A safety finding surfaced doing this, worth recording.** This container's environment already
 carries `DATABASE_URL`/`TEST_DATABASE_URL` pointing at a real hosted Supabase project
 (`aws-0-us-east-1.pooler.supabase.com`) — presumably the phase-6 production database. `src/db/migrate.ts`
-loads env with plain `dotenv` (no `override: true`), so it does *not* override an
+loads env with plain `dotenv` (no `override: true`), so it does _not_ override an
 already-set `DATABASE_URL` — an `npm run db:migrate:test` run in this session tried to reach
 that Supabase project instead of the local `.env.test` target, and only failed to do anything on
 a connection timeout. `src/test/setup.ts` is the one file in this codebase that loads `.env.test`
@@ -81,12 +81,13 @@ injected and worth Noah's attention independent of phase 5 — see the plan's st
 detail. No production data was read or written while establishing this.
 
 **What genuinely still needs Noah, not a cloud AI session:** actually pointing
-`ODDS_PROVIDER=espn` at *production* and reconciling what lands there — that needs credentials
+`ODDS_PROVIDER=espn` at _production_ and reconciling what lands there — that needs credentials
 only Noah holds, not more verification.
 
-**[PR #21](https://github.com/NoahJohn1/SimulatedBetting/pull/21) is open** against `main`,
-merged clean (branch was 6 behind / 20 ahead when opened, 0 behind / 22 ahead now), CI running,
-subscribed for monitoring.
+**[PR #21](https://github.com/NoahJohn1/SimulatedBetting/pull/21) merged into `main`** at
+`66ce6ce`, so the adapter is on the default branch. What is left on this phase is the `[NOAH]`
+cutover above — pointing `ODDS_PROVIDER=espn` at production and reconciling what lands — not
+more code and not more verification.
 
 ---
 
@@ -159,14 +160,14 @@ a variable sync cadence — real work, in service of a worse feed.
 7. **First real slate.** An admin-run backfill that pulls a genuine week into a real season,
    plus reconciliation over it.
 
-| Task                                                  | Status                                     | Owner                                          |
-| ----------------------------------------------------- | ------------------------------------------ | ----------------------------------------------- |
-| Spike the payload — NFL and CFB, both endpoints       | ✅ Complete                                | —                                                |
-| `EspnScoreProvider`                                   | ✅ Complete                                | —                                                |
-| `EspnOddsProvider`                                    | ✅ Complete                                | —                                                |
-| CFB paging by week and conference group               | ✅ Complete — one request (`groups`/`limit`), not a loop; see spec | —                          |
-| Defensive parsing — a reshaped field skips its market | ✅ Complete                                | —                                                |
-| Kill switch env flag falling back to fixtures         | ✅ Code complete · 🔲 **[NOAH]** still needs to set it in Vercel | **[NOAH]** to set in Vercel        |
+| Task                                                  | Status                                                                                                                                                                                                                                                                                  | Owner                                |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Spike the payload — NFL and CFB, both endpoints       | ✅ Complete                                                                                                                                                                                                                                                                             | —                                    |
+| `EspnScoreProvider`                                   | ✅ Complete                                                                                                                                                                                                                                                                             | —                                    |
+| `EspnOddsProvider`                                    | ✅ Complete                                                                                                                                                                                                                                                                             | —                                    |
+| CFB paging by week and conference group               | ✅ Complete — one request (`groups`/`limit`), not a loop; see spec                                                                                                                                                                                                                      | —                                    |
+| Defensive parsing — a reshaped field skips its market | ✅ Complete                                                                                                                                                                                                                                                                             | —                                    |
+| Kill switch env flag falling back to fixtures         | ✅ Code complete · 🔲 **[NOAH]** still needs to set it in Vercel                                                                                                                                                                                                                        | **[NOAH]** to set in Vercel          |
 | First real slate — admin backfill plus reconciliation | 🔄 Mechanically verified (2026-09-03) — `syncOdds`/`syncResults` run for real against live ESPN data, persisted correctly into a scratch Postgres (194 games, 329 markets, 658 selections, spot-checked); **only the actual run against production plus reconciliation is outstanding** | **[NOAH]** — runs against production |
 
 Everything in this table, including the persistence half of the last row, was built and
@@ -211,26 +212,63 @@ private group of friends, not a business — a broken Saturday is an annoyance, 
   from `seed.ts`. In production that means starting next season requires shell access to the
   database, which is not a thing you want to discover in September.
 
-**Verified against the repo 2026-09-02.** The app is deployed, but the observability half —
-which this phase calls the item that earns it — is absent.
+**Verified against the repo 2026-09-04.** The app is deployed, and the observability half —
+which this phase calls the item that earns it — is now built and on `main`, but inert until the
+`[NOAH]` rows below happen.
 
-**The `[CLOUD]` half is designed, and the design is on `main`.** See the
+**The `[CLOUD]` half is built.** See the
 [production deployment spec](specs/2026-09-02-production-deployment-design.md) and its
-[implementation plan](plans/2026-09-02-production-deployment-implementation-plan.md), which cover
-the four `[CLOUD]` rows below and nothing else — merged 2026-09-03, ready for a session to execute.
-Every row in the task table below is still `🔲 Backlog`: nothing has been built yet, only planned.
-The `[NOAH]` rows are unchanged by any of this, and none of them gates starting the implementation
-— the spec's §9 works through what happens if each stays undone.
+[implementation plan](archive/plans/2026-09-02-production-deployment-implementation-plan.md),
+which covered the four `[CLOUD]` rows below and nothing else. The plan is archived because it
+shipped. The four `[CLOUD]` rows below are now `✅ Complete`. The `[NOAH]` rows are unchanged by any of
+this, and none of them gated building the four rows above — the spec's §9 works through what
+happens while each stays undone.
 
-| Task                                                                  | Status     | Owner                                 | Evidence                                                                                                            |
-| --------------------------------------------------------------------- | ---------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Hosted Postgres, backups, documented restore                          | 🔲 Backlog | **[NOAH]**                            | Not verifiable from the repo                                                                                        |
-| Vercel wiring — env, `AUTH_URL`, OAuth redirect, migrations on deploy | 🔄 Partial | **[NOAH]**                            | App runs; `CRON_SECRET` presence unconfirmed                                                                        |
-| `CRON_SECRET` on the real invocations                                 | 🔲 Backlog | **[NOAH]**                            | Actions secrets absent — see [repo-health 1.5](repo-health.md#15-the-cron-workflow--the-only-thing-actually-broken) |
-| Error monitoring (Sentry free tier)                                   | 🔲 Backlog | **[NOAH]** signup · [CLOUD] wiring    | No monitoring dependency in `package.json`                                                                          |
-| Alerting on cron failure and reconciliation drift                     | 🔲 Backlog | [CLOUD] code · **[NOAH]** destination | `reconcileBalances`/`reconcileEscrow` are called only from the cron route                                           |
-| Admin health page                                                     | 🔲 Backlog | [CLOUD]                               | `src/app/admin` holds only `page.tsx`, `events/`, `wagers/`                                                         |
-| Admin season-creation screen                                          | 🔲 Backlog | [CLOUD]                               | `createSeason` is reachable only from `seed.ts` and `bootstrap-season.ts`                                           |
+| Task                                                                  | Status      | Owner                                 | Evidence                                                                                                                                                    |
+| --------------------------------------------------------------------- | ----------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hosted Postgres, backups, documented restore                          | 🔲 Backlog  | **[NOAH]**                            | Not verifiable from the repo                                                                                                                                |
+| Vercel wiring — env, `AUTH_URL`, OAuth redirect, migrations on deploy | 🔄 Partial  | **[NOAH]**                            | App runs; `CRON_SECRET` presence unconfirmed                                                                                                                |
+| `CRON_SECRET` on the real invocations                                 | 🔲 Backlog  | **[NOAH]**                            | Actions secrets absent — see [repo-health 1.5](repo-health.md#15-the-cron-workflow--the-only-thing-actually-broken)                                         |
+| Error monitoring (Sentry free tier)                                   | ✅ Complete | **[NOAH]** signup · [CLOUD] wiring    | `@sentry/nextjs` wired via [`src/instrumentation.ts`](../src/instrumentation.ts); `[NOAH]` signup still outstanding                                         |
+| Alerting on cron failure and reconciliation drift                     | ✅ Complete | [CLOUD] code · **[NOAH]** destination | [`src/server/ops/alerts.ts`](../src/server/ops/alerts.ts); `[NOAH]` destination still outstanding                                                           |
+| Admin health page                                                     | ✅ Complete | [CLOUD]                               | [`src/app/admin/health/page.tsx`](../src/app/admin/health/page.tsx)                                                                                         |
+| Admin season-creation screen                                          | ✅ Complete | [CLOUD]                               | [`src/app/admin/seasons/page.tsx`](../src/app/admin/seasons/page.tsx)                                                                                       |
+| Instrument `sync-odds` with `runJob`                                  | 🔲 Backlog  | [CLOUD], after the ESPN adapter       | Deferred by [D58](decisions.md#d58--cron-health-is-a-job_runs-table-and-sync-odds-is-derived-from-market-freshness) — a one-line addition, not a correction |
+
+> **Applying the `job_runs` migration is the only thing this work needs before it is useful.**
+> Every other `[NOAH]` item here is inert when absent — no webhook URL, no DSN, no auth token, all
+> no-ops. A `job_runs` write that fails is logged and swallowed, so a deploy that lands ahead of
+> the migration degrades `/admin/health` to "never run" rather than stopping settlement. See the
+> spec's §9.
+
+### Still owed, now that the cloud half has merged
+
+The `[CLOUD]` half is code on `main`. **None of it does anything until the rows below happen.**
+They can be done in any order, at any time, against the running app — none needs a redeploy of
+code, and only row 1 gates anything at all.
+
+| #   | Do this                                                                                                                                          | Lane         | Until it is done                                                                                                                                                                                                                 |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Apply the `job_runs` migration** to the production database                                                                                    | **[NOAH]**   | `/admin/health` shows every job as never-run and says so in a banner, and no alert can fire. Nothing else changes: a failed `job_runs` write is logged and swallowed, so settlement, allowance and reconciliation are unaffected |
+| 2   | Create a Discord or Slack incoming webhook and set **`ALERT_WEBHOOK_URL`** in Vercel                                                             | **[NOAH]**   | Every alert is written to the Vercel function log and sent nowhere. The webhook is what makes the alarm audible                                                                                                                  |
+| 3   | Sign up for Sentry's free tier and set **`SENTRY_DSN`** and **`NEXT_PUBLIC_SENTRY_DSN`**                                                         | **[NOAH]**   | `Sentry.init` is never called and nothing reports ([D62](decisions.md#d62--sentry-is-inert-without-a-dsn))                                                                                                                       |
+| 4   | Optionally set **`SENTRY_AUTH_TOKEN`**, `SENTRY_ORG`, `SENTRY_PROJECT`                                                                           | **[NOAH]**   | Sentry works, but its stack traces point at minified bundle lines because no source maps were uploaded at build time                                                                                                             |
+| 5   | **Break a cron on purpose and confirm the alert arrives** — e.g. dispatch `settle` with a wrong `CRON_SECRET`, or watch the first real reconcile | **[MANUAL]** | The alarm is untested, which for practical purposes is the same as not having one. Belongs in the [phase 9](#9--hardening) smoke checklist                                                                                       |
+| 6   | Run the full suite once on a desktop with Docker                                                                                                 | **[LOCAL]**  | CI is the only thing that has ever executed `job-runs.test.ts`, `health-reads.test.ts` and `activate.test.ts` — they were written in a cloud session with no Postgres                                                            |
+| 7   | Create and activate the real season from `/admin/seasons`                                                                                        | **[MANUAL]** | `src/db/bootstrap-season.ts` remains the only way to start a season, which is the problem this screen was built to remove                                                                                                        |
+
+**How to do row 1.** Migrations are applied by hand until the migrations-on-deploy row above
+lands. From a machine with the production connection string:
+
+```bash
+ENV_FILE=.env.production npm run db:migrate
+```
+
+`src/db/migrate.ts` applies one file per transaction and is idempotent — re-running it after the
+fact is safe and applies nothing twice.
+
+**Rows 2 through 4 are environment variables only.** Vercel re-reads them on the next invocation;
+there is nothing to rebuild and nothing in the repository to change.
 
 **Deliberately skipped.** A staging environment. For a private group, a kill switch plus fast
 rollback covers what staging would, at a fraction of the setup.
@@ -335,15 +373,29 @@ table extending the pattern [`/me/feed-preferences`](<../src/app/(app)/me/feed-p
 already established; per-type toggles plus a global off; a one-click unsubscribe link that works
 without signing in; and a dev mode that logs instead of sending.
 
-| Task                                                       | Status     | Owner                                                    |
-| ---------------------------------------------------------- | ---------- | -------------------------------------------------------- |
-| Transactional email provider on a free tier                | 🔲 Backlog | **[NOAH]** — signup, API key, DNS for the sending domain |
-| `notification_preferences` table and migration             | 🔲 Backlog | [CLOUD]                                                  |
-| Per-type toggles plus a global off                         | 🔲 Backlog | [CLOUD]                                                  |
-| One-click unsubscribe that works without signing in        | 🔲 Backlog | [CLOUD]                                                  |
-| Dev mode that logs instead of sending                      | 🔲 Backlog | [CLOUD]                                                  |
-| Idempotency-keyed sends from the `feed_events` emit points | 🔲 Backlog | [CLOUD]                                                  |
-| Confirm a real email renders correctly in an inbox         | 🔲 Backlog | **[MANUAL]**                                             |
+**This phase is designed, and the design is on `main`. No code has been written.** See the
+[email notifications spec](specs/2026-09-03-email-notifications-design.md) and its
+[implementation plan](plans/2026-09-03-email-notifications-implementation-plan.md) — 16 tasks,
+lane-tagged, with the decisions it records at
+[D63–D68](decisions.md#d63--every-send-is-keyed-but-not-every-send-rides-a-feed-event). The
+design settles the idempotency question this section raises: sends are keyed and enqueued into
+an outbox inside the emitting transaction, then delivered outside it, so a re-run of `settle`
+cannot double-send
+([D64](decisions.md#d64--notifications-are-an-outbox-enqueued-in-the-transaction-delivered-outside-it)).
+Every `[CLOUD]` row below is ready for a session to execute; none of them is blocked on the
+`[NOAH]` provider signup, because the transport is inert without an API key
+([D68](decisions.md#d68--the-email-transport-is-inert-without-an-api-key)).
+
+| Task                                                       | Status                | Owner                                                    |
+| ---------------------------------------------------------- | --------------------- | -------------------------------------------------------- |
+| Transactional email provider on a free tier                | 🔲 Backlog            | **[NOAH]** — signup, API key, DNS for the sending domain |
+| `notification_preferences` table and migration             | 🔲 Backlog — designed | [CLOUD]                                                  |
+| Per-type toggles plus a global off                         | 🔲 Backlog — designed | [CLOUD]                                                  |
+| One-click unsubscribe that works without signing in        | 🔲 Backlog — designed | [CLOUD]                                                  |
+| Dev mode that logs instead of sending                      | 🔲 Backlog — designed | [CLOUD]                                                  |
+| Idempotency-keyed sends from the `feed_events` emit points | 🔲 Backlog — designed | [CLOUD]                                                  |
+| Apply the notification migration to production             | 🔲 Backlog            | **[NOAH]**                                               |
+| Confirm a real email renders correctly in an inbox         | 🔲 Backlog            | **[MANUAL]**                                             |
 
 ---
 
@@ -373,18 +425,36 @@ smoke test is checking that error states exist, and they do.
   in one burst. No index changes needed; the schema already had this covered.
 - **A house rules page.** Plain language: no real money, how the allowance works, what credits
   are and why they cannot become cash, who arbitrates and how.
-- **The new-member path.** What someone sees before an admin approves them, after approval, and
-  when there is no active season to join. Three screens that exist
-  ([`/pending`](../src/app/pending/page.tsx), [`/join`](../src/app/join/page.tsx),
-  [`/no-season`](../src/app/no-season/page.tsx)) and have never been looked at as a sequence.
+- **The new-member path.** What someone sees before an admin approves them, after approval, when
+  there is no active season to join, and when their account has been switched off. Four screens
+  that exist ([`/pending`](../src/app/pending/page.tsx), [`/join`](../src/app/join/page.tsx),
+  [`/no-season`](../src/app/no-season/page.tsx), [`/disabled`](../src/app/disabled/page.tsx)) and
+  had never been looked at as a sequence until the spec did
+  ([D71](decisions.md#d71--the-four-gate-screens-are-one-sequence-on-one-component)).
 
-| Task                                                                  | Status     | Owner                                                                          |
-| --------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------ |
-| A written smoke checklist                                             | 🔲 Backlog | [CLOUD] to draft · **[MANUAL]** to validate — it is derived from the test pass |
-| Rate limiting on mutations                                            | 🔲 Backlog | [CLOUD]                                                                        |
-| Load sanity — a full CFB Saturday and a season of feed events         | ✅ Complete | —                                                                              |
-| A house rules page                                                    | 🔲 Backlog | [CLOUD]                                                                        |
-| The new-member path — `/pending`, `/join`, `/no-season` as a sequence | 🔲 Backlog | [CLOUD]                                                                        |
+**This phase is designed, and the design is on `main`. No code has been written.** See the
+[hardening spec](specs/2026-09-03-hardening-design.md) and its
+[implementation plan](plans/2026-09-03-hardening-implementation-plan.md) — 11 tasks, lane-tagged,
+with the decisions it records at
+[D69–D73](decisions.md#d69--rate-limiting-is-a-postgres-fixed-window-counter-enforced-at-the-action-boundary).
+Two of the bullets above changed shape in the design, and the table below follows the design
+rather than the bullets: rate limiting is a Postgres fixed-window counter enforced at the action
+boundary, so `src/server/money/`, `src/server/bets/` and `src/server/p2p/` take no diff at all
+([D69](decisions.md#d69--rate-limiting-is-a-postgres-fixed-window-counter-enforced-at-the-action-boundary));
+and the new-member path is **four** screens on one shared component, not three, since `/disabled`
+belongs to the same sequence
+([D71](decisions.md#d71--the-four-gate-screens-are-one-sequence-on-one-component)). The smoke
+checklist also stops waiting on the human pass — it ships as an unvalidated draft with an empty
+run log, so the `[MANUAL]` run has a list to follow rather than being the thing that produces one
+([D73](decisions.md#d73--the-smoke-checklist-ships-unvalidated-with-a-run-log)).
+
+| Task                                                                               | Status                | Owner                                                                               |
+| ---------------------------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------- |
+| A written smoke checklist                                                          | 🔲 Backlog — designed | [CLOUD] to draft · **[MANUAL]** to validate — the draft no longer waits on the pass |
+| Rate limiting on mutations                                                         | 🔲 Backlog — designed | [CLOUD]                                                                             |
+| Load sanity — a full CFB Saturday and a season of feed events                      | ✅ Complete           | —                                                                                   |
+| A house rules page                                                                 | 🔲 Backlog — designed | [CLOUD]                                                                             |
+| The new-member path — `/pending`, `/join`, `/no-season`, `/disabled` as a sequence | 🔲 Backlog — designed | [CLOUD]                                                                             |
 
 ---
 

@@ -72,6 +72,13 @@ Fill in `.env.local`:
 - `ADMIN_EMAILS` — comma-separated addresses that land pre-approved. This is how the first
   admin gets in, since nobody exists yet to approve them.
 - `CRON_SECRET` — any random string; the cron routes require it as a bearer token.
+- `ALERT_WEBHOOK_URL` — a Discord or Slack incoming-webhook URL for cron-failure and
+  reconciliation-drift alerts. Unset, alerts are logged and not sent, which is the expected
+  state in CI and locally.
+- `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` — Sentry project DSNs. Unset, `Sentry.init` is never
+  called and nothing reports.
+- `SENTRY_AUTH_TOKEN` — only for source-map upload at build time. Without it the build warns
+  and succeeds.
 
 Then:
 

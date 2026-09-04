@@ -1147,3 +1147,327 @@ line.
 
 _Rejected:_ performance tracing on from the start. Four users generate no performance question the
 free tier's quota is better spent answering than errors are.
+
+---
+
+### D63 — Every send is keyed, but not every send rides a feed event
+
+_Added 2026-09-03 during the phase 8 email-notifications design session._
+
+Notification rows carry a deterministic `dedupe_key` under a unique index, exactly as
+`feed_events.dedupe_key` and `ledger_entries.idempotency_key` do. Four of the six notification
+types enqueue from the emit point that already writes a feed event and extend that event's key
+with the recipient's user id. The other two — "your offer expires soon" and "your account was
+approved" — have no feed event to extend, so they carry keys of their own shape,
+`p2p:<wagerId>:expiring:<userId>` and `user:<userId>:approved`, derived from the same kind of
+fact. The invariant is that the key is deterministic, not that a feed event exists.
+
+The recipient is part of the key because a feed event is one row for a whole season while a
+notification is one row per person: `ALLOWANCE_PAID` is a single card and a dozen emails.
+Appending the user id is what lets one unique index enforce once-per-person-per-fact for all six
+types identically.
+
+_Rejected:_ adding `P2P_EXPIRING` and `MEMBER_APPROVED` to `feed_event_type` so that every send
+rides a feed event and the rule has no exceptions. It puts two cards in the season feed that
+nobody asked for, and `P2P_EXPIRING` in particular would broadcast to everyone a fact concerning
+one person — reversing the call `expirePass` in `src/server/p2p/sweep.ts` already records in a
+comment as deliberate ("an ignored offer is a non-event, exactly as a withdrawn one is").
+
+_Rejected:_ shipping only the four types that have emit points. It is the smallest change, but
+"an offer nobody sees expires" is the reason [D50](#d50--notifications-are-opt-out-email-with-per-type-switches)
+gave for the feature existing at all.
+
+_Consequence to watch:_ a future notification type must decide its own key rather than inheriting
+one. That is the cost of the exception and is why the key scheme is tabulated in the spec rather
+than left to each call site.
+
+---
+
+### D64 — Notifications are an outbox: enqueued in the transaction, delivered outside it
+
+_Added 2026-09-03 during the phase 8 email-notifications design session._
+
+`enqueueNotification(tx, input)` inserts one row with `ON CONFLICT (dedupe_key) DO NOTHING`,
+inside the caller's transaction — the same argument `emitFeedEvent` makes for taking a `tx`. A
+separate pass, `deliverPending`, reads unsent rows, sends them, and stamps `sent_at`. Nothing
+sends mail inside a transaction and nothing sends mail from a request path: immediates flush from
+`after()` once the response is out, and a daily `/api/cron/notify` sweeps both the digest and
+anything `after()` dropped.
+
+This is what makes a `settle` re-run safe. The database rejects the duplicate insert, so the
+second run enqueues nothing and there is nothing to send twice — a duplicate ledger write has a
+reversing entry, and a duplicate email has nothing.
+
+_Rejected:_ sending inline at the emit point. No new table, but a send inside a transaction that
+later rolls back has emailed about a bet that did not settle, and a provider timeout becomes a
+settlement failure. The constraint [D50](#d50--notifications-are-opt-out-email-with-per-type-switches)
+carries into the build is precisely this one.
+
+_Rejected:_ handing rows to an external queue (QStash, Inngest) for retries and backoff. Better
+delivery guarantees, at the cost of a second paid signup, a second set of credentials and a
+webhook endpoint to secure, for a group of about a dozen people.
+
+_What this accepts:_ `enqueueNotification` is one more statement inside the settle transaction, so
+a throw there rolls a settlement back. The insert takes no joins and does no computation, which is
+the same exposure and the same mitigation `emitFeedEvent` already carries.
+
+---
+
+### D65 — Preferences are applied at delivery; suppression is an outcome, not a missing row
+
+_Added 2026-09-03 during the phase 8 email-notifications design session._
+
+The emit points enqueue unconditionally. `deliverPending` reads `notification_preferences`, and a
+row whose owner has switched that type off — or switched email off entirely — is stamped
+`SUPPRESSED` and never rendered. The row is written either way.
+
+Two things follow. The settle transaction gains no preferences query, so enqueueing stays a pure
+function of the fact rather than of who happens to be listening. And a member who mutes a type
+midway through a settle run does not leave a half-keyed hole behind them: the key was written, so
+a re-run still cannot double-send, and the record says plainly what was suppressed rather than
+looking like nothing ever happened.
+
+_Rejected:_ checking preferences at enqueue and skipping the insert. It saves rows, but it makes
+the outbox's contents depend on when somebody flipped a switch relative to when a cron ran — so a
+preference change between two runs of a resumable job can produce a send the first run suppressed.
+It also puts a read of a preferences table inside the money path.
+
+---
+
+### D66 — The digest collapses across types into one email per recipient
+
+_Added 2026-09-03 during the phase 8 email-notifications design session._
+
+`BETS_SETTLED` enqueues one row per settled bet and `ALLOWANCE_PAID` one row per member. The
+delivery pass groups every unsent `DIGEST` row by user and renders a single email, so a Tuesday
+reads "your allowance landed, and here is how four bets settled" rather than arriving as five
+messages.
+
+Digest-ness is therefore a column on the row rather than a property of the type. That keeps the
+enqueue side at one row per fact — which is what makes it keyed and re-run safe — and confines
+batching to delivery, where it belongs.
+
+The digest flushes from `/api/cron/notify`, daily at 13:00 UTC. That is 9am Eastern, so Sunday's
+settlements arrive Monday morning; and it is a daily schedule, so it is legal on Vercel Hobby and
+needs neither a GitHub Actions job nor a new secret.
+
+_Rejected:_ riding the existing daily `reconcile` cron, which would add no schedule at all. It runs
+at 08:00 UTC — 4am Eastern — so every digest would arrive in the middle of the night.
+
+_Rejected:_ riding the `settle` cron with a time-of-day gate. It needs no new route, but `settle`'s
+GitHub Actions schedule is currently disabled pending secrets, so digests would silently never
+send — and a time gate inside a money job is a new way for settlement to be wrong.
+
+---
+
+### D67 — Unsubscribe is a stateless HMAC, and GET never mutates
+
+_Added 2026-09-03 during the phase 8 email-notifications design session._
+
+The unsubscribe token is `base64url(HMAC-SHA256(AUTH_SECRET, "unsub:v1:<userId>:<scope>"))`,
+verified with `crypto.timingSafeEqual`, where scope is `all` or one notification type. Nothing is
+stored: no column, no lookup, no expiry, and no dependency beyond `node:crypto`.
+
+`GET /unsubscribe` verifies the token and renders a confirmation page. It changes nothing.
+`POST /api/unsubscribe` is the only writer. True one-click comes from RFC 8058 headers —
+`List-Unsubscribe` plus `List-Unsubscribe-Post: List-Unsubscribe=One-Click` — which make Gmail and
+Apple Mail render a native control that POSTs. The header is scoped to that email's own type, never
+`all`: someone pressing it means "stop sending me this", not "stop everything".
+
+The split exists because link scanners — Outlook Safe Links, corporate mail filters — issue a GET
+against every URL in a message. A mutating GET means members are silently unsubscribed by their own
+employer's spam filter, and the symptom is "email stopped working" with nothing to explain it.
+
+_Rejected:_ a stored `unsubscribe_token` column on `notification_preferences`, individually
+revocable by regenerating one user's token. It costs a column, an index and a lookup, and it
+requires the preferences row to exist before the first email can be sent — which breaks the "no row
+means everything is on" default that `feed_preferences` established and that
+[D50](#d50--notifications-are-opt-out-email-with-per-type-switches)'s opt-out default depends on.
+
+_What this accepts:_ revoking a leaked token means rotating `AUTH_SECRET`, which signs everyone out.
+The worst a leaked token does is turn someone's email off, and signing in turns it back on.
+
+---
+
+### D68 — The email transport is inert without an API key
+
+_Added 2026-09-03 during the phase 8 email-notifications design session._
+
+`sendEmail` picks its implementation from the environment. With `RESEND_API_KEY` unset it logs the
+recipient, subject and body to the console and sends nothing; with the key set it makes one
+`POST https://api.resend.com/emails`. There is no second flag and no `EMAIL_MODE` variable.
+
+This is the roadmap's "dev mode that logs instead of sending", expressed the way this repository
+already expresses the same idea twice: `ALERT_WEBHOOK_URL` unset makes `raiseAlert` warn rather than
+fail, and [D62](#d62--sentry-is-inert-without-a-dsn) makes Sentry inert without a DSN. It also means
+CI and the test suite cannot send mail by construction, since no key is ever set there — a stronger
+guarantee than a flag somebody can set wrong.
+
+Resend is called over plain `fetch` with no SDK, exactly as `alerts.ts` posts to a webhook with no
+SDK, so `package.json` gains no dependency and the entire provider surface is one small module.
+
+_Rejected:_ an explicit `EMAIL_TRANSPORT=console|resend` variable. It is more legible in a config
+file, but it adds a second thing that must agree with the first, and the failure it introduces —
+key present, transport still `console` — is silent.
+
+_Rejected:_ Nodemailer over SMTP, which would be provider-agnostic and swappable with no code
+change. It adds a dependency, makes SMTP credentials a second kind of secret, and pays a cold-start
+handshake on every serverless invocation.
+
+_What this accepts:_ a production deploy that forgets the key logs silently instead of sending, and
+nothing breaks to say so. `/admin/health` therefore names the live transport.
+
+### D69 — Rate limiting is a Postgres fixed-window counter, enforced at the action boundary
+
+_Added 2026-09-03 during the hardening design session._
+
+Every mutating server action consumes from a `rate_limits` table before it calls its service: one
+row per `(subject_id, bucket, window_start)`, incremented by a single `INSERT … ON CONFLICT DO
+UPDATE … RETURNING count`. The subject is the session's user id, never an IP and never anything the
+client sends. Enforcement lives in `src/app/**/actions.ts`, so `src/server/money/`,
+`src/server/bets/` and `src/server/p2p/` take no diff at all — the ledger-funnel guard and the
+`money-touch` hook stay quiet, and cron routes, `seed.ts` and the test suite keep calling the
+services unthrottled. A structural test asserts every exported `*Action` and every inline
+`'use server'` block in a page file either consumes or is a documented exemption.
+
+Windows are fixed, one per bucket, minute-scale. The buckets are `BET_PLACE` and `P2P_OFFER` at
+10/min, `EVENT_WRITE` and `COMMENT` at 10/min, `P2P_RESPOND` at 20/min, and `REACTION`,
+`ADMIN_ACTION` and `DEFAULT` at 30/min.
+
+_Rejected:_ an in-memory counter. Vercel runs several instances, so the real limit would be N times
+the configured one and would reset on every cold start. Cheap, and dishonest as a written guarantee.
+
+_Rejected:_ Vercel KV or Upstash. A paid dependency and a second piece of state for a four-person
+app that already has a database one query away.
+
+_Rejected:_ enforcing inside the services. It catches every caller including future ones, but puts
+a transport concern inside money code, trips the money-path hook on every edit, and would throttle
+the cron and seeding paths that legitimately loop.
+
+_Rejected:_ an hourly tier alongside the minute one. It doubles the query count on every mutation to
+address a member spamming steadily for an hour — which in a private group of four is a social
+problem with a social fix.
+
+_What this accepts:_ a fixed window lets a member issue up to twice a bucket's limit across a window
+boundary. At ten bets a minute that is twenty in a two-second straddle, which is not the failure
+this guards against. A sliding-window log buys the precision at the cost of one row per hit.
+
+---
+
+### D70 — The rate limiter fails open and counts attempts, not successes
+
+_Added 2026-09-03 during the hardening design session._
+
+If the `rate_limits` statement throws, `consume` logs, reports to Sentry, and allows the mutation.
+And the counter increments on the attempt, before the service runs, and is never refunded when the
+service rejects the request.
+
+Both halves follow from what the limiter is for. It guards against a nuisance — a runaway render
+loop, an impatient double-tap — so making it a hard dependency in front of bet placement means one
+exhausted connection pool or one mid-deploy migration takes the app's ability to act with it. Phase
+6 settled this shape for alerting ([D60](#d60--alerts-fire-on-transition-not-on-every-failing-run)
+and that plan's "alerting can never be the outage"), and it applies with more force here, because
+this sits in the request path of every mutation rather than beside one. Refunding on failure means a
+second write and a path that can leak; counting the request rather than the outcome means there is
+one write and one meaning.
+
+_Rejected:_ failing closed. It makes the limiter table a single point of failure for placing a bet,
+offering a wager, and commenting — to prevent, at worst, a burst of writes that the group would
+notice and mention to each other the same day.
+
+_Rejected:_ refunding the token when the service rejects. It reads fairer, and it hands anyone with
+a rejected-request loop an unlimited retry budget, which is precisely the case the limit exists for.
+
+_What this accepts:_ a member who submits ten slips that all bounce off `LINE_MOVED` has spent their
+minute. At ten a minute that is a wait, not a wall, and the alternative is a limiter that does not
+limit the one behaviour worth limiting.
+
+---
+
+### D71 — The four gate screens are one sequence on one component
+
+_Added 2026-09-03 during the hardening design session._
+
+`/pending`, `/join`, `/no-season` and `/disabled` render one new `GateScreen` — title, body, an
+optional step indicator, a control slot and a footer slot — instead of four hand-rolled copies of
+the same centering block. Each exports a `metadata.title`. Each offers at least one control and a
+link to the house rules. `/pending` gains a "check again" control, and `/join`'s inline submit
+becomes a real action with a typed error and a pending state. The step indicator makes the sequence
+explicit: sign in, then 1 of 2 waiting for approval, then 2 of 2 joining the season. `/no-season`
+and `/disabled` are branches off that line and carry no step number.
+
+There are four of these screens, not the three the roadmap names. `/disabled` is reached by the same
+`requireApprovedMember` switch as the other three and had been left out of the count.
+
+_Rejected:_ widening `StatusScreen` with a full-viewport variant. Its doc comment documents a
+specific contract — sized to render inside the shell, where a header and a tab bar are already
+taking space — and gate screens have no shell and need a footer. One component answering to two
+contracts would falsify that comment.
+
+_Rejected:_ leaving `/no-season` and `/disabled` alone as rare states. They are the two with no
+control of any kind on them today, so a member who lands there can only close the tab. Rare is the
+argument for making them self-explanatory, not for skipping them.
+
+_What this accepts:_ the step indicator hard-codes a two-step sequence. If approval is ever
+automated away, or a third step appears, the numbers are wrong until someone changes them — which is
+a visible wrongness on the screen rather than a silent one.
+
+---
+
+### D72 — The house rules page is public and lives outside the app shell
+
+_Added 2026-09-03 during the hardening design session._
+
+`/rules` is a root-level route, rendered without a session, linked from `/sign-in`, all four gate
+screens and `/me`. Its figures — starting bankroll, starting credits, the weekly top-up of each —
+are read from the active season and fall back to `defaults.ts` when none is running, so the rules
+page and `/join` cannot quote different numbers to the same person on the same day.
+
+Outside the shell because that is where its readers are. A member on `/pending` or `/no-season` is
+not inside `(app)`, and those are the people who most need to be told that this is play money, that
+credits cannot become cash, and who rules on a disputed event. Public because the one moment a
+person decides whether to hand over a Google account is before they have signed in. The root layout
+already sets `index: false`, so readable does not mean indexed.
+
+_Rejected:_ `(app)/rules`, inside the shell. It inherits the header, balance and nav for free, and
+is invisible to exactly the pending and no-season members this phase is for — which would mean a
+second copy of the rules for them, and two copies drift.
+
+_Rejected:_ requiring a session on the root route. It keeps the app fully closed to strangers, at
+the cost of the `/sign-in` link, which is the placement that does the most work.
+
+_Rejected:_ hard-coding the amounts in the copy. They live in `defaults.ts` and are overridable per
+season, so hard-coded prose is wrong the first time a season is created with different numbers.
+
+---
+
+### D73 — The smoke checklist ships unvalidated, with a run log
+
+_Added 2026-09-03 during the hardening design session._
+
+`docs/smoke-checklist.md` is written from reading the implementation, not from a completed human
+pass, and says so in its first paragraph. It carries a machine half anyone can run, a hands half
+that is one continuous path from a new account's first sign-in through arbitration, a run-log table
+that is empty on delivery, and a closing section naming what the document cannot know until a person
+runs it. The first `[MANUAL]` run's job is to correct the document, and its corrections matter more
+than its pass or fail.
+
+The roadmap already splits this row `[CLOUD]` to draft and `[MANUAL]` to validate. Writing the draft
+now is what makes the pass cheap to run; claiming the draft is finished is what would make the pass
+feel redundant and quietly not happen.
+
+_Rejected:_ waiting for the human pass before writing anything. It is the same deadlock the roadmap
+broke for phase 5 — the pass is easier to schedule when there is a list to follow, and a list
+derived from the code is a better starting point than a blank page.
+
+_Rejected:_ shipping it without the caveat. An unmarked checklist is indistinguishable from a
+validated one six months later, and the first person to hit a step that cannot be performed as
+written concludes the app is broken rather than the document.
+
+_Rejected:_ a `scripts/smoke.ts` automating the machine half. `npm run verify` and `/admin/health`
+already are that command, and a second artifact would need to stay in sync with the document for no
+coverage that does not already exist.
+
+_Consequence to watch:_ if the pass keeps not happening, this document ages into a description of an
+app that has changed underneath it. The run log is empty on purpose so that its emptiness is the
+signal.

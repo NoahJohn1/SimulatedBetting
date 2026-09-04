@@ -75,7 +75,7 @@ also now exports `DATABASE_URL` explicitly rather than relying on any file load 
 migration step, as a second layer against the same class of bug.
 
 What genuinely remains outside a cloud session's reach: pointing `ODDS_PROVIDER=espn` at
-*production* itself and reconciling what lands there (Noah's credentials, Noah's call), and the
+_production_ itself and reconciling what lands there (Noah's credentials, Noah's call), and the
 roadmap's human test pass gate (a person's judgment, not a test result).
 
 ## Global Constraints

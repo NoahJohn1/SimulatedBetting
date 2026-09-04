@@ -1,15 +1,25 @@
 'use client';
 
+import { useEffect } from 'react';
+import * as Sentry from '@sentry/nextjs';
+
 // Only catches errors thrown by the root layout itself, which is why it renders its own
 // <html>/<body> rather than relying on layout.tsx — that layout is what would have thrown.
 // Kept dependency-free (no Tailwind classes) since the app's own CSS may be what failed to
 // load in the first place.
 export default function GlobalError({
+  error,
   retry,
 }: {
   error: Error & { digest?: string };
   retry: () => void;
 }) {
+  // A root-layout throw is the one failure a user sees with nothing recording it. No-op
+  // without a DSN, like every other Sentry call in this app (D62).
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <html lang="en">
       <body

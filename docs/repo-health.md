@@ -12,17 +12,17 @@ not get re-proposed later.
 
 ## Status at a glance
 
-_Last verified 2026-09-02._
+_Last verified 2026-09-04._
 
 Every item below carries a **lane** — who or what can actually finish it. The lane is decided by
 what the work needs, not by who can type the file. Four lanes now, not three: `[MANUAL]` splits
 into `[MANUAL]` and `[NOAH]` below, since not every human task needs Noah's specific credentials.
 
-| Lane         | Means                                      | Why                                                                                                                                                                                    |
-| ------------ | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **[MANUAL]** | Either of you, by hand                     | Clicking, reading, judging. No special account needed.                                                                                                                                 |
-| **[NOAH]**   | Noah specifically                          | An account or permission only he holds: GitHub repo settings, the Vercel dashboard, DNS, paid signups. No agent has these credentials, and none should.                                |
-| **[CLOUD]**  | A Claude Code web session, start to finish | Measured 2026-08-25: `npm ci` (21s), `npm run typecheck`, `npm run lint`, `npx next build` and any test that only reads source all run clean in a cloud session. As of 2026-09-03, so does the full DB-backed suite — see [3.7](#37-postgres-without-docker-in-a-cloud-session). |
+| Lane         | Means                                      | Why                                                                                                                                                                                                                                                                                                                 |
+| ------------ | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **[MANUAL]** | Either of you, by hand                     | Clicking, reading, judging. No special account needed.                                                                                                                                                                                                                                                              |
+| **[NOAH]**   | Noah specifically                          | An account or permission only he holds: GitHub repo settings, the Vercel dashboard, DNS, paid signups. No agent has these credentials, and none should.                                                                                                                                                             |
+| **[CLOUD]**  | A Claude Code web session, start to finish | Measured 2026-08-25: `npm ci` (21s), `npm run typecheck`, `npm run lint`, `npx next build` and any test that only reads source all run clean in a cloud session. As of 2026-09-03, so does the full DB-backed suite — see [3.7](#37-postgres-without-docker-in-a-cloud-session).                                    |
 | **[LOCAL]**  | Claude on your desktop                     | For work that has to exercise Docker itself — `docker compose up`, the session-start hook's Docker branch — not merely "needs Postgres." A cloud session has the `docker` binary but no daemon (`/var/run/docker.sock` does not exist), so nothing that specifically depends on Docker running can be proven there. |
 
 This document covers repo mechanics. For the product phases — the ESPN adapter, deployment, the
@@ -33,8 +33,8 @@ UI ladder, email, hardening — see [the roadmap's status table](roadmap.md#road
 of this repo's own `db:up` script, false of Postgres itself. A cloud session that installs and
 starts a native Postgres server (no container runtime involved — see
 [3.7](#37-postgres-without-docker-in-a-cloud-session)) runs the entire suite, migrations
-included. What's left in [LOCAL] is narrower and more honest: only the things that test *Docker
-specifically*, not everything that merely needs a database.
+included. What's left in [LOCAL] is narrower and more honest: only the things that test _Docker
+specifically_, not everything that merely needs a database.
 
 Two things soften the [LOCAL] lane further: **CI has Postgres**, so a cloud session that opens a
 pull request gets the full suite run against a real database by the `verify` job regardless; and
@@ -48,23 +48,23 @@ assumption that every test needs a database. It does not, and the table above mo
 
 ### Done
 
-| #   | Item                                                                                                                                                                      | Lane       | Landed                                                                                       |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------- |
-| 1   | Branch protection on `main` requiring `verify` ([1.4](#14-cheap-improvements))                                                                                            | **[NOAH]** | Re-verified 2026-08-25 — `main` is protected                                                 |
-| 2   | Five milestones, and the `bug` / `money` / `ui` / `from-test-pass` / `phase-5`–`phase-9` labels ([4](#4-issues-and-milestones))                                           | **[NOAH]** | Spot-checked present; GitHub settings, not files                                             |
-| 3   | Bug issue template ([2](#2-hygiene))                                                                                                                                      | [CLOUD]    | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7)                                   |
-| 4   | `decision-log` skill ([3.4](#34-decision-log--a-skill))                                                                                                                   | [CLOUD]    | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7)                                   |
-| 5   | `money-invariants` skill ([3.3](#33-money-invariants--all-three-layers))                                                                                                  | [CLOUD]    | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7)                                   |
-| 6   | `engines.node: ">=22"` — half the Node-pinning item ([1.4](#14-cheap-improvements))                                                                                       | [CLOUD]    | [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8), incidentally, not from this plan |
-| 7   | `cron.yml` restored to valid YAML, schedule off ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken))                                                            | [CLOUD]    | [#9](https://github.com/NoahJohn1/SimulatedBetting/pull/9) — a holding position, not the fix |
-| 8   | Cron empty-secret guards on both jobs ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken))                                                                      | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
-| 9   | Ledger-funnel guard test ([3.3](#33-money-invariants--all-three-layers))                                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13) — proven able to fail           |
-| 10  | `.nvmrc`, CI `build` / `concurrency` / `timeout-minutes`, Dependabot ([1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), [1.4](#14-cheap-improvements)) | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
-| 11  | `session-start` hook — written, cloud branches proven ([3.6](#36-session-start--a-hook))                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13); Docker path outstanding        |
-| 12  | `money-touch` PostToolUse hook — layer 2 ([3.3](#33-money-invariants--all-three-layers))                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
-| 13  | `.env.test` documented in the README ([3.6](#36-session-start--a-hook))                                                                                                   | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
-| 14  | Prettier plus `eslint-config-prettier` ([2](#2-hygiene))                                                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                 |
-| 15  | Reconcile the ESPN adapter work against the Prettier reformat                                                                                                             | [CLOUD]    | Commit `2722534` on `espn-adapter`, ahead of this branch's own PR                             |
+| #   | Item                                                                                                                                                                      | Lane       | Landed                                                                                             |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------- |
+| 1   | Branch protection on `main` requiring `verify` ([1.4](#14-cheap-improvements))                                                                                            | **[NOAH]** | Re-verified 2026-08-25 — `main` is protected                                                       |
+| 2   | Five milestones, and the `bug` / `money` / `ui` / `from-test-pass` / `phase-5`–`phase-9` labels ([4](#4-issues-and-milestones))                                           | **[NOAH]** | Spot-checked present; GitHub settings, not files                                                   |
+| 3   | Bug issue template ([2](#2-hygiene))                                                                                                                                      | [CLOUD]    | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7)                                         |
+| 4   | `decision-log` skill ([3.4](#34-decision-log--a-skill))                                                                                                                   | [CLOUD]    | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7)                                         |
+| 5   | `money-invariants` skill ([3.3](#33-money-invariants--all-three-layers))                                                                                                  | [CLOUD]    | [#7](https://github.com/NoahJohn1/SimulatedBetting/pull/7)                                         |
+| 6   | `engines.node: ">=22"` — half the Node-pinning item ([1.4](#14-cheap-improvements))                                                                                       | [CLOUD]    | [#8](https://github.com/NoahJohn1/SimulatedBetting/pull/8), incidentally, not from this plan       |
+| 7   | `cron.yml` restored to valid YAML, schedule off ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken))                                                            | [CLOUD]    | [#9](https://github.com/NoahJohn1/SimulatedBetting/pull/9) — a holding position, not the fix       |
+| 8   | Cron empty-secret guards on both jobs ([1.5](#15-the-cron-workflow--the-only-thing-actually-broken))                                                                      | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                       |
+| 9   | Ledger-funnel guard test ([3.3](#33-money-invariants--all-three-layers))                                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13) — proven able to fail                 |
+| 10  | `.nvmrc`, CI `build` / `concurrency` / `timeout-minutes`, Dependabot ([1.1](#11-it-never-builds--worth-adding-but-narrower-than-it-looks), [1.4](#14-cheap-improvements)) | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                       |
+| 11  | `session-start` hook — written, cloud branches proven ([3.6](#36-session-start--a-hook))                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13); Docker path outstanding              |
+| 12  | `money-touch` PostToolUse hook — layer 2 ([3.3](#33-money-invariants--all-three-layers))                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                       |
+| 13  | `.env.test` documented in the README ([3.6](#36-session-start--a-hook))                                                                                                   | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                       |
+| 14  | Prettier plus `eslint-config-prettier` ([2](#2-hygiene))                                                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                       |
+| 15  | Reconcile the ESPN adapter work against the Prettier reformat                                                                                                             | [CLOUD]    | Commit `2722534`, merged to `main` in [#21](https://github.com/NoahJohn1/SimulatedBetting/pull/21) |
 
 ### Outstanding
 
@@ -81,7 +81,10 @@ and what it is waiting on.
 | 6   | Merge Dependabot's monthly PR                                                   | **[MANUAL]** | Nothing — standing monthly task. First fire 2026-09-02: [#14](https://github.com/NoahJohn1/SimulatedBetting/pull/14) and [#15](https://github.com/NoahJohn1/SimulatedBetting/pull/15) merged, [#16](https://github.com/NoahJohn1/SimulatedBetting/pull/16) and [#17](https://github.com/NoahJohn1/SimulatedBetting/pull/17) closed per row 7 |
 | 7   | ESLint 10 and TypeScript 7 majors                                               | **[MANUAL]** | Upstream. See [1.6](#16-the-dependency-majors-that-cannot-land-yet) — Dependabot re-proposes monthly, and a green run is the signal to merge                                                                                                                                                                                                 |
 | 8   | `db-migration` skill ([3.5](#35-db-migration--a-skill))                         | [CLOUD]      | Deliberately deferred. The trigger is a migration going wrong; it has not fired                                                                                                                                                                                                                                                              |
-| 9   | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | Nothing — no longer gates phase 5 (2026-09-03), still useful for 6-9 and for whatever it turns up along the way                                                                                                                                                                                                                              |
+| 9   | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | Nothing — no longer gates phase 5 (2026-09-03), still useful for 6-9. Cheaper to run once phase 9 lands: its plan drafts a `docs/smoke-checklist.md` for the pass to follow, rather than deriving one from it ([D73](decisions.md#d73--the-smoke-checklist-ships-unvalidated-with-a-run-log))                                                |
+| 10  | **Apply the `job_runs` migration to production**                                | **[NOAH]**   | Nothing. Until it lands, `/admin/health` reports every job as never-run and no alert can fire — see [roadmap 6](roadmap.md#still-owed-now-that-the-cloud-half-has-merged)                                                                                                                                                                    |
+| 11  | Set `ALERT_WEBHOOK_URL`, and the two Sentry DSNs                                | **[NOAH]**   | Nothing. Vercel environment variables only; the code is inert without them by design ([D59](decisions.md#d59--one-generic-webhook-carrying-both-content-and-text), [D62](decisions.md#d62--sentry-is-inert-without-a-dsn))                                                                                                                   |
+| 12  | Run the phase-6 DB-backed tests on a desktop                                    | **[LOCAL]**  | A desktop with Docker. `job-runs.test.ts`, `health-reads.test.ts` and `activate.test.ts` were written in a cloud session and have only ever run in CI                                                                                                                                                                                        |
 
 ### What changed underneath all of this
 
@@ -95,6 +98,15 @@ and what it is waiting on.
 - **That second workflow is the one thing in this repo that is actually broken.** It failed
   every scheduled fire for two days, and the fix applied on 2026-08-24 replaced that failure
   with a different one. Written up in [1.5](#15-the-cron-workflow--the-only-thing-actually-broken).
+- **Phase 6's cloud half, and the phase 8 and 9 designs, are on `main` as of 2026-09-04.** One
+  integration branch merged all three: phase 6's observability code (the `job_runs` table,
+  `raiseAlert` on a webhook and Sentry, `/admin/health`, `/admin/seasons`), plus the phase 8 and
+  phase 9 specs and implementation plans, which are documents only — no implementation code. That
+  adds three `[NOAH]` rows to the [Outstanding table](#outstanding) (10, 11 and 12) and a `[LOCAL]`
+  one, because phase 6 shipped code whose tests have only ever run in CI and whose alerting is
+  inert until Noah applies a migration and sets three environment variables. **The rule this
+  document keeps repeating applies here too:** the counts and statuses above were re-verified on
+  2026-09-04 rather than left to update themselves.
 - **The UI work is on `main` now.** `claude/roadmap-7b-plan-il1opu` merged as
   [PR #10](https://github.com/NoahJohn1/SimulatedBetting/pull/10) at `584a4ac`, followed by
   [PR #11](https://github.com/NoahJohn1/SimulatedBetting/pull/11) at `2d8dc91`, so phases 7a and
@@ -121,7 +133,8 @@ change plus one uncommented block, and is independent of both branches.
 ## 1. The CI gate
 
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs `npm ci`, applies migrations,
-and runs `npm run verify` (typecheck, lint, 866 tests across 81 files). That is a good gate
+and runs `npm run verify` (typecheck, lint, 950 tests across 88 files, re-measured 2026-09-04
+after phase 6's cloud half landed). That is a good gate
 with one real hole and several cheap improvements.
 
 ### 1.1 It never builds — worth adding, but narrower than it looks
@@ -508,17 +521,17 @@ a code bug and is not.
 broader than the work. A cloud session is the _better_ place to prove four of the hook's five
 branches, because a cloud session is the degraded environment the hook exists to handle.
 
-| Branch                                                   | Proven where | Status                 |
-| -------------------------------------------------------- | ------------ | ---------------------- |
-| `npm ci` when `node_modules` is absent                   | [CLOUD]      | ✅                     |
-| Re-running is a no-op                                    | [CLOUD]      | ✅                     |
-| No daemon → prints instructions, exits 0                 | [CLOUD]      | ✅                     |
-| A `docker` binary on `PATH` is not mistaken for a daemon | [CLOUD]      | ✅                     |
-| `docker compose up -d --wait` and both migrations        | **[LOCAL]**  | 🔲 Outstanding — row 4 |
+| Branch                                                   | Proven where | Status                                                         |
+| -------------------------------------------------------- | ------------ | -------------------------------------------------------------- |
+| `npm ci` when `node_modules` is absent                   | [CLOUD]      | ✅                                                             |
+| Re-running is a no-op                                    | [CLOUD]      | ✅                                                             |
+| No daemon → prints instructions, exits 0                 | [CLOUD]      | ✅                                                             |
+| A `docker` binary on `PATH` is not mistaken for a daemon | [CLOUD]      | ✅                                                             |
+| `docker compose up -d --wait` and both migrations        | **[LOCAL]**  | 🔲 Outstanding — row 4                                         |
 | Native Postgres fallback and both migrations, no Docker  | [CLOUD]      | ✅ — see [3.7](#37-postgres-without-docker-in-a-cloud-session) |
 
 A Claude Code web session starts with no `node_modules` and no Postgres reachable on port 5433
-(docker-compose's mapping), so it cannot bring up *that* database. Re-confirmed 2026-08-25:
+(docker-compose's mapping), so it cannot bring up _that_ database. Re-confirmed 2026-08-25:
 `node_modules` absent, port 5433 closed.
 
 **One correction to the original writeup, and a second correction on top of it.** The original
@@ -531,7 +544,7 @@ a cloud session at all." As of 2026-09-03 it can, just not through Docker — se
 and falls back to a native Postgres server running directly in the container, which this specific
 environment's image ships pre-installed. A web session is no longer read-only with respect to
 the tests. This also means the [three-lane
-plan](plans/2026-08-20-repo-health-implementation-plan.md)'s split of *this specific item* is
+plan](plans/2026-08-20-repo-health-implementation-plan.md)'s split of _this specific item_ is
 narrower than it was — see 3.7 for what's still genuinely [LOCAL] versus what moved to [CLOUD].
 
 A `SessionStart` hook fixes it: `npm ci` when `node_modules` is missing, `docker compose up -d
@@ -581,7 +594,7 @@ returning and Postgres actually accepting connections.
 
 **What this does and doesn't change.** Every roadmap or repo-health item tagged `[LOCAL]` purely
 because "it needs a database" should be re-read as `[CLOUD]` — this environment's image already
-carries what that needs. What's still genuinely `[LOCAL]` is anything that tests *Docker itself*
+carries what that needs. What's still genuinely `[LOCAL]` is anything that tests _Docker itself_
 — row 4 above (`docker compose up -d --wait`), and this repo's `db:up`/`docker-compose.yml`
 path specifically — since a cloud session still has no daemon to exercise. A production
 database (Vercel's hosted Postgres) is a separate concern entirely; this is a disposable,
@@ -678,8 +691,9 @@ the existing code rather than Prettier's defaults: 86 files needed reformatting 
 230, because it picked up conventions already in use rather than imposing a property nobody
 had chosen ([D55](decisions.md#d55--prettier-adopted-with-a-config-matched-to-the-existing-code)).
 The reformat itself is isolated as its own commit, so it can be dropped whole with
-one revert if it turns out to be in someone's way. `format:check` is deliberately **not** wired
-into `verify` or CI yet — Noah's ESPN adapter work is unpushed, and a formatting gate today
-would turn his eventual merge conflict into a red build instead of an ordinary one. See
-[Outstanding rows 5 and 6](#outstanding): tell him before this merges, and wire the gate once
-his branch lands.
+one revert if it turns out to be in someone's way. `format:check` was deliberately **not** wired
+into `verify` or CI while Noah's ESPN adapter work was unpushed, because a formatting gate then
+would have turned his eventual merge conflict into a red build instead of an ordinary one. That
+reason expired on 2026-09-03 when [#21](https://github.com/NoahJohn1/SimulatedBetting/pull/21)
+merged. [Outstanding row 5](#outstanding) is unblocked and is now the cheapest `[CLOUD]` item on
+the list.

@@ -4,7 +4,7 @@
 **Status:** Built (code complete on `espn-adapter`, not yet merged to `main`). All five success
 criteria are now mechanically verified, including criterion 2 — `syncOdds`/`syncResults` run
 with the real ESPN providers against live data on 2026-09-03, persisting correctly into a real
-Postgres database. Only running that same pipeline against *production* and reconciling it
+Postgres database. Only running that same pipeline against _production_ and reconciling it
 there remains, which needs Noah's credentials rather than more verification — see
 [roadmap](../roadmap.md#5--real-data-the-espn-adapter) task 7.
 **Scope:** Phase 5 of the production-readiness roadmap (tasks 2, 3, 5, 6) — see
