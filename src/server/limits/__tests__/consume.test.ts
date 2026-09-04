@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '@/db/client';
 import { rateLimits } from '@/db/schema';
 import { BUCKETS } from '@/server/limits/policy';
-import { consume } from '@/server/limits/consume';
+import { consume, pruneRateLimits } from '@/server/limits/consume';
 import { resetDb } from '@/test/db';
 
 const SUBJECT = '00000000-0000-4000-8000-000000000001';
@@ -67,5 +67,21 @@ describe('consume', () => {
 
     expect(await consume(SUBJECT, 'BET_PLACE')).toBeNull();
     expect(logged).toHaveBeenCalled();
+  });
+});
+
+describe('pruneRateLimits', () => {
+  it('deletes closed windows and leaves the current one alone', async () => {
+    const old = new Date(Date.now() - 3 * 60 * 60 * 1_000);
+    await db
+      .insert(rateLimits)
+      .values({ subjectId: SUBJECT, bucket: 'COMMENT', windowStart: old, count: 4 });
+    await consume(SUBJECT, 'COMMENT');
+
+    expect(await pruneRateLimits()).toBe(1);
+
+    const remaining = await db.select().from(rateLimits);
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].windowStart.getTime()).toBeGreaterThan(old.getTime());
   });
 });
