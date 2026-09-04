@@ -220,13 +220,13 @@ sequence.
 Load sanity's results are written up in [repo-health.md 3.7](repo-health.md#37-postgres-without-docker-in-a-cloud-session)
 and [docs/README.md](README.md), not repeated here.
 
-| Task                                                                               | Status      | Owner                                       |
-| ---------------------------------------------------------------------------------- | ----------- | ------------------------------------------- |
-| A written smoke checklist                                                          | 🔲 Backlog  | [CLOUD] to draft · **[MANUAL]** to validate |
-| Rate limiting on mutations                                                         | 🔲 Backlog  | [CLOUD]                                     |
-| Load sanity — a full CFB Saturday and a season of feed events                      | ✅ Complete | —                                           |
-| A house rules page                                                                 | 🔲 Backlog  | [CLOUD]                                     |
-| The new-member path — `/pending`, `/join`, `/no-season`, `/disabled` as a sequence | 🔲 Backlog  | [CLOUD]                                     |
+| Task                                                                               | Status                                | Owner                                       |
+| ---------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------- |
+| [A written smoke checklist](smoke-checklist.md)                                    | 🔄 Drafted — awaiting a [MANUAL] pass | [CLOUD] to draft · **[MANUAL]** to validate |
+| Rate limiting on mutations                                                         | 🔲 Backlog                            | [CLOUD]                                     |
+| Load sanity — a full CFB Saturday and a season of feed events                      | ✅ Complete                           | —                                           |
+| A house rules page                                                                 | 🔲 Backlog                            | [CLOUD]                                     |
+| The new-member path — `/pending`, `/join`, `/no-season`, `/disabled` as a sequence | 🔲 Backlog                            | [CLOUD]                                     |
 
 **What's left.** All four remaining rows are `[CLOUD]` work, ready to execute — see the plan for
 task order. The smoke checklist ships as an unvalidated draft; the `[MANUAL]` pass corrects it
