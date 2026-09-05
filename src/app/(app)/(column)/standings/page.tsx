@@ -67,7 +67,14 @@ export default async function StandingsPage() {
     .where(eq(seasonMemberships.seasonId, member.seasonId))
     .orderBy(desc(seasonMemberships.balanceCents));
 
-  if (rows.length === 0) return <EmptyState title="Nobody has joined yet" />;
+  if (rows.length === 0) {
+    return (
+      <EmptyState
+        title="Nobody has joined yet"
+        body="Standings show up once other members join the season."
+      />
+    );
+  }
 
   const byCredits = [...rows].sort((a, b) =>
     a.creditsBalanceCents < b.creditsBalanceCents

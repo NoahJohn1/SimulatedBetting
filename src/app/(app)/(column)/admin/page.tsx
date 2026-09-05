@@ -74,7 +74,10 @@ export default async function AdminPage() {
         </h2>
 
         {pending.length === 0 ? (
-          <EmptyState title="Nobody is waiting" />
+          <EmptyState
+            title="Nobody is waiting"
+            body="Sign-ins land here for approval before they can bet."
+          />
         ) : (
           pending.map((user) => (
             <Card key={user.id} className="flex items-center justify-between gap-3 p-3">

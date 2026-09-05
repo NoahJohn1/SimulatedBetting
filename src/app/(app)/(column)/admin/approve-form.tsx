@@ -34,7 +34,7 @@ export function ApproveForm({
       } else {
         toast({
           tone: 'negative',
-          title: 'That went through too quickly',
+          title: "You're doing that too quickly",
           description: `Try again in ${result.error.retryAfterSeconds} seconds.`,
         });
       }

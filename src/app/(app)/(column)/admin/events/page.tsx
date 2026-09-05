@@ -56,7 +56,7 @@ export default async function AdminEventsPage() {
         <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Overdue</h2>
 
         {queue.overdue.length === 0 ? (
-          <EmptyState title="Nothing is overdue" />
+          <EmptyState title="Nothing is overdue" body="Every event is resolving on schedule." />
         ) : (
           queue.overdue.map((row) => {
             const openBets = openBetCountByEventId.get(row.eventId) ?? 0;
@@ -89,7 +89,7 @@ export default async function AdminEventsPage() {
         <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Disputed</h2>
 
         {queue.disputed.length === 0 ? (
-          <EmptyState title="No open disputes" />
+          <EmptyState title="No open disputes" body="Nobody has flagged a result." />
         ) : (
           queue.disputed.map((row) => (
             <Link key={row.eventId} href={`/events/${row.eventId}/resolve`} className="block">
