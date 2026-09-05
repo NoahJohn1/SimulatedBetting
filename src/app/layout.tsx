@@ -1,5 +1,10 @@
+import { eq } from 'drizzle-orm';
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { cookies } from 'next/headers';
+import { db } from '@/db/client';
+import { users } from '@/db/schema';
+import { getSessionUser } from '@/server/auth/session';
 import './globals.css';
 
 const geistSans = Geist({
@@ -44,9 +49,44 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: LayoutProps<'/'>) {
+/**
+ * The dark-mode toggle (Task 17, D75). `theme` is a device cookie, not an account column —
+ * "System" is represented by the cookie's absence (or any value other than `light`/`dark`),
+ * which is why this returns `undefined` rather than a third literal: React drops a JSX
+ * attribute entirely when its value is `undefined`, so System renders `<html>` with no
+ * `data-theme` at all, exactly what the `[data-theme]` selectors in globals.css (7b) already
+ * expect — the plain `prefers-color-scheme` media query handles System on its own.
+ */
+function readThemeCookie(value: string | undefined): 'light' | 'dark' | undefined {
+  return value === 'light' || value === 'dark' ? value : undefined;
+}
+
+export default async function RootLayout({ children }: LayoutProps<'/'>) {
+  const cookieStore = await cookies();
+  const theme = readThemeCookie(cookieStore.get('theme')?.value);
+
+  // The accent picker (Task 18, D75) is account-level, not a device cookie, so it needs the
+  // signed-in user's row — nothing above this reads one yet, since this layout wraps signed-out
+  // routes too (sign-in, pending, disabled…), so a narrow select here is the query, not a reuse
+  // of one from further down the tree. Signed-out pages get no attribute at all, which is
+  // exactly the green default globals.css already renders for that case.
+  const sessionUser = await getSessionUser();
+  let accent: string | undefined;
+  if (sessionUser) {
+    const [row] = await db
+      .select({ accent: users.accent })
+      .from(users)
+      .where(eq(users.id, sessionUser.id));
+    accent = row?.accent.toLowerCase();
+  }
+
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      data-theme={theme}
+      data-accent={accent}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

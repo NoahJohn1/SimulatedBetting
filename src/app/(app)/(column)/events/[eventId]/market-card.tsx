@@ -321,7 +321,7 @@ function manageMessage(code: string): string {
     case 'INVALID_PRICE':
       return 'Price must be -100 or lower, or 100 or higher.';
     case 'RATE_LIMITED':
-      return 'You are doing that too quickly. Give it a few seconds.';
+      return "You're doing that too quickly. Give it a few seconds.";
     default:
       return 'That change could not be saved.';
   }

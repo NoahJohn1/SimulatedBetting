@@ -5,8 +5,10 @@
 **Scope:** Phase 7b of the UI ladder (see [../roadmap.md](../roadmap.md#roadmap))
 **Depends on:** [7a](2026-08-22-ui-foundations-design.md), which shipped the six shared
 components this phase retokenizes and the structural-test pattern it extends.
-**Blocks:** [7c](../roadmap.md#7c--screen-by-screen-rebuild), which rebuilds every screen
-against what this phase produces. Blocks nothing outside the ladder.
+**Blocked:** 7c, which rebuilt every screen against what this phase produced — shipped in
+[PR #28](https://github.com/NoahJohn1/SimulatedBetting/pull/28); see the
+[screen-rebuild audit](../screen-rebuild-audit.md) for its dispositions of this phase's
+backlog. Blocked nothing outside the ladder.
 
 ## Purpose
 

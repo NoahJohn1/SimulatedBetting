@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { REACTION_EMOJI } from '@/server/feed/reaction-emoji';
+import { REACTION_EMOJI, reactionLabel } from '@/server/feed/reaction-emoji';
 import type { SerializedFeedCard } from './actions';
 
 /**
@@ -44,6 +44,7 @@ export function ReactionPicker({
             type="button"
             onClick={() => onToggle(r.emoji)}
             aria-pressed={r.mine}
+            aria-label={`${reactionLabel(r.emoji)} reaction, ${r.count}${r.mine ? ', yours' : ''}`}
             className={`rounded-full border px-2 py-0.5 text-xs transition-colors ${
               r.mine ? 'border-accent bg-surface-muted' : 'border-line hover:bg-surface-sunken'
             }`}
@@ -79,6 +80,7 @@ export function ReactionPicker({
               setExpanded(false);
             }}
             aria-pressed={mine}
+            aria-label={`React ${reactionLabel(emoji)}${count > 0 ? `, ${count}` : ''}${mine ? ', yours' : ''}`}
             className={`rounded-full border px-2 py-0.5 text-xs transition-colors ${
               mine ? 'border-accent bg-surface-muted' : 'border-line hover:bg-surface-sunken'
             }`}

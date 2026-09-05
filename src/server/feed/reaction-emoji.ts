@@ -15,6 +15,20 @@
  */
 export const REACTION_EMOJI = ['🔥', '😂', '💀', '🤝', '🎯', '🤡'] as const;
 
+/**
+ * A screen reader's built-in emoji names are inconsistent across platforms (VoiceOver says
+ * "fire", NVDA says "fire, red"). `ReactionPicker` (Task 19) uses these instead so a chip's
+ * `aria-label` reads the same word everywhere, e.g. "Fire reaction, 3, yours".
+ */
+export const REACTION_LABEL: Record<(typeof REACTION_EMOJI)[number], string> = {
+  '🔥': 'Fire',
+  '😂': 'Laughing',
+  '💀': 'Skull',
+  '🤝': 'Handshake',
+  '🎯': 'Bullseye',
+  '🤡': 'Clown',
+};
+
 export const MAX_COMMENT_LENGTH = 500;
 
 export type FeedErrorCode =
@@ -35,4 +49,9 @@ export class FeedError extends Error {
 
 export function isAllowedEmoji(emoji: string): boolean {
   return (REACTION_EMOJI as readonly string[]).includes(emoji);
+}
+
+/** `REACTION_LABEL` lookup for a DB-typed (plain `string`) emoji; the emoji itself if unknown. */
+export function reactionLabel(emoji: string): string {
+  return (REACTION_LABEL as Record<string, string>)[emoji] ?? emoji;
 }

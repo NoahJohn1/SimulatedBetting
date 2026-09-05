@@ -118,7 +118,11 @@ export default async function GamesPage({ searchParams }: PageProps<'/games'>) {
         </div>
 
         {visibleDays.length === 0 ? (
-          <EmptyState title="No games" body="No games match this filter." />
+          <EmptyState
+            title="No games"
+            body="No games match this filter."
+            action={{ href: '/games', label: 'Clear filters' }}
+          />
         ) : (
           visibleDays.map(([key, games], i) => (
             <DaySection

@@ -34,7 +34,11 @@ describe('shared status components', () => {
       const source = readFileSync(file, 'utf8');
       expect(
         source.includes('@/components/ui/status-screen') ||
-          source.includes('@/components/ui/loading-screen'),
+          source.includes('@/components/ui/loading-screen') ||
+          // Task 16: five routes render a screen-specific skeleton instead of the generic
+          // LoadingScreen, but still delegate to a shared component in src/components/ui —
+          // never inline markup of their own.
+          source.includes('@/components/ui/skeleton'),
         `${file} should render a shared status component rather than its own markup`,
       ).toBe(true);
     }
