@@ -3,13 +3,7 @@
 import { useSlip } from '@/components/bet-slip/slip-context';
 import { Line, Price } from '@/components/ui/money';
 import type { BoardGame, BoardMarket, BoardSelection } from '@/server/odds/board';
-
-export const MARKET_ORDER = ['SPREAD', 'MONEYLINE', 'TOTAL'] as const;
-export const MARKET_LABEL: Record<string, string> = {
-  SPREAD: 'Spread',
-  MONEYLINE: 'Money',
-  TOTAL: 'Total',
-};
+import { MARKET_LABEL } from './market-meta';
 
 /** `O `/`U ` ahead of a TOTAL selection's line — Line itself only knows the number. */
 function sidePrefix(market: BoardMarket, selection: BoardSelection): string {

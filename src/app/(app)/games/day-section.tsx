@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { MARKET_LABEL, MARKET_ORDER } from './odds-cell';
+import { MARKET_LABEL, MARKET_ORDER } from './market-meta';
 
 /**
  * One day's worth of games, collapsible. Native <details>/<summary> rather than client state

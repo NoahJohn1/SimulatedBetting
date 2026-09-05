@@ -1,6 +1,7 @@
 import { formatKickoff } from '@/domain/dates';
 import type { BoardGame, BoardMarket, BoardSelection } from '@/server/odds/board';
-import { MARKET_ORDER, OddsCell } from './odds-cell';
+import { MARKET_ORDER } from './market-meta';
+import { OddsCell } from './odds-cell';
 
 /** The three odds cells for one team line, in the board's fixed market order. */
 function cellsFor(

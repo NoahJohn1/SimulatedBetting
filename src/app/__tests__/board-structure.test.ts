@@ -16,11 +16,13 @@ const SECTION = join(GAMES, 'day-section.tsx');
 const ROW = join(GAMES, 'game-row.tsx');
 const CELL = join(GAMES, 'odds-cell.tsx');
 const CARD = join(GAMES, 'game-card.tsx');
+const META = join(GAMES, 'market-meta.ts');
 
 const pageSource = () => readFileSync(PAGE, 'utf8');
 const sectionSource = () => readFileSync(SECTION, 'utf8');
 const rowSource = () => readFileSync(ROW, 'utf8');
 const cellSource = () => readFileSync(CELL, 'utf8');
+const metaSource = () => readFileSync(META, 'utf8');
 
 describe('odds board structure (D77)', () => {
   it('filters are links driven by searchParams, not client state', () => {
@@ -52,5 +54,22 @@ describe('odds board structure (D77)', () => {
 
   it('game-card.tsx is gone', () => {
     expect(existsSync(CARD)).toBe(false);
+  });
+
+  /**
+   * The market metadata (MARKET_ORDER/MARKET_LABEL) has to live in a plain, non-'use client'
+   * module. odds-cell.tsx is a client component; a server component that imports a plain value
+   * out of a 'use client' module gets a client-reference proxy instead of the value, and
+   * `MARKET_ORDER.map` on that proxy throws at render time (found in the live browser pass,
+   * not by this suite — there is no jsdom here). Guarding the import path is the cheapest
+   * thing this text-only suite can do against that regression.
+   */
+  it('market metadata lives in a plain module the server components can actually read', () => {
+    expect(existsSync(META)).toBe(true);
+    expect(metaSource()).not.toMatch(/^'use client';/m);
+    expect(metaSource()).toMatch(/MARKET_ORDER/);
+    expect(metaSource()).toMatch(/MARKET_LABEL/);
+    expect(sectionSource()).toMatch(/from '\.\/market-meta'/);
+    expect(rowSource()).toMatch(/from '\.\/market-meta'/);
   });
 });
