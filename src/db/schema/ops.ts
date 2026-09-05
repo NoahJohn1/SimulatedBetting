@@ -1,6 +1,12 @@
 import { boolean, index, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
-export const jobName = pgEnum('job_name', ['SETTLE', 'ALLOWANCE', 'RECONCILE', 'NOTIFY', 'SYNC_ODDS']);
+export const jobName = pgEnum('job_name', [
+  'SETTLE',
+  'ALLOWANCE',
+  'RECONCILE',
+  'NOTIFY',
+  'SYNC_ODDS',
+]);
 
 export type JobName = (typeof jobName.enumValues)[number];
 
