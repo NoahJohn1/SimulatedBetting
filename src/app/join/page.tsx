@@ -1,13 +1,16 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
-import { Button } from '@/components/ui/button';
+import { GateScreen } from '@/components/ui/gate-screen';
 import { db } from '@/db/client';
 import { seasons } from '@/db/schema';
-import { formatCents } from '@/domain/money';
+import { formatAmount } from '@/domain/money';
 import { currentMember, getSessionUser } from '@/server/auth/session';
-import { joinSeason } from '@/server/seasons/service';
+import { JoinForm } from './join-form';
 
-/** An approved member who has not joined the running season yet. */
+export const metadata: Metadata = { title: 'Join the season' };
+
 export default async function JoinPage() {
   const user = await getSessionUser();
   if (!user) redirect('/sign-in');
@@ -20,23 +23,25 @@ export default async function JoinPage() {
   if (!season) redirect('/no-season');
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-8 px-6 text-center">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{season.name}</h1>
-        <p className="mt-3 max-w-sm text-balance text-sm text-ink-muted">
-          Join the season and start with {formatCents(season.startingBankrollCents)}, plus{' '}
-          {formatCents(season.weeklyAllowanceCents)} every week.
-        </p>
-      </div>
-      <form
-        action={async () => {
-          'use server';
-          await joinSeason(user.id, season.id);
-          redirect('/');
-        }}
-      >
-        <Button type="submit">Join season</Button>
-      </form>
-    </main>
+    <GateScreen
+      title={season.name}
+      step={{ current: 2, total: 2 }}
+      body={
+        <>
+          Join and start with {formatAmount(season.startingBankrollCents)} plus{' '}
+          {formatAmount(season.startingCreditsCents, 'CREDITS')}, topped up by{' '}
+          {formatAmount(season.weeklyAllowanceCents)} and{' '}
+          {formatAmount(season.weeklyCreditAllowanceCents, 'CREDITS')} every week. None of it is
+          real money.
+        </>
+      }
+      footer={
+        <Link href="/rules" className="underline">
+          How this works
+        </Link>
+      }
+    >
+      <JoinForm />
+    </GateScreen>
   );
 }

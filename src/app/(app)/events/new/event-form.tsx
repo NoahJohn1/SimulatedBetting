@@ -11,6 +11,7 @@ import {
   MIN_OUTCOMES_PER_MARKET,
   type CreateEventError,
 } from '@/server/events/types';
+import type { RateLimited } from '@/server/limits/types';
 import { createEventAction } from '../actions';
 
 interface OutcomeDraft {
@@ -64,8 +65,10 @@ function bookPercent(outcomes: OutcomeDraft[]): number | null {
 }
 
 /** Errors without a market/outcome index of their own — shown as a form-level message. */
-function bannerMessage(error: CreateEventError): string | null {
+function bannerMessage(error: CreateEventError | RateLimited): string | null {
   switch (error.code) {
+    case 'RATE_LIMITED':
+      return `You're creating events too quickly. Try again in ${error.retryAfterSeconds} seconds.`;
     case 'NOT_A_MEMBER':
       return 'You are not a member of the active season.';
     case 'INVALID_TITLE':
@@ -107,7 +110,7 @@ export function EventForm() {
   const [startsAt, setStartsAt] = useState('');
   const [resolvesBy, setResolvesBy] = useState('');
   const [markets, setMarkets] = useState<MarketDraft[]>([newMarket()]);
-  const [error, setError] = useState<CreateEventError | null>(null);
+  const [error, setError] = useState<CreateEventError | RateLimited | null>(null);
   const [pending, startTransition] = useTransition();
 
   function updateMarket(id: string, patch: Partial<MarketDraft>) {

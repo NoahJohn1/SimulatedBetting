@@ -3,6 +3,8 @@
 import { redirect } from 'next/navigation';
 import { requireAdmin } from '@/server/auth/session';
 import { voidCustomEvent, type VoidError } from '@/server/events/resolve';
+import { consume } from '@/server/limits/consume';
+import type { RateLimited } from '@/server/limits/types';
 
 /**
  * Void an event from the admin queue.
@@ -14,8 +16,11 @@ import { voidCustomEvent, type VoidError } from '@/server/events/resolve';
 export async function voidEventAction(input: {
   eventId: string;
   note: string;
-}): Promise<{ ok: false; error: VoidError } | never> {
+}): Promise<{ ok: false; error: VoidError | RateLimited } | never> {
   const member = await requireAdmin();
+
+  const limited = await consume(member.userId, 'ADMIN_ACTION');
+  if (limited) return { ok: false, error: limited };
 
   const result = await voidCustomEvent({
     eventId: input.eventId,

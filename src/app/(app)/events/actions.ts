@@ -8,6 +8,8 @@ import { disputeResolution, type DisputeResolutionResult } from '@/server/events
 import { editCustomEvent, setMarketStatus, type ManageError } from '@/server/events/manage';
 import { resolveCustomEvent, type ResolveError } from '@/server/events/resolve';
 import type { CreateEventError } from '@/server/events/types';
+import { consume } from '@/server/limits/consume';
+import type { RateLimited } from '@/server/limits/types';
 
 export interface CreateEventFormValues {
   title: string;
@@ -26,8 +28,11 @@ export interface CreateEventFormValues {
  */
 export async function createEventAction(
   form: CreateEventFormValues,
-): Promise<{ ok: false; error: CreateEventError } | never> {
+): Promise<{ ok: false; error: CreateEventError | RateLimited } | never> {
   const member = await requireApprovedMemberOrThrow();
+
+  const limited = await consume(member.userId, 'EVENT_WRITE');
+  if (limited) return { ok: false, error: limited };
 
   const result = await createCustomEvent({
     creatorMembershipId: member.membershipId,
@@ -43,7 +48,7 @@ export async function createEventAction(
   redirect(`/events/${result.eventId}`);
 }
 
-export type ManageActionResult = { ok: true } | { ok: false; error: ManageError };
+export type ManageActionResult = { ok: true } | { ok: false; error: ManageError | RateLimited };
 
 /**
  * Suspend or reopen one market on a custom event.
@@ -58,6 +63,9 @@ export async function suspendMarketAction(input: {
   status: 'OPEN' | 'SUSPENDED';
 }): Promise<ManageActionResult> {
   const member = await requireApprovedMemberOrThrow();
+
+  const limited = await consume(member.userId, 'EVENT_WRITE');
+  if (limited) return { ok: false, error: limited };
 
   const result = await setMarketStatus({
     marketId: input.marketId,
@@ -83,6 +91,9 @@ export async function editEventAction(input: {
 }): Promise<ManageActionResult> {
   const member = await requireApprovedMemberOrThrow();
 
+  const limited = await consume(member.userId, 'EVENT_WRITE');
+  if (limited) return { ok: false, error: limited };
+
   const result = await editCustomEvent({
     eventId: input.eventId,
     actorMembershipId: member.membershipId,
@@ -106,8 +117,11 @@ export async function resolveEventAction(input: {
   eventId: string;
   winners: { marketId: string; winningSelectionId: string }[];
   note: string;
-}): Promise<{ ok: false; error: ResolveError } | never> {
+}): Promise<{ ok: false; error: ResolveError | RateLimited } | never> {
   const member = await requireApprovedMemberOrThrow();
+
+  const limited = await consume(member.userId, 'EVENT_WRITE');
+  if (limited) return { ok: false, error: limited };
 
   const result = await resolveCustomEvent({
     eventId: input.eventId,
@@ -127,8 +141,11 @@ export async function resolveEventAction(input: {
 export async function disputeEventAction(input: {
   eventId: string;
   reason: string;
-}): Promise<DisputeResolutionResult> {
+}): Promise<DisputeResolutionResult | { ok: false; error: RateLimited }> {
   const member = await requireApprovedMemberOrThrow();
+
+  const limited = await consume(member.userId, 'EVENT_WRITE');
+  if (limited) return { ok: false, error: limited };
 
   const result = await disputeResolution({
     eventId: input.eventId,

@@ -24,6 +24,7 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Email notifications plan](plans/2026-09-03-email-notifications-implementation-plan.md)         | The task-by-task plan for that work, lane-tagged, with what still needs Noah and what needs a real inbox                             |
 | [Hardening spec](specs/2026-09-03-hardening-design.md)                                          | Phase 9's cloud half — rate limiting on every mutation, the house rules page, the new-member path as a sequence, the smoke checklist |
 | [Hardening plan](plans/2026-09-03-hardening-implementation-plan.md)                             | The task-by-task plan for that work, lane-tagged, with what a cloud session can and cannot verify                                    |
+| [Smoke checklist](smoke-checklist.md)                                                           | The pre-deploy pass — machine half and hands half. A draft until a person has run it                                                 |
 
 ### Reference
 

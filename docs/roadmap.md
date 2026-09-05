@@ -33,7 +33,7 @@ Where a status cannot be verified from the repo, it says so and dates the observ
 | 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | 🔲 Backlog                                                                           | [CLOUD]                             | —                                                                                                                                                                                    |
 | 7d  | [Craft](#7d--craft)                                           | 🔲 Backlog                                                                           | [CLOUD]                             | —                                                                                                                                                                                    |
 | 8   | [Email notifications](#8--email-notifications)                | 🔄 Partial — built, not yet sending                                                  | **[NOAH]** [MANUAL]                 | [spec](specs/2026-09-03-email-notifications-design.md) · [plan](plans/2026-09-03-email-notifications-implementation-plan.md)                                                         |
-| 9   | [Hardening](#9--hardening)                                    | 🔲 Backlog — spec and plan on `main`, nothing built                                  | [CLOUD] [MANUAL]                    | [spec](specs/2026-09-03-hardening-design.md) · [plan](plans/2026-09-03-hardening-implementation-plan.md)                                                                             |
+| 9   | [Hardening](#9--hardening)                                    | 🔄 Built on a branch, not yet merged — the smoke checklist awaits a [MANUAL] pass    | **[MANUAL]**                        | [spec](specs/2026-09-03-hardening-design.md) · [plan](plans/2026-09-03-hardening-implementation-plan.md)                                                                             |
 
 ---
 
@@ -213,25 +213,26 @@ needed for delivery to actually reach an inbox.
 page, and the new-member path — `/pending`, `/join`, `/no-season`, `/disabled` — treated as one
 sequence.
 
-**Status: designed, not built — except load sanity, done directly against a real database.**
+**Status: Tasks 1–10 built on `claude/phase-9-hardening-urtq3o`, not yet merged to `main`.**
 [Spec](specs/2026-09-03-hardening-design.md) ·
 [plan](plans/2026-09-03-hardening-implementation-plan.md) — 11 tasks, decisions
 [D69–D73](decisions.md#d69--rate-limiting-is-a-postgres-fixed-window-counter-enforced-at-the-action-boundary).
 Load sanity's results are written up in [repo-health.md 3.7](repo-health.md#37-postgres-without-docker-in-a-cloud-session)
 and [docs/README.md](README.md), not repeated here.
 
-| Task                                                                               | Status      | Owner                                       |
-| ---------------------------------------------------------------------------------- | ----------- | ------------------------------------------- |
-| A written smoke checklist                                                          | 🔲 Backlog  | [CLOUD] to draft · **[MANUAL]** to validate |
-| Rate limiting on mutations                                                         | 🔲 Backlog  | [CLOUD]                                     |
-| Load sanity — a full CFB Saturday and a season of feed events                      | ✅ Complete | —                                           |
-| A house rules page                                                                 | 🔲 Backlog  | [CLOUD]                                     |
-| The new-member path — `/pending`, `/join`, `/no-season`, `/disabled` as a sequence | 🔲 Backlog  | [CLOUD]                                     |
+| Task                                                                               | Status                                | Owner                                       |
+| ---------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------- |
+| [A written smoke checklist](smoke-checklist.md)                                    | 🔄 Drafted — awaiting a [MANUAL] pass | [CLOUD] to draft · **[MANUAL]** to validate |
+| Rate limiting on mutations                                                         | ✅ Complete on the branch             | —                                           |
+| Load sanity — a full CFB Saturday and a season of feed events                      | ✅ Complete                           | —                                           |
+| A house rules page                                                                 | ✅ Complete on the branch             | —                                           |
+| The new-member path — `/pending`, `/join`, `/no-season`, `/disabled` as a sequence | ✅ Complete on the branch             | —                                           |
 
-**What's left.** All four remaining rows are `[CLOUD]` work, ready to execute — see the plan for
-task order. The smoke checklist ships as an unvalidated draft; the `[MANUAL]` pass corrects it
-rather than writing it from scratch
-([D73](decisions.md#d73--the-smoke-checklist-ships-unvalidated-with-a-run-log)).
+**What's left.** Every `[CLOUD]` row is built on the branch. The smoke checklist ships as an
+unvalidated draft; the `[MANUAL]` pass corrects it rather than writing it from scratch
+([D73](decisions.md#d73--the-smoke-checklist-ships-unvalidated-with-a-run-log)), and this branch
+still needs to merge — with the parallel phase-8 email-notifications branch, then to `main` — before
+any of it reaches production.
 
 ---
 

@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { signIn } from '@/server/auth/config';
 import { getSessionUser } from '@/server/auth/session';
@@ -50,6 +51,10 @@ export default async function SignInPage() {
           Continue with Google
         </Button>
       </form>
+
+      <Link href="/rules" className="text-xs text-ink-muted underline">
+        What is this? House rules
+      </Link>
     </main>
   );
 }

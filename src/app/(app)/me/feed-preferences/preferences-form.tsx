@@ -20,6 +20,7 @@ export function PreferencesForm({
 }) {
   const [mutedSet, setMutedSet] = useState(() => new Set(muted));
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   function toggle(type: FeedEventType) {
@@ -33,8 +34,20 @@ export function PreferencesForm({
   }
 
   function save() {
+    setSaved(false);
+    setError(null);
     startTransition(async () => {
-      await saveFeedPreferencesAction([...mutedSet]);
+      const result = await saveFeedPreferencesAction([...mutedSet]);
+      // The result was previously discarded entirely, so a refusal — a rate limit is the one
+      // that actually happens — showed "Saved" while nothing was written.
+      if ('error' in result) {
+        setError(
+          result.error === 'RATE_LIMITED'
+            ? `You're saving too quickly. Try again in ${result.retryAfterSeconds} seconds.`
+            : 'Could not save. Try again.',
+        );
+        return;
+      }
       setSaved(true);
     });
   }
@@ -63,6 +76,7 @@ export function PreferencesForm({
       })}
 
       <div className="flex items-center justify-end gap-3 pt-2">
+        {error ? <span className="text-xs text-negative">{error}</span> : null}
         {saved ? <span className="text-xs text-positive">Saved</span> : null}
         <Button onClick={save} disabled={pending}>
           {pending ? 'Saving…' : 'Save'}

@@ -23,10 +23,12 @@ export function NotificationForm({
   const [mutedSet, setMutedSet] = useState(() => new Set(muted));
   const [enabled, setEnabled] = useState(emailsEnabled);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   function toggle(type: NotificationType) {
     setSaved(false);
+    setError(null);
     setMutedSet((current) => {
       const next = new Set(current);
       if (next.has(type)) next.delete(type);
@@ -36,11 +38,19 @@ export function NotificationForm({
   }
 
   function save() {
+    setSaved(false);
+    setError(null);
     startTransition(async () => {
-      await saveNotificationPreferencesAction({
+      const result = await saveNotificationPreferencesAction({
         mutedTypes: [...mutedSet],
         emailsEnabled: enabled,
       });
+      // Reporting the refusal rather than discarding it: a rate limit is the one that actually
+      // happens, and "Saved" over a write that did not happen is the worse failure.
+      if ('error' in result) {
+        setError(`You're saving too quickly. Try again in ${result.retryAfterSeconds} seconds.`);
+        return;
+      }
       setSaved(true);
     });
   }
@@ -53,6 +63,7 @@ export function NotificationForm({
           checked={enabled}
           onChange={() => {
             setSaved(false);
+            setError(null);
             setEnabled((on) => !on);
           }}
           className="mt-0.5"
@@ -90,6 +101,7 @@ export function NotificationForm({
       })}
 
       <div className="flex items-center justify-end gap-3 pt-2">
+        {error ? <span className="text-xs text-negative">{error}</span> : null}
         {saved ? <span className="text-xs text-positive">Saved</span> : null}
         <Button onClick={save} disabled={pending}>
           {pending ? 'Saving…' : 'Save'}

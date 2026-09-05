@@ -1,4 +1,5 @@
 import { authorizeCronRequest, jsonSafe } from '@/server/cron/auth';
+import { pruneRateLimits } from '@/server/limits/consume';
 import { reconcileBalances, reconcileEscrow } from '@/server/money/reconcile';
 import { pruneNotifications } from '@/server/notify/deliver';
 import { raiseAlert } from '@/server/ops/alerts';
@@ -59,6 +60,7 @@ export async function GET(request: Request): Promise<Response> {
       try {
         await pruneJobRuns();
         await pruneNotifications();
+        await pruneRateLimits();
       } catch (err) {
         console.error('[reconcile] pruning bookkeeping tables failed', err);
       }

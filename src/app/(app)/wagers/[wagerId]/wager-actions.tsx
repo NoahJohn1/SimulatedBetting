@@ -26,17 +26,27 @@ const BUTTON =
 const PRIMARY =
   'rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-ink disabled:opacity-50';
 
+function message(error?: { code: string; retryAfterSeconds?: number }): string {
+  if (!error) return 'Something went wrong.';
+  if (error.code === 'RATE_LIMITED') {
+    return `You're doing that too quickly. Try again in ${error.retryAfterSeconds} seconds.`;
+  }
+  return error.code;
+}
+
 export function WagerActions(props: WagerActionsProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  function run(fn: () => Promise<{ ok: boolean; error?: { code: string } }>) {
+  function run(
+    fn: () => Promise<{ ok: boolean; error?: { code: string; retryAfterSeconds?: number } }>,
+  ) {
     setError(null);
     startTransition(async () => {
       const result = await fn();
       if (!result.ok) {
-        setError(result.error?.code ?? 'Something went wrong.');
+        setError(message(result.error));
         return;
       }
       router.refresh();

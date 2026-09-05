@@ -102,6 +102,10 @@ export default async function MePage() {
         </ul>
       )}
 
+      <Link href="/rules" className="text-sm font-medium text-ink-muted underline">
+        House rules
+      </Link>
+
       <form
         action={async () => {
           'use server';

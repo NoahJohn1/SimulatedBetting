@@ -17,11 +17,20 @@ export function ActivateForm({ seasonId }: { seasonId: string }) {
     startTransition(async () => {
       const result = await activateSeasonAction(seasonId);
       if (result.ok) return;
-      setError(
-        result.code === 'ALREADY_ACTIVE'
-          ? `“${result.blockingSeasonName}” is still active. End it before starting this one.`
-          : 'That season could not be found.',
-      );
+      switch (result.code) {
+        case 'ALREADY_ACTIVE':
+          setError(
+            `“${result.blockingSeasonName}” is still active. End it before starting this one.`,
+          );
+          break;
+        case 'RATE_LIMITED':
+          setError(
+            `That went through too quickly. Try again in ${result.retryAfterSeconds} seconds.`,
+          );
+          break;
+        default:
+          setError('That season could not be found.');
+      }
     });
   }
 
