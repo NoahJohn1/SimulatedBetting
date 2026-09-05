@@ -57,7 +57,7 @@ built.
 | 7a  | UI foundations                                                | ✅ Complete                                                                                                                                                                                                                                                                   | —                                   | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md)                                                                                       |
 | 7b  | Design system                                                 | ✅ Complete                                                                                                                                                                                                                                                                   | —                                   | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md)                                                                                  |
 | 7c  | Screen-by-screen rebuild                                      | ✅ Merged — Tasks 1–13 merged to `main` in [PR #28](https://github.com/NoahJohn1/SimulatedBetting/pull/28), audited against an 80-game slate                                                                                                                                  | —                                   | [PR #28](https://github.com/NoahJohn1/SimulatedBetting/pull/28) · [spec](specs/2026-09-05-screen-rebuild-and-craft-design.md) · [plan](plans/2026-09-05-screen-rebuild-and-craft-implementation-plan.md) · [audit](screen-rebuild-audit.md) |
-| 7d  | [Craft](#7d--craft)                                           | ✅ Built — Tasks 14–21 on `claude/phase-7d-craft`, audited (structural re-verification + an end-to-end keyboard trace); PR not yet opened                                                                                                                                     | [LOCAL] **[MANUAL]**                | [spec](specs/2026-09-05-screen-rebuild-and-craft-design.md) · [plan](plans/2026-09-05-screen-rebuild-and-craft-implementation-plan.md) · [audit](screen-rebuild-audit.md)                                                                   |
+| 7d  | [Craft](#7d--craft)                                           | ✅ Merged — Tasks 14–21 merged to `main` in [PR #29](https://github.com/NoahJohn1/SimulatedBetting/pull/29), audited (structural re-verification + an end-to-end keyboard trace)                                                                                              | [LOCAL] **[MANUAL]**                | [PR #29](https://github.com/NoahJohn1/SimulatedBetting/pull/29) · [spec](specs/2026-09-05-screen-rebuild-and-craft-design.md) · [plan](plans/2026-09-05-screen-rebuild-and-craft-implementation-plan.md) · [audit](screen-rebuild-audit.md) |
 | 8   | [Email notifications](#8--email-notifications)                | 🔄 Merged to `main` in [PR #25](https://github.com/NoahJohn1/SimulatedBetting/pull/25); inert until a provider key is set                                                                                                                                                     | **[NOAH]** [LOCAL] [MANUAL]         | [spec](specs/2026-09-03-email-notifications-design.md) · [plan](plans/2026-09-03-email-notifications-implementation-plan.md)                                                                                                                |
 | 9   | [Hardening](#9--hardening)                                    | 🔄 Merged to `main` in [PR #25](https://github.com/NoahJohn1/SimulatedBetting/pull/25) — spot-checked live 2026-09-05 ([repo-health.md](repo-health.md#7-phase-5689-live-verification-2026-09-05)); the [MANUAL] smoke checklist (real Google accounts) still awaits its pass | [LOCAL] **[MANUAL]**                | [spec](specs/2026-09-03-hardening-design.md) · [plan](plans/2026-09-03-hardening-implementation-plan.md)                                                                                                                                    |
 
@@ -135,9 +135,9 @@ Nothing is dropped silently; if a phase declines an item, it lands in the rung t
 
 ### 7d — Craft
 
-**Status: built.** Tasks 14–21 landed on `claude/phase-7d-craft` — see the
+**Status: merged.** Tasks 14–21 merged to `main` in [PR #29](https://github.com/NoahJohn1/SimulatedBetting/pull/29) — see the
 [spec](specs/2026-09-05-screen-rebuild-and-craft-design.md) for what shipped and the
-[screen-rebuild audit](screen-rebuild-audit.md) for how it was checked. Not yet opened as a PR.
+[screen-rebuild audit](screen-rebuild-audit.md) for how it was checked.
 
 | Task                                           | Status     | Owner        |
 | ---------------------------------------------- | ---------- | ------------ |
@@ -148,7 +148,7 @@ Nothing is dropped silently; if a phase declines an item, it lands in the rung t
 `document.body` on both the Sheet and rail, because clearing the slip unmounts the button the
 focus-restore was targeting — found during the Task 21 close-out, written up in the
 [screen-rebuild audit](screen-rebuild-audit.md). It wants a small refactor of the slip's
-close/clear ordering and belongs to a session of its own, not to opening the PR.
+close/clear ordering and belongs to a session of its own, not to [PR #29](https://github.com/NoahJohn1/SimulatedBetting/pull/29).
 
 ---
 
