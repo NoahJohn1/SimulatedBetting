@@ -24,7 +24,16 @@ export function ReactionPicker({
   onToggle: (emoji: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const active = card.reactions.filter((r) => r.count > 0);
+
+  // Iterate the fixed six in order and keep the ones with a count, rather than filtering
+  // `card.reactions` directly — that array's order is whatever the DB's GROUP BY happened to
+  // return, or (after an optimistic toggle) insertion order, neither of which is the "six,
+  // fixed, in this order everywhere" invariant `reaction-emoji.ts` documents. The expanded
+  // picker below already gets this for free by mapping REACTION_EMOJI; the compact view has
+  // to do it deliberately since it only shows a subset.
+  const active = REACTION_EMOJI.map((emoji) =>
+    card.reactions.find((r) => r.emoji === emoji),
+  ).filter((r): r is SerializedFeedCard['reactions'][number] => r !== undefined && r.count > 0);
 
   if (!expanded) {
     return (
