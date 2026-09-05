@@ -120,6 +120,13 @@
       "when": 1788530147165,
       "tag": "0016_awesome_juggernaut",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1788633933240,
+      "tag": "0017_curly_mercury",
+      "breakpoints": true
     }
   ]
 }

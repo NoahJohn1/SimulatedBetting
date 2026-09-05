@@ -1,8 +1,9 @@
 import { desc, eq } from 'drizzle-orm';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { db } from '@/db/client';
-import { ledgerEntries, seasonMemberships } from '@/db/schema';
+import { ledgerEntries, seasonMemberships, users } from '@/db/schema';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Money } from '@/components/ui/money';
@@ -10,7 +11,9 @@ import { Table, THead, TBody, Tr, Th, Td } from '@/components/ui/table';
 import { formatDateTime } from '@/domain/dates';
 import { signOut } from '@/server/auth/config';
 import { getSessionUser, requireApprovedMember } from '@/server/auth/session';
+import { AppearanceForm } from './appearance-form';
 import { LEDGER_LABELS } from './ledger-labels';
+import type { Theme } from './actions';
 
 export const metadata: Metadata = { title: 'Me' };
 
@@ -30,10 +33,20 @@ export default async function MePage() {
   const user = await getSessionUser();
   const now = new Date();
 
+  const cookieStore = await cookies();
+  const themeCookie = cookieStore.get('theme')?.value;
+  const currentTheme: Theme =
+    themeCookie === 'light' || themeCookie === 'dark' ? themeCookie : 'system';
+
   const [membership] = await db
     .select({ creditsBalanceCents: seasonMemberships.creditsBalanceCents })
     .from(seasonMemberships)
     .where(eq(seasonMemberships.id, member.membershipId));
+
+  const [userRow] = await db
+    .select({ accent: users.accent })
+    .from(users)
+    .where(eq(users.id, member.userId));
 
   const entries = await db
     .select()
@@ -77,6 +90,11 @@ export default async function MePage() {
             </li>
           ))}
         </ul>
+      </Card>
+
+      <Card className="flex flex-col gap-4 p-4">
+        <h2 className="text-sm font-semibold">Appearance</h2>
+        <AppearanceForm currentTheme={currentTheme} currentAccent={userRow?.accent ?? 'GREEN'} />
       </Card>
 
       {entries.length === 0 ? (
