@@ -50,6 +50,33 @@
   --cau-700: oklch(55.5% 0.163 48.998);
   --cau-800: oklch(47.3% 0.137 46.201);
   --cau-950: oklch(27.9% 0.077 45.635);
+
+  /* Accent hue ramps (Task 1). Light ink is always --n-0 (white); only the light
+     --accent stop and the dark pair are named per hue. Stops copied from
+     node_modules/tailwindcss/theme.css — see the grep in the task brief. */
+  --acc-green: oklch(52.7% 0.154 150.069);
+  --acc-green-dark: oklch(79.2% 0.209 151.711);
+  --acc-green-ink-dark: oklch(26.6% 0.065 152.934);
+
+  --acc-blue: oklch(54.6% 0.245 262.881);
+  --acc-blue-dark: oklch(70.7% 0.165 254.624);
+  --acc-blue-ink-dark: oklch(28.2% 0.091 267.935);
+
+  --acc-indigo: oklch(51.1% 0.262 276.966);
+  --acc-indigo-dark: oklch(67.3% 0.182 276.935);
+  --acc-indigo-ink-dark: oklch(25.7% 0.09 281.288);
+
+  --acc-violet: oklch(54.1% 0.281 293.009);
+  --acc-violet-dark: oklch(70.2% 0.183 293.541);
+  --acc-violet-ink-dark: oklch(28.3% 0.141 291.089);
+
+  --acc-teal: oklch(51.1% 0.096 186.391);
+  --acc-teal-dark: oklch(77.7% 0.152 181.912);
+  --acc-teal-ink-dark: oklch(27.7% 0.046 192.524);
+
+  --acc-orange: oklch(55.3% 0.195 38.402);
+  --acc-orange-dark: oklch(75% 0.183 55.934);
+  --acc-orange-ink-dark: oklch(26.6% 0.079 36.259);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -76,7 +103,7 @@
   --ink-muted: var(--n-500);
   --ink-subtle: var(--n-400);
 
-  --accent: var(--n-900);
+  --accent: var(--acc-green);
   --accent-ink: var(--n-0);
 
   --positive: var(--pos-600);
@@ -134,8 +161,8 @@
     --ink-muted: var(--n-400);
     --ink-subtle: var(--n-600);
 
-    --accent: var(--n-100);
-    --accent-ink: var(--n-900);
+    --accent: var(--acc-green-dark);
+    --accent-ink: var(--acc-green-ink-dark);
 
     --positive: var(--pos-400);
     --positive-surface: var(--pos-950);
@@ -155,7 +182,7 @@
     --caution-line: var(--cau-800);
     --caution-on-surface: var(--cau-400);
 
-    --slip-shadow: 0 -8px 24px rgb(0 0 0 / 0.5);
+    --slip-shadow: 0 -8px 24px rgb(0 0 0 / 0.5), 0 -1px 0 rgb(255 255 255 / 0.08);
     /* DARK-PALETTE-END */
 
     color-scheme: dark;
@@ -180,8 +207,8 @@
   --ink-muted: var(--n-400);
   --ink-subtle: var(--n-600);
 
-  --accent: var(--n-100);
-  --accent-ink: var(--n-900);
+  --accent: var(--acc-green-dark);
+  --accent-ink: var(--acc-green-ink-dark);
 
   --positive: var(--pos-400);
   --positive-surface: var(--pos-950);
@@ -201,10 +228,110 @@
   --caution-line: var(--cau-800);
   --caution-on-surface: var(--cau-400);
 
-  --slip-shadow: 0 -8px 24px rgb(0 0 0 / 0.5);
+  --slip-shadow: 0 -8px 24px rgb(0 0 0 / 0.5), 0 -1px 0 rgb(255 255 255 / 0.08);
   /* DARK-PALETTE-END */
 
   color-scheme: dark;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Accent remaps (Task 1). Six hues, each in the same three selector contexts
+   the neutrals use for [data-theme]: a plain :root attribute rule for light,
+   a media-query copy for the OS-dark default, and a [data-theme='dark'] copy
+   for an explicit toggle. Every block sets exactly --accent and --accent-ink.
+
+   Green is additionally the :root default above (no [data-accent] needed) —
+   the explicit 'green' blocks below exist so re-selecting it from the picker
+   behaves the same as every other hue.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root[data-accent='green'] {
+  --accent: var(--acc-green);
+  --accent-ink: var(--n-0);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-accent='green']:not([data-theme='light']) {
+    --accent: var(--acc-green-dark);
+    --accent-ink: var(--acc-green-ink-dark);
+  }
+}
+:root[data-theme='dark'][data-accent='green'] {
+  --accent: var(--acc-green-dark);
+  --accent-ink: var(--acc-green-ink-dark);
+}
+
+:root[data-accent='blue'] {
+  --accent: var(--acc-blue);
+  --accent-ink: var(--n-0);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-accent='blue']:not([data-theme='light']) {
+    --accent: var(--acc-blue-dark);
+    --accent-ink: var(--acc-blue-ink-dark);
+  }
+}
+:root[data-theme='dark'][data-accent='blue'] {
+  --accent: var(--acc-blue-dark);
+  --accent-ink: var(--acc-blue-ink-dark);
+}
+
+:root[data-accent='indigo'] {
+  --accent: var(--acc-indigo);
+  --accent-ink: var(--n-0);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-accent='indigo']:not([data-theme='light']) {
+    --accent: var(--acc-indigo-dark);
+    --accent-ink: var(--acc-indigo-ink-dark);
+  }
+}
+:root[data-theme='dark'][data-accent='indigo'] {
+  --accent: var(--acc-indigo-dark);
+  --accent-ink: var(--acc-indigo-ink-dark);
+}
+
+:root[data-accent='violet'] {
+  --accent: var(--acc-violet);
+  --accent-ink: var(--n-0);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-accent='violet']:not([data-theme='light']) {
+    --accent: var(--acc-violet-dark);
+    --accent-ink: var(--acc-violet-ink-dark);
+  }
+}
+:root[data-theme='dark'][data-accent='violet'] {
+  --accent: var(--acc-violet-dark);
+  --accent-ink: var(--acc-violet-ink-dark);
+}
+
+:root[data-accent='teal'] {
+  --accent: var(--acc-teal);
+  --accent-ink: var(--n-0);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-accent='teal']:not([data-theme='light']) {
+    --accent: var(--acc-teal-dark);
+    --accent-ink: var(--acc-teal-ink-dark);
+  }
+}
+:root[data-theme='dark'][data-accent='teal'] {
+  --accent: var(--acc-teal-dark);
+  --accent-ink: var(--acc-teal-ink-dark);
+}
+
+:root[data-accent='orange'] {
+  --accent: var(--acc-orange);
+  --accent-ink: var(--n-0);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-accent='orange']:not([data-theme='light']) {
+    --accent: var(--acc-orange-dark);
+    --accent-ink: var(--acc-orange-ink-dark);
+  }
+}
+:root[data-theme='dark'][data-accent='orange'] {
+  --accent: var(--acc-orange-dark);
+  --accent-ink: var(--acc-orange-ink-dark);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

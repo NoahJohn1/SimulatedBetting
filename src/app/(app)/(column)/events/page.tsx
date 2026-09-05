@@ -1,0 +1,85 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { StatusBadge } from '@/components/ui/badge';
+import { buttonClasses } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Money } from '@/components/ui/money';
+import { formatDateTime } from '@/domain/dates';
+import { requireApprovedMember } from '@/server/auth/session';
+import { listSeasonEvents, type EventBoardRow, type EventSection } from '@/server/events/query';
+
+const SECTION_TITLES: Record<EventSection, string> = {
+  OPEN: 'Open',
+  AWAITING: 'Awaiting resolution',
+  SETTLED: 'Recently settled',
+};
+
+export const metadata: Metadata = { title: 'Events' };
+
+export default async function EventsPage() {
+  const member = await requireApprovedMember();
+  const rows = await listSeasonEvents(member.seasonId);
+  const now = new Date();
+
+  const bySection = new Map<EventSection, EventBoardRow[]>();
+  for (const row of rows) {
+    bySection.set(row.section, [...(bySection.get(row.section) ?? []), row]);
+  }
+
+  return (
+    <div className="flex flex-col gap-6 px-4 py-4">
+      <Link href="/events/new" className={buttonClasses('primary')}>
+        Create an event
+      </Link>
+
+      {rows.length === 0 ? (
+        <EmptyState title="No events yet" body="Be the first to put an event on the board." />
+      ) : (
+        (['OPEN', 'AWAITING', 'SETTLED'] as const).map((section) => (
+          <Section
+            key={section}
+            title={SECTION_TITLES[section]}
+            rows={bySection.get(section) ?? []}
+            now={now}
+          />
+        ))
+      )}
+    </div>
+  );
+}
+
+function Section({ title, rows, now }: { title: string; rows: EventBoardRow[]; now: Date }) {
+  if (rows.length === 0) return null;
+
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">{title}</h2>
+      <ul className="flex flex-col gap-2">
+        {rows.map((row) => (
+          <Card key={row.eventId} as="li" className="hover:border-line-hover">
+            <Link href={`/events/${row.eventId}`} className="flex flex-col gap-2 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold">{row.title}</span>
+                {row.overdue ? <StatusBadge status="Overdue" /> : null}
+              </div>
+
+              <div className="text-sm text-ink-muted">
+                Created by {row.creatorDisplayName} · Closes {formatDateTime(row.startsAt, now)}
+              </div>
+
+              <div className="flex items-center justify-between border-t border-line-subtle pt-2 text-sm">
+                <span className="text-ink-muted">
+                  {row.marketCount} market{row.marketCount === 1 ? '' : 's'}
+                </span>
+                <span className="text-ink-muted">
+                  Staked <Money cents={row.stakedCreditsCents} currency="CREDITS" />
+                </span>
+              </div>
+            </Link>
+          </Card>
+        ))}
+      </ul>
+    </section>
+  );
+}

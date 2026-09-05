@@ -46,7 +46,7 @@ These apply to every task and are not repeated per task.
   touches `src/`. Run `npm run format` before every commit.
 - **No raw colour classes in `.tsx`.** `src/app/__tests__/token-lint.test.ts` fails the build on
   a raw palette class, hex value, or `dark:` variant outside its allowlist. Speak only the
-  semantic vocabulary. Task 1 extends the *token layer*; it does not loosen the lint.
+  semantic vocabulary. Task 1 extends the _token layer_; it does not loosen the lint.
 - **Type and spacing subsets are law.** Type: `text-xs` … `text-2xl` only. Spacing: the 4px
   scale in steps `0.5 1 2 3 4 6 8 12 16`. Rebuilt screens must land inside these (spec §success
   criteria 11).
@@ -62,50 +62,50 @@ These apply to every task and are not repeated per task.
 - **Server components by default.** A file gains `'use client'` only for state or handlers the
   task names. Filters are links, not client state (D77).
 - **Commit after every task** (some tasks name intermediate commits). Imperative subject, a body
-  explaining *why*, and this repo's attribution footer.
+  explaining _why_, and this repo's attribution footer.
 
 ---
 
 ## File Structure
 
-| File | New? | Responsibility |
-| ---- | ---- | -------------- |
-| `src/app/globals.css` | modify | Tier-1 accent ramps, `[data-accent]` remaps, green default, dark slip-shadow fix |
-| `src/app/__tests__/token-layer.test.ts` | modify | Assert the six accent remaps |
-| `src/domain/dates.ts` | new | `formatDayHeading`, `formatKickoff`, `formatDateTime` — the one date vocabulary |
-| `src/domain/__tests__/dates.test.ts` | new | Fixed-date tests for all three |
-| `src/components/ui/toast.tsx` | new | `ToastProvider`, `useToast` — the announcement layer (D76) |
-| `src/components/ui/sheet.tsx` | new | Bottom sheet: portal, scrim, ESC, focus trap, scroll lock |
-| `src/components/ui/dialog.tsx` | new | `ConfirmDialog` over native `<dialog>` |
-| `src/components/ui/table.tsx` | new | `Table`/`THead`/`TBody`/`Tr`/`Th`/`Td` token-speaking primitives |
-| `src/components/ui/card.tsx` | modify | `as` element prop (the 7b review's escape hatch) |
-| `src/components/ui/tab-bar.tsx` | modify | Export `NAV_ITEMS`; hide below the header at `lg` |
-| `src/app/(app)/layout.tsx` | modify | Header nav at `lg`, ToastProvider mount, slip placement |
-| `src/app/(app)/(column)/layout.tsx` | new | The centered `max-w-2xl` content column (D74) |
-| `src/app/(app)/(column)/…` | move | `feed`, `standings`, `bets`, `wagers`, `events`, `me`, `members` move under the column group (URLs unchanged) |
-| `src/app/(app)/games/page.tsx` | modify | Filters, day sections, two-pane grid at `lg` |
-| `src/app/(app)/games/game-row.tsx` | new | The compact two-line row (D77) |
-| `src/app/(app)/games/day-section.tsx` | new | Sticky-header, collapsible `<details>` day group |
-| `src/app/(app)/games/odds-cell.tsx` | new | Extracted from `game-card.tsx`; shared cell button |
-| `src/app/(app)/games/game-card.tsx` | delete | Replaced by `game-row.tsx` (Task 5, once the row ships) |
-| `src/components/bet-slip/bet-slip.tsx` | modify | Sheet container below `lg`; leg prices; To-return line; toasts |
-| `src/components/bet-slip/slip-rail.tsx` | new | The `lg+` rail on `/games` (same panel, second container) |
-| `src/app/(app)/(column)/feed/feed-card.tsx` | modify | Reaction row collapses to a trigger |
-| `src/app/(app)/(column)/feed/[eventId]/page.tsx` | modify | `generateMetadata`, back link |
-| `src/app/(app)/(column)/standings/page.tsx` | modify | `Table` at `lg`, cards below |
-| `src/app/(app)/(column)/bets/page.tsx` | modify | Leg describer with teams, one status chip, merged controls |
-| `src/app/(app)/(column)/bets/leg-label.tsx` | new | `LegLine` — game legs name their game everywhere |
-| `src/app/(app)/(column)/wagers/page.tsx` | modify | One section per wager |
-| `src/app/(app)/(column)/wagers/[wagerId]/*` | modify | `ConfirmDialog` on call-it-off; dates via `domain/dates` |
-| `src/app/(app)/(column)/events/…` | modify | Stacked datetimes, metadata, back links, drop "Book: —" |
-| `src/app/(app)/(column)/me/page.tsx` | modify | English ledger labels, settings list, ledger `Table` at `lg` |
-| `src/app/admin/*` → `src/app/(app)/(column)/admin/*` | move | Admin joins the shell (D78); `requireAdmin` stays in its layout |
-| `docs/screen-rebuild-audit.md` | new | The 7c and 7d browser audits |
-| `vitest.config.ts` | modify (Task 14) | Projects split: node + jsdom |
-| `src/components/ui/__tests__/*.test.tsx` | new (Task 14) | Dialog/Sheet/Toast behaviour (D79) |
-| `src/db/schema/identity.ts` | modify (Task 18) | `users.accent` column |
-| `src/app/(app)/(column)/me/appearance-*.tsx` | new (Tasks 17–18) | Dark toggle + accent picker |
-| `docs/roadmap.md`, `docs/README.md` | modify | Status rows at each rung's end |
+| File                                                 | New?              | Responsibility                                                                                                |
+| ---------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| `src/app/globals.css`                                | modify            | Tier-1 accent ramps, `[data-accent]` remaps, green default, dark slip-shadow fix                              |
+| `src/app/__tests__/token-layer.test.ts`              | modify            | Assert the six accent remaps                                                                                  |
+| `src/domain/dates.ts`                                | new               | `formatDayHeading`, `formatKickoff`, `formatDateTime` — the one date vocabulary                               |
+| `src/domain/__tests__/dates.test.ts`                 | new               | Fixed-date tests for all three                                                                                |
+| `src/components/ui/toast.tsx`                        | new               | `ToastProvider`, `useToast` — the announcement layer (D76)                                                    |
+| `src/components/ui/sheet.tsx`                        | new               | Bottom sheet: portal, scrim, ESC, focus trap, scroll lock                                                     |
+| `src/components/ui/dialog.tsx`                       | new               | `ConfirmDialog` over native `<dialog>`                                                                        |
+| `src/components/ui/table.tsx`                        | new               | `Table`/`THead`/`TBody`/`Tr`/`Th`/`Td` token-speaking primitives                                              |
+| `src/components/ui/card.tsx`                         | modify            | `as` element prop (the 7b review's escape hatch)                                                              |
+| `src/components/ui/tab-bar.tsx`                      | modify            | Export `NAV_ITEMS`; hide below the header at `lg`                                                             |
+| `src/app/(app)/layout.tsx`                           | modify            | Header nav at `lg`, ToastProvider mount, slip placement                                                       |
+| `src/app/(app)/(column)/layout.tsx`                  | new               | The centered `max-w-2xl` content column (D74)                                                                 |
+| `src/app/(app)/(column)/…`                           | move              | `feed`, `standings`, `bets`, `wagers`, `events`, `me`, `members` move under the column group (URLs unchanged) |
+| `src/app/(app)/games/page.tsx`                       | modify            | Filters, day sections, two-pane grid at `lg`                                                                  |
+| `src/app/(app)/games/game-row.tsx`                   | new               | The compact two-line row (D77)                                                                                |
+| `src/app/(app)/games/day-section.tsx`                | new               | Sticky-header, collapsible `<details>` day group                                                              |
+| `src/app/(app)/games/odds-cell.tsx`                  | new               | Extracted from `game-card.tsx`; shared cell button                                                            |
+| `src/app/(app)/games/game-card.tsx`                  | delete            | Replaced by `game-row.tsx` (Task 5, once the row ships)                                                       |
+| `src/components/bet-slip/bet-slip.tsx`               | modify            | Sheet container below `lg`; leg prices; To-return line; toasts                                                |
+| `src/components/bet-slip/slip-rail.tsx`              | new               | The `lg+` rail on `/games` (same panel, second container)                                                     |
+| `src/app/(app)/(column)/feed/feed-card.tsx`          | modify            | Reaction row collapses to a trigger                                                                           |
+| `src/app/(app)/(column)/feed/[eventId]/page.tsx`     | modify            | `generateMetadata`, back link                                                                                 |
+| `src/app/(app)/(column)/standings/page.tsx`          | modify            | `Table` at `lg`, cards below                                                                                  |
+| `src/app/(app)/(column)/bets/page.tsx`               | modify            | Leg describer with teams, one status chip, merged controls                                                    |
+| `src/app/(app)/(column)/bets/leg-label.tsx`          | new               | `LegLine` — game legs name their game everywhere                                                              |
+| `src/app/(app)/(column)/wagers/page.tsx`             | modify            | One section per wager                                                                                         |
+| `src/app/(app)/(column)/wagers/[wagerId]/*`          | modify            | `ConfirmDialog` on call-it-off; dates via `domain/dates`                                                      |
+| `src/app/(app)/(column)/events/…`                    | modify            | Stacked datetimes, metadata, back links, drop "Book: —"                                                       |
+| `src/app/(app)/(column)/me/page.tsx`                 | modify            | English ledger labels, settings list, ledger `Table` at `lg`                                                  |
+| `src/app/admin/*` → `src/app/(app)/(column)/admin/*` | move              | Admin joins the shell (D78); `requireAdmin` stays in its layout                                               |
+| `docs/screen-rebuild-audit.md`                       | new               | The 7c and 7d browser audits                                                                                  |
+| `vitest.config.ts`                                   | modify (Task 14)  | Projects split: node + jsdom                                                                                  |
+| `src/components/ui/__tests__/*.test.tsx`             | new (Task 14)     | Dialog/Sheet/Toast behaviour (D79)                                                                            |
+| `src/db/schema/identity.ts`                          | modify (Task 18)  | `users.accent` column                                                                                         |
+| `src/app/(app)/(column)/me/appearance-*.tsx`         | new (Tasks 17–18) | Dark toggle + accent picker                                                                                   |
+| `docs/roadmap.md`, `docs/README.md`                  | modify            | Status rows at each rung's end                                                                                |
 
 ---
 
@@ -126,10 +126,12 @@ These apply to every task and are not repeated per task.
 ### Task 1 [CLOUD]: Six accent hues in the token layer
 
 **Files:**
+
 - Modify: `src/app/globals.css`
 - Modify: `src/app/__tests__/token-layer.test.ts`
 
 **Interfaces:**
+
 - Produces: `[data-accent="green"|"blue"|"indigo"|"violet"|"teal"|"orange"]` remapping exactly
   `--accent` and `--accent-ink` in both themes; green as the `:root` default (no attribute
   needed); the dark slip shadow's second layer. Consumed by Task 18's picker; visible to every
@@ -174,14 +176,14 @@ grep -E -- '--color-(green|blue|indigo|violet|teal|orange)-(400|600|700|950):' n
 Add to the Tier-1 section of `globals.css`, per hue, the stops the table below names (copied
 values, `--acc-*` prefix so Tier-1 privacy holds):
 
-| Hue | Light `--accent` | Dark `--accent` | Light ink | Dark ink |
-| --- | --- | --- | --- | --- |
-| green (default) | green-700 | green-400 | white (`--n-0`) | green-950 |
-| blue | blue-600 | blue-400 | white | blue-950 |
-| indigo | indigo-600 | indigo-400 | white | indigo-950 |
-| violet | violet-600 | violet-400 | white | violet-950 |
-| teal | teal-700 | teal-400 | white | teal-950 |
-| orange | orange-700 | orange-400 | white | orange-950 |
+| Hue             | Light `--accent` | Dark `--accent` | Light ink       | Dark ink   |
+| --------------- | ---------------- | --------------- | --------------- | ---------- |
+| green (default) | green-700        | green-400       | white (`--n-0`) | green-950  |
+| blue            | blue-600         | blue-400        | white           | blue-950   |
+| indigo          | indigo-600       | indigo-400      | white           | indigo-950 |
+| violet          | violet-600       | violet-400      | white           | violet-950 |
+| teal            | teal-700         | teal-400        | white           | teal-950   |
+| orange          | orange-700       | orange-400      | white           | orange-950 |
 
 Green and teal and orange use the 700 stop in light deliberately: green must sit visibly darker
 and yellower than emerald (`--positive`), orange redder and deeper than amber (`--caution`), and
@@ -196,7 +198,7 @@ pointing the existing `--accent`/`--accent-ink` lines at the green ramp):
 
 ```css
 :root[data-accent='blue'] {
-  --accent: var(--acc-blue);        /* blue-600 */
+  --accent: var(--acc-blue); /* blue-600 */
   --accent-ink: var(--n-0);
 }
 @media (prefers-color-scheme: dark) {
@@ -236,10 +238,12 @@ git commit -m "feat: six accent hues under [data-accent], green default"
 ### Task 2 [CLOUD]: One date vocabulary
 
 **Files:**
+
 - Create: `src/domain/dates.ts`
 - Test: `src/domain/__tests__/dates.test.ts`
 
 **Interfaces:**
+
 - Produces: `formatDayHeading(d: Date): string` → `"Saturday, Sep 5"`;
   `formatKickoff(d: Date): string` → `"12:00 PM ET"`;
   `formatDateTime(d: Date, now?: Date): string` → `"Sep 7, 11:25 AM ET"`, adding the year
@@ -311,11 +315,13 @@ export function formatDateTime(d: Date, now: Date = new Date()): string {
 ### Task 3 [CLOUD]: Toast — the announcement layer (D76)
 
 **Files:**
+
 - Create: `src/components/ui/toast.tsx`
 - Modify: `src/app/(app)/layout.tsx`
 - Test: `src/app/__tests__/toast-structure.test.ts`
 
 **Interfaces:**
+
 - Produces: `ToastProvider` (client), `useToast(): { toast(t: { tone: 'positive' | 'negative' | 'neutral'; title: string; description?: string }): void }`.
   Consumed by every form task (6, 7, 9, 10, 11, 12) — one `toast()` per submitted action's
   result, success and failure both; field-level validation additionally marks the field inline.
@@ -352,8 +358,14 @@ import { createContext, useCallback, useContext, useRef, useState } from 'react'
 import { createPortal } from 'react-dom';
 
 type Tone = 'positive' | 'negative' | 'neutral';
-interface ToastInput { tone: Tone; title: string; description?: string }
-interface ToastItem extends ToastInput { id: string }
+interface ToastInput {
+  tone: Tone;
+  title: string;
+  description?: string;
+}
+interface ToastItem extends ToastInput {
+  id: string;
+}
 
 const ToastContext = createContext<{ toast: (t: ToastInput) => void } | null>(null);
 
@@ -374,31 +386,58 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setItems((all) => all.filter((t) => t.id !== id));
   }, []);
 
-  const toast = useCallback((input: ToastInput) => {
-    const id = crypto.randomUUID();
-    setItems((all) => [...all.slice(-2), { ...input, id }]); // queue of 3
-    timers.current.set(id, setTimeout(() => dismiss(id), DISMISS_MS));
-  }, [dismiss]);
+  const toast = useCallback(
+    (input: ToastInput) => {
+      const id = crypto.randomUUID();
+      setItems((all) => [...all.slice(-2), { ...input, id }]); // queue of 3
+      timers.current.set(
+        id,
+        setTimeout(() => dismiss(id), DISMISS_MS),
+      );
+    },
+    [dismiss],
+  );
 
   const pause = (id: string) => clearTimeout(timers.current.get(id));
-  const resume = (id: string) => timers.current.set(id, setTimeout(() => dismiss(id), DISMISS_MS));
+  const resume = (id: string) =>
+    timers.current.set(
+      id,
+      setTimeout(() => dismiss(id), DISMISS_MS),
+    );
 
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
       {typeof document !== 'undefined' &&
         createPortal(
-          <div role="status" aria-live="polite"
-               className="pointer-events-none fixed inset-x-0 bottom-[calc(56px+env(safe-area-inset-bottom))] z-50 flex flex-col items-center gap-2 px-4 lg:bottom-6">
+          <div
+            role="status"
+            aria-live="polite"
+            className="pointer-events-none fixed inset-x-0 bottom-[calc(56px+env(safe-area-inset-bottom))] z-50 flex flex-col items-center gap-2 px-4 lg:bottom-6"
+          >
             {items.map((t) => (
-              <div key={t.id} onMouseEnter={() => pause(t.id)} onMouseLeave={() => resume(t.id)}
-                   className="pointer-events-auto flex w-full max-w-sm items-start justify-between gap-3 rounded-card border border-line bg-surface-raised p-3 shadow-slip">
+              <div
+                key={t.id}
+                onMouseEnter={() => pause(t.id)}
+                onMouseLeave={() => resume(t.id)}
+                className="pointer-events-auto flex w-full max-w-sm items-start justify-between gap-3 rounded-card border border-line bg-surface-raised p-3 shadow-slip"
+              >
                 <div className="flex flex-col gap-0.5">
-                  <span className={`text-sm font-semibold ${t.tone === 'negative' ? 'text-negative' : t.tone === 'positive' ? 'text-positive' : ''}`}>{t.title}</span>
+                  <span
+                    className={`text-sm font-semibold ${t.tone === 'negative' ? 'text-negative' : t.tone === 'positive' ? 'text-positive' : ''}`}
+                  >
+                    {t.title}
+                  </span>
                   {t.description && <span className="text-xs text-ink-muted">{t.description}</span>}
                 </div>
-                <button type="button" aria-label="Dismiss" onClick={() => dismiss(t.id)}
-                        className="text-xs text-ink-muted">✕</button>
+                <button
+                  type="button"
+                  aria-label="Dismiss"
+                  onClick={() => dismiss(t.id)}
+                  className="text-xs text-ink-muted"
+                >
+                  ✕
+                </button>
               </div>
             ))}
           </div>,
@@ -424,6 +463,7 @@ the portal escapes it). No screen consumes it yet; call sites arrive with their 
 ### Task 4 [CLOUD]: The desktop shell (D74)
 
 **Files:**
+
 - Modify: `src/components/ui/tab-bar.tsx` — export `NAV_ITEMS: { href: string; label: string }[]`
   (the six existing destinations, single source); root nav element gains `lg:hidden`
 - Modify: `src/app/(app)/layout.tsx` — header renders `NAV_ITEMS` as links in a
@@ -435,6 +475,7 @@ the portal escapes it). No screen consumes it yet; call sites arrive with their 
   into `src/app/(app)/(column)/` (`git mv` — route groups leave URLs unchanged)
 
 **Interfaces:**
+
 - Produces: the `(column)` group whose layout is exactly
   `<div className="mx-auto w-full max-w-2xl flex-1">{children}</div>`; `NAV_ITEMS`. `/games`
   stays outside the group (its `lg` two-pane grid arrives in Task 6). Task 12 moves admin in.
@@ -453,6 +494,7 @@ the portal escapes it). No screen consumes it yet; call sites arrive with their 
 ### Task 5 [CLOUD]: The odds board (D77)
 
 **Files:**
+
 - Create: `src/app/(app)/games/odds-cell.tsx` — extract the cell `<button>` (selected state,
   suspended `—` rendering, slip-context toggle) from `game-card.tsx` verbatim; both render it
   during this task; `game-card.tsx` is deleted at the end
@@ -463,6 +505,7 @@ the portal escapes it). No screen consumes it yet; call sites arrive with their 
 - Test: `src/app/__tests__/board-structure.test.ts`
 
 **Interfaces:**
+
 - Consumes: `getSlate()` from `src/server/odds/board.ts` (`BoardGame[]` — has `sport`,
   `startsAt`, teams, markets) — **read-only; do not edit `src/server/odds/`**; `formatDayHeading`/
   `formatKickoff` (Task 2); the slip context (unchanged).
@@ -489,7 +532,9 @@ it('day sections are native details/summary', () => {
 
 ```tsx
 <article className="grid grid-cols-[minmax(0,1fr)_repeat(3,4rem)] items-center gap-x-2 gap-y-1 border-b border-line-subtle px-1 py-2 lg:grid-cols-[3.5rem_minmax(0,1fr)_repeat(3,4.5rem)]">
-  <span className="hidden text-xs text-ink-muted lg:block row-span-2">{formatKickoff(game.startsAt)}</span>
+  <span className="hidden text-xs text-ink-muted lg:block row-span-2">
+    {formatKickoff(game.startsAt)}
+  </span>
   {/* away line: abbr + spread/money/total cells; home line below; time shown inline before
       the away abbr at <lg. Suspended market → the existing dashed “—” cell. */}
 </article>
@@ -514,6 +559,7 @@ it('day sections are native details/summary', () => {
 ### Task 6 [CLOUD]: The bet slip — Sheet born, prices and payout shown
 
 **Files:**
+
 - Create: `src/components/ui/sheet.tsx`
 - Modify: `src/components/bet-slip/bet-slip.tsx`
 - Create: `src/components/bet-slip/slip-rail.tsx`
@@ -522,6 +568,7 @@ it('day sections are native details/summary', () => {
 - Test: `src/app/__tests__/sheet-structure.test.ts`
 
 **Interfaces:**
+
 - Consumes: slip context (`slip-context.tsx`, unchanged); `useToast` (Task 3);
   `americanToRational`, `combine`, `payoutCents` from `src/domain/odds.ts`.
 - Produces: `Sheet({ open, onClose, label, children })` — portal, scrim (click dismisses), ESC
@@ -539,15 +586,12 @@ it('day sections are native details/summary', () => {
 - [ ] **Step 3: Split `SlipPanel` out of `bet-slip.tsx`.** The collapsed bar stays a sticky bar
       above the tab bar (`bottom-[calc(41px+env(safe-area-inset-bottom))]` at `<lg`,
       `lg:bottom-0` once the tab bar is hidden); "Show" opens the `Sheet` containing
-      `SlipPanel`. Panel additions, both containers:
-      - each leg row shows its price: `<Price american={leg.priceAmerican} />` after the line;
-      - a summary row before the stake input: combined price and
-        `To return <Money cents={payout} …/>`, computed
-        `payoutCents(stakeCents, combine(legs.map(l => americanToRational(l.priceAmerican))))`
-        — bigint in, bigint out, rendered only through `Money`;
-      - on place: success → `toast({ tone: 'positive', title: 'Bet placed', description: <the describeBet line> })`,
-        clear slip, close sheet; failure → `toast({ tone: 'negative', title: <the error's human line> })`
-        and the existing inline field marking stays.
+      `SlipPanel`. Panel additions, both containers: - each leg row shows its price: `<Price american={leg.priceAmerican} />` after the line; - a summary row before the stake input: combined price and
+      `To return <Money cents={payout} …/>`, computed
+      `payoutCents(stakeCents, combine(legs.map(l => americanToRational(l.priceAmerican))))`
+      — bigint in, bigint out, rendered only through `Money`; - on place: success → `toast({ tone: 'positive', title: 'Bet placed', description: <the describeBet line> })`,
+      clear slip, close sheet; failure → `toast({ tone: 'negative', title: <the error's human line> })`
+      and the existing inline field marking stays.
 - [ ] **Step 4: The rail.** `slip-rail.tsx` renders `SlipPanel` inside
       `<aside className="hidden lg:block sticky top-16 self-start">`. `/games`'s page wraps
       content in `<div className="lg:grid lg:grid-cols-[minmax(0,1fr)_21rem] lg:gap-6 lg:px-6">`
@@ -563,12 +607,14 @@ it('day sections are native details/summary', () => {
 ### Task 7 [CLOUD]: Feed
 
 **Files:**
+
 - Modify: `src/app/(app)/(column)/feed/feed-card.tsx`
 - Modify: `src/app/(app)/(column)/feed/[eventId]/page.tsx`
 - Modify: `src/app/(app)/(column)/feed/[eventId]/comment-thread.tsx` (Card `as` adoption)
 - Modify: `src/components/ui/card.tsx`
 
 **Interfaces:**
+
 - Consumes: `useToast` for comment/reaction failures; `Card` gains
   `as?: 'div' | 'article' | 'section' | 'li'` (default `'div'`) — the 7b review's escape hatch,
   landing with its first consumers here.
@@ -589,10 +635,12 @@ it('day sections are native details/summary', () => {
 ### Task 8 [CLOUD]: Standings — Table born
 
 **Files:**
+
 - Create: `src/components/ui/table.tsx`
 - Modify: `src/app/(app)/(column)/standings/page.tsx`
 
 **Interfaces:**
+
 - Produces: `Table`, `THead`, `TBody`, `Tr`, `Th`, `Td` — thin token-speaking primitives
   (`Th`: `text-xs font-semibold uppercase tracking-wide text-ink-muted text-left`; numeric
   cells right-align via `align="right"` prop on `Th`/`Td`). Presentation only, no sorting.
@@ -613,6 +661,7 @@ it('day sections are native details/summary', () => {
 ### Task 9 [CLOUD]: Bets and Wagers — legs name their game, Dialog born
 
 **Files:**
+
 - Create: `src/app/(app)/(column)/bets/leg-label.tsx`
 - Modify: `src/app/(app)/(column)/bets/page.tsx`
 - Modify: `src/app/(app)/(column)/wagers/page.tsx`
@@ -621,6 +670,7 @@ it('day sections are native details/summary', () => {
 - Create: `src/components/ui/dialog.tsx`
 
 **Interfaces:**
+
 - Produces: `LegLine({ leg })` rendering a game leg as
   `ECU @ ALA · Spread · ECU +27.5` with kickoff via `formatKickoff`, and a custom leg as
   `<event title> · <outcome>`; `ConfirmDialog({ open, onClose, onConfirm, title, body, confirmLabel, tone })`
@@ -659,6 +709,7 @@ it('day sections are native details/summary', () => {
 ### Task 10 [CLOUD]: Events
 
 **Files:**
+
 - Modify: `src/app/(app)/(column)/events/new/event-form.tsx` — the two `datetime-local` fields
   stack full-width (`flex flex-col gap-4`, no two-up row); "Book: —" line deleted from the
   market editor
@@ -678,14 +729,16 @@ it('day sections are native details/summary', () => {
 ### Task 11 [CLOUD]: Me
 
 **Files:**
+
 - Modify: `src/app/(app)/(column)/me/page.tsx`
 
 **Interfaces:**
+
 - Consumes: `Table` (Task 8), `formatDateTime` (Task 2).
 
 - [ ] **Step 1: English ledger labels.** One map from `ledger_entry_type` to copy, in the page:
-      `P2P_ESCROW` → `Wager stake held`, `P2P_RELEASE` → `Wager paid out`, refunds → `Stake
-      returned`, etc. — cover every value of the enum (`grep ledgerEntryType src/db/schema/money.ts`
+      `P2P_ESCROW` → `Wager stake held`, `P2P_RELEASE` → `Wager paid out`, refunds →
+      `Stake returned`, etc. — cover every value of the enum (`grep ledgerEntryType src/db/schema/money.ts`
       for the full list; the test below pins it). Rows with a `note` keep showing it as the
       second line. A raw enum reaching the screen is a bug: add
       `src/app/__tests__/ledger-labels.test.ts` asserting the page's map covers every enum
@@ -702,6 +755,7 @@ it('day sections are native details/summary', () => {
 ### Task 12 [CLOUD]: Admin joins the shell (D78)
 
 **Files:**
+
 - Move: `src/app/admin/*` → `src/app/(app)/(column)/admin/*` (`git mv`; URLs unchanged)
 - Modify: the moved `admin/layout.tsx` (or create one) — `requireAdmin()` stays exactly as it
   gates today; the bare `<main>`/"Back to app" chrome is deleted (the shell provides chrome)
@@ -723,6 +777,7 @@ it('day sections are native details/summary', () => {
 ### Task 13 [CLOUD, LOCAL fallback]: The 7c audit and docs
 
 **Files:**
+
 - Create: `docs/screen-rebuild-audit.md`
 - Modify: `docs/roadmap.md` (7c rows → complete, with inherited-table dispositions),
   `docs/README.md` (plan/spec links)
@@ -748,11 +803,13 @@ it('day sections are native details/summary', () => {
 ### Task 14 [CLOUD]: The component harness (D79) — first 7d task
 
 **Files:**
+
 - Modify: `package.json` (dev deps: `jsdom`, `@testing-library/react`,
   `@testing-library/user-event`), `vitest.config.ts`
 - Create: `src/components/ui/__tests__/dialog.test.tsx`, `sheet.test.tsx`, `toast.test.tsx`
 
 **Interfaces:**
+
 - Produces: a `projects` split in `vitest.config.ts` — the existing node project untouched
   (`src/**/__tests__/**/*.test.ts`, `environment: 'node'`, `fileParallelism: false`, existing
   setup), plus a `ui` project (`src/components/ui/__tests__/**/*.test.tsx`,
@@ -800,6 +857,7 @@ it('day sections are native details/summary', () => {
 ### Task 17 [CLOUD]: The dark-mode toggle
 
 **Files:**
+
 - Create: `src/app/(app)/(column)/me/appearance-form.tsx` (client), an action in
   `src/app/(app)/(column)/me/actions.ts`
 - Modify: `src/app/layout.tsx` (read the cookie, stamp `data-theme`), `me/page.tsx`
@@ -819,6 +877,7 @@ it('day sections are native details/summary', () => {
 **DB.** Requires Postgres.
 
 **Files:**
+
 - Modify: `src/db/schema/identity.ts` — `accent` pg enum
   (`GREEN|BLUE|INDIGO|VIOLET|TEAL|ORANGE`), column on `users`, `notNull().default('GREEN')`
 - Generated: `drizzle/00NN_*.sql`
@@ -876,15 +935,15 @@ it('day sections are native details/summary', () => {
 
 Measured 2026-09-05 in the session that wrote this plan, not assumed.
 
-| Step | Provable in a cloud session |
-| ---- | --------------------------- |
-| Tasks 1–3 — tokens, dates, toast structure | ✅ Yes — CSS/source assertions and pure unit tests |
-| Tasks 4–12 — builds, structural tests, full suite | ✅ Yes. Baseline measured: 109 files / 1121 tests, exit 0, 56s |
-| Task 18's migration | ✅ Against the local test database |
+| Step                                                    | Provable in a cloud session                                                                                                                                                                                               |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tasks 1–3 — tokens, dates, toast structure              | ✅ Yes — CSS/source assertions and pure unit tests                                                                                                                                                                        |
+| Tasks 4–12 — builds, structural tests, full suite       | ✅ Yes. Baseline measured: 109 files / 1121 tests, exit 0, 56s                                                                                                                                                            |
+| Task 18's migration                                     | ✅ Against the local test database                                                                                                                                                                                        |
 | Real-slate rendering (board density, Task 13/21 audits) | ⚠️ Only if `site.api.espn.com` is reachable from the session — this plan's own session pulled 179 games through the phase-5 local path, so it is likely but must be re-verified; otherwise the audit rows are **[LOCAL]** |
-| The 4.5:1 accent contrast measurements | ✅ Computed styles in the audit's Chromium |
-| Task 18's **production** migration | ❌ **[LOCAL]** — production connection string |
-| The phone-in-hand pass, accent-follows-device check | ❌ **[MANUAL]** — Task 21 |
+| The 4.5:1 accent contrast measurements                  | ✅ Computed styles in the audit's Chromium                                                                                                                                                                                |
+| Task 18's **production** migration                      | ❌ **[LOCAL]** — production connection string                                                                                                                                                                             |
+| The phone-in-hand pass, accent-follows-device check     | ❌ **[MANUAL]** — Task 21                                                                                                                                                                                                 |
 
 **If a session's hook cannot start Postgres**, mark every **DB** task written-but-not-run and
 say so. Never report a DB test as passing on the strength of having written it.
