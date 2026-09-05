@@ -1,5 +1,12 @@
 'use client';
-import { createContext, useCallback, useContext, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { createPortal } from 'react-dom';
 
 /**
@@ -29,8 +36,17 @@ export function useToast() {
 
 const DISMISS_MS = 5000;
 
+const emptySubscribe = () => () => {};
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
+  // Hydration-safe client check: server snapshot false, client snapshot true. No effect,
+  // no setState — avoids the cascading-render lint that a useState+useEffect gate trips.
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   const dismiss = useCallback((id: string) => {
@@ -60,7 +76,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      {typeof document !== 'undefined' &&
+      {mounted &&
         createPortal(
           <div
             role="status"
