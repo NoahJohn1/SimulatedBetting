@@ -14,7 +14,6 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Mobile audit](mobile-audit.md)                                                                 | Every screen at 375×812, with each finding assigned to the ladder rung that owns its fix                                                                             |
 | [Design-system audit](design-system-audit.md)                                                   | All 18 routes in both themes at two viewports, after the 7b sweep, with each remaining finding assigned to a rung                                                    |
 | [Screen rebuild spec](specs/2026-09-05-screen-rebuild-and-craft-design.md)                      | Phases 7c and 7d in one spec — the walk's evidence, the board redesign, the accent system, D74–D79                                                                   |
-| [Screen rebuild plan](plans/2026-09-05-screen-rebuild-and-craft-implementation-plan.md)         | Twenty-one lane-tagged tasks in two rungs, with the parallel-dispatch groups marked                                                                                  |
 | [Screen rebuild audit](screen-rebuild-audit.md)                                                 | The 7c pass (every route, both themes, two viewports, a real 80-game slate) plus 7d's a11y pass and close-out (keyboard trace, SR labels, contrast, the six accents) |
 | [Repo health plan](plans/2026-08-20-repo-health-implementation-plan.md)                         | The task-by-task plan for the repo health work, written for parallel execution                                                                                       |
 | [Cloud lane spec](specs/2026-09-02-cloud-lane-completion-design.md)                             | Closing every [CLOUD] item in repo health — the cron guard, the funnel guard test, the CI chore, both hooks, and Prettier                                            |
@@ -22,11 +21,8 @@ sportsbook lines, simulated currency. No real money is involved at any point.
 | [Docs status and archive spec](specs/2026-09-02-docs-status-and-archive-design.md)              | The owner taxonomy, the roadmap's master table, and what moved to the archive                                                                                        |
 | [Docs status and archive plan](plans/2026-09-02-docs-status-and-archive-implementation-plan.md) | The task-by-task plan for that restructure                                                                                                                           |
 | [ESPN adapter spec](specs/2026-08-22-espn-adapter-design.md)                                    | Phase 5: `EspnOddsProvider`/`EspnScoreProvider`, the payload spike findings, the kill switch, success criteria                                                       |
-| [ESPN adapter plan](plans/2026-08-22-espn-adapter-implementation.md)                            | The task-by-task plan, plus dated status notes on what was verified from a cloud session and how                                                                     |
 | [Email notifications spec](specs/2026-09-03-email-notifications-design.md)                      | Phase 8: the notification outbox, keyed sends from the feed emit points, per-type preferences, and one-click unsubscribe                                             |
-| [Email notifications plan](plans/2026-09-03-email-notifications-implementation-plan.md)         | The task-by-task plan for that work, lane-tagged, with what still needs Noah and what needs a real inbox                                                             |
 | [Hardening spec](specs/2026-09-03-hardening-design.md)                                          | Phase 9's cloud half — rate limiting on every mutation, the house rules page, the new-member path as a sequence, the smoke checklist                                 |
-| [Hardening plan](plans/2026-09-03-hardening-implementation-plan.md)                             | The task-by-task plan for that work, lane-tagged, with what a cloud session can and cannot verify                                                                    |
 | [Smoke checklist](smoke-checklist.md)                                                           | The pre-deploy pass — machine half and hands half. A draft until a person has run it                                                                                 |
 
 ### Reference
@@ -55,6 +51,10 @@ subsystem was built.
 | [UI foundations plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md)               | Phase 7a — shipped           |
 | [Design system plan](archive/plans/2026-08-24-design-system-implementation-plan.md)                 | Phase 7b — shipped           |
 | [Production deployment plan](archive/plans/2026-09-02-production-deployment-implementation-plan.md) | Phase 6 cloud half — shipped |
+| [ESPN adapter plan](archive/plans/2026-08-22-espn-adapter-implementation.md)                        | Phase 5 — shipped            |
+| [Screen rebuild plan](archive/plans/2026-09-05-screen-rebuild-and-craft-implementation-plan.md)     | Phases 7c and 7d — shipped   |
+| [Email notifications plan](archive/plans/2026-09-03-email-notifications-implementation-plan.md)     | Phase 8 — shipped            |
+| [Hardening plan](archive/plans/2026-09-03-hardening-implementation-plan.md)                         | Phase 9 — shipped            |
 
 ## The short version
 
@@ -199,12 +199,11 @@ Every open item from [the roadmap](roadmap.md#roadmap) and
 
 #### What a cloud session can pick up now
 
-| Item                                       | Source         | Has a plan                                                                    |
-| ------------------------------------------ | -------------- | ----------------------------------------------------------------------------- |
-| Uncomment the three cron `schedule:` lines | repo health 3  | —                                                                             |
-| Add `format:check` to `verify` and CI      | repo health 5  | —                                                                             |
-| Instrument `sync-odds` with `runJob`       | roadmap 6      | [plan](archive/plans/2026-09-02-production-deployment-implementation-plan.md) |
-| Give `deliverPending` a claim step         | repo health 13 | [finding](repo-health.md#51-notification-delivery-has-no-claim-step)          |
+| Item                                       | Source         | Has a plan                                                           |
+| ------------------------------------------ | -------------- | -------------------------------------------------------------------- |
+| Uncomment the three cron `schedule:` lines | repo health 3  | —                                                                    |
+| Add `format:check` to `verify` and CI      | repo health 5  | —                                                                    |
+| Give `deliverPending` a claim step         | repo health 13 | [finding](repo-health.md#51-notification-delivery-has-no-claim-step) |
 
 Row 1 above is `[CLOUD]` work that is currently blocked, not ready to pick up — see its
 "Blocked on" column in [repo health's Outstanding table](repo-health.md#outstanding). Row 2

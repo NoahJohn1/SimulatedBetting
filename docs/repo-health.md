@@ -612,7 +612,7 @@ container environment variables) — this one does, pointing at a Supabase proje
 loads `.env.test` with `override: true`, so the test suite always ignores that ambient value in
 favor of the local target — but `src/db/migrate.ts` did not do the same for `.env.local`/
 `$ENV_FILE` until this was found and fixed (see the plan's status note in
-[the ESPN adapter plan](plans/2026-08-22-espn-adapter-implementation.md) for how). Any script
+[the ESPN adapter plan](archive/plans/2026-08-22-espn-adapter-implementation.md) for how). Any script
 that loads env with plain `dotenv` and no `override: true` is one ambient variable away from
 silently targeting whatever database this container's environment happens to carry — worth
 checking before adding another one.
