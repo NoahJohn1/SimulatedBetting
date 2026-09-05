@@ -3,6 +3,8 @@ import { db } from '@/db/client';
 import { seasonMemberships, seasons } from '@/db/schema';
 import { postEntry } from '@/server/money/ledger';
 import { emitFeedEvent } from '@/server/feed/emit';
+import { enqueueNotification } from '@/server/notify/enqueue';
+import { seasonMemberUserIds } from '@/server/notify/recipients';
 
 const LEAGUE_TIMEZONE = 'America/New_York';
 
@@ -90,6 +92,27 @@ export async function payWeeklyAllowance(now: Date = new Date()): Promise<Allowa
       occurredAt: now,
     }),
   );
+
+  // The feed gets one card for the whole run (D26); the mail gets one row per person, because
+  // an email is addressed and a feed card is broadcast. Same fact, different fan-out (D63).
+  //
+  // A separate transaction from the per-member postEntry loop above, on purpose: those money
+  // writes are already committed member by member, and a notification failure must not be able
+  // to roll any of them back.
+  await db.transaction(async (tx) => {
+    for (const { userId } of await seasonMemberUserIds(tx, season.id)) {
+      await enqueueNotification(tx, {
+        userId,
+        type: 'ALLOWANCE_PAID',
+        dedupeKey: `allowance:${season.id}:${weekKey}:${userId}`,
+        payload: {
+          weekKey,
+          amountCents: season.weeklyAllowanceCents.toString(),
+          creditAmountCents: season.weeklyCreditAllowanceCents.toString(),
+        },
+      });
+    }
+  });
 
   return { credited, skipped };
 }

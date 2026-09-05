@@ -11,8 +11,11 @@ import {
 import { gradeParlay, settledPayoutCents } from '@/domain/grading';
 import type { LegStatus } from '@/domain/grading';
 import { isBigWin, isParlayHit, multipleBasisPoints, survivingLegCount } from '@/domain/milestones';
+import { describeBet } from '@/server/feed/describe-leg';
 import { emitFeedEvent } from '@/server/feed/emit';
 import { postEntry } from '@/server/money/ledger';
+import { enqueueNotification } from '@/server/notify/enqueue';
+import { userIdForMembership } from '@/server/notify/recipients';
 import type {
   BetSettledPayload,
   BigWinPayload,
@@ -134,6 +137,25 @@ export async function settleBetsForLegs(
       payload: settledPayload,
       occurredAt: input.settledAt,
     });
+
+    // The bet's owner, in the digest. `attempts` is in the key exactly as it is in the feed key
+    // and the ledger key beside it, so a re-run sends nothing and an admin correction sends a
+    // second, correct email rather than being swallowed (D63).
+    const settledUserId = await userIdForMembership(tx, bet.membershipId);
+    if (settledUserId) {
+      await enqueueNotification(tx, {
+        userId: settledUserId,
+        type: 'BETS_SETTLED',
+        dedupeKey: `bet:${bet.id}:settled:${attempts}:${settledUserId}`,
+        payload: {
+          betId: bet.id,
+          outcome,
+          netCents: (payout - bet.stakeCents).toString(),
+          subject: describeBet(snapshots),
+          correction: attempts > 1,
+        },
+      });
+    }
 
     if (outcome === 'WON' && isBigWin(bet.stakeCents, payout)) {
       const bigWin: BigWinPayload = {

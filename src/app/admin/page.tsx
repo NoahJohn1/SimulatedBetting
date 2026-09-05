@@ -6,6 +6,7 @@ import { db } from '@/db/client';
 import { users } from '@/db/schema';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
+import { setUserStatus } from '@/server/admin/approve';
 import { requireAdmin } from '@/server/auth/session';
 
 export const metadata: Metadata = { title: 'Admin' };
@@ -34,7 +35,7 @@ export default async function AdminPage() {
     const status = String(formData.get('status'));
     if (status !== 'APPROVED' && status !== 'DISABLED') return;
 
-    await db.update(users).set({ status }).where(eq(users.id, userId));
+    await setUserStatus(userId, status);
     revalidatePath('/admin');
   }
 

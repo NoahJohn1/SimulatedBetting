@@ -32,7 +32,7 @@ Where a status cannot be verified from the repo, it says so and dates the observ
 | 7b  | Design system                                                 | ✅ Complete                                                                          | —                                   | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md)                           |
 | 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | 🔲 Backlog                                                                           | [CLOUD]                             | —                                                                                                                                                                                    |
 | 7d  | [Craft](#7d--craft)                                           | 🔲 Backlog                                                                           | [CLOUD]                             | —                                                                                                                                                                                    |
-| 8   | [Email notifications](#8--email-notifications)                | 🔲 Backlog — spec and plan on `main`, nothing built                                  | [CLOUD] **[NOAH]** [LOCAL] [MANUAL] | [spec](specs/2026-09-03-email-notifications-design.md) · [plan](plans/2026-09-03-email-notifications-implementation-plan.md)                                                         |
+| 8   | [Email notifications](#8--email-notifications)                | 🔄 Partial — built, not yet sending                                                  | **[NOAH]** [MANUAL]                 | [spec](specs/2026-09-03-email-notifications-design.md) · [plan](plans/2026-09-03-email-notifications-implementation-plan.md)                                                         |
 | 9   | [Hardening](#9--hardening)                                    | 🔲 Backlog — spec and plan on `main`, nothing built                                  | [CLOUD] [MANUAL]                    | [spec](specs/2026-09-03-hardening-design.md) · [plan](plans/2026-09-03-hardening-implementation-plan.md)                                                                             |
 
 ---
@@ -189,16 +189,16 @@ the weekly allowance. Per-type toggles and a global off
 [plan](plans/2026-09-03-email-notifications-implementation-plan.md) — 16 tasks, lane-tagged,
 decisions [D63–D68](decisions.md#d63--every-send-is-keyed-but-not-every-send-rides-a-feed-event).
 
-| Task                                                               | Status     | Owner        |
-| ------------------------------------------------------------------ | ---------- | ------------ |
-| Transactional email provider — signup, API key, sending-domain DNS | 🔲 Backlog | **[NOAH]**   |
-| `notification_preferences` table and migration                     | 🔲 Backlog | [CLOUD]      |
-| Per-type toggles plus a global off                                 | 🔲 Backlog | [CLOUD]      |
-| One-click unsubscribe, no sign-in required                         | 🔲 Backlog | [CLOUD]      |
-| Dev mode that logs instead of sending                              | 🔲 Backlog | [CLOUD]      |
-| Idempotency-keyed sends from the `feed_events` emit points         | 🔲 Backlog | [CLOUD]      |
-| Apply the notification migration to production                     | 🔲 Backlog | **[LOCAL]**  |
-| Confirm a real email renders correctly in an inbox                 | 🔲 Backlog | **[MANUAL]** |
+| Task                                                               | Status      | Owner        |
+| ------------------------------------------------------------------ | ----------- | ------------ |
+| Transactional email provider — signup, API key, sending-domain DNS | 🔲 Backlog  | **[NOAH]**   |
+| `notification_preferences` table and migration                     | ✅ Complete | [CLOUD]      |
+| Per-type toggles plus a global off                                 | ✅ Complete | [CLOUD]      |
+| One-click unsubscribe, no sign-in required                         | ✅ Complete | [CLOUD]      |
+| Dev mode that logs instead of sending                              | ✅ Complete | [CLOUD]      |
+| Idempotency-keyed sends from the `feed_events` emit points         | ✅ Complete | [CLOUD]      |
+| Apply the notification migration to production                     | 🔲 Backlog  | **[LOCAL]**  |
+| Confirm a real email renders correctly in an inbox                 | 🔲 Backlog  | **[MANUAL]** |
 
 **What's left.** Every `[CLOUD]` row is unblocked and ready for a session to execute — none of it
 waits on the `[NOAH]` provider signup, since the transport is inert without an API key

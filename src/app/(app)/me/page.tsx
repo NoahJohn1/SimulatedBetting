@@ -60,6 +60,10 @@ export default async function MePage() {
         Feed filters
       </Link>
 
+      <Link href="/me/notifications" className="text-xs text-ink-muted hover:underline">
+        Email
+      </Link>
+
       {entries.length === 0 ? (
         <EmptyState title="No activity yet" />
       ) : (
