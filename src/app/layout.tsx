@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { cookies } from 'next/headers';
 import './globals.css';
 
 const geistSans = Geist({
@@ -44,9 +45,28 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: LayoutProps<'/'>) {
+/**
+ * The dark-mode toggle (Task 17, D75). `theme` is a device cookie, not an account column —
+ * "System" is represented by the cookie's absence (or any value other than `light`/`dark`),
+ * which is why this returns `undefined` rather than a third literal: React drops a JSX
+ * attribute entirely when its value is `undefined`, so System renders `<html>` with no
+ * `data-theme` at all, exactly what the `[data-theme]` selectors in globals.css (7b) already
+ * expect — the plain `prefers-color-scheme` media query handles System on its own.
+ */
+function readThemeCookie(value: string | undefined): 'light' | 'dark' | undefined {
+  return value === 'light' || value === 'dark' ? value : undefined;
+}
+
+export default async function RootLayout({ children }: LayoutProps<'/'>) {
+  const cookieStore = await cookies();
+  const theme = readThemeCookie(cookieStore.get('theme')?.value);
+
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      data-theme={theme}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
