@@ -1,5 +1,5 @@
-import { LoadingScreen } from '@/components/ui/loading-screen';
+import { StandingsSkeleton } from '@/components/ui/skeleton';
 
 export default function Loading() {
-  return <LoadingScreen label="Loading standings" />;
+  return <StandingsSkeleton />;
 }
