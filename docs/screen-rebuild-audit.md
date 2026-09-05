@@ -156,3 +156,152 @@ blind scrolling, the desktop shape exists (D74), the four components are born at
 sites, all action results announce through the toast layer, legs name their games, one date
 vocabulary, per-entity titles with back links, admin inside the shell, both themes hold at both
 viewports, and all twelve accent pairs measure ≥ 4.5:1. **7c is shippable.**
+
+---
+
+# The a11y pass — 7d Task 19
+
+**Date:** 2026-09-05. No live browser in this session, so contrast is measured programmatically
+(a throwaway Node script parsing `globals.css`'s `oklch()` stops, not committed) rather than by
+the 7b/7c audits' canvas pixel-readback method; the two agree to within 0.01–0.02 on every pair
+they share (e.g. green light: 4.94 here vs 4.95 in the 7c canvas reading).
+
+## Keyboard: tab order down the board, into the slip, through Sheet/Dialog
+
+Read (not modified): `game-row.tsx`, `day-section.tsx`, `odds-cell.tsx`, `bet-slip.tsx`,
+`slip-panel.tsx`, `slip-rail.tsx`, `sheet.tsx`, `dialog.tsx`, `(app)/layout.tsx`,
+`(app)/games/page.tsx`.
+
+- **The board.** `GameRow` is a plain grid whose only focusable children are the six `OddsCell`
+  buttons, in source order: away line's three cells left-to-right, then home line's three —
+  exactly "cell → cell across a row, row → row." Kickoff time and team abbreviation are
+  non-interactive `<span>`s, so they are correctly skipped. `DaySection` is a native
+  `<details>/<summary>`; the `<summary>` is a real tab stop and Enter/Space toggles it via
+  platform behaviour, no script needed.
+- **Into the slip.** `/games`'s two-pane grid (`page.tsx`) renders the board `<div>` then the
+  `<aside>` rail in that DOM order, so Tab reaches `SlipRail`'s `SlipPanel` immediately after
+  the last board row — not after the tab bar — at `lg+`. Below `lg`, the rail is `hidden`
+  (removed from the tab order by `display: none`) and `BetSlip`'s collapsed bar's "Show" button
+  is the next stop after the board instead. Verified by reading `layout.tsx`'s render order
+  (header → `main` → `BetSlip` → `TabBar`) and `slip-rail.tsx`/`bet-slip.tsx`'s `hidden`/
+  `lg:hidden` pair, which never both resolve to visible at once.
+- **Through Sheet/Dialog.** Both already carry the behaviour Task 14 wrote jsdom tests for —
+  this task did not touch either component's trap logic, only re-ran the suite:
+  `npx vitest run src/components/ui/__tests__` → **3 files / 12 tests passed**, unchanged from
+  Task 14 (scrim click, Escape, body-scroll lock/restore, and focus-in/focus-restore for
+  `Sheet`; `showModal`, Escape, focus-restore, and single-fire `onConfirm` for `ConfirmDialog`).
+- **Recorded, not fixed:** `Sheet` is a hand-rolled `<div>` (D79's own comment explains the
+  trade — pinned bottom placement over `<dialog>`'s free top-layer trap), and it does not
+  implement a Tab-cycling containment loop the way `<dialog>`'s native `showModal()` does for
+  `ConfirmDialog`. Tabbing forward past the last element inside an open `Sheet` (or
+  Shift+Tab-ing backward past the first) can reach elements outside the panel that the scrim
+  only covers visually. This task's brief is explicit — "Task 14's focus traps are already
+  tested — verify they still work, don't re-implement" — so this is disclosed debt, not a Task
+  19 fix; the tests above confirm everything Task 14 actually wrote a test for still passes.
+
+## Labels: icon-only controls
+
+Swept with `grep -rn "aria-label" src/app src/components` against every `<button>` in
+`src/app` and `src/components` (`grep -rn "<button"`, ~50 call sites). Nearly all already carry
+a visible text label (Approve/Deny, Take it/Decline/Withdraw, Save/Cancel/Edit, Post, Delete,
+Load more, Remove market/outcome, the theme and accent radios, Dismiss) or an existing
+`aria-label` (`Remove ${leg.label}` in the slip, the accent swatches, the segmented controls'
+`<nav aria-label>`, the toast's `Dismiss`, an outcome's `Remove outcome N`). Day-section
+`<summary>`s already show their game count in visible text per the task brief, so none needed
+an additional label.
+
+Two real gaps, both fixed in this commit:
+
+1. **The feed's reaction chips** (`reaction-picker.tsx`, both the collapsed row and the
+   expanded six-emoji picker) had only an emoji glyph and a count as their accessible name —
+   platform emoji-name announcements are inconsistent (VoiceOver vs NVDA read the same emoji
+   differently) and say nothing about the count or whether it's yours. Added
+   `REACTION_LABEL`/`reactionLabel()` (`src/server/feed/reaction-emoji.ts`) — one fixed English
+   word per emoji (Fire, Laughing, Skull, Handshake, Bullseye, Clown) — and an `aria-label` on
+   each chip: `"Fire reaction, 3, yours"` / `"React Fire"`.
+2. **`OddsCell`'s missing-selection placeholder** (the dashed "—" `<div>`) had no accessible
+   name at all — a screen reader either skips a non-interactive div with only a dash glyph or
+   reads it ambiguously. Gave it `aria-label="{team}: no line yet"`.
+
+## SR: `OddsCell`'s full descriptive label
+
+`odds-cell.tsx` already had every field the label needs as props: `teamLabel` (abbreviation,
+matching this task's own example), `market.type`, `selection.line`, `selection.priceAmerican`.
+Added `cellAriaLabel()`, spelling signs as words rather than symbols (a bare `+`/`-` is not
+reliably announced):
+
+- Spread: `"ECU spread plus 27.5 at minus 102"`
+- Moneyline (no line): `"ALA moneyline at minus 150"`
+- Total (no team side of its own — `cellsFor` renders OVER on the away row and UNDER on the
+  home row purely for grid layout, so naming the row's team would be a lie):
+  `"Over 47.5 at minus 110"`
+
+Also added `aria-pressed={active}` — the cell is a toggle button, and this was the only toggle
+button on the board without one (`ReactionPicker`'s chips already had it).
+
+## Contrast: all six accents, both themes, ink-on-accent
+
+Parsed `--acc-{hue}` / `--acc-{hue}-dark` / `--acc-{hue}-ink-dark` straight out of
+`globals.css`, converted each `oklch()` to linear sRGB (Björn Ottosson's OKLab matrices), and
+applied the WCAG 2.1 relative-luminance/contrast formula. Light ink is `--n-0` (`#fff`,
+luminance 1) for every hue, per Task 1.
+
+| Accent          | Light ratio | Dark ratio | Light accent RGB  | Dark accent RGB    | Dark ink RGB     |
+| --------------- | ----------- | ---------- | ----------------- | ------------------ | ---------------- |
+| Green (default) | 4.94        | 8.40       | `rgb(0,130,54)`   | `rgb(5,223,114)`   | `rgb(3,46,21)`   |
+| Blue            | 5.26        | 5.58       | `rgb(21,93,252)`  | `rgb(81,162,255)`  | `rgb(22,36,86)`  |
+| Indigo          | 6.44        | 5.14       | `rgb(79,57,246)`  | `rgb(124,134,255)` | `rgb(30,26,77)`  |
+| Violet          | 5.88        | 5.36       | `rgb(127,34,254)` | `rgb(166,132,255)` | `rgb(47,13,104)` |
+| Teal            | 5.39        | 7.76       | `rgb(0,120,111)`  | `rgb(0,213,190)`   | `rgb(2,47,46)`   |
+| Orange          | 5.23        | 6.58       | `rgb(202,53,0)`   | `rgb(255,137,4)`   | `rgb(68,19,6)`   |
+
+**All twelve pairs clear 4.5:1**, matching the 7c canvas measurement to within rounding. No
+accent stop needed to move.
+
+## Hue collision: accents vs won/lost/caution
+
+Computed OKLab Euclidean distance (ΔE) and hue distance between each accent stop and the
+same-theme outcome token (`positive`/`negative`/`caution`, light stop vs light stop, dark stop
+vs dark stop) — the two constructions that actually sit near each other on screen: a selected
+cell or primary button (solid accent fill) and a settled leg's status text or badge (tinted
+`*-surface` behind `*-on-surface` text).
+
+The closest pairs, smallest ΔE first:
+
+| Pair                           | Δhue  | ΔE (OKLab) |
+| ------------------------------ | ----- | ---------- |
+| green dark vs positive dark    | 11.5° | 0.057      |
+| teal dark vs positive dark     | 18.7° | 0.060      |
+| orange light vs negative light | 11.1° | 0.070      |
+| green light vs positive light  | 13.2° | 0.078      |
+| teal light vs positive light   | 23.2° | 0.109      |
+| orange dark vs caution dark    | 28.5° | 0.120      |
+| orange light vs caution light  | 19.9° | 0.131      |
+
+Every other accent/outcome pair sits at ΔE ≥ 0.25 (blue, indigo, violet — all far from the
+warm/green outcome hues). None of the seven close pairs above is a same-color collision:
+
+- **Green vs positive** was the 7c audit's own finding, deliberately built this way by Task 1
+  ("green must sit visibly darker and yellower than emerald") — a solid green-700/-400 fill
+  reads as a different, cooler-toned green than the tinted emerald status text next to it.
+- **Teal vs positive (dark)** is the closest new pair this pass found: `rgb(0,213,190)` vs
+  `rgb(0,212,146)` — R and G channels are within 1 of each other, only B (190 vs 146, a real
+  17% swing) separates them. That reads as turquoise vs spring-green, not as one color, and
+  the two never share a construction (fill vs tinted text).
+- **Orange vs negative (light)** is the other new pair: `rgb(202,53,0)` vs `rgb(231,0,11)` — a
+  burnt orange (G=53 gives it visible orange cast) against a near-pure red (G=0). Distinct at a
+  glance, and orange's designed-in separation from _caution_ (Task 1's actual design intent)
+  is even wider (ΔE 0.131) than its accidental proximity to _negative_.
+
+No accent stop was moved. Every pair is either the 7c audit's already-reviewed, deliberately
+close green/positive relationship, or a comparable-or-larger separation the reasoning above
+covers the same way. A future accent hue that lands materially closer than 0.05 ΔE to an
+outcome token, or with matching lightness _and_ chroma (not just similar hue), would warrant
+revisiting this — this pass found nothing that crosses that line.
+
+## Verdict
+
+Keyboard order, icon-only labels, `OddsCell`'s SR description, and all six accents' contrast
+and hue separation are in place. `npm run verify` is clean (see the commit). The one disclosed
+gap — `Sheet`'s lack of a Tab-cycling containment loop — is explicitly out of this task's scope
+per its own brief and is recorded above rather than silently left out.

@@ -10,6 +10,33 @@ function sidePrefix(market: BoardMarket, selection: BoardSelection): string {
   return market.type === 'TOTAL' ? (selection.side === 'OVER' ? 'O ' : 'U ') : '';
 }
 
+/** `plus 27.5` / `minus 3` — the word form a screen reader should say instead of a bare sign. */
+function signedWords(n: number): string {
+  return n >= 0 ? `plus ${n}` : `minus ${Math.abs(n)}`;
+}
+
+/**
+ * The full sentence a screen reader announces for a cell — team, market, line, and price spelled
+ * out (Task 19's a11y pass): "ECU spread plus 27.5 at minus 102". The visible cell only ever
+ * shows the numbers themselves (Line/Price below), which read as bare digits with no market or
+ * team context; this is the one place that context gets said out loud. A total has no team side
+ * of its own (the OVER cell renders on the away row and UNDER on the home row purely for grid
+ * layout, per game-row.tsx's `cellsFor`), so it names the direction instead of borrowing
+ * whichever team happens to share its row.
+ */
+function cellAriaLabel(market: BoardMarket, selection: BoardSelection, teamLabel: string): string {
+  const price = signedWords(selection.priceAmerican);
+
+  if (market.type === 'MONEYLINE' || selection.line === null) {
+    return `${teamLabel} moneyline at ${price}`;
+  }
+  if (market.type === 'TOTAL') {
+    const direction = selection.side === 'OVER' ? 'Over' : 'Under';
+    return `${direction} ${Number(selection.line)} at ${price}`;
+  }
+  return `${teamLabel} spread ${signedWords(Number(selection.line))} at ${price}`;
+}
+
 /**
  * The plain-text description a slip leg carries (@/components/bet-slip/slip-context.tsx):
  * persisted to localStorage and later shown as ordinary text in the slip, so it has to be a
@@ -51,7 +78,10 @@ export function OddsCell({
 
   if (!market || !selection) {
     return (
-      <div className="flex h-12 w-16 items-center justify-center rounded-lg border border-dashed border-line text-xs text-ink-muted">
+      <div
+        aria-label={`${teamLabel}: no line yet`}
+        className="flex h-12 w-16 items-center justify-center rounded-lg border border-dashed border-line text-xs text-ink-muted"
+      >
         —
       </div>
     );
@@ -64,6 +94,8 @@ export function OddsCell({
     <button
       type="button"
       disabled={disabled}
+      aria-label={cellAriaLabel(market, selection, teamLabel)}
+      aria-pressed={active}
       onClick={() =>
         slip.toggle({
           selectionId: selection.id,
