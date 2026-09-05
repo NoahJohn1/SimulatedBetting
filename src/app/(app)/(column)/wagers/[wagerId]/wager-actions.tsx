@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { ConfirmDialog } from '@/components/ui/dialog';
+import { useToast } from '@/components/ui/toast';
 import {
   acceptWagerAction,
   cancelOfferAction,
@@ -36,8 +38,10 @@ function message(error?: { code: string; retryAfterSeconds?: number }): string {
 
 export function WagerActions(props: WagerActionsProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
 
   function run(
     fn: () => Promise<{ ok: boolean; error?: { code: string; retryAfterSeconds?: number } }>,
@@ -49,6 +53,26 @@ export function WagerActions(props: WagerActionsProps) {
         setError(message(result.error));
         return;
       }
+      router.refresh();
+    });
+  }
+
+  function runProposeCancel() {
+    startTransition(async () => {
+      const result = await proposeCancelAction(props.wagerId);
+      if (!result.ok) {
+        toast({
+          tone: 'negative',
+          title: 'Could not propose calling it off',
+          description: message(result.error),
+        });
+        return;
+      }
+      toast({
+        tone: 'positive',
+        title: 'Proposed calling it off',
+        description: 'Waiting on them to agree.',
+      });
       router.refresh();
     });
   }
@@ -142,7 +166,7 @@ export function WagerActions(props: WagerActionsProps) {
             type="button"
             disabled={pending || props.youProposedCancel}
             className={BUTTON}
-            onClick={() => run(() => proposeCancelAction(props.wagerId))}
+            onClick={() => setConfirmingCancel(true)}
           >
             {props.youProposedCancel ? 'Waiting on them to agree' : 'Propose calling it off'}
           </button>
@@ -153,6 +177,15 @@ export function WagerActions(props: WagerActionsProps) {
       )}
 
       {error && <p className="text-sm text-negative">{error}</p>}
+
+      <ConfirmDialog
+        open={confirmingCancel}
+        onClose={() => setConfirmingCancel(false)}
+        onConfirm={runProposeCancel}
+        title="Propose calling it off?"
+        body="Both of you have to agree before either stake comes back."
+        confirmLabel="Propose"
+      />
     </div>
   );
 }

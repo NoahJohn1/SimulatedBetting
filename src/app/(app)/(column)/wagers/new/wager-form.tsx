@@ -193,7 +193,7 @@ export function WagerForm({ members }: { members: MemberOption[] }) {
         </FormField>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="flex flex-col gap-4">
         <FormField label="Offer expires" htmlFor="wager-expires">
           <input
             id="wager-expires"

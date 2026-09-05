@@ -6,6 +6,7 @@ import { Money } from '@/components/ui/money';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { requireApprovedMember } from '@/server/auth/session';
 import { loadWagerBoard, type WagerSummary } from '@/server/p2p/query';
+import { sectionFor, type WagerSection } from './sections';
 
 export const metadata: Metadata = { title: 'Wagers' };
 
@@ -52,37 +53,49 @@ export default async function WagersPage() {
   const member = await requireApprovedMember();
   const board = await loadWagerBoard(member.membershipId, member.seasonId);
 
-  const empty =
-    board.openOffers.length === 0 &&
-    board.offersToYou.length === 0 &&
-    board.yourOffers.length === 0 &&
-    board.liveWagers.length === 0 &&
-    board.settledWagers.length === 0;
+  // One section per wager (the walk found a wager double-listed — `board.liveWagers` and
+  // `board.awaitingYourClaim` overlap by construction, since every claimable wager is also
+  // accepted). `awaitingYourClaim` is left out of the pool below for exactly that reason: it
+  // is a subset of `liveWagers`, and `sectionFor` recovers it from there.
+  const pool = [
+    ...board.openOffers,
+    ...board.offersToYou,
+    ...board.yourOffers,
+    ...board.liveWagers,
+    ...board.settledWagers,
+  ];
+
+  const bySection = new Map<WagerSection, WagerSummary[]>();
+  for (const wager of pool) {
+    const section = sectionFor(wager, member.membershipId);
+    bySection.set(section, [...(bySection.get(section) ?? []), wager]);
+  }
 
   return (
     <div className="flex flex-col gap-4 px-4 py-4">
-      <SegmentedControl
-        label="Bets or wagers"
-        segments={[
-          { href: '/bets', label: 'Bets', active: false },
-          { href: '/wagers', label: 'Wagers', active: true },
-        ]}
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <SegmentedControl
+          label="Bets or wagers"
+          segments={[
+            { href: '/bets', label: 'Bets', active: false },
+            { href: '/wagers', label: 'Wagers', active: true },
+          ]}
+        />
+      </div>
 
       <Link href="/wagers/new" className={buttonClasses('primary')}>
         Offer a wager
       </Link>
 
-      {empty ? (
+      {pool.length === 0 ? (
         <EmptyState title="No wagers yet" body="Offer one and see who takes the other side." />
       ) : (
         <>
-          <Section title="Awaiting your call" wagers={board.awaitingYourClaim} />
-          <Section title="Challenges to you" wagers={board.offersToYou} />
-          <Section title="Open to the season" wagers={board.openOffers} />
-          <Section title="Your open offers" wagers={board.yourOffers} />
-          <Section title="Live" wagers={board.liveWagers} />
-          <Section title="Finished" wagers={board.settledWagers} />
+          <Section title="Awaiting your call" wagers={bySection.get('AWAITING_YOUR_CALL') ?? []} />
+          <Section title="Challenges to you" wagers={bySection.get('INVITES') ?? []} />
+          <Section title="Open to the season" wagers={bySection.get('OPEN_TO_THE_SEASON') ?? []} />
+          <Section title="Live" wagers={bySection.get('LIVE') ?? []} />
+          <Section title="Finished" wagers={bySection.get('SETTLED') ?? []} />
         </>
       )}
     </div>

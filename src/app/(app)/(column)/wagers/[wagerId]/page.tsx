@@ -1,9 +1,30 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { StatusBadge } from '@/components/ui/badge';
 import { Money } from '@/components/ui/money';
+import { formatDateTime } from '@/domain/dates';
 import { requireApprovedMember } from '@/server/auth/session';
 import { loadWagerDetail } from '@/server/p2p/query';
 import { WagerActions } from './wager-actions';
+
+const DESCRIPTION_LIMIT = 140;
+
+export async function generateMetadata({
+  params,
+}: PageProps<'/wagers/[wagerId]'>): Promise<Metadata> {
+  const member = await requireApprovedMember();
+  const { wagerId } = await params;
+  const wager = await loadWagerDetail(wagerId, member.membershipId);
+  if (!wager) return { title: 'Wager' };
+
+  const description =
+    wager.description && wager.description.length > DESCRIPTION_LIMIT
+      ? `${wager.description.slice(0, DESCRIPTION_LIMIT)}…`
+      : (wager.description ?? undefined);
+
+  return { title: wager.subject, description };
+}
 
 export default async function WagerDetailPage({ params }: PageProps<'/wagers/[wagerId]'>) {
   const member = await requireApprovedMember();
@@ -25,6 +46,10 @@ export default async function WagerDetailPage({ params }: PageProps<'/wagers/[wa
 
   return (
     <div className="flex flex-col gap-4 px-4 py-4">
+      <Link href="/wagers" className="text-sm text-ink-muted hover:text-ink">
+        ← Wagers
+      </Link>
+
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <StatusBadge status={wager.status} />
@@ -63,7 +88,7 @@ export default async function WagerDetailPage({ params }: PageProps<'/wagers/[wa
         )}
         <div className="flex justify-between">
           <dt className="text-ink-muted">Settled by</dt>
-          <dd>{wager.resolvesBy.toLocaleString()}</dd>
+          <dd>{formatDateTime(wager.resolvesBy)}</dd>
         </div>
       </dl>
 
