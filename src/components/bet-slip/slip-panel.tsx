@@ -152,7 +152,9 @@ export function SlipPanel({
         onPlaced?.();
         router.refresh();
       } else {
-        toast({ tone: 'negative', title: message(result.error, currency) });
+        const text = message(result.error, currency);
+        toast({ tone: 'negative', title: text });
+        setError(text);
       }
     });
   }
