@@ -219,10 +219,11 @@ provider signup, two migrations against production, and a person's pass over the
 [D63–D68](decisions.md#d63--every-send-is-keyed-but-not-every-send-rides-a-feed-event) and
 [D69–D73](decisions.md#d69--rate-limiting-is-a-postgres-fixed-window-counter-enforced-at-the-action-boundary).
 7c and 7d are both built now too: 7c merged to `main` in
-[PR #28](https://github.com/NoahJohn1/SimulatedBetting/pull/28), and 7d landed on
-`claude/phase-7d-craft`, audited, awaiting its own PR. What's left of either is not `[CLOUD]`
-work — see [roadmap 7c](roadmap.md#7c--screen-by-screen-rebuild) and
-[roadmap 7d](roadmap.md#7d--craft) for the dispositions.
+[PR #28](https://github.com/NoahJohn1/SimulatedBetting/pull/28) with nothing left owed — its
+inherited-backlog dispositions moved to the [screen-rebuild audit](screen-rebuild-audit.md) once
+the roadmap collapsed its row. 7d landed on `claude/phase-7d-craft`, audited, awaiting its own
+PR; what's left of it is not `[CLOUD]` work — see [roadmap 7d](roadmap.md#7d--craft) for its
+dispositions.
 
 #### What needs a desktop with Docker
 
