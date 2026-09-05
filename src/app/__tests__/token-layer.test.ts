@@ -59,6 +59,28 @@ function darkBlocks(): string[] {
   );
 }
 
+/** Every `--name: value;` declared in a chunk of CSS, in source order, as name -> value. */
+function declaredMap(block: string): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const m of block.matchAll(/^\s*--([a-z0-9-]+)\s*:\s*([^;]+);/gim)) {
+    map[`--${m[1]}`] = m[2].trim();
+  }
+  return map;
+}
+
+/** The three selector contexts an accent hue's remap appears in — light, media-dark, and
+ *  [data-theme='dark'] — matching how the neutrals handle [data-theme], each parsed into its
+ *  declared custom properties. */
+function accentBlocksFor(hue: string): Record<string, string>[] {
+  const pattern = new RegExp(`[^{}]*\\[data-accent=['"]${hue}['"]\\][^{}]*\\{([^}]*)\\}`, 'g');
+  return [...CSS.matchAll(pattern)].map((m) => declaredMap(m[1]));
+}
+
+/** The light palette's :root block, parsed so a single token's default can be asserted. */
+const lightRootBlock = declaredMap(
+  CSS.slice(CSS.indexOf('/* LIGHT-PALETTE-START */'), CSS.indexOf('/* LIGHT-PALETTE-END */')),
+);
+
 describe('the token layer', () => {
   it('declares all thirty-one Tier 2 tokens in the light palette', () => {
     const light = CSS.slice(
@@ -117,5 +139,24 @@ describe('the token layer', () => {
   it('renders the app in Geist rather than the create-next-app Arial fallback', () => {
     expect(CSS).toContain('var(--font-geist-sans)');
     expect(CSS).not.toContain('Arial');
+  });
+});
+
+const ACCENTS = ['green', 'blue', 'indigo', 'violet', 'teal', 'orange'] as const;
+
+describe('accent remaps', () => {
+  it.each(ACCENTS)('defines %s in light, media-dark, and data-theme-dark', (hue) => {
+    // Three selector contexts, matching how the neutrals handle [data-theme]:
+    expect(CSS).toMatch(new RegExp(`\\[data-accent='${hue}'\\]`));
+    const blocks = accentBlocksFor(hue);
+    expect(blocks, `expected 3 selector contexts for [data-accent='${hue}']`).toHaveLength(3);
+    // Each accent block sets exactly these two tokens and nothing else:
+    for (const block of blocks) {
+      expect(Object.keys(block)).toEqual(['--accent', '--accent-ink']);
+    }
+  });
+
+  it('defaults :root --accent to the green ramp, not the neutral ramp', () => {
+    expect(lightRootBlock['--accent']).toBe('var(--acc-green)');
   });
 });
