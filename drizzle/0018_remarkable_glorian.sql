@@ -1,0 +1,1 @@
+ALTER TYPE "public"."job_name" ADD VALUE 'SYNC_ODDS';

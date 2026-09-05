@@ -5,8 +5,8 @@ import { activeTransport } from '@/server/notify/transport';
 
 export type Freshness = 'fresh' | 'stale' | 'never-run';
 
-/** The three recorded jobs, plus sync-odds, whose health is derived rather than recorded (D58). */
-export type HealthJob = JobName | 'SYNC_ODDS';
+/** Every job `runJob` can record. sync-odds' card still reads derived freshness, not this table (D58). */
+export type HealthJob = JobName;
 
 /**
  * Roughly three times each job's own interval, so one missed fire is not an alarm and two are.
@@ -181,8 +181,8 @@ async function readLastReconcile(): Promise<ReconcileHealth> {
 }
 
 /**
- * sync-odds is not instrumented (D58). The freshest market timestamp is the better evidence
- * anyway: it says the sync wrote rows, not that a handler returned 200.
+ * sync-odds also writes to `job_runs` now, but this screen keeps reading its freshness from the
+ * market timestamp instead (D58): it says the sync wrote rows, not that a handler returned 200.
  */
 async function readLastMarketSync(): Promise<Date | null> {
   const rows = await db.execute<{ last_synced_at: string | null }>(
