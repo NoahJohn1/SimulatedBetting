@@ -3,6 +3,7 @@ import { Badge, StatusBadge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Money } from '@/components/ui/money';
 import { formatAmount } from '@/domain/money';
+import { formatDateTime } from '@/domain/dates';
 import type { FeedEventType } from '@/db/schema';
 import type {
   AdminAdjustmentPayload,
@@ -26,19 +27,6 @@ import type {
   P2PVoidedPayload,
 } from '@/server/feed/payload';
 import type { SerializedFeedCard } from './actions';
-
-/** "Fri 8pm" — a compact close/resolve-by time, matching the copy in the brief's feed table. */
-function formatDeadline(iso: string): string {
-  const date = new Date(iso);
-  const weekday = date.toLocaleDateString('en-US', {
-    weekday: 'short',
-    timeZone: 'America/New_York',
-  });
-  const timeOpts: Intl.DateTimeFormatOptions = { hour: 'numeric', timeZone: 'America/New_York' };
-  if (date.getMinutes() !== 0) timeOpts.minute = '2-digit';
-  const time = date.toLocaleTimeString('en-US', timeOpts).replace(' ', '').toLowerCase();
-  return `${weekday} ${time}`;
-}
 
 function EventTitleLink({ eventId, title }: { eventId: string; title: string }) {
   return (
@@ -254,7 +242,7 @@ function Body({ type, payload }: { type: FeedEventType; payload: unknown }) {
         <p className="text-sm">
           opened <EventTitleLink eventId={created.eventId} title={created.title} /> ·{' '}
           {created.marketCount} {created.marketCount === 1 ? 'market' : 'markets'} · closes{' '}
-          {formatDeadline(created.resolvesBy)}
+          {formatDateTime(new Date(created.resolvesBy))}
         </p>
       );
     }

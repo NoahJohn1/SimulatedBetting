@@ -30,8 +30,8 @@ Where a status cannot be verified from the repo, it says so and dates the observ
 | 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — cloud half built; nothing is live until the migration and env vars land                                                                                                                                                                                          | [CLOUD] **[NOAH]** [LOCAL] [MANUAL] | [spec](specs/2026-09-02-production-deployment-design.md) · [plan](archive/plans/2026-09-02-production-deployment-implementation-plan.md)                                             |
 | 7a  | UI foundations                                                | ✅ Complete                                                                                                                                                                                                                                                                   | —                                   | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md)                                |
 | 7b  | Design system                                                 | ✅ Complete                                                                                                                                                                                                                                                                   | —                                   | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md)                           |
-| 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | 🔄 Active — spec, design canvas and plan are the next step                                                                                                                                                                                                                    | [CLOUD] **[MANUAL]**                | —                                                                                                                                                                                    |
-| 7d  | [Craft](#7d--craft)                                           | 🔄 Active — specced together with 7c, built after it                                                                                                                                                                                                                          | [CLOUD] **[MANUAL]**                | —                                                                                                                                                                                    |
+| 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | ✅ Built — Tasks 1–13 on `claude/phase-7c-screen-rebuild`, audited against an 80-game slate; PR in review                                                                                                                                                                     | [CLOUD] **[MANUAL]**                | —                                                                                                                                                                                    |
+| 7d  | [Craft](#7d--craft)                                           | 🔜 Next — specced with 7c (Tasks 14–21); branches after 7c merges                                                                                                                                                                                                             | [CLOUD] **[MANUAL]**                | —                                                                                                                                                                                    |
 | 8   | [Email notifications](#8--email-notifications)                | 🔄 Merged to `main` in [PR #25](https://github.com/NoahJohn1/SimulatedBetting/pull/25); inert until a provider key is set                                                                                                                                                     | **[NOAH]** [LOCAL] [MANUAL]         | [spec](specs/2026-09-03-email-notifications-design.md) · [plan](plans/2026-09-03-email-notifications-implementation-plan.md)                                                         |
 | 9   | [Hardening](#9--hardening)                                    | 🔄 Merged to `main` in [PR #25](https://github.com/NoahJohn1/SimulatedBetting/pull/25) — spot-checked live 2026-09-05 ([repo-health.md](repo-health.md#7-phase-5689-live-verification-2026-09-05)); the [MANUAL] smoke checklist (real Google accounts) still awaits its pass | **[MANUAL]**                        | [spec](specs/2026-09-03-hardening-design.md) · [plan](plans/2026-09-03-hardening-implementation-plan.md)                                                                             |
 
@@ -142,10 +142,14 @@ actually feel them:
 
 Games and the bet slip → Feed → Standings → Bets and Wagers → Events → Me → Admin.
 
-**Status: active, and the next thing to be specced.** 7c and 7d are being taken together — one
-spec, one design canvas, one plan, built in 7c-then-7d order — because 7d's inherited items are
-mostly craft applied to the same screens 7c rebuilds, and specifying them apart would design the
-same screens twice. New decisions start at **D74**.
+**Status: built, in review.** Specced and planned with 7d
+([spec](specs/2026-09-05-screen-rebuild-and-craft-design.md) ·
+[plan](plans/2026-09-05-screen-rebuild-and-craft-implementation-plan.md), decisions
+[D74–D79](decisions.md#d74--desktop-is-a-content-column-plus-a-games-slip-rail-not-a-redesign));
+Tasks 1–13 are implemented and audited against the real slate — see the
+[screen-rebuild audit](screen-rebuild-audit.md) and the dispositions below. The design canvas
+did not exist when the rebuild ran, so the plan's starting classes shipped; a canvas pass can
+adjust visuals in 7d without reopening structure.
 
 **Design against real content first.** The inherited backlog below is largely a list of things
 that only show up under real data — odds-board density at 375px, a 60-game CFB Saturday, a
@@ -180,6 +184,30 @@ that declined it and a reason.
 If a third screen in a row hand-rolls the same missing component, lift it immediately rather
 than at the end — see the consequence noted on
 [D53](decisions.md#d53--the-shared-component-set-is-scoped-to-call-sites-that-exist).
+
+#### 7c dispositions
+
+Row by row, what the rebuild did with the backlog above (evidence in the
+[screen-rebuild audit](screen-rebuild-audit.md)):
+
+| Inherited item                                              | Disposition                                                                                      |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `Dialog`, `Sheet`, `Table`, `Toast`                         | **Done** — each born in its first call site's commit (D53's rule held)                           |
+| Type/spacing normalization                                  | **Done per rebuilt screen** — the subsets are a plan-wide constraint                             |
+| Brand accent                                                | **Done differently** — D75: six member-choice hues, green default; picker is 7d Task 18          |
+| `generateMetadata` on detail routes                         | **Done** — feed, event, wager, member detail (member added by the audit)                         |
+| Odds-board density at 375px                                 | **Done** — D77 rows; an 80-game day is 9,684px vs ~34,000px for the old full board               |
+| Two-up `datetime-local` inputs                              | **Done** — stacked full-width on `/events/new` and `/wagers/new`                                 |
+| "Event queueBack to admin" run-together                     | **Done** — plain `<h1>` inside the shell (D78)                                                   |
+| Button height +6–8px                                        | **Accepted** — the rebuild kept `Button`'s `h-11`; better tap target                             |
+| `FormField` quieter labels                                  | **Accepted** — kept as the design                                                                |
+| Card border/radius on ledger and rank rows                  | **Accepted** — kept; those rows render as `Table` at `lg` now anyway                             |
+| "Create an event" lost its border                           | **Accepted** — reads unchanged                                                                   |
+| No desktop layout                                           | **Done** — D74: header nav + content column + the games slip rail                                |
+| Imperceptible dark slip shadow                              | **Done** — Task 1's second shadow layer (1px light top edge)                                     |
+| `/admin/events` & `/admin/wagers` latent `mx-auto` overflow | **Done** — `w-full` applied in the D78 move                                                      |
+| `Card` adoption unfinished (11 sites)                       | **Mostly done** — `as` prop shipped and adopted; 5 hand-rolled sites remain, listed in the audit |
+| Radius vocabulary (45 raw / 10 vocab)                       | **Partially absorbed** — 43 raw / 13 vocab after the rebuild; continues per-screen in 7d         |
 
 ### 7d — Craft
 

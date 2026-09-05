@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { StatusBadge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -15,6 +17,16 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
       <span className="text-sm font-semibold tabular-nums">{children}</span>
     </Card>
   );
+}
+
+export async function generateMetadata({
+  params,
+}: PageProps<'/members/[membershipId]'>): Promise<Metadata> {
+  const { membershipId } = await params;
+  const member = await requireApprovedMember();
+  const profile = await getMemberProfile({ membershipId, seasonId: member.seasonId });
+  if (!profile) return {};
+  return { title: profile.displayName };
 }
 
 export default async function MemberProfilePage({ params }: PageProps<'/members/[membershipId]'>) {
@@ -46,6 +58,9 @@ export default async function MemberProfilePage({ params }: PageProps<'/members/
 
   return (
     <div className="flex flex-col gap-4 px-4 py-4">
+      <Link href="/standings" className="text-sm text-ink-muted hover:underline">
+        ← Standings
+      </Link>
       <header className="flex items-center justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="text-lg font-semibold">{profile.displayName}</h1>
