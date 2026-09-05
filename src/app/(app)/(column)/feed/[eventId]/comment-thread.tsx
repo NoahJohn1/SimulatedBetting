@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { Card } from '@/components/ui/card';
+import { useToast } from '@/components/ui/toast';
 import { MAX_COMMENT_LENGTH } from '@/server/feed/reaction-emoji';
 import { addCommentAction, deleteCommentAction } from '../actions';
 
@@ -24,6 +26,7 @@ export function CommentThread({
   const [body, setBody] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const { toast } = useToast();
 
   const ERRORS: Record<string, string> = {
     COMMENT_EMPTY: 'Say something first.',
@@ -35,6 +38,8 @@ export function CommentThread({
   function submit() {
     const trimmed = body.trim();
     if (trimmed.length === 0) {
+      // Caught before anything is submitted, so it stays an inline validation message rather
+      // than a toast — there is no action result to announce yet.
       setError(ERRORS.COMMENT_EMPTY);
       return;
     }
@@ -43,7 +48,7 @@ export function CommentThread({
     startTransition(async () => {
       const result = await addCommentAction(eventId, trimmed);
       if ('error' in result) {
-        setError(ERRORS[result.error] ?? 'Could not post that.');
+        toast({ tone: 'negative', title: ERRORS[result.error] ?? 'Could not post that.' });
         return;
       }
       setBody('');
@@ -53,7 +58,9 @@ export function CommentThread({
   function remove(commentId: string) {
     startTransition(async () => {
       const result = await deleteCommentAction(commentId, eventId);
-      if ('error' in result) setError(ERRORS[result.error] ?? 'Could not delete that.');
+      if ('error' in result) {
+        toast({ tone: 'negative', title: ERRORS[result.error] ?? 'Could not delete that.' });
+      }
     });
   }
 
@@ -66,7 +73,7 @@ export function CommentThread({
       ) : (
         <ul className="flex flex-col gap-2">
           {comments.map((comment) => (
-            <li key={comment.id} className="rounded-xl border border-line bg-surface-raised p-3">
+            <Card key={comment.id} as="li" className="p-3">
               {comment.deleted ? (
                 <p className="text-sm italic text-ink-muted">Comment removed</p>
               ) : (
@@ -87,7 +94,7 @@ export function CommentThread({
                   <p className="whitespace-pre-wrap text-sm">{comment.body}</p>
                 </>
               )}
-            </li>
+            </Card>
           ))}
         </ul>
       )}

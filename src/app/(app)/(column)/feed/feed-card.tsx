@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { Badge, StatusBadge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Money } from '@/components/ui/money';
+import { formatAmount } from '@/domain/money';
 import type { FeedEventType } from '@/db/schema';
 import type {
   AdminAdjustmentPayload,
@@ -404,7 +406,7 @@ export function FeedCardView({
   reactionRow?: React.ReactNode;
 }) {
   return (
-    <article className="flex flex-col gap-2 rounded-xl border border-line bg-surface-raised p-3">
+    <Card as="article" className="flex flex-col gap-2 p-3">
       <header className="flex items-baseline justify-between gap-2">
         {card.subject ? (
           <Link
@@ -429,6 +431,133 @@ export function FeedCardView({
             : `${card.commentCount} ${card.commentCount === 1 ? 'comment' : 'comments'}`}
         </Link>
       </footer>
-    </article>
+    </Card>
   );
+}
+
+/**
+ * The plain-text equivalent of what `Body` renders as its first line, for a context that has
+ * no components to render into — a `<title>` tag. Kept in lockstep with `Body`'s cases by
+ * living in the same file next to it; a case added to one and not the other is a one-file
+ * diff to catch in review, not a search across the app.
+ */
+function headlinePredicate(type: FeedEventType, payload: unknown): string {
+  switch (type) {
+    case 'BET_PLACED': {
+      const bet = payload as BetPlacedPayload;
+      return `bet ${formatAmount(BigInt(bet.stakeCents), bet.currency)} to win ${formatAmount(BigInt(bet.potentialPayoutCents), bet.currency)}`;
+    }
+
+    case 'BET_SETTLED': {
+      const bet = payload as BetSettledPayload;
+      const verb =
+        bet.outcome === 'WON'
+          ? 'won'
+          : bet.outcome === 'LOST'
+            ? 'lost'
+            : bet.outcome === 'PUSHED'
+              ? 'pushed'
+              : 'had a bet voided';
+      const amount =
+        bet.outcome === 'LOST'
+          ? formatAmount(BigInt(bet.stakeCents), bet.currency)
+          : formatAmount(BigInt(bet.payoutCents), bet.currency);
+      return `${verb} ${amount}`;
+    }
+
+    case 'MEMBER_JOINED': {
+      const joined = payload as MemberJoinedPayload;
+      return `joined with ${formatAmount(BigInt(joined.startingBankrollCents))}`;
+    }
+
+    case 'ALLOWANCE_PAID': {
+      const allowance = payload as AllowancePaidPayload;
+      return `weekly allowance paid · ${formatAmount(BigInt(allowance.amountCents))} to ${allowance.memberCount} ${allowance.memberCount === 1 ? 'member' : 'members'}`;
+    }
+
+    case 'ADMIN_ADJUSTMENT': {
+      const adjustment = payload as AdminAdjustmentPayload;
+      const amount = BigInt(adjustment.amountCents);
+      return `${amount > 0n ? '+' : ''}${formatAmount(amount, adjustment.currency)} by admin ${adjustment.adminDisplayName}`;
+    }
+
+    case 'MILESTONE_LEAD_CHANGE': {
+      const lead = payload as LeadChangePayload;
+      return `takes the lead · ${formatAmount(BigInt(lead.balanceCents))}`;
+    }
+
+    case 'MILESTONE_BIG_WIN': {
+      const win = payload as BigWinPayload;
+      return `cashed ${(win.multipleBasisPoints / 10_000).toFixed(1)}×`;
+    }
+
+    case 'MILESTONE_PARLAY_HIT': {
+      const hit = payload as ParlayHitPayload;
+      return `hit a ${hit.legCount}-leg parlay`;
+    }
+
+    case 'CUSTOM_EVENT_CREATED': {
+      const created = payload as CustomEventCreatedPayload;
+      return `opened ${created.title}`;
+    }
+
+    case 'CUSTOM_EVENT_RESOLVED': {
+      const resolved = payload as CustomEventResolvedPayload;
+      return `${resolved.title} resolved by ${resolved.resolvedByDisplayName}`;
+    }
+
+    case 'CUSTOM_EVENT_DISPUTED': {
+      const disputed = payload as CustomEventDisputedPayload;
+      return `disputed ${disputed.title}`;
+    }
+
+    case 'CUSTOM_EVENT_VOIDED': {
+      const voided = payload as CustomEventVoidedPayload;
+      return `${voided.title} voided by admin ${voided.adminDisplayName}`;
+    }
+
+    case 'CUSTOM_EVENT_OVERDUE': {
+      const overdue = payload as CustomEventOverduePayload;
+      return `${overdue.title} is past its resolve-by date`;
+    }
+
+    case 'P2P_OFFERED': {
+      const offered = payload as P2POfferedPayload;
+      return `is offering ${formatAmount(BigInt(offered.offererStakeCents), 'CREDITS')} against ${formatAmount(BigInt(offered.acceptorStakeCents), 'CREDITS')} credits`;
+    }
+
+    case 'P2P_ACCEPTED': {
+      const accepted = payload as P2PAcceptedPayload;
+      return `took it — ${formatAmount(BigInt(accepted.potCents), 'CREDITS')} credits on the line`;
+    }
+
+    case 'P2P_SETTLED': {
+      const settled = payload as P2PSettledPayload;
+      return `took the ${formatAmount(BigInt(settled.potCents), 'CREDITS')} pot`;
+    }
+
+    case 'P2P_DISPUTED': {
+      const disputed = payload as P2PDisputedPayload;
+      return `and their opponent disagree on ${disputed.subject}`;
+    }
+
+    case 'P2P_VOIDED': {
+      const voided = payload as P2PVoidedPayload;
+      return `${voided.subject} was called off`;
+    }
+
+    default:
+      return '';
+  }
+}
+
+/**
+ * The sentence a feed detail page's `<title>` is built from — the same actor-plus-payload
+ * combination the card itself renders, flattened to text. Truncation to 60ch is the caller's
+ * job (generateMetadata), not this function's, so it stays reusable for a non-title context.
+ */
+export function feedCardHeadline(card: SerializedFeedCard): string {
+  const actor = card.subject ? card.subject.displayName : 'The league';
+  const predicate = headlinePredicate(card.type, card.payload);
+  return predicate ? `${actor} ${predicate}` : actor;
 }
