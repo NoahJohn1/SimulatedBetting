@@ -291,6 +291,7 @@ async function expiringPass(now: Date, summary: SweepP2PSummary): Promise<void> 
           ? (wager.description ?? '')
           : ((await loadSelectionSubject(wager.selectionId!))?.subject ?? '');
 
+      let flagged = 0;
       await db.transaction(async (tx) => {
         const memberships = [wager.offererMembershipId, wager.opponentMembershipId].filter(
           (id): id is string => id !== null,
@@ -310,9 +311,12 @@ async function expiringPass(now: Date, summary: SweepP2PSummary): Promise<void> 
               expiresAt: wager.expiresAt.toISOString(),
             },
           });
-          if (applied) summary.expiringFlagged += 1;
+          if (applied) flagged += 1;
         }
       });
+      // Counted only once the transaction that queued the rows has committed — incrementing
+      // inside it reported warnings that a later throw had rolled back.
+      summary.expiringFlagged += flagged;
     } catch (err) {
       summary.errors.push({ wagerId: wager.id, message: (err as Error).message });
     }

@@ -25,8 +25,8 @@ stopping partway through because the second account isn't at hand is worse than 
 - [ ] `npm ci`
 - [ ] `npm run verify`
 - [ ] `npm run build`
-- [ ] Each of the four cron routes returns 200 when dispatched by hand (`/api/cron/settle`,
-      `/api/cron/reconcile`, `/api/cron/allowance`, `/api/cron/sync-odds`)
+- [ ] Each of the five cron routes returns 200 when dispatched by hand (`/api/cron/settle`,
+      `/api/cron/reconcile`, `/api/cron/allowance`, `/api/cron/sync-odds`, `/api/cron/notify`)
 - [ ] `/admin/health` reports every job fresh
 - [ ] `reconcile` reports no balance drift and no escrow drift
 

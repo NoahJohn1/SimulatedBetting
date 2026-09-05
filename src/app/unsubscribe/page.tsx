@@ -23,9 +23,9 @@ const LABELS: Record<string, string> = {
 export default async function UnsubscribePage({
   searchParams,
 }: {
-  searchParams: Promise<{ u?: string; s?: string; t?: string }>;
+  searchParams: Promise<{ u?: string; s?: string; t?: string; done?: string }>;
 }) {
-  const { u = '', s = '', t = '' } = await searchParams;
+  const { u = '', s = '', t = '', done } = await searchParams;
   const verified = verifyUnsubscribe(u, s, t);
 
   if (!verified) {
@@ -36,6 +36,20 @@ export default async function UnsubscribePage({
           <p className="text-sm text-ink-muted">
             It may have been truncated by your mail client. You can change what you receive from the
             app’s Email settings once you are signed in.
+          </p>
+        </Card>
+      </main>
+    );
+  }
+
+  if (done) {
+    return (
+      <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-4 px-4 py-6">
+        <Card className="flex flex-col gap-2 p-4">
+          <h1 className="text-lg font-semibold">Turned off</h1>
+          <p className="text-sm text-ink-muted">
+            You will no longer get email about {LABELS[verified] ?? 'these'}. Nothing was deleted —
+            you can turn it back on any time from the app’s Email settings.
           </p>
         </Card>
       </main>

@@ -1,5 +1,5 @@
 import { after } from 'next/server';
-import { and, asc, eq, inArray, isNull, lt } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, isNull, lt, ne } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { notifications, users, type NotificationChannel, type NotificationType } from '@/db/schema';
 import { getManyNotificationPreferences, isSuppressed } from './preferences';
@@ -237,12 +237,26 @@ export function flushSoon(): void {
   }
 }
 
-/** Retention. Rides the daily reconcile run, as `pruneJobRuns` does. */
+/**
+ * Retention. Rides the daily reconcile run, as `pruneJobRuns` does.
+ *
+ * Two conditions, not one. Filtering on `queuedAt` alone deleted rows that had never been sent,
+ * which silently discards the backlog precisely when the notify cron has been failing — the one
+ * time the backlog matters. And it dropped the permanent keys with the rest: `ACCOUNT_APPROVED`
+ * is deliberately unversioned (`user:<id>:approved`) so that approve/disable/approve sends one
+ * email ever, and that promise lasts exactly as long as its row does. Both are excluded here.
+ */
 export async function pruneNotifications(olderThanDays = 30): Promise<number> {
   const cutoff = new Date(Date.now() - olderThanDays * 86_400_000);
   const deleted = await db
     .delete(notifications)
-    .where(lt(notifications.queuedAt, cutoff))
+    .where(
+      and(
+        lt(notifications.queuedAt, cutoff),
+        isNotNull(notifications.sentAt),
+        ne(notifications.type, 'ACCOUNT_APPROVED'),
+      ),
+    )
     .returning({ id: notifications.id });
   return deleted.length;
 }

@@ -27,5 +27,18 @@ export async function POST(request: Request): Promise<Response> {
   if (verified === 'all') await disableAllEmail(userId);
   else await muteType(userId, verified);
 
+  // Two callers, two right answers. Gmail's and Apple Mail's RFC 8058 control POSTs here and
+  // renders nothing, so JSON is correct for it. The confirmation page's form is a browser
+  // navigation, and JSON is what the member would then be staring at — so that one gets a 303
+  // back to the page, which reads `done` and says so in words.
+  if (request.headers.get('accept')?.includes('text/html')) {
+    const back = new URL('/unsubscribe', url.origin);
+    back.searchParams.set('u', userId);
+    back.searchParams.set('s', scope);
+    back.searchParams.set('t', token);
+    back.searchParams.set('done', '1');
+    return Response.redirect(back, 303);
+  }
+
   return Response.json({ ok: true, scope: verified });
 }
