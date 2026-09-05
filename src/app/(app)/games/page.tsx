@@ -1,7 +1,11 @@
 import type { Metadata } from 'next';
+import { eq } from 'drizzle-orm';
+import { SlipRail } from '@/components/bet-slip/slip-rail';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import type { Segment } from '@/components/ui/segmented-control';
+import { db } from '@/db/client';
+import { seasonMemberships } from '@/db/schema';
 import { formatDayHeading } from '@/domain/dates';
 import { getSlate } from '@/server/odds/board';
 import type { BoardGame } from '@/server/odds/board';
@@ -35,7 +39,7 @@ function href(params: { league?: string; day?: string }): string {
  * a real navigation the server re-queries against.
  */
 export default async function GamesPage({ searchParams }: PageProps<'/games'>) {
-  await requireApprovedMember();
+  const member = await requireApprovedMember();
   const params = await searchParams;
 
   const rawLeague = typeof params.league === 'string' ? params.league : undefined;
@@ -46,12 +50,31 @@ export default async function GamesPage({ searchParams }: PageProps<'/games'>) {
 
   const slate = await getSlate();
 
+  // The rail (lg+) needs the same two balances the layout shell already fetches for the
+  // collapsed bar (<lg) — the session carries cash, but a credits slip has to check itself
+  // against the credits balance and never against cash (D31). Queried again here rather than
+  // threaded down from the layout, since the rail is this page's own concern, not the shell's.
+  const [balances] = await db
+    .select({ creditsBalanceCents: seasonMemberships.creditsBalanceCents })
+    .from(seasonMemberships)
+    .where(eq(seasonMemberships.id, member.membershipId));
+
+  const rail = (
+    <SlipRail
+      balanceCents={member.balanceCents.toString()}
+      creditsBalanceCents={(balances?.creditsBalanceCents ?? 0n).toString()}
+    />
+  );
+
   if (slate.length === 0) {
     return (
-      <EmptyState
-        title="No games on the board"
-        body="Nothing is open for betting right now. The odds sync runs every 15 minutes."
-      />
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_21rem] lg:gap-6 lg:px-6">
+        <EmptyState
+          title="No games on the board"
+          body="Nothing is open for betting right now. The odds sync runs every 15 minutes."
+        />
+        {rail}
+      </div>
     );
   }
 
@@ -87,28 +110,31 @@ export default async function GamesPage({ searchParams }: PageProps<'/games'>) {
   ];
 
   return (
-    <div className="flex flex-col gap-3 px-4 py-4">
-      <SegmentedControl label="League" segments={leagueSegments} />
-      <div className="overflow-x-auto">
-        <SegmentedControl label="Day" segments={daySegments} />
-      </div>
+    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_21rem] lg:gap-6 lg:px-6">
+      <div className="flex flex-col gap-3 px-4 py-4 lg:px-0">
+        <SegmentedControl label="League" segments={leagueSegments} />
+        <div className="overflow-x-auto">
+          <SegmentedControl label="Day" segments={daySegments} />
+        </div>
 
-      {visibleDays.length === 0 ? (
-        <EmptyState title="No games" body="No games match this filter." />
-      ) : (
-        visibleDays.map(([key, games], i) => (
-          <DaySection
-            key={key}
-            heading={formatDayHeading(games[0].startsAt)}
-            count={games.length}
-            defaultOpen={i === 0}
-          >
-            {games.map((game) => (
-              <GameRow key={game.id} game={game} />
-            ))}
-          </DaySection>
-        ))
-      )}
+        {visibleDays.length === 0 ? (
+          <EmptyState title="No games" body="No games match this filter." />
+        ) : (
+          visibleDays.map(([key, games], i) => (
+            <DaySection
+              key={key}
+              heading={formatDayHeading(games[0].startsAt)}
+              count={games.length}
+              defaultOpen={i === 0}
+            >
+              {games.map((game) => (
+                <GameRow key={game.id} game={game} />
+              ))}
+            </DaySection>
+          ))
+        )}
+      </div>
+      {rail}
     </div>
   );
 }
