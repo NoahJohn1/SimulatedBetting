@@ -4,6 +4,7 @@ import { BetSlip } from '@/components/bet-slip/bet-slip';
 import { BetSlipProvider } from '@/components/bet-slip/slip-context';
 import { Money } from '@/components/ui/money';
 import { TabBar } from '@/components/ui/tab-bar';
+import { ToastProvider } from '@/components/ui/toast';
 import { db } from '@/db/client';
 import { seasonMemberships } from '@/db/schema';
 import { requireApprovedMember } from '@/server/auth/session';
@@ -23,33 +24,35 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
     .where(eq(seasonMemberships.id, member.membershipId));
 
   return (
-    <div className="flex min-h-dvh flex-col bg-surface">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-surface-raised/90 px-4 py-3 backdrop-blur">
-        <Link href="/games" className="text-sm font-semibold tracking-tight">
-          SimulatedBetting
-        </Link>
-        <div className="flex items-center gap-3">
-          {member.role === 'ADMIN' ? (
-            <Link
-              href="/admin"
-              className="text-xs font-medium text-ink-muted transition-colors hover:text-ink"
-            >
-              Admin
-            </Link>
-          ) : null}
-          <Money cents={member.balanceCents} className="text-sm font-semibold" />
-        </div>
-      </header>
+    <ToastProvider>
+      <div className="flex min-h-dvh flex-col bg-surface">
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-surface-raised/90 px-4 py-3 backdrop-blur">
+          <Link href="/games" className="text-sm font-semibold tracking-tight">
+            SimulatedBetting
+          </Link>
+          <div className="flex items-center gap-3">
+            {member.role === 'ADMIN' ? (
+              <Link
+                href="/admin"
+                className="text-xs font-medium text-ink-muted transition-colors hover:text-ink"
+              >
+                Admin
+              </Link>
+            ) : null}
+            <Money cents={member.balanceCents} className="text-sm font-semibold" />
+          </div>
+        </header>
 
-      <BetSlipProvider>
-        <main className="flex-1">{children}</main>
-        <BetSlip
-          balanceCents={member.balanceCents.toString()}
-          creditsBalanceCents={(balances?.creditsBalanceCents ?? 0n).toString()}
-        />
-      </BetSlipProvider>
+        <BetSlipProvider>
+          <main className="flex-1">{children}</main>
+          <BetSlip
+            balanceCents={member.balanceCents.toString()}
+            creditsBalanceCents={(balances?.creditsBalanceCents ?? 0n).toString()}
+          />
+        </BetSlipProvider>
 
-      <TabBar />
-    </div>
+        <TabBar />
+      </div>
+    </ToastProvider>
   );
 }
