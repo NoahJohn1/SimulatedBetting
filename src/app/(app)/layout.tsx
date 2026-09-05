@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { BetSlip } from '@/components/bet-slip/bet-slip';
 import { BetSlipProvider } from '@/components/bet-slip/slip-context';
 import { Money } from '@/components/ui/money';
-import { TabBar } from '@/components/ui/tab-bar';
+import { HeaderNav, TabBar } from '@/components/ui/tab-bar';
 import { ToastProvider } from '@/components/ui/toast';
 import { db } from '@/db/client';
 import { seasonMemberships } from '@/db/schema';
@@ -30,6 +30,7 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
           <Link href="/games" className="text-sm font-semibold tracking-tight">
             SimulatedBetting
           </Link>
+          <HeaderNav />
           <div className="flex items-center gap-3">
             {member.role === 'ADMIN' ? (
               <Link

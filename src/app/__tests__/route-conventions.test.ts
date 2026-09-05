@@ -97,12 +97,12 @@ describe('error and not-found boundaries', () => {
  */
 const FEATURE_SEGMENTS = [
   join('(app)', 'games'),
-  join('(app)', 'events'),
-  join('(app)', 'feed'),
-  join('(app)', 'bets'),
-  join('(app)', 'wagers'),
-  join('(app)', 'standings'),
-  join('(app)', 'me'),
+  join('(app)', '(column)', 'events'),
+  join('(app)', '(column)', 'feed'),
+  join('(app)', '(column)', 'bets'),
+  join('(app)', '(column)', 'wagers'),
+  join('(app)', '(column)', 'standings'),
+  join('(app)', '(column)', 'me'),
   'admin',
 ];
 
@@ -121,7 +121,7 @@ describe('loading boundaries', () => {
       .filter((page) => page.startsWith(join(APP, '(app)') + '/'));
 
     expect(uncovered.map((f) => f.replace(APP, ''))).toEqual([
-      join('/(app)', 'members', '[membershipId]', 'page.tsx'),
+      join('/(app)', '(column)', 'members', '[membershipId]', 'page.tsx'),
     ]);
   });
 });
@@ -150,12 +150,12 @@ describe('metadata', () => {
 
   const TITLED_PAGES = [
     join('(app)', 'games'),
-    join('(app)', 'events'),
-    join('(app)', 'feed'),
-    join('(app)', 'bets'),
-    join('(app)', 'wagers'),
-    join('(app)', 'standings'),
-    join('(app)', 'me'),
+    join('(app)', '(column)', 'events'),
+    join('(app)', '(column)', 'feed'),
+    join('(app)', '(column)', 'bets'),
+    join('(app)', '(column)', 'wagers'),
+    join('(app)', '(column)', 'standings'),
+    join('(app)', '(column)', 'me'),
     'admin',
   ];
 

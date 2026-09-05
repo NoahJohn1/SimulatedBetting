@@ -20,7 +20,7 @@ vi.mock('@/server/bets/place', () => ({
 }));
 
 import { placeBet } from '@/server/bets/place';
-import { placeBetAction } from '@/app/(app)/bets/actions';
+import { placeBetAction } from '@/app/(app)/(column)/bets/actions';
 
 const slip = {
   type: 'SINGLE' as const,

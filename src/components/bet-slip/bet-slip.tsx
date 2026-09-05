@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { placeBetAction } from '@/app/(app)/bets/actions';
+import { placeBetAction } from '@/app/(app)/(column)/bets/actions';
 import { Button } from '@/components/ui/button';
 import { Money } from '@/components/ui/money';
 import type { Currency } from '@/db/schema';

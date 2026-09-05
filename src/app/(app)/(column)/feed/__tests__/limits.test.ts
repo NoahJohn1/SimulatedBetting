@@ -27,7 +27,7 @@ vi.mock('@/server/feed/social', async () => {
 });
 
 import { addComment } from '@/server/feed/social';
-import { addCommentAction } from '@/app/(app)/feed/actions';
+import { addCommentAction } from '@/app/(app)/(column)/feed/actions';
 
 beforeEach(async () => {
   await resetDb();
