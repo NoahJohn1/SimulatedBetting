@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ui/toast';
 import type { ArbitrateError } from '@/server/p2p/types';
 import type { RateLimited } from '@/server/limits/types';
 import { arbitrateWagerAction } from './actions';
@@ -33,6 +34,7 @@ export function ArbitrationForm({
   acceptorDisplayName: string;
 }) {
   const router = useRouter();
+  const { toast } = useToast();
   const [note, setNote] = useState('');
   const [error, setError] = useState<ArbitrateError | RateLimited | null>(null);
   const [pending, startTransition] = useTransition();
@@ -43,8 +45,19 @@ export function ArbitrationForm({
       const result = await arbitrateWagerAction(wagerId, verdict, note);
       if (!result.ok) {
         setError(result.error);
+        toast({ tone: 'negative', title: errorMessage(result.error) });
         return;
       }
+      const winner =
+        verdict === 'VOID'
+          ? null
+          : verdict === 'OFFERER'
+            ? offererDisplayName
+            : acceptorDisplayName;
+      toast({
+        tone: 'positive',
+        title: winner ? `Ruled: ${winner} wins` : 'Ruled: refunded both sides',
+      });
       router.refresh();
     });
   }

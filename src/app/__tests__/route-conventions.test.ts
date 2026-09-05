@@ -45,7 +45,7 @@ describe('error and not-found boundaries', () => {
   it('exist inside the app shell and the admin section, not only at the root', () => {
     expect(existsSync(join(APP, '(app)', 'error.tsx'))).toBe(true);
     expect(existsSync(join(APP, '(app)', 'not-found.tsx'))).toBe(true);
-    expect(existsSync(join(APP, 'admin', 'error.tsx'))).toBe(true);
+    expect(existsSync(join(APP, '(app)', '(column)', 'admin', 'error.tsx'))).toBe(true);
   });
 
   it('keeps the root boundaries, which catch layout failures the shell ones cannot', () => {
@@ -61,7 +61,7 @@ describe('error and not-found boundaries', () => {
    * nothing, because landing there means the shell was destroyed.
    */
   it('gives every notFound() caller a boundary inside its own section', () => {
-    const SECTION_ROOTS = ['(app)', 'admin'];
+    const SECTION_ROOTS = ['(app)'];
 
     const callers = walk(APP)
       .filter((f) => f.endsWith('page.tsx'))
@@ -71,7 +71,7 @@ describe('error and not-found boundaries', () => {
 
     for (const page of callers) {
       const section = SECTION_ROOTS.find((root) => page.startsWith(join(APP, root) + '/'));
-      expect(section, `${page} is outside (app) and admin; extend SECTION_ROOTS`).toBeDefined();
+      expect(section, `${page} is outside (app); extend SECTION_ROOTS`).toBeDefined();
 
       const stopAt = join(APP, section!);
       let dir = join(page, '..');
@@ -103,7 +103,7 @@ const FEATURE_SEGMENTS = [
   join('(app)', '(column)', 'wagers'),
   join('(app)', '(column)', 'standings'),
   join('(app)', '(column)', 'me'),
-  'admin',
+  join('(app)', '(column)', 'admin'),
 ];
 
 describe('loading boundaries', () => {
@@ -156,7 +156,7 @@ describe('metadata', () => {
     join('(app)', '(column)', 'wagers'),
     join('(app)', '(column)', 'standings'),
     join('(app)', '(column)', 'me'),
-    'admin',
+    join('(app)', '(column)', 'admin'),
   ];
 
   it.each(TITLED_PAGES)('%s exports its own title', (segment) => {

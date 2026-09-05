@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseAmountToCents } from '@/app/admin/seasons/parse';
+import { parseAmountToCents } from '@/app/(app)/(column)/admin/seasons/parse';
 
 describe('parseAmountToCents', () => {
   it.each([

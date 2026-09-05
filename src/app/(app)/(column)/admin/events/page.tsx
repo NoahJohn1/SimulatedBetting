@@ -49,13 +49,8 @@ export default async function AdminEventsPage() {
   );
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-6 px-4 py-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold tracking-tight">Event queue</h1>
-        <Link href="/admin" className="text-sm text-ink-muted underline">
-          Back to admin
-        </Link>
-      </div>
+    <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 px-4 py-6">
+      <h1 className="text-lg font-semibold tracking-tight">Event queue</h1>
 
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Overdue</h2>

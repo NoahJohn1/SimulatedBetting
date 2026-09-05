@@ -1,6 +1,5 @@
 import { desc } from 'drizzle-orm';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { db } from '@/db/client';
 import { seasons } from '@/db/schema';
 import { Badge, type BadgeTone } from '@/components/ui/badge';
@@ -49,12 +48,7 @@ export default async function SeasonsPage() {
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-4 px-4 py-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold tracking-tight">Seasons</h1>
-        <Link href="/admin" className="text-sm text-ink-muted underline">
-          Back to admin
-        </Link>
-      </div>
+      <h1 className="text-lg font-semibold tracking-tight">Seasons</h1>
 
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">

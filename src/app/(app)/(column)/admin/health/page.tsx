@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { Badge, type BadgeTone } from '@/components/ui/badge';
 import { Callout } from '@/components/ui/callout';
 import { Card } from '@/components/ui/card';
@@ -48,12 +47,7 @@ export default async function HealthPage() {
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-4 px-4 py-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold tracking-tight">Health</h1>
-        <Link href="/admin" className="text-sm text-ink-muted underline">
-          Back to admin
-        </Link>
-      </div>
+      <h1 className="text-lg font-semibold tracking-tight">Health</h1>
 
       {health.runRecordUnavailable ? (
         <Callout tone="caution">

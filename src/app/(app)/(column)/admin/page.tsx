@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { asc, eq } from 'drizzle-orm';
 import type { Metadata } from 'next';
@@ -6,11 +5,12 @@ import Link from 'next/link';
 import { db } from '@/db/client';
 import { users } from '@/db/schema';
 import { Card } from '@/components/ui/card';
-import { Callout } from '@/components/ui/callout';
 import { EmptyState } from '@/components/ui/empty-state';
 import { setUserStatus } from '@/server/admin/approve';
 import { requireAdmin } from '@/server/auth/session';
 import { consume } from '@/server/limits/consume';
+import type { RateLimited } from '@/server/limits/types';
+import { ApproveForm } from './approve-form';
 
 export const metadata: Metadata = { title: 'Admin' };
 
@@ -21,10 +21,8 @@ export const metadata: Metadata = { title: 'Admin' };
  * requireAdmin runs server-side on every request; the tab is hidden for non-admins as a
  * convenience, never as the control.
  */
-export default async function AdminPage({ searchParams }: PageProps<'/admin'>) {
+export default async function AdminPage() {
   await requireAdmin();
-  const params = await searchParams;
-  const limitedFor = typeof params.limited === 'string' ? params.limited : null;
 
   const pending = await db
     .select()
@@ -32,21 +30,19 @@ export default async function AdminPage({ searchParams }: PageProps<'/admin'>) {
     .where(eq(users.status, 'PENDING'))
     .orderBy(asc(users.createdAt));
 
-  async function setStatus(formData: FormData) {
+  async function setStatus(
+    userId: string,
+    status: 'APPROVED' | 'DISABLED',
+  ): Promise<{ ok: true } | { ok: false; error: RateLimited }> {
     'use server';
     const actor = await requireAdmin();
 
     const limited = await consume(actor.userId, 'ADMIN_ACTION');
-    // A FormData action has no return channel to the form, so the refusal travels as a query
-    // parameter and the page renders it. Silently doing nothing would be the worse failure.
-    if (limited) redirect(`/admin?limited=${limited.retryAfterSeconds}`);
-
-    const userId = String(formData.get('userId'));
-    const status = String(formData.get('status'));
-    if (status !== 'APPROVED' && status !== 'DISABLED') return;
+    if (limited) return { ok: false, error: limited };
 
     await setUserStatus(userId, status);
     revalidatePath('/admin');
+    return { ok: true };
   }
 
   // `w-full` below is load-bearing: `mx-auto` turns off cross-axis stretch inside the root
@@ -54,12 +50,7 @@ export default async function AdminPage({ searchParams }: PageProps<'/admin'>) {
   // member's un-shrinkable email — pushed the page 2px wider than a 375px phone.
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-4 px-4 py-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold tracking-tight">Admin</h1>
-        <Link href="/games" className="text-sm text-ink-muted underline">
-          Back to app
-        </Link>
-      </div>
+      <h1 className="text-lg font-semibold tracking-tight">Admin</h1>
 
       <Link href="/admin/health" className="text-sm text-ink-muted underline">
         Health — is it working
@@ -77,12 +68,6 @@ export default async function AdminPage({ searchParams }: PageProps<'/admin'>) {
         Seasons
       </Link>
 
-      {limitedFor ? (
-        <Callout tone="caution">
-          That went through too quickly and was not applied. Try again in {limitedFor} seconds.
-        </Callout>
-      ) : null}
-
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
           Waiting for approval
@@ -97,22 +82,7 @@ export default async function AdminPage({ searchParams }: PageProps<'/admin'>) {
                 <span className="block truncate text-sm font-medium">{user.displayName}</span>
                 <span className="block truncate text-xs text-ink-muted">{user.email}</span>
               </span>
-              <span className="flex shrink-0 gap-2">
-                <form action={setStatus}>
-                  <input type="hidden" name="userId" value={user.id} />
-                  <input type="hidden" name="status" value="APPROVED" />
-                  <button className="h-9 rounded-full bg-accent px-4 text-xs font-medium text-accent-ink">
-                    Approve
-                  </button>
-                </form>
-                <form action={setStatus}>
-                  <input type="hidden" name="userId" value={user.id} />
-                  <input type="hidden" name="status" value="DISABLED" />
-                  <button className="h-9 rounded-full border border-line-strong px-4 text-xs font-medium">
-                    Deny
-                  </button>
-                </form>
-              </span>
+              <ApproveForm userId={user.id} displayName={user.displayName} setStatus={setStatus} />
             </Card>
           ))
         )}
