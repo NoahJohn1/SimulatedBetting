@@ -51,7 +51,11 @@ export default async function MyBetsPage({ searchParams }: PageProps<'/bets'>) {
     return (
       <div className="flex flex-col gap-4 px-4 py-4">
         {controls}
-        <EmptyState title="No bets yet" body="Pick something off the board to get started." />
+        <EmptyState
+          title="No bets yet"
+          body="Pick something off the board to get started."
+          action={{ href: '/games', label: 'Browse games' }}
+        />
       </div>
     );
   }

@@ -56,7 +56,7 @@ export default async function SeasonsPage() {
         </h2>
 
         {rows.length === 0 ? (
-          <EmptyState title="No seasons yet" />
+          <EmptyState title="No seasons yet" body="Create one below to get started." />
         ) : (
           rows.map((season) => (
             <Card key={season.id} className="flex items-center justify-between gap-3 p-3">

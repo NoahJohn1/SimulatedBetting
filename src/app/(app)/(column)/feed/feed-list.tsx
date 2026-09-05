@@ -57,7 +57,7 @@ export function FeedList({ initial }: { initial: SerializedFeedPage }) {
           tone: 'negative',
           title:
             result.error === 'RATE_LIMITED'
-              ? `Reacting too quickly — try again in ${result.retryAfterSeconds}s`
+              ? `You're reacting too quickly. Try again in ${result.retryAfterSeconds} seconds.`
               : 'That reaction did not stick',
         });
       }

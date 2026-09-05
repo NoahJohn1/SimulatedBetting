@@ -80,7 +80,10 @@ export default async function MePage() {
       </Card>
 
       {entries.length === 0 ? (
-        <EmptyState title="No activity yet" />
+        <EmptyState
+          title="No activity yet"
+          body="Bets, payouts, and adjustments will show up here."
+        />
       ) : (
         <>
           <ol className="flex flex-col gap-1 lg:hidden">
