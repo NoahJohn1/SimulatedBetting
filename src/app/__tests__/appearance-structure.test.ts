@@ -67,3 +67,47 @@ describe('theme action', () => {
     expect(body).toMatch(/consume\(/);
   });
 });
+
+describe('root layout accent', () => {
+  it("reads the signed-in user's accent column, not a second hand-typed value", () => {
+    expect(layoutSource()).toMatch(/getSessionUser/);
+    expect(layoutSource()).toMatch(/users\.accent/);
+  });
+
+  it('stamps data-accent only for a signed-in user', () => {
+    expect(layoutSource()).toMatch(/data-accent=\{/);
+    expect(layoutSource()).not.toMatch(/data-accent=['"]/);
+  });
+
+  it('lowercases the enum value to match the [data-accent] CSS selectors', () => {
+    expect(layoutSource()).toMatch(/\.toLowerCase\(\)/);
+  });
+});
+
+describe('appearance form accent picker', () => {
+  it('renders its six swatches from the schema’s exported list, not a second copy', () => {
+    expect(formSource()).toMatch(/ACCENT_VALUES/);
+  });
+
+  it('is a radio group', () => {
+    expect(formSource()).toMatch(/role="radiogroup"/);
+    expect(formSource()).toMatch(/role="radio"/);
+  });
+});
+
+describe('accent action', () => {
+  it('is a server action that validates against the curated six', () => {
+    expect(actionsSource()).toMatch(/saveAccentAction/);
+    expect(actionsSource()).toMatch(/ACCENT_VALUES\.includes/);
+  });
+
+  it('consumes a rate-limit bucket (D69)', () => {
+    const body = actionsSource().slice(actionsSource().indexOf('saveAccentAction'));
+    expect(body).toMatch(/consume\(/);
+  });
+
+  it('keys the write on the session, never on a client-supplied member id', () => {
+    const body = actionsSource().slice(actionsSource().indexOf('saveAccentAction'));
+    expect(body).toMatch(/requireApprovedMemberOrThrow/);
+  });
+});

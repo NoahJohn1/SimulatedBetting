@@ -1,6 +1,10 @@
+import { eq } from 'drizzle-orm';
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { cookies } from 'next/headers';
+import { db } from '@/db/client';
+import { users } from '@/db/schema';
+import { getSessionUser } from '@/server/auth/session';
 import './globals.css';
 
 const geistSans = Geist({
@@ -61,10 +65,26 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
   const cookieStore = await cookies();
   const theme = readThemeCookie(cookieStore.get('theme')?.value);
 
+  // The accent picker (Task 18, D75) is account-level, not a device cookie, so it needs the
+  // signed-in user's row — nothing above this reads one yet, since this layout wraps signed-out
+  // routes too (sign-in, pending, disabled…), so a narrow select here is the query, not a reuse
+  // of one from further down the tree. Signed-out pages get no attribute at all, which is
+  // exactly the green default globals.css already renders for that case.
+  const sessionUser = await getSessionUser();
+  let accent: string | undefined;
+  if (sessionUser) {
+    const [row] = await db
+      .select({ accent: users.accent })
+      .from(users)
+      .where(eq(users.id, sessionUser.id));
+    accent = row?.accent.toLowerCase();
+  }
+
   return (
     <html
       lang="en"
       data-theme={theme}
+      data-accent={accent}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>

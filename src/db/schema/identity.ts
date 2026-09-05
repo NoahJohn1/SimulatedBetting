@@ -15,6 +15,16 @@ export const userRole = pgEnum('user_role', ['USER', 'ADMIN']);
 export const userStatus = pgEnum('user_status', ['PENDING', 'APPROVED', 'DISABLED']);
 export const seasonStatus = pgEnum('season_status', ['UPCOMING', 'ACTIVE', 'COMPLETED']);
 
+/**
+ * The accent picker's six curated hues (D75) — the exact names Task 1 remapped under
+ * `[data-accent]` in `src/app/globals.css`, uppercased for the enum. This is the one exported
+ * list the picker and the root layout both key off (lowercased for the DOM attribute), so a
+ * hue can never drift between the database, the CSS, and the UI.
+ */
+export const ACCENT_VALUES = ['GREEN', 'BLUE', 'INDIGO', 'VIOLET', 'TEAL', 'ORANGE'] as const;
+export const accent = pgEnum('accent', ACCENT_VALUES);
+export type Accent = (typeof ACCENT_VALUES)[number];
+
 export const users = pgTable(
   'users',
   {
@@ -26,6 +36,7 @@ export const users = pgTable(
     avatarUrl: text('avatar_url'),
     role: userRole('role').notNull().default('USER'),
     status: userStatus('status').notNull().default('PENDING'),
+    accent: accent('accent').notNull().default('GREEN'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex('users_provider_account_idx').on(t.provider, t.providerAccountId)],

@@ -1,7 +1,10 @@
 'use server';
 
+import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
+import { db } from '@/db/client';
+import { ACCENT_VALUES, users, type Accent } from '@/db/schema';
 import { requireApprovedMemberOrThrow } from '@/server/auth/session';
 import { consume } from '@/server/limits/consume';
 
@@ -44,6 +47,32 @@ export async function saveThemeAction(theme: Theme): Promise<SaveThemeResult> {
 
   // The root layout reads this cookie on every request; without a revalidation the router
   // cache keeps serving the previous <html data-theme> until an unrelated navigation.
+  revalidatePath('/', 'layout');
+  return { saved: true };
+}
+
+export type SaveAccentResult =
+  { saved: true } | { error: 'RATE_LIMITED'; retryAfterSeconds: number };
+
+/**
+ * The accent picker (Task 18, D75). Unlike theme, accent is account-level — it follows the
+ * member across devices — so it lives on `users.accent` rather than in a cookie, keyed off the
+ * session's own user id rather than anything the client sends, for the same reason
+ * `saveNotificationPreferencesAction` next door does: a crafted request must not be able to
+ * repaint somebody else's screen.
+ */
+export async function saveAccentAction(next: Accent): Promise<SaveAccentResult> {
+  const member = await requireApprovedMemberOrThrow();
+
+  const limited = await consume(member.userId, 'DEFAULT');
+  if (limited) return { error: limited.code, retryAfterSeconds: limited.retryAfterSeconds };
+
+  // Belt-and-suspenders over the type: `next` reaches this function as the server-action RPC
+  // boundary's argument, not a value the type checker can vouch for at runtime.
+  if (!ACCENT_VALUES.includes(next)) throw new Error(`not a curated accent: ${next}`);
+
+  await db.update(users).set({ accent: next }).where(eq(users.id, member.userId));
+
   revalidatePath('/', 'layout');
   return { saved: true };
 }

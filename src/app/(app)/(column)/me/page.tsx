@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { db } from '@/db/client';
-import { ledgerEntries, seasonMemberships } from '@/db/schema';
+import { ledgerEntries, seasonMemberships, users } from '@/db/schema';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Money } from '@/components/ui/money';
@@ -42,6 +42,11 @@ export default async function MePage() {
     .select({ creditsBalanceCents: seasonMemberships.creditsBalanceCents })
     .from(seasonMemberships)
     .where(eq(seasonMemberships.id, member.membershipId));
+
+  const [userRow] = await db
+    .select({ accent: users.accent })
+    .from(users)
+    .where(eq(users.id, member.userId));
 
   const entries = await db
     .select()
@@ -89,7 +94,7 @@ export default async function MePage() {
 
       <Card className="flex flex-col gap-4 p-4">
         <h2 className="text-sm font-semibold">Appearance</h2>
-        <AppearanceForm currentTheme={currentTheme} />
+        <AppearanceForm currentTheme={currentTheme} currentAccent={userRow?.accent ?? 'GREEN'} />
       </Card>
 
       {entries.length === 0 ? (
