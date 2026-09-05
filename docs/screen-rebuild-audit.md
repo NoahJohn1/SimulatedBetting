@@ -305,3 +305,195 @@ Keyboard order, icon-only labels, `OddsCell`'s SR description, and all six accen
 and hue separation are in place. `npm run verify` is clean (see the commit). The one disclosed
 gap — `Sheet`'s lack of a Tab-cycling containment loop — is explicitly out of this task's scope
 per its own brief and is recorded above rather than silently left out.
+
+---
+
+# The 7d audit and close-out — Task 21
+
+**Date:** 2026-09-05. No live browser in this session (same constraint as Task 19), so this
+pass is structural: reading the final tree's source and re-running the suite, rather than a
+Chromium pass. Baseline confirmed before starting: `git log --oneline -10` shows Tasks 14
+(`26b8b9a`) through 20 (`46f2d1f`/`6566756`) all merged to `claude/phase-7d-craft`, and
+`npm test` measures **121 files / 1237 tests, exit 0** — matching this task's brief exactly.
+
+## Re-running the Task 13 protocol on the final tree
+
+Task 13's live-browser pass (route × theme × viewport, the board on a real slate, the accent
+spot-check) cannot be repeated here — same constraint as Task 19, unchanged since. What a
+structural pass over Tasks 14–20's diff can actually confirm, read directly out of the source
+Task 13 audited:
+
+- **`[data-theme]` selectors.** `globals.css` still carries the exact three-context pattern the
+  7c audit verified — a plain `:root:not([data-theme='light'])` media-query copy for OS-dark,
+  and a `:root[data-theme='dark']` copy for the explicit choice. Task 17's dark-mode toggle adds
+  a fourth _reader_ of this contract (`src/app/layout.tsx`'s `readThemeCookie` stamps
+  `data-theme` only for `'light'`/`'dark'`, leaving it entirely absent for System — verified by
+  reading the function, which returns `undefined` rather than a third string literal, so React
+  drops the attribute) but writes no new selector and does not touch the existing three.
+- **The six accents.** `grep -c "data-accent=" src/app/globals.css` returns **18** — exactly
+  6 hues × 3 selector contexts (light, media-dark, explicit-dark), unchanged from Task 1's
+  original shape and from the 7c/Task-19 audits' counts. Task 18's accent picker
+  (`appearance-form.tsx`) is a new _writer_ — it derives its six swatch values from the schema's
+  `ACCENT_VALUES` (not a second hand-typed list) and previews each with `var(--acc-{hue})`,
+  reading Tier-1 tokens directly only for that static swatch preview, never overriding what
+  `--accent` itself resolves to. `src/app/layout.tsx` stamps `data-accent` from the signed-in
+  user's row, lowercased, with no attribute (green default) for signed-out pages — exactly D75's
+  contract. The dark slip-shadow fix (`--slip-shadow`'s second `rgb(255 255 255 / 0.08)` layer,
+  Task 1 Step 4) is untouched in both dark blocks.
+- **Responsive breakpoints.** `grep -n "lg:hidden\|hidden lg:\|lg:grid\|lg:flex\|lg:block"`
+  across `(app)/layout.tsx`, `tab-bar.tsx`, `games/page.tsx`, and `(column)/layout.tsx` finds
+  every breakpoint Task 4/5/6/8/11 built still in place: `TabBar`'s `lg:hidden`, `HeaderNav`'s
+  `hidden … lg:flex`, `/games`'s `lg:grid lg:grid-cols-[minmax(0,1fr)_21rem]` two-pane grid
+  (twice — the `<lg` and `lg+` render branches share the class), `SlipRail`'s
+  `hidden lg:block`. None of Tasks 14–20 touch these files' breakpoint classes; Task 15's motion
+  additions to `odds-cell.tsx`/`sheet.tsx`/`toast.tsx` and Task 16's skeletons are new markup
+  alongside the existing responsive classes, not replacements for them.
+- **The odds-board density approach.** `game-row.tsx`, `day-section.tsx`, and `odds-cell.tsx`
+  (D77) are structurally unchanged by 14–20 except for the additions each task's brief names:
+  Task 15 added a `transition-colors duration-[var(--motion-fast)]` to `OddsCell` (inert at
+  `--motion-fast: 0s` unless `prefers-reduced-motion: no-preference`, confirmed in
+  `globals.css`), and Task 19 added `cellAriaLabel`/`aria-pressed`. The two-line row, the sticky
+  `<details>/<summary>` day section, and the shared `MARKET_ORDER`/`MARKET_LABEL` header row are
+  the same shapes the 7c audit measured at 9,684px for an 80-game day — nothing in 14–20 changes
+  row height, grid columns, or the collapse mechanism.
+- **The suite as evidence.** `npx vitest run src/app/__tests__/token-layer.test.ts
+src/app/__tests__/token-lint.test.ts src/app/__tests__/board-structure.test.ts
+src/app/__tests__/sheet-structure.test.ts src/app/__tests__/toast-structure.test.ts` — **5
+  files / 380 tests passed.** These are exactly the structural assertions that would fail if
+  14–20 had regressed the accent remaps, the raw-colour lint, the board's link-driven filters,
+  the Sheet's dialog contract, or the toast's live region — they didn't move.
+
+**What still needs a live browser, and why this is new surface, not a repeat of Task 13's
+gap.** Task 13 could not check contrast or rendering in a real Chromium session either, but it
+had no dark-mode _control_ and no accent _picker_ to check — 7c's accents were spot-checked via
+`data-accent` applied directly in devtools, and dark mode only ever meant OS-level
+`prefers-color-scheme`. Tasks 17 and 18 add two real UI controls (`AppearanceForm`'s theme
+radiogroup and accent radiogroup) that a member actually clicks, and their combination —
+**six accents × two explicit theme states (Light/Dark), not just System** — is surface no
+audit in this plan has ever driven through a live browser. The contrast math in Task 19's
+programmatic pass covers the color values themselves and does not change based on whether
+`data-theme` was set by a media query or by the cookie, so the _numbers_ are not in question;
+what is unverified is the actual click-through — does the accent swatch group render legibly
+against both `Light` and `Dark` explicit choices, does the radiogroup's own selected-state
+styling (which itself consumes `--accent`) ever collide with an accent it's picturing, does
+`router.refresh()` visibly repaint the whole page without a flash of the old accent. **This is
+the one row of this close-out that a human/browser pass should specifically cover** — not
+because anything is suspected broken, but because it is the only combination in the whole plan
+that has never been through a real renderer.
+
+## Keyboard walk, end to end: board cell → slip → place → toast
+
+Task 19 traced board → slip → into Sheet/Dialog. This extends that trace through placement and
+the toast, reading `slip-panel.tsx`, `bet-slip.tsx`, `slip-rail.tsx`, `sheet.tsx`, and
+`toast.tsx` together, and reconciling one place where the trace showed something the file list
+alone would not: a focus destination that depends on _which_ state updates land in the same
+render.
+
+**Board → slip (unchanged from Task 19, re-confirmed):** `GameRow`'s six `OddsCell` buttons are
+the only focusable elements in a row, tab order away-then-home, left-to-right within each; the
+board leads into `SlipRail` immediately at `lg+` (both live in `/games/page.tsx`'s
+`lg:grid lg:grid-cols-[minmax(0,1fr)_21rem]` two-pane `<div>`, board first, `<aside>` second) or
+into `BetSlip`'s collapsed bar's "Show" `<button>` at `<lg` (the rail is `hidden`, out of the tab
+order; the bar keeps `lg:hidden` off itself only on `/games`, so it correctly never overlaps the
+rail).
+
+**Into the panel:** Activating "Show" (`<lg`) calls `setOpen(true)`; `Sheet`'s open-effect fires
+synchronously with the render that mounts it — `restoreFocusRef.current = document.activeElement`
+(captures the "Show" button), then `panelRef.current?.focus()` moves focus onto the panel
+`<div role="dialog" aria-modal="true" tabIndex={-1}>`. At `lg+` there is no Sheet to enter —
+`SlipRail`'s `<aside>` is already in the DOM and its `SlipPanel` is simply the next focusable
+region after the board, no focus jump needed. From the panel, Tab reaches, in source order: the
+notice's Dismiss button (if a notice is showing), each leg's Remove button, the stake `<input>`,
+Clear, then Place bet (`<Button onClick={submit} disabled={pending}>` — `pending` is
+`useTransition`'s flag, satisfying D51's every-pending-form-disables-a-control rule; verified by
+reading `slip-panel.tsx`'s `submit()`, which wraps the whole placement in
+`startTransition`). Tabbing forward past Place bet inside the Sheet (or Shift+Tab back past
+Dismiss/the first Remove) is the same non-looping gap Task 19 already disclosed for `Sheet` —
+re-confirmed unchanged, not re-litigated here.
+
+**Activating Place bet, and a finding this trace surfaces that Task 19's board-to-slip trace
+did not reach:**
+
+Reading `submit()` in `slip-panel.tsx`: on a successful `placeBetAction`, three state updates
+fire in the same synchronous continuation (no `await` between them) — `toast({tone: 'positive',
+title: 'Bet placed', ...})`, `slip.clear()`, and `onPlaced?.()` (which is `() =>
+setOpen(false)` from `bet-slip.tsx`, or `undefined` from `slip-rail.tsx` — the rail passes
+nothing to close). Because these land in one batched render:
+
+- `slip.clear()` empties `slip.legs`, so `BetSlip`'s own guard
+  (`if (slip.legs.length === 0) return null;`) removes the **entire** collapsed-bar `<div>` —
+  including the "Show" button that `Sheet`'s `restoreFocusRef` is holding a reference to — in
+  the same commit that unmounts the `Sheet` itself.
+- `Sheet`'s open-effect cleanup (`restoreFocusRef.current?.focus()`) still runs on unmount, but
+  by the time it fires the referenced button is no longer attached to the document.
+
+I confirmed this empirically rather than by inspection alone: a small throwaway jsdom test in
+this session (`@testing-library/react`, the real `Sheet` component, a harness mimicking
+`BetSlip`'s "unmount on empty legs" guard around it — not committed, since it exists only to
+answer this one question) reproduces `bet-slip.tsx`'s exact shape and shows
+`document.activeElement` lands on **`document.body`** after the simulated placement, with the
+"Show" button confirmed removed from the document. The same loss happens on the `lg+` rail path
+too, and more directly — `SlipRail`'s `SlipPanel` has no `Sheet` and thus no restore attempt at
+all, so the "Place bet" button the user's focus was on simply disappears when `slip.clear()`
+empties the panel.
+
+**The consequence:** after successfully placing a bet from the keyboard — on either surface —
+focus is silently dropped to `<body>`. The positive toast still announces correctly through its
+`role="status"`/`aria-live="polite"` region for a screen-reader user (D76's contract holds
+regardless of focus), but a sighted keyboard user gets no visible focus indicator anywhere on
+the page, and the next Tab press restarts from the top of the document (the header wordmark)
+rather than continuing anywhere near where they were — the toast's own Dismiss button, being
+portalled last into `document.body`, ends up one of the last stops in that restarted traversal
+rather than the first.
+
+**Classification:** this is a real, reproducible gap, not a regression Tasks 14–20 introduced —
+the "whole bar unmounts on an empty slip" behavior is Task 6's original design (D53), and every
+piece here (the guard, the restore-focus effect, the batched updates) is exactly as its own task
+built it and tested it. It surfaced only because this trace, unlike Task 19's, was asked to
+follow the path all the way through a successful placement rather than stopping at "into
+Sheet/Dialog." Recorded as disclosed debt below, not fixed in this commit — Task 21's brief is
+an audit and close-out, not a source change, and a fix here (e.g., moving focus to a stable
+anchor — the main landmark, or the toast region itself — when the invoking control is about to
+be unmounted alongside the slip) deserves its own reviewed change with a jsdom test guarding it,
+the way Task 14 did for the rest of `Sheet`'s contract.
+
+**Toast, the last leg of the trace:** `ToastProvider`'s portal renders `role="status"
+aria-live="polite"`, unchanged since Task 3 and re-confirmed by
+`toast-structure.test.ts` passing. Task 15 added the enter/exit `data-state` transition (inert
+under reduced motion) and Task 19 did not touch this file; nothing here regresses the polite
+announcement Task 13's hot-path walk exercised.
+
+## Screen-reader transcript — `[MANUAL]`
+
+Not attempted. This session has no VoiceOver or NVDA available (no live browser, no assistive
+technology host) — recording an invented transcript would be fabrication, not evidence. Marking
+this row `[MANUAL]` exactly as the task's own brief anticipates: a real VoiceOver or NVDA pass
+over board cell → slip → place → toast, on whichever surface (iOS/mobile Safari or a desktop
+browser) the eventual reviewer has to hand, is the only way to close it. The keyboard trace
+above is the closest a cloud session can get, and it already found one gap (focus lands on
+`<body>` after placement) that a screen-reader pass would also need to characterize — does the
+screen reader re-announce anything useful at that point, or does it go silent along with the
+visual focus indicator.
+
+## Open items this close-out does not attempt
+
+- **`[LOCAL]` Task 18's production migration** (`ENV_FILE=.env.production npm run db:migrate`)
+  — not run, no `.env.production` created. The accent column ships `notNull().default('GREEN')`
+  so every existing production row is valid the instant the migration applies; nothing about
+  7d's own work makes this more or less urgent than it already was.
+- **`[MANUAL]` Noah, on a real phone against the live Saturday slate** — scrolling the board,
+  placing a bet, feeling the Sheet and the toasts, picking an accent and confirming it follows
+  to a second device. Not attempted; per the plan, findings from this pass do not block a merge.
+
+## Verdict
+
+Nothing in Tasks 14–20 regressed anything Task 13 or Task 19 verified — the accent remaps, the
+dark-mode selectors, the responsive breakpoints, and the board's density approach are all
+structurally intact, and the 380 structural tests plus the full 121-file/1237-test suite back
+that up. The keyboard trace now runs board cell → slip → place → toast end to end and surfaces
+one real, reproducible, previously-undocumented gap (focus drops to `document.body` after a
+successful placement on both the Sheet and rail surfaces) — recorded above as disclosed debt,
+not fixed here. Two rows stay explicitly open and unattempted, exactly as scoped: the production
+migration (`[LOCAL]`) and Noah's phone pass (`[MANUAL]`), neither of which blocks anything. The
+screen-reader transcript is `[MANUAL]` rather than fabricated. **7d is built; what remains of it
+is not `[CLOUD]` work.**

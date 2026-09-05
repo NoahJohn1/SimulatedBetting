@@ -30,8 +30,8 @@ Where a status cannot be verified from the repo, it says so and dates the observ
 | 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — cloud half built; nothing is live until the migration and env vars land                                                                                                                                                                                          | [CLOUD] **[NOAH]** [LOCAL] [MANUAL] | [spec](specs/2026-09-02-production-deployment-design.md) · [plan](archive/plans/2026-09-02-production-deployment-implementation-plan.md)                                             |
 | 7a  | UI foundations                                                | ✅ Complete                                                                                                                                                                                                                                                                   | —                                   | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md)                                |
 | 7b  | Design system                                                 | ✅ Complete                                                                                                                                                                                                                                                                   | —                                   | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md)                           |
-| 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | ✅ Built — Tasks 1–13 on `claude/phase-7c-screen-rebuild`, audited against an 80-game slate; PR in review                                                                                                                                                                     | [CLOUD] **[MANUAL]**                | —                                                                                                                                                                                    |
-| 7d  | [Craft](#7d--craft)                                           | 🔜 Next — specced with 7c (Tasks 14–21); branches after 7c merges                                                                                                                                                                                                             | [CLOUD] **[MANUAL]**                | —                                                                                                                                                                                    |
+| 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | ✅ Merged — Tasks 1–13 merged to `main` in [PR #28](https://github.com/NoahJohn1/SimulatedBetting/pull/28), audited against an 80-game slate                                                                                                                                  | —                                   | [PR #28](https://github.com/NoahJohn1/SimulatedBetting/pull/28)                                                                                                                      |
+| 7d  | [Craft](#7d--craft)                                           | ✅ Built — Tasks 14–21 on `claude/phase-7d-craft`, audited (structural re-verification + an end-to-end keyboard trace); PR not yet opened                                                                                                                                     | [LOCAL] **[MANUAL]**                | —                                                                                                                                                                                    |
 | 8   | [Email notifications](#8--email-notifications)                | 🔄 Merged to `main` in [PR #25](https://github.com/NoahJohn1/SimulatedBetting/pull/25); inert until a provider key is set                                                                                                                                                     | **[NOAH]** [LOCAL] [MANUAL]         | [spec](specs/2026-09-03-email-notifications-design.md) · [plan](plans/2026-09-03-email-notifications-implementation-plan.md)                                                         |
 | 9   | [Hardening](#9--hardening)                                    | 🔄 Merged to `main` in [PR #25](https://github.com/NoahJohn1/SimulatedBetting/pull/25) — spot-checked live 2026-09-05 ([repo-health.md](repo-health.md#7-phase-5689-live-verification-2026-09-05)); the [MANUAL] smoke checklist (real Google accounts) still awaits its pass | **[MANUAL]**                        | [spec](specs/2026-09-03-hardening-design.md) · [plan](plans/2026-09-03-hardening-implementation-plan.md)                                                                             |
 
@@ -142,11 +142,12 @@ actually feel them:
 
 Games and the bet slip → Feed → Standings → Bets and Wagers → Events → Me → Admin.
 
-**Status: built, in review.** Specced and planned with 7d
+**Status: merged.** Specced and planned with 7d
 ([spec](specs/2026-09-05-screen-rebuild-and-craft-design.md) ·
 [plan](plans/2026-09-05-screen-rebuild-and-craft-implementation-plan.md), decisions
 [D74–D79](decisions.md#d74--desktop-is-a-content-column-plus-a-games-slip-rail-not-a-redesign));
-Tasks 1–13 are implemented and audited against the real slate — see the
+Tasks 1–13 are implemented, audited against the real slate, and merged to `main` in
+[PR #28](https://github.com/NoahJohn1/SimulatedBetting/pull/28) — see the
 [screen-rebuild audit](screen-rebuild-audit.md) and the dispositions below. The design canvas
 did not exist when the rebuild ran, so the plan's starting classes shipped; a canvas pass can
 adjust visuals in 7d without reopening structure.
@@ -218,9 +219,22 @@ one spec and one plan.
 - Motion and transitions; skeleton loaders in place of spinners
 - Accessibility: keyboard paths, focus management, contrast, screen reader labels
 - Error and empty-state copy that reads like a person wrote it
-- **A density pass on the odds board.** A 60-game CFB Saturday is the layout stress case, and
-  [D8](decisions.md#d8--layout-sportsbook-first) already rejected one-game-at-a-time cards on
-  exactly these grounds. What replaces them still has to be designed.
+- ~~A density pass on the odds board~~ — this landed in **7c's Task 5** instead (D77: the
+  two-line `GameRow`, sticky `<details>` day sections, league/day filter chips), not here. This
+  bullet predates the finished plan, which put the board rebuild on the 7c side of the rung
+  split so 7c alone would already be shippable against a real slate; it is left struck through
+  rather than deleted so the record shows the plan changed rather than the work being dropped.
+
+**Status: built.** Tasks 14–21 landed on `claude/phase-7d-craft`
+([spec](specs/2026-09-05-screen-rebuild-and-craft-design.md) ·
+[plan](plans/2026-09-05-screen-rebuild-and-craft-implementation-plan.md)): the jsdom/RTL
+harness, motion behind `prefers-reduced-motion`, per-screen skeletons, the dark-mode toggle, the
+per-account accent picker (D75), a keyboard/labels/SR a11y pass, and a copy pass on empty states
+and errors. Audited — structurally re-verified against Task 13's protocol plus an end-to-end
+keyboard trace from board cell through placement to the toast — in the
+[screen-rebuild audit](screen-rebuild-audit.md)'s 7d sections and the dispositions below. Not
+yet opened as a PR; two items stay open and don't block that: Task 18's production migration
+(`[LOCAL]`) and Noah's phone pass against the live slate (`[MANUAL]`).
 
 #### What 7d inherits
 
@@ -231,6 +245,19 @@ one spec and one plan.
 | Revisit the component-test harness question                              | 7b                | [D54](decisions.md#d54--a-token-lint-test-is-the-harness-7b-earns-revisiting-d51) found 7b's components too simple to earn one. `Dialog` and `Toast` are the ones that would, and they arrive in 7c | [CLOUD] |
 | Skeleton loaders replacing the neutral `LoadingScreen`                   | 7a                | A skeleton that does not match its screen is worse than none, and the screens did not exist yet                                                                                                     | [CLOUD] |
 | The admin section renders with no header or tab bar on mobile            | 7a (mobile audit) | A structural decision about whether admin joins the app shell, not a styling one                                                                                                                    | [CLOUD] |
+
+#### 7d dispositions
+
+Row by row, what 7d did with the backlog above (evidence in the
+[screen-rebuild audit](screen-rebuild-audit.md)'s Task 19 and Task 21 sections):
+
+| Inherited item                                  | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dark-mode toggle — control, cookie, persistence | **Done** — Task 17: a three-state (System/Light/Dark) control, a `theme` cookie the root layout reads, `data-theme` stamped only for the two explicit choices                                                                                                                                                                                                                                                                                            |
+| Focus management, keyboard paths, SR labels     | **Done, with one disclosed gap found by this close-out** — Task 19's board→slip→Sheet/Dialog trace, `OddsCell`'s full SR label, and the icon-only-control label sweep all landed; Task 21's end-to-end extension of that trace (through placement to the toast) additionally found that a successful bet placement drops keyboard focus to `document.body` on both the Sheet and rail surfaces — recorded as debt in the audit, not fixed in this commit |
+| Component-test harness                          | **Done** — Task 14: a jsdom + React Testing Library project alongside the existing node suite, with behavioural tests for `Dialog`, `Sheet`, and `Toast`                                                                                                                                                                                                                                                                                                 |
+| Skeleton loaders replacing `LoadingScreen`      | **Done** — Task 16: a skeleton shaped to each of games/feed/bets/standings/admin, `LoadingScreen` kept only where no screen shape exists yet                                                                                                                                                                                                                                                                                                             |
+| Admin — no header/tab bar on mobile             | **Done, ahead of 7d** — resolved by 7c's Task 12 (D78, admin joins the app shell) before any 7d task touched admin; listed here only because the original backlog entry predates that fix                                                                                                                                                                                                                                                                |
 
 ---
 
