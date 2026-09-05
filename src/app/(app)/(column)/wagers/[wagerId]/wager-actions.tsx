@@ -45,14 +45,17 @@ export function WagerActions(props: WagerActionsProps) {
 
   function run(
     fn: () => Promise<{ ok: boolean; error?: { code: string; retryAfterSeconds?: number } }>,
+    label: { success: string; failure: string },
   ) {
     setError(null);
     startTransition(async () => {
       const result = await fn();
       if (!result.ok) {
         setError(message(result.error));
+        toast({ tone: 'negative', title: label.failure, description: message(result.error) });
         return;
       }
+      toast({ tone: 'positive', title: label.success });
       router.refresh();
     });
   }
@@ -95,7 +98,12 @@ export function WagerActions(props: WagerActionsProps) {
             type="button"
             disabled={pending}
             className={PRIMARY}
-            onClick={() => run(() => acceptWagerAction(props.wagerId))}
+            onClick={() =>
+              run(() => acceptWagerAction(props.wagerId), {
+                success: 'Took the wager',
+                failure: 'Could not take the wager',
+              })
+            }
           >
             Take it
           </button>
@@ -105,7 +113,12 @@ export function WagerActions(props: WagerActionsProps) {
             type="button"
             disabled={pending}
             className={BUTTON}
-            onClick={() => run(() => declineWagerAction(props.wagerId))}
+            onClick={() =>
+              run(() => declineWagerAction(props.wagerId), {
+                success: 'Declined the wager',
+                failure: 'Could not decline the wager',
+              })
+            }
           >
             Decline
           </button>
@@ -115,7 +128,12 @@ export function WagerActions(props: WagerActionsProps) {
             type="button"
             disabled={pending}
             className={BUTTON}
-            onClick={() => run(() => cancelOfferAction(props.wagerId))}
+            onClick={() =>
+              run(() => cancelOfferAction(props.wagerId), {
+                success: 'Withdrew the offer',
+                failure: 'Could not withdraw the offer',
+              })
+            }
           >
             Withdraw
           </button>
@@ -132,7 +150,12 @@ export function WagerActions(props: WagerActionsProps) {
               type="button"
               disabled={pending}
               className={props.yourClaim === 'OFFERER' ? PRIMARY : BUTTON}
-              onClick={() => run(() => claimWinnerAction(props.wagerId, 'OFFERER'))}
+              onClick={() =>
+                run(() => claimWinnerAction(props.wagerId, 'OFFERER'), {
+                  success: `Claimed ${props.offererDisplayName} won`,
+                  failure: 'Could not record your claim',
+                })
+              }
             >
               {props.offererDisplayName}
             </button>
@@ -140,7 +163,12 @@ export function WagerActions(props: WagerActionsProps) {
               type="button"
               disabled={pending}
               className={props.yourClaim === 'ACCEPTOR' ? PRIMARY : BUTTON}
-              onClick={() => run(() => claimWinnerAction(props.wagerId, 'ACCEPTOR'))}
+              onClick={() =>
+                run(() => claimWinnerAction(props.wagerId, 'ACCEPTOR'), {
+                  success: `Claimed ${props.acceptorDisplayName ?? 'the other side'} won`,
+                  failure: 'Could not record your claim',
+                })
+              }
             >
               {props.acceptorDisplayName ?? 'The other side'}
             </button>
@@ -148,7 +176,12 @@ export function WagerActions(props: WagerActionsProps) {
               type="button"
               disabled={pending}
               className={props.yourClaim === 'VOID' ? PRIMARY : BUTTON}
-              onClick={() => run(() => claimWinnerAction(props.wagerId, 'VOID'))}
+              onClick={() =>
+                run(() => claimWinnerAction(props.wagerId, 'VOID'), {
+                  success: 'Claimed a refund for both sides',
+                  failure: 'Could not record your claim',
+                })
+              }
             >
               Nobody — refund us
             </button>

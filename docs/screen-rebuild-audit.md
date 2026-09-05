@@ -109,6 +109,18 @@ stayed monochrome.
    9 missed, because it wasn't on any screen task's file list. `generateMetadata` (member's
    name) and `← Standings` added.
 
+### Fixed by the final whole-branch review
+
+9. **The events screens still hand-rolled dates** — `/events`'s board inlined `toLocaleString`
+   for "Closes …" with no ET suffix, and `/events/[eventId]` kept a private `when()` helper.
+   Spec criterion 8 is blanket, not per-task; both now call `formatDateTime`, and `when()` is
+   gone.
+10. **Wager accept/decline/cancel-offer/claim results bypassed the toast layer** — only the
+    propose-cancel path on `/wagers/[wagerId]` announced through `useToast()`; the other four
+    outcomes were inline-only (`setError` on failure, a silent `router.refresh()` on success).
+    Spec criterion 5 / D76 apply to every submitted action, so `run()` now toasts both outcomes
+    too, alongside the inline field marking it already kept.
+
 ### Classified — 7d owns them
 
 - Floating empty states on admin and elsewhere ("Nobody is waiting" centered in void) — Task 20.

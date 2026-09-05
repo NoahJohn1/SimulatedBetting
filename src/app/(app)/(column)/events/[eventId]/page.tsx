@@ -5,6 +5,7 @@ import { StatusBadge } from '@/components/ui/badge';
 import { buttonClasses } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { Money } from '@/components/ui/money';
+import { formatDateTime } from '@/domain/dates';
 import { requireApprovedMember } from '@/server/auth/session';
 import { getCustomEventDetail } from '@/server/events/query';
 import { DisputeForm } from './dispute-form';
@@ -22,16 +23,6 @@ export async function generateMetadata({
   if (!detail) return { title: 'Event' };
 
   return { title: detail.title };
-}
-
-function when(date: Date): string {
-  return date.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: 'America/New_York',
-  });
 }
 
 export default async function CustomEventPage({ params }: PageProps<'/events/[eventId]'>) {
@@ -109,7 +100,8 @@ export default async function CustomEventPage({ params }: PageProps<'/events/[ev
 
         <p className="text-sm text-ink-muted">Created by {detail.creator.displayName}</p>
         <p className="text-sm text-ink-muted">
-          Closes {when(detail.startsAt)} ET · Resolves by {when(detail.resolvesBy)} ET
+          Closes {formatDateTime(detail.startsAt, now)} · Resolves by{' '}
+          {formatDateTime(detail.resolvesBy, now)}
         </p>
         <p className="text-sm text-ink-muted">
           <Money cents={stakedCents} currency="CREDITS" /> staked in credits
@@ -144,8 +136,8 @@ export default async function CustomEventPage({ params }: PageProps<'/events/[ev
           </h2>
           <p className="text-ink-secondary">
             {detail.status === 'VOIDED' ? 'Voided' : 'Resolved'} by{' '}
-            {detail.resolution.byDisplayName ?? 'a member'} on {when(detail.resolution.resolvedAt)}{' '}
-            ET
+            {detail.resolution.byDisplayName ?? 'a member'} on{' '}
+            {formatDateTime(detail.resolution.resolvedAt, now)}
             {detail.resolution.attempt > 1 ? ` · correction #${detail.resolution.attempt - 1}` : ''}
           </p>
           {detail.resolution.note ? (

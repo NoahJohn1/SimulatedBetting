@@ -5,6 +5,7 @@ import { buttonClasses } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Money } from '@/components/ui/money';
+import { formatDateTime } from '@/domain/dates';
 import { requireApprovedMember } from '@/server/auth/session';
 import { listSeasonEvents, type EventBoardRow, type EventSection } from '@/server/events/query';
 
@@ -19,6 +20,7 @@ export const metadata: Metadata = { title: 'Events' };
 export default async function EventsPage() {
   const member = await requireApprovedMember();
   const rows = await listSeasonEvents(member.seasonId);
+  const now = new Date();
 
   const bySection = new Map<EventSection, EventBoardRow[]>();
   for (const row of rows) {
@@ -39,6 +41,7 @@ export default async function EventsPage() {
             key={section}
             title={SECTION_TITLES[section]}
             rows={bySection.get(section) ?? []}
+            now={now}
           />
         ))
       )}
@@ -46,7 +49,7 @@ export default async function EventsPage() {
   );
 }
 
-function Section({ title, rows }: { title: string; rows: EventBoardRow[] }) {
+function Section({ title, rows, now }: { title: string; rows: EventBoardRow[]; now: Date }) {
   if (rows.length === 0) return null;
 
   return (
@@ -62,14 +65,7 @@ function Section({ title, rows }: { title: string; rows: EventBoardRow[] }) {
               </div>
 
               <div className="text-sm text-ink-muted">
-                Created by {row.creatorDisplayName} · Closes{' '}
-                {row.startsAt.toLocaleString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit',
-                  timeZone: 'America/New_York',
-                })}
+                Created by {row.creatorDisplayName} · Closes {formatDateTime(row.startsAt, now)}
               </div>
 
               <div className="flex items-center justify-between border-t border-line-subtle pt-2 text-sm">
