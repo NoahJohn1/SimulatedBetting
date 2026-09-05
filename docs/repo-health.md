@@ -12,7 +12,7 @@ not get re-proposed later.
 
 ## Status at a glance
 
-_Last verified 2026-09-04._
+_Last verified 2026-09-05._
 
 Every item below carries a **lane** — who or what can actually finish it, decided by what the
 work needs, not by who happens to be free. Claude does as much of this as it can; see
@@ -66,6 +66,7 @@ assumption that every test needs a database. It does not, and the table above mo
 | 14  | Prettier plus `eslint-config-prettier` ([2](#2-hygiene))                                                                                                                  | [CLOUD]    | [#13](https://github.com/NoahJohn1/SimulatedBetting/pull/13)                                                                                                                                          |
 | 15  | Reconcile the ESPN adapter work against the Prettier reformat                                                                                                             | [CLOUD]    | Commit `2722534`, merged to `main` in [#21](https://github.com/NoahJohn1/SimulatedBetting/pull/21)                                                                                                    |
 | 16  | Run the phase-6 DB-backed tests (`job-runs.test.ts`, `health-reads.test.ts`, `activate.test.ts`)                                                                          | [CLOUD]    | Re-tagged from [LOCAL] and verified 2026-09-04 in a cloud session — `20 passed` against the native Postgres from [3.7](#37-postgres-without-docker-in-a-cloud-session), no Docker or desktop involved |
+| 17  | Phases 5/6/8/9 spot-checked live against a scratch local DB, ahead of phase 7 ([7](#7-phase-5689-live-verification-2026-09-05))                                          | [LOCAL]    | 2026-09-05 — real ESPN data, `/admin/health`, notification delivery, rate limiting, and a full place→settle→reconcile cycle all confirmed against real code paths, not just tests     |
 
 ### Outstanding
 
@@ -82,7 +83,7 @@ and what it is waiting on.
 | 6   | Merge Dependabot's monthly PR                                                           | **[MANUAL]** | Nothing — standing monthly task. First fire 2026-09-02: [#14](https://github.com/NoahJohn1/SimulatedBetting/pull/14) and [#15](https://github.com/NoahJohn1/SimulatedBetting/pull/15) merged, [#16](https://github.com/NoahJohn1/SimulatedBetting/pull/16) and [#17](https://github.com/NoahJohn1/SimulatedBetting/pull/17) closed per row 7 |
 | 7   | ESLint 10 and TypeScript 7 majors                                                       | **[MANUAL]** | Upstream. See [1.6](#16-the-dependency-majors-that-cannot-land-yet) — Dependabot re-proposes monthly, and a green run is the signal to merge                                                                                                                                                                                                 |
 | 8   | `db-migration` skill ([3.5](#35-db-migration--a-skill))                                 | [CLOUD]      | Deliberately deferred. The trigger is a migration going wrong; it has not fired                                                                                                                                                                                                                                                              |
-| 9   | The human test pass, and the issues it produces ([4](#4-issues-and-milestones))         | **[MANUAL]** | Nothing — no longer gates phase 5 (2026-09-03), still useful for 6-9. Cheaper to run once phase 9 lands: its plan drafts a `docs/smoke-checklist.md` for the pass to follow, rather than deriving one from it ([D73](decisions.md#d73--the-smoke-checklist-ships-unvalidated-with-a-run-log))                                                |
+| 9   | The human test pass, and the issues it produces ([4](#4-issues-and-milestones))         | **[MANUAL]** | Nothing — no longer gates phase 5 (2026-09-03), still useful for 6-9. Cheaper to run once phase 9 lands: its plan drafts a `docs/smoke-checklist.md` for the pass to follow, rather than deriving one from it ([D73](decisions.md#d73--the-smoke-checklist-ships-unvalidated-with-a-run-log)). A 2026-09-05 scripted pass ([7](#7-phase-5689-live-verification-2026-09-05)) covered everything reachable without a real Google sign-in; what's left is specifically the two-real-account walk (P2P offers, disputes) in `smoke-checklist.md` §C                                                |
 | 10  | **Apply the `job_runs` migration to production**                                        | **[LOCAL]**  | Nothing — only the production database connection string, which Conner holds. Until it lands, `/admin/health` reports every job as never-run and no alert can fire — see [roadmap 6](roadmap.md#6--production-deployment)                                                                                                                    |
 | 11  | Set `ALERT_WEBHOOK_URL`, and the two Sentry DSNs                                        | **[NOAH]**   | Nothing. Vercel environment variables only; the code is inert without them by design ([D59](decisions.md#d59--one-generic-webhook-carrying-both-content-and-text), [D62](decisions.md#d62--sentry-is-inert-without-a-dsn))                                                                                                                   |
 | 12  | **Apply the notify and `rate_limits` migrations to production**                         | **[LOCAL]**  | Nothing — the same connection string as row 10, and cheapest applied in the same pass. `0015` (notifications, preferences) and `0016` (rate limits). Until `0016` lands, `consume` fails open and the app simply does not rate-limit ([D70](decisions.md#d70--the-rate-limiter-fails-open-and-counts-attempts-not-successes))                |
@@ -714,6 +715,65 @@ pointing at a dead port is worse than none, because it suppresses the write that
 fixed it. Worth a `pg_isready` against the URL the file actually names, falling back to rewriting
 it. Filed as an observation rather than an Outstanding row because it costs one line to work
 around and the hook edit belongs with whoever next touches [3.6](#36-session-start--a-hook).
+
+---
+
+## 7. Phase 5/6/8/9 live verification, 2026-09-05
+
+Ahead of phase 7, every phase the roadmap marked done or built was spot-checked against real
+behavior rather than trusting the checkmarks — a scratch local Postgres (Docker, port 5433), a
+freshly bootstrapped season, and real ESPN data, all on a throwaway branch that never touched
+`main` or production. [PR #25](https://github.com/NoahJohn1/SimulatedBetting/pull/25) (phases 8/9)
+was confirmed merged first.
+
+**Gate:** `npm ci` and `npm run verify` — typecheck clean, lint 0 errors (3 pre-existing
+warnings), 109 files / 1121 tests passed, matching the phase 8/9 merge count exactly.
+
+**Phase 5 (ESPN adapter):** `sync-odds` against the real ESPN feed landed 179 games / 366 markets
+/ 732 selections of real, current teams and lines (e.g. Alabama −6500 ML vs East Carolina +2000)
+— not fixtures.
+
+**Phase 6 (`/admin/health`):** renders correctly, reports `Odds sync: Running` after triggering it
+and `Never run` for the rest, and the email transport row correctly reports console-only (no
+`RESEND_API_KEY`).
+
+**Phase 8 (email notifications):** `/api/cron/notify` delivered a queued `ACCOUNT_APPROVED`
+notification to the console transport with correct subject, body, and working
+one-click-unsubscribe links. `/me/notifications`'s save path (`consume` +
+`setNotificationPreferences`) succeeds on a first call with no rate-limit refusal.
+
+**Phase 9 (hardening):** the `PENDING → /pending`, `APPROVED-not-joined → /join`,
+`joined → /games` gate sequence each render the right `GateScreen` for that state. `BET_PLACE`'s
+rate limit correctly allows 10 calls/60s and refuses the 11th with a `retryAfterSeconds`.
+
+**Money invariants, live:** placed a real $100 bet (`placeBet`), marked its game `FINAL`, ran
+`/api/cron/settle` (1 game settled, $101.54 paid, bet `WON`), then `/api/cron/reconcile` — zero
+discrepancies, zero escrow discrepancies.
+
+**No real Google OAuth was used or could be.** Google is the only sign-in method with no dev
+bypass (confirmed in code and the README), and `admin:promote` only elevates a user row that
+already exists — it cannot create one. Every gated route above was exercised through
+locally-forged Auth.js JWT session cookies (same `AUTH_SECRET`, `@auth/core/jwt`'s own
+`encode()`) against fabricated `@test.local` identities — not real accounts — created and deleted
+for this pass only. This covers every phase 8/9 authorization path except the two-real-account
+P2P/dispute walk in `smoke-checklist.md` §C, which still needs its `[MANUAL]` human pass.
+
+### Two findings from this pass
+
+**`promote-admin.ts`'s doc comment is wrong.** It (and `README.md`'s matching claim) says the
+script is "safe on an account that has not signed in yet — it records the intent so the row is
+promoted the moment it exists." The code is a plain conditional
+`UPDATE users SET role='ADMIN', status='APPROVED' WHERE email = $1`; if no row matches, it errors
+and exits. There is no pending-promotion mechanism anywhere in the schema. Stale documentation,
+not a functional bug — worth a one-line fix whenever someone next touches that script.
+
+**`/admin/*` returns HTTP 200, not 307, to a non-JS client when access is denied.**
+`admin/loading.tsx`'s Suspense boundary flushes a 200 shell before `requireAdmin()`'s redirect
+resolves, so Next.js embeds a client-side redirect instruction
+(`NEXT_REDIRECT;replace;/pending;307`) instead of sending a real HTTP redirect. A real browser
+executes it invisibly and lands on `/pending` correctly — **access is genuinely denied, this is
+not a security issue** — but any future curl-based monitoring or smoke-test script against
+`/admin/*` needs to know it won't see a plain 307.
 
 ---
 
