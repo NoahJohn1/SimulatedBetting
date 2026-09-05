@@ -211,9 +211,9 @@ Row 1 above is `[CLOUD]` work that is currently blocked, not ready to pick up �
 (`format:check`) was blocked on the same thing until the ESPN adapter's Prettier reconciliation
 landed — it is unblocked now.
 
-**Phases 8 and 9 are built and merged as of 2026-09-05**, so what used to be the two largest
+**Phases 8 and 9 are built and merged to each other as of 2026-09-05, awaiting review in [PR #25](https://github.com/NoahJohn1/SimulatedBetting/pull/25)**, so what used to be the two largest
 unbuilt pieces here is gone from this table. Both were executed in parallel cloud sessions from
-their plans, then merged together and into `main`. What remains of them is not `[CLOUD]` work: a
+their plans, then merged together. What remains of them is not `[CLOUD]` work: a
 provider signup, two migrations against production, and a person's pass over the smoke checklist
 — all listed below. Their decisions are recorded at
 [D63–D68](decisions.md#d63--every-send-is-keyed-but-not-every-send-rides-a-feed-event) and
