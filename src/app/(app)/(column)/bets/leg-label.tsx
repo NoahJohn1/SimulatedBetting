@@ -1,3 +1,4 @@
+import { Line } from '@/components/ui/money';
 import { formatKickoff } from '@/domain/dates';
 import type { MarketTypeValue, SelectionSide } from '@/db/schema';
 
@@ -27,32 +28,32 @@ export interface LegLineData {
 }
 
 /**
- * The team-name half of a leg's description: `side` resolved against the game's own
- * abbreviations for HOME/AWAY, and the board's `O`/`U` convention for a TOTAL's OVER/UNDER
- * (@/app/(app)/games/odds-cell.tsx's `sidePrefix`).
+ * The team-name half of a leg's side, resolved against the game's own abbreviations for
+ * HOME/AWAY. Empty for a TOTAL leg — its OVER/UNDER is named by `sidePrefix` below instead,
+ * exactly as the board itself splits the two (@/app/(app)/games/odds-cell.tsx).
  */
-function sideText(leg: LegLineData): string {
+function teamText(leg: LegLineData): string {
   if (leg.side === 'HOME') return leg.homeAbbr ?? 'HOME';
   if (leg.side === 'AWAY') return leg.awayAbbr ?? 'AWAY';
-  if (leg.side === 'OVER') return 'O';
-  if (leg.side === 'UNDER') return 'U';
-  return leg.side ?? '';
+  return '';
 }
 
-/** A leading space plus the signed line, matching `Line`'s no-sign-on-TOTAL rule — empty for
- * a moneyline leg, which carries no line at all. */
-function lineText(leg: LegLineData): string {
-  if (leg.line === null) return '';
-  const value = Number(leg.line);
-  const signed = leg.marketType === 'TOTAL' ? value : value > 0 ? `+${value}` : value;
-  return ` ${signed}`;
+/** `O `/`U ` ahead of a TOTAL leg's line — `Line` itself only knows the number, same split as
+ * odds-cell.tsx's `sidePrefix`. */
+function sidePrefix(leg: LegLineData): string {
+  return leg.marketType === 'TOTAL' ? (leg.side === 'OVER' ? 'O ' : 'U ') : '';
 }
 
 /**
  * The leg description a bet card renders. The walk's worst finding was a game leg that said
  * "SPREAD · AWAY 2.5 −112" with no team on it; this renders "ECU @ ALA · Spread · ECU +27.5"
- * with kickoff trailing, and a custom leg as "<event title> · <outcome>". The price itself
- * stays a separate `<Price>` at the call site — this component is text only.
+ * with kickoff trailing, and a custom leg as "<event title> · <outcome>".
+ *
+ * The line itself goes through the shared `Line` component rather than a hand-formatted
+ * string: `Line` is the one place the sign convention (no sign on TOTAL, a leading `+` on a
+ * positive SPREAD) lives, and rendering it directly — instead of restating that rule here —
+ * is also what keeps the number's `tabular-nums` alignment with every other odds display. The
+ * price itself stays a separate `<Price>` at the call site.
  */
 export function LegLine({ leg }: { leg: LegLineData }) {
   if (leg.eventKind === 'CUSTOM') {
@@ -64,10 +65,18 @@ export function LegLine({ leg }: { leg: LegLineData }) {
   }
 
   const matchup = `${leg.awayAbbr ?? '?'} @ ${leg.homeAbbr ?? '?'}`;
+  const teamName = teamText(leg);
+
   return (
     <span>
-      {matchup} · {MARKET_LABEL[leg.marketType]} · {sideText(leg)}
-      {lineText(leg)}
+      {matchup} · {MARKET_LABEL[leg.marketType]} · {teamName}
+      {teamName && leg.line !== null ? ' ' : null}
+      {leg.line !== null && (
+        <>
+          {sidePrefix(leg)}
+          <Line value={leg.line} market={leg.marketType === 'TOTAL' ? 'TOTAL' : 'SPREAD'} />
+        </>
+      )}
       {leg.startsAt ? ` · ${formatKickoff(leg.startsAt)}` : ''}
     </span>
   );

@@ -76,7 +76,6 @@ export default async function MyBetsPage({ searchParams }: PageProps<'/bets'>) {
       price: betLegs.priceAtPlacement,
       side: selections.side,
       marketType: markets.type,
-      marketTitle: markets.title,
       outcomeLabel: selections.label,
       eventKind: events.kind,
       eventTitle: events.title,
