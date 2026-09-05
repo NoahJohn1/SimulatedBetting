@@ -4,7 +4,9 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSlip } from '@/components/bet-slip/slip-context';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Price } from '@/components/ui/money';
+import { useToast } from '@/components/ui/toast';
 import { formatAmount } from '@/domain/money';
 import { editEventAction, suspendMarketAction } from '../actions';
 
@@ -91,6 +93,7 @@ function OutcomeButton({
 
 export function MarketCard(props: MarketCardProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -111,8 +114,17 @@ export function MarketCard(props: MarketCardProps) {
         marketId: props.marketId,
         status,
       });
-      if (result.ok) router.refresh();
-      else setError(manageMessage(result.error.code));
+      if (result.ok) {
+        toast({
+          tone: 'positive',
+          title: status === 'OPEN' ? 'Market reopened' : 'Market suspended',
+        });
+        router.refresh();
+      } else {
+        const description = manageMessage(result.error.code);
+        setError(description);
+        toast({ tone: 'negative', title: 'Could not update the market', description });
+      }
     });
   }
 
@@ -134,15 +146,18 @@ export function MarketCard(props: MarketCardProps) {
       });
       if (result.ok) {
         setEditing(false);
+        toast({ tone: 'positive', title: 'Market saved' });
         router.refresh();
       } else {
-        setError(manageMessage(result.error.code));
+        const description = manageMessage(result.error.code);
+        setError(description);
+        toast({ tone: 'negative', title: 'Could not save the market', description });
       }
     });
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-line bg-surface-raised p-3">
+    <Card as="section" className="flex flex-col gap-3 p-3">
       <div className="flex items-start justify-between gap-2">
         {editing ? (
           <input
@@ -291,7 +306,7 @@ export function MarketCard(props: MarketCardProps) {
           ) : null}
         </div>
       ) : null}
-    </section>
+    </Card>
   );
 }
 

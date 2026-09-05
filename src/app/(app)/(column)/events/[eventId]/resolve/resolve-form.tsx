@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/toast';
 import type { ResolveError } from '@/server/events/resolve';
 import type { RateLimited } from '@/server/limits/types';
 import { resolveEventAction } from '../../actions';
@@ -50,6 +51,7 @@ function errorMessage(error: ResolveError | RateLimited): string {
 }
 
 export function ResolveForm({ eventId, attempt, markets }: ResolveFormProps) {
+  const { toast } = useToast();
   const [pending, startTransition] = useTransition();
   const [winners, setWinners] = useState<Record<string, string>>({});
   const [note, setNote] = useState('');
@@ -76,7 +78,14 @@ export function ResolveForm({ eventId, attempt, markets }: ResolveFormProps) {
         note,
       });
       // On success the action redirects server-side and this branch never runs.
-      if (!result.ok) setError(result.error);
+      if (!result.ok) {
+        setError(result.error);
+        toast({
+          tone: 'negative',
+          title: 'Could not resolve the event',
+          description: errorMessage(result.error),
+        });
+      }
     });
   }
 

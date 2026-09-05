@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/ui/badge';
 import { buttonClasses } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Money } from '@/components/ui/money';
 import { requireApprovedMember } from '@/server/auth/session';
@@ -51,38 +52,38 @@ function Section({ title, rows }: { title: string; rows: EventBoardRow[] }) {
   return (
     <section className="flex flex-col gap-2">
       <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">{title}</h2>
-      {rows.map((row) => (
-        <Link
-          key={row.eventId}
-          href={`/events/${row.eventId}`}
-          className="flex flex-col gap-2 rounded-xl border border-line bg-surface-raised p-3 hover:border-line-hover"
-        >
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-semibold">{row.title}</span>
-            {row.overdue ? <StatusBadge status="Overdue" /> : null}
-          </div>
+      <ul className="flex flex-col gap-2">
+        {rows.map((row) => (
+          <Card key={row.eventId} as="li" className="hover:border-line-hover">
+            <Link href={`/events/${row.eventId}`} className="flex flex-col gap-2 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold">{row.title}</span>
+                {row.overdue ? <StatusBadge status="Overdue" /> : null}
+              </div>
 
-          <div className="text-sm text-ink-muted">
-            Created by {row.creatorDisplayName} · Closes{' '}
-            {row.startsAt.toLocaleString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              hour: 'numeric',
-              minute: '2-digit',
-              timeZone: 'America/New_York',
-            })}
-          </div>
+              <div className="text-sm text-ink-muted">
+                Created by {row.creatorDisplayName} · Closes{' '}
+                {row.startsAt.toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  timeZone: 'America/New_York',
+                })}
+              </div>
 
-          <div className="flex items-center justify-between border-t border-line-subtle pt-2 text-sm">
-            <span className="text-ink-muted">
-              {row.marketCount} market{row.marketCount === 1 ? '' : 's'}
-            </span>
-            <span className="text-ink-muted">
-              Staked <Money cents={row.stakedCreditsCents} currency="CREDITS" />
-            </span>
-          </div>
-        </Link>
-      ))}
+              <div className="flex items-center justify-between border-t border-line-subtle pt-2 text-sm">
+                <span className="text-ink-muted">
+                  {row.marketCount} market{row.marketCount === 1 ? '' : 's'}
+                </span>
+                <span className="text-ink-muted">
+                  Staked <Money cents={row.stakedCreditsCents} currency="CREDITS" />
+                </span>
+              </div>
+            </Link>
+          </Card>
+        ))}
+      </ul>
     </section>
   );
 }

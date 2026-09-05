@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { useToast } from '@/components/ui/toast';
 import type { DisputeError } from '@/server/events/dispute';
 import type { RateLimited } from '@/server/limits/types';
 import { disputeEventAction } from '../actions';
@@ -34,6 +36,7 @@ function errorMessage(error: DisputeError | RateLimited): string {
 }
 
 export function DisputeForm({ eventId, alreadyDisputed, existingReason }: DisputeFormProps) {
+  const { toast } = useToast();
   const [pending, startTransition] = useTransition();
   const [reason, setReason] = useState('');
   const [error, setError] = useState<DisputeError | RateLimited | null>(null);
@@ -45,12 +48,12 @@ export function DisputeForm({ eventId, alreadyDisputed, existingReason }: Disput
 
   if (submittedReason !== null) {
     return (
-      <section className="flex flex-col gap-1 rounded-xl border border-line bg-surface-raised p-3 text-sm">
+      <Card as="section" className="flex flex-col gap-1 p-3 text-sm">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
           Your dispute
         </h2>
         <p className="text-ink-secondary">“{submittedReason}”</p>
-      </section>
+      </Card>
     );
   }
 
@@ -59,44 +62,55 @@ export function DisputeForm({ eventId, alreadyDisputed, existingReason }: Disput
     startTransition(async () => {
       const trimmed = reason.trim();
       const result = await disputeEventAction({ eventId, reason: trimmed });
-      if (result.ok) setSubmittedReason(trimmed);
-      else setError(result.error);
+      if (result.ok) {
+        setSubmittedReason(trimmed);
+        toast({ tone: 'positive', title: 'Dispute submitted' });
+      } else {
+        setError(result.error);
+        toast({
+          tone: 'negative',
+          title: 'Could not submit the dispute',
+          description: errorMessage(result.error),
+        });
+      }
     });
   }
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        submit();
-      }}
-      className="flex flex-col gap-2 rounded-xl border border-line bg-surface-raised p-3"
-    >
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">Dispute this resolution</span>
-        <textarea
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          maxLength={MAX_DISPUTE_REASON_LENGTH}
-          rows={3}
-          placeholder="What's wrong with the resolution?"
-          className="rounded-xl border border-line-strong bg-surface-sunken px-3 py-2 text-sm"
-        />
-        <span className="text-xs text-ink-muted">
-          {reason.length}/{MAX_DISPUTE_REASON_LENGTH}
-        </span>
-      </label>
-
-      {error ? <p className="text-xs text-negative">{errorMessage(error)}</p> : null}
-
-      <Button
-        type="submit"
-        variant="secondary"
-        disabled={pending || reason.trim().length === 0}
-        className="self-start"
+    <Card className="p-3">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit();
+        }}
+        className="flex flex-col gap-2"
       >
-        {pending ? 'Submitting…' : 'Submit dispute'}
-      </Button>
-    </form>
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium">Dispute this resolution</span>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            maxLength={MAX_DISPUTE_REASON_LENGTH}
+            rows={3}
+            placeholder="What's wrong with the resolution?"
+            className="rounded-xl border border-line-strong bg-surface-sunken px-3 py-2 text-sm"
+          />
+          <span className="text-xs text-ink-muted">
+            {reason.length}/{MAX_DISPUTE_REASON_LENGTH}
+          </span>
+        </label>
+
+        {error ? <p className="text-xs text-negative">{errorMessage(error)}</p> : null}
+
+        <Button
+          type="submit"
+          variant="secondary"
+          disabled={pending || reason.trim().length === 0}
+          className="self-start"
+        >
+          {pending ? 'Submitting…' : 'Submit dispute'}
+        </Button>
+      </form>
+    </Card>
   );
 }

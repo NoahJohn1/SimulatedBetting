@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { StatusBadge } from '@/components/ui/badge';
@@ -8,6 +9,20 @@ import { requireApprovedMember } from '@/server/auth/session';
 import { getCustomEventDetail } from '@/server/events/query';
 import { DisputeForm } from './dispute-form';
 import { MarketCard, type MarketCardPosition } from './market-card';
+
+export async function generateMetadata({
+  params,
+}: PageProps<'/events/[eventId]'>): Promise<Metadata> {
+  const { eventId } = await params;
+  const member = await requireApprovedMember();
+
+  // Another season's event is indistinguishable from a missing one, on purpose — no title
+  // to leak, same as the page body below.
+  const detail = await getCustomEventDetail(eventId, member.membershipId);
+  if (!detail) return { title: 'Event' };
+
+  return { title: detail.title };
+}
 
 function when(date: Date): string {
   return date.toLocaleString('en-US', {
@@ -75,6 +90,10 @@ export default async function CustomEventPage({ params }: PageProps<'/events/[ev
 
   return (
     <div className="flex flex-col gap-4 px-4 py-4">
+      <Link href="/events" className="text-sm text-ink-muted hover:text-ink">
+        ← Events
+      </Link>
+
       <header className="flex flex-col gap-2">
         <div className="flex items-start justify-between gap-2">
           <h1 className="text-lg font-semibold">{detail.title}</h1>

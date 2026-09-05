@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
-import { americanToRational } from '@/domain/odds';
+import { useToast } from '@/components/ui/toast';
 import {
   MAX_DESCRIPTION_LENGTH,
   MAX_MARKETS_PER_EVENT,
@@ -39,29 +39,6 @@ function newOutcome(): OutcomeDraft {
 
 function newMarket(): MarketDraft {
   return { id: newId(), title: '', outcomes: [newOutcome(), newOutcome()] };
-}
-
-/**
- * Sum of implied probability across a market's outcomes, as a percentage.
- *
- * Informational only (D38) — an invalid/empty price is simply left out of the sum rather
- * than blocking the readout, since the server is the real gate on price validity.
- */
-function bookPercent(outcomes: OutcomeDraft[]): number | null {
-  let sum = 0;
-  let any = false;
-  for (const outcome of outcomes) {
-    const price = Number(outcome.priceAmerican);
-    if (!Number.isInteger(price)) continue;
-    try {
-      const { num, den } = americanToRational(price);
-      sum += Number(den) / Number(num);
-      any = true;
-    } catch {
-      // Not a parseable price yet — leave it out rather than treating it as 0%.
-    }
-  }
-  return any ? sum * 100 : null;
 }
 
 /** Errors without a market/outcome index of their own — shown as a form-level message. */
@@ -100,11 +77,25 @@ function marketErrorMessage(
   }
 }
 
+/**
+ * Every result gets one toast (D76), including the field-level errors that also mark their
+ * own input inline — `bannerMessage` stays null for those since the inline marking already
+ * says it, but the toast still needs a description of its own.
+ */
+function toastDescription(error: CreateEventError | RateLimited): string {
+  const banner = bannerMessage(error);
+  if (banner) return banner;
+  if (error.code === 'INVALID_MARKET') return marketErrorMessage(error.reason);
+  if (error.code === 'INVALID_PRICE') return 'Price must be -100 or lower, or 100 or higher.';
+  return 'Check the highlighted fields.';
+}
+
 const fieldClass = 'rounded-card border border-line-strong bg-surface-sunken px-3 py-2 text-sm';
 const fieldErrorClass =
   'rounded-card border border-negative-line bg-surface-sunken px-3 py-2 text-sm';
 
 export function EventForm() {
+  const { toast } = useToast();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [startsAt, setStartsAt] = useState('');
@@ -179,7 +170,14 @@ export function EventForm() {
       });
 
       // On success the action redirects server-side and this branch never runs.
-      if (!result.ok) setError(result.error);
+      if (!result.ok) {
+        setError(result.error);
+        toast({
+          tone: 'negative',
+          title: 'Could not create the event',
+          description: toastDescription(result.error),
+        });
+      }
     });
   }
 
@@ -212,7 +210,7 @@ export function EventForm() {
         />
       </label>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="flex flex-col gap-4">
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium">Closes</span>
           <input
@@ -236,7 +234,6 @@ export function EventForm() {
 
       <div className="flex flex-col gap-4">
         {markets.map((market, marketIndex) => {
-          const pct = bookPercent(market.outcomes);
           const marketError =
             error?.code === 'INVALID_MARKET' && error.marketIndex === marketIndex ? error : null;
 
@@ -322,19 +319,14 @@ export function EventForm() {
                 })}
               </div>
 
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => addOutcome(market.id)}
-                  disabled={market.outcomes.length >= MAX_OUTCOMES_PER_MARKET}
-                  className="text-xs font-medium text-ink-secondary hover:underline disabled:opacity-30"
-                >
-                  + Add outcome
-                </button>
-                <span className="text-xs text-ink-muted">
-                  Book: {pct === null ? '—' : `${Math.round(pct)}%`}
-                </span>
-              </div>
+              <button
+                type="button"
+                onClick={() => addOutcome(market.id)}
+                disabled={market.outcomes.length >= MAX_OUTCOMES_PER_MARKET}
+                className="self-start text-xs font-medium text-ink-secondary hover:underline disabled:opacity-30"
+              >
+                + Add outcome
+              </button>
             </div>
           );
         })}
