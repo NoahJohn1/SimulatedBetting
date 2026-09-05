@@ -1471,3 +1471,155 @@ coverage that does not already exist.
 _Consequence to watch:_ if the pass keeps not happening, this document ages into a description of an
 app that has changed underneath it. The run log is empty on purpose so that its emptiness is the
 signal.
+
+---
+
+### D74 — Desktop is a content column plus a games slip rail, not a redesign
+
+_Added 2026-09-05 during the phase 7c/7d design session._
+
+The app gets one breakpoint, `lg` (1024px). At and above it the bottom tab bar's six
+destinations move into the top header, every screen's content clamps to a centered `max-w-2xl`
+column, and `/games` alone widens to two panes — the board plus a sticky ~340px bet-slip rail
+showing the same slip state the mobile sheet shows. Below `lg` the app keeps its phone shape.
+The slip becomes one component with two containers (a `Sheet` below `lg`, the rail above), a
+rendering split rather than a state refactor.
+
+_Rejected:_ a max-width column alone, with the slip staying a bottom sheet at every size. It is
+the cheapest fix for "every list runs edge to edge," but it leaves desktop betting worse than
+mobile betting — the one screen with a workflow gets nothing from the extra 600px, and
+[D8](#d8--layout-sportsbook-first)'s sportsbook-first layout has an obvious desktop completion
+that costs one grid template.
+
+_Rejected:_ a full desktop redesign — sidebar navigation, multi-column board, two-pane details.
+It roughly doubles the phase's design and audit surface for a private group that mostly plays on
+phones, and nothing in it is foreclosed by shipping the column-plus-rail first.
+
+---
+
+### D75 — The accent is a per-account choice from six curated hues
+
+_Added 2026-09-05 during the phase 7c/7d design session._
+
+`--accent`/`--accent-ink` stop being fixed near-black and become a member choice among six
+hues — green (the default), blue, indigo, violet, teal, orange — each shipped as an
+a11y-checked light/dark pair remapped under `[data-accent]`, exactly as `[data-theme]` remaps
+the neutrals. The choice is account-level: a `users.accent` column, a picker on `/me`, and the
+root layout rendering the attribute server-side. 7c ships the token plumbing with green for
+everyone; 7d ships the column and the picker. Green and orange are deliberately tuned away from
+emerald (positive) and amber (caution) so a selected control never reads as a settled outcome.
+
+_Rejected:_ one fixed brand hue. The two-line change 7b prepared was sized for exactly that, but
+a hue picked by the developer is a guess about taste in a product whose whole audience is a
+private group; letting each member pick converts the guess into a feature.
+
+_Rejected:_ a per-device cookie, matching the dark-mode toggle's mechanism. Accent is identity
+and should follow the member across devices; theme is a device property. The asymmetry is the
+point, not an inconsistency.
+
+_Rejected:_ admin-assigned member colours doubling as identity in the feed and standings. More
+opinionated than asked for, and it welds a presentation token to a social feature nobody
+requested.
+
+_What this accepts:_ six accents multiply the audit surface; bounded by spot-checking the
+selected-cell/primary-button/active-nav trio per accent rather than re-auditing every screen.
+
+---
+
+### D76 — All action results announce through one Toast layer
+
+_Added 2026-09-05 during the phase 7c/7d design session._
+
+Every submitted action — bet placed, offer posted, ruling saved, preferences stored, and their
+failures — announces through a single Toast provider in the `(app)` shell: a portal, a
+`role="status"` live region, auto-dismiss with pause-on-hover, a small queue. Field-level
+validation additionally marks the offending field inline, but the announcement itself is always
+a toast, so no result can scroll out of view and every form reports identically. This retires
+the inline-success-text pattern on all twelve forms as their screens are rebuilt, answering the
+design question [D53](#d53--the-shared-component-set-is-scoped-to-call-sites-that-exist)
+deferred when it declined to build `Toast` against zero call sites.
+
+_Rejected:_ toasts for success with errors kept inline. The conventional split, but it makes
+every form carry two reporting paths, and the failure case — the one a member must not miss —
+becomes the one that can scroll away.
+
+_Rejected:_ redesigned inline results with no toast layer. One less client provider, but the
+walk showed the real failure is positional: a result rendered where the user no longer is. A
+pinned callout fixes one form at a time; the toast fixes the class.
+
+_What this accepts:_ a toast detached from a long form is a weaker error surface than an
+adjacent message, which is why field marking stays mandatory alongside it.
+
+---
+
+### D77 — The odds board is compact rows in filterable, collapsible day sections
+
+_Added 2026-09-05 during the phase 7c/7d design session._
+
+The card-per-game board is replaced. A game is a two-line row (away over home, each line
+carrying its spread/money/total cells, kickoff in the leading column); a day is a section with
+a sticky header, its game count, and one column-header row; later days render collapsed by
+default. League and day filter chips above the board are server-rendered links, so the URL
+carries the view. Measured against the live slate this spec was written on — 68 games that
+Saturday, 80 the next — a full day drops from ~34,000px of cards to roughly 5,000px of rows
+before any filter is applied.
+
+This is the density answer [D8](#d8--layout-sportsbook-first) left open when it rejected
+one-game-at-a-time cards against exactly this slate.
+
+_Rejected:_ keeping the card and adding only filters and sticky headers. The smallest diff, but
+the card itself is the cost — ~190px and a repeated column-header row per game — so the 375px
+density finding the mobile audit assigned here would survive its own fix.
+
+_Rejected:_ collapsible sections around the existing card. Same reason at one remove: density
+inside an open section is unchanged.
+
+_Rejected:_ a virtualized list. A dependency and a scroll-behaviour risk taken against a DOM
+size that collapse-plus-filters already caps; revisit only if a filtered single day exceeds
+~150 games.
+
+---
+
+### D78 — Admin joins the app shell
+
+_Added 2026-09-05 during the phase 7c/7d design session._
+
+`/admin*` renders inside the `(app)` shell — header, navigation, content column — instead of as
+bare pages with a "Back to app" link. Admin destinations appear in the navigation for admins
+only; the `requireAdmin` gates on the routes are untouched. The mobile audit's run-together
+header and the latent `mx-auto` overflow are fixed by construction rather than patched. The
+roadmap had assigned the shell question to 7d; it is answered here and executed as part of 7c's
+admin rebuild, since rebuilding the admin screens outside the shell and then moving them in
+would design them twice — the exact duplication this combined spec exists to avoid.
+
+_Rejected:_ keeping admin outside the shell as a deliberately utilitarian area. The walk showed
+what that reads as on a phone: a different, unfinished app, with floating empty states and no
+way back but a text link. Utilitarian is a tone, not an architecture.
+
+_Rejected:_ a separate admin shell (own header, own nav). A second chrome to keep consistent
+with the first, for four routes.
+
+---
+
+### D79 — Dialog, Sheet, and Toast earn a minimal component harness, revisiting D54
+
+_Added 2026-09-05 during the phase 7c/7d design session._
+
+[D54](#d54--a-token-lint-test-is-the-harness-7b-earns-revisiting-d51) ended "the components
+that would earn a harness are the deferred ones — `Dialog` and `Toast` — so the harness
+question moves with them." They exist now, and the answer flips: jsdom plus React Testing
+Library land as dev dependencies in 7d, scoped to the three components with behaviour a
+source-text assertion cannot reach — Dialog's focus trap, ESC handling, and focus restore;
+Sheet's dismiss paths and scroll lock; Toast's announcement, queue, and dismissal. Nothing else
+migrates: `Button`, `Table`, `SegmentedControl` and the rest stay under structural assertion.
+
+_Rejected:_ continuing with structural tests only. A focus trap is precisely the kind of
+regression a filesystem walk cannot see and a browser audit only catches on the day it runs;
+this is the first behaviour in the repo whose loss would be silent.
+
+_Rejected:_ a broad harness migration while the tooling is open. D51 and D54's reasoning still
+holds for every component that is a class-name switch; paying to keep their tests green through
+future rewrites buys nothing.
+
+_What this accepts:_ a second vitest environment and two dev dependencies, the cost D51 twice
+declined — accepted now because the behaviour exists, which was always the condition.
