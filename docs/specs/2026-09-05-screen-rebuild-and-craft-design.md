@@ -179,14 +179,14 @@ Tier 1 gains the ramp stops for six hues; Tier 2 gains nothing — `--accent` an
 keep their names, and `[data-accent="…"]` selectors remap them exactly the way `[data-theme]`
 remaps the neutrals:
 
-| Accent | Light | Dark | `--accent-ink` (light/dark) |
-| ------ | ----------- | ----------- | --------------------------- |
-| Green (default) | green-700 | green-400 | white / green-950 |
-| Blue | blue-600 | blue-400 | white / blue-950 |
-| Indigo | indigo-600 | indigo-400 | white / indigo-950 |
-| Violet | violet-600 | violet-400 | white / violet-950 |
-| Teal | teal-700 | teal-400 | white / teal-950 |
-| Orange | orange-700 | orange-400 | white / orange-950 |
+| Accent          | Light      | Dark       | `--accent-ink` (light/dark) |
+| --------------- | ---------- | ---------- | --------------------------- |
+| Green (default) | green-700  | green-400  | white / green-950           |
+| Blue            | blue-600   | blue-400   | white / blue-950            |
+| Indigo          | indigo-600 | indigo-400 | white / indigo-950          |
+| Violet          | violet-600 | violet-400 | white / violet-950          |
+| Teal            | teal-700   | teal-400   | white / teal-950            |
+| Orange          | orange-700 | orange-400 | white / orange-950          |
 
 The exact stops are chosen in the token commit against measured contrast — every `--accent-ink`
 on `--accent` pair must hold ≥4.5:1 in both themes, and the two hues that share a family with an
@@ -207,12 +207,12 @@ the root layout reading the signed-in user's value — server-rendered, so no fl
 Following [D53](../decisions.md#d53--the-shared-component-set-is-scoped-to-call-sites-that-exist):
 each is built in the commit that first needs it, against the call sites named here.
 
-| Component | First call site | What it is |
-| --------- | --------------- | ---------- |
-| `Sheet` | The expanded bet slip below `lg` (Games commit, first in the order) | Bottom sheet in a portal: scrim, drag-handle, ESC/scrim dismiss, focus trap, body scroll lock, safe-area padding. Replaces today's sticky-div slip and its `bottom-[41px]` coupling to the tab bar's rendered height. |
-| `Toast` | Bet placed / slip errors (same Games commit) | One provider in the `(app)` shell, portal at the viewport edge, `role="status"` live region, auto-dismiss with pause-on-hover, a small queue. Tone prop reuses the callout tones. |
-| `Dialog` | "Propose calling it off" on the wager detail (Bets and Wagers commit) | Native `<dialog>` under a styled wrapper: `showModal()`, ESC and scrim dismiss, focus restore to the invoker, a `danger` confirm variant. Later call sites: admin void, comment delete. |
-| `Table` | `/standings` at `lg+` (Standings commit) | A semantic `<table>` speaking the token vocabulary — header row, numeric cell alignment, row hover. Desktop-only presentation; below `lg` the rank rows stay cards. Later call sites: `/me`'s ledger, admin queues. |
+| Component | First call site                                                       | What it is                                                                                                                                                                                                            |
+| --------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Sheet`   | The expanded bet slip below `lg` (Games commit, first in the order)   | Bottom sheet in a portal: scrim, drag-handle, ESC/scrim dismiss, focus trap, body scroll lock, safe-area padding. Replaces today's sticky-div slip and its `bottom-[41px]` coupling to the tab bar's rendered height. |
+| `Toast`   | Bet placed / slip errors (same Games commit)                          | One provider in the `(app)` shell, portal at the viewport edge, `role="status"` live region, auto-dismiss with pause-on-hover, a small queue. Tone prop reuses the callout tones.                                     |
+| `Dialog`  | "Propose calling it off" on the wager detail (Bets and Wagers commit) | Native `<dialog>` under a styled wrapper: `showModal()`, ESC and scrim dismiss, focus restore to the invoker, a `danger` confirm variant. Later call sites: admin void, comment delete.                               |
+| `Table`   | `/standings` at `lg+` (Standings commit)                              | A semantic `<table>` speaking the token vocabulary — header row, numeric cell alignment, row hover. Desktop-only presentation; below `lg` the rank rows stay cards. Later call sites: `/me`'s ledger, admin queues.   |
 
 `Card` also gets the element-type escape hatch the 7b review asked for (`as` prop accepting
 `article`/`section`/`li`), which unblocks the eleven hand-rolled call sites the audit counted.
@@ -294,13 +294,13 @@ The 7b audit pattern, applied per rung:
 
 ## What this phase defers, and who owns it
 
-| Deferred | Owner | Why not here |
-| -------- | ----- | ------------ |
-| Virtualized board rendering | Future, if ever | Collapse + filters cap the DOM at sizes measured; a dependency against a problem not yet observed |
-| Team logos on the board | Screen designs may propose at `lg+` | Compact rows are text-first; logos are decoration until proven otherwise |
-| Live/in-play board states | Post-ladder | Depends on data freshness guarantees the sync does not make |
-| Member identity colour (accent as avatar) | Never, unless asked | D75 rejected admin-assigned accents; identity colour is a different feature wearing the same token |
-| Radius-vocabulary adoption sweep (45 raw sites) | Absorbed per-screen here | Each rebuilt screen adopts `rounded-card`/`control`/`pill` as it is touched; no separate sweep |
+| Deferred                                        | Owner                               | Why not here                                                                                       |
+| ----------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Virtualized board rendering                     | Future, if ever                     | Collapse + filters cap the DOM at sizes measured; a dependency against a problem not yet observed  |
+| Team logos on the board                         | Screen designs may propose at `lg+` | Compact rows are text-first; logos are decoration until proven otherwise                           |
+| Live/in-play board states                       | Post-ladder                         | Depends on data freshness guarantees the sync does not make                                        |
+| Member identity colour (accent as avatar)       | Never, unless asked                 | D75 rejected admin-assigned accents; identity colour is a different feature wearing the same token |
+| Radius-vocabulary adoption sweep (45 raw sites) | Absorbed per-screen here            | Each rebuilt screen adopts `rounded-card`/`control`/`pill` as it is touched; no separate sweep     |
 
 ## Risks
 
