@@ -30,8 +30,8 @@ Where a status cannot be verified from the repo, it says so and dates the observ
 | 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — cloud half built; nothing is live until the migration and env vars land                                      | [CLOUD] **[NOAH]** [LOCAL] [MANUAL] | [spec](specs/2026-09-02-production-deployment-design.md) · [plan](archive/plans/2026-09-02-production-deployment-implementation-plan.md)                                             |
 | 7a  | UI foundations                                                | ✅ Complete                                                                                                               | —                                   | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md)                                |
 | 7b  | Design system                                                 | ✅ Complete                                                                                                               | —                                   | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md)                           |
-| 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | 🔲 Backlog                                                                                                                | [CLOUD]                             | —                                                                                                                                                                                    |
-| 7d  | [Craft](#7d--craft)                                           | 🔲 Backlog                                                                                                                | [CLOUD]                             | —                                                                                                                                                                                    |
+| 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | 🔄 Active — spec, design canvas and plan are the next step                                                                | [CLOUD] **[MANUAL]**                | —                                                                                                                                                                                    |
+| 7d  | [Craft](#7d--craft)                                           | 🔄 Active — specced together with 7c, built after it                                                                      | [CLOUD] **[MANUAL]**                | —                                                                                                                                                                                    |
 | 8   | [Email notifications](#8--email-notifications)                | 🔄 Built, in [PR #25](https://github.com/NoahJohn1/SimulatedBetting/pull/25); inert until a provider key is set           | **[NOAH]** [LOCAL] [MANUAL]         | [spec](specs/2026-09-03-email-notifications-design.md) · [plan](plans/2026-09-03-email-notifications-implementation-plan.md)                                                         |
 | 9   | [Hardening](#9--hardening)                                    | 🔄 Built, in [PR #25](https://github.com/NoahJohn1/SimulatedBetting/pull/25) — the smoke checklist awaits a [MANUAL] pass | **[MANUAL]**                        | [spec](specs/2026-09-03-hardening-design.md) · [plan](plans/2026-09-03-hardening-implementation-plan.md)                                                                             |
 
@@ -64,6 +64,20 @@ Full detail — the payload spike, the live-feed run, the persistence test, a sa
 set, the existing `*/15` cron starts pulling real data on its own schedule — no separate backfill
 step, unless a season needs seeding mid-week. Reconciling what lands only needs the production
 database, so that part is `[LOCAL]`, not `[NOAH]`.
+
+**The adapter needs no account, key or secret.** It reads `site.api.espn.com`'s public JSON with
+no `Authorization` header — `ODDS_PROVIDER` is the only switch, and `.env.local` is as good a
+place to set it as Vercel. So a real slate can be pulled into a local database and looked at
+without the production cutover, without Noah, and without touching production:
+
+```bash
+ODDS_PROVIDER=espn                                   # in .env.local
+curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/cron/sync-odds
+```
+
+That is the intended way to evaluate the UI against real content rather than fixtures, which is
+what [7c](#7c--screen-by-screen-rebuild) needs before it designs anything. It proves nothing
+about production — the cutover row above is still the cutover row.
 
 **The honest risk.** Undocumented endpoint, no SLA, can change shape without notice. Mitigated by
 the defensive parsing and kill switch above, both already built.
@@ -128,6 +142,17 @@ actually feel them:
 
 Games and the bet slip → Feed → Standings → Bets and Wagers → Events → Me → Admin.
 
+**Status: active, and the next thing to be specced.** 7c and 7d are being taken together — one
+spec, one design canvas, one plan, built in 7c-then-7d order — because 7d's inherited items are
+mostly craft applied to the same screens 7c rebuilds, and specifying them apart would design the
+same screens twice. New decisions start at **D74**.
+
+**Design against real content first.** The inherited backlog below is largely a list of things
+that only show up under real data — odds-board density at 375px, a 60-game CFB Saturday, a
+desktop layout that has never existed. Pull a real ESPN slate into a local database before
+designing anything; [phase 5](#5--real-data-the-espn-adapter) explains how, and it needs nothing
+from Vercel.
+
 #### What 7c inherits
 
 Deferred here by an earlier rung. This is a backlog, not a wish list — each line has a phase
@@ -157,6 +182,10 @@ than at the end — see the consequence noted on
 [D53](decisions.md#d53--the-shared-component-set-is-scoped-to-call-sites-that-exist).
 
 ### 7d — Craft
+
+**Specced with [7c](#7c--screen-by-screen-rebuild), built after it.** The rungs stay separate —
+the app is shippable at the end of 7c, which is the whole point of the ladder — but they share
+one spec and one plan.
 
 - Motion and transitions; skeleton loaders in place of spinners
 - Accessibility: keyboard paths, focus management, contrast, screen reader labels
