@@ -737,8 +737,8 @@ it('day sections are native details/summary', () => {
 - Consumes: `Table` (Task 8), `formatDateTime` (Task 2).
 
 - [ ] **Step 1: English ledger labels.** One map from `ledger_entry_type` to copy, in the page:
-      `P2P_ESCROW` → `Wager stake held`, `P2P_RELEASE` → `Wager paid out`, refunds → `Stake
-returned`, etc. — cover every value of the enum (`grep ledgerEntryType src/db/schema/money.ts`
+      `P2P_ESCROW` → `Wager stake held`, `P2P_RELEASE` → `Wager paid out`, refunds →
+      `Stake returned`, etc. — cover every value of the enum (`grep ledgerEntryType src/db/schema/money.ts`
       for the full list; the test below pins it). Rows with a `note` keep showing it as the
       second line. A raw enum reaching the screen is a bug: add
       `src/app/__tests__/ledger-labels.test.ts` asserting the page's map covers every enum
