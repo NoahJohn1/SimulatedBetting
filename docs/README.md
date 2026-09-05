@@ -196,29 +196,29 @@ Every open item from [the roadmap](roadmap.md#roadmap) and
 
 #### What a cloud session can pick up now
 
-| Item                                                                                   | Source        | Has a plan                                                                    |
-| -------------------------------------------------------------------------------------- | ------------- | ----------------------------------------------------------------------------- |
-| Uncomment the three cron `schedule:` lines                                             | repo health 3 | —                                                                             |
-| Add `format:check` to `verify` and CI                                                  | repo health 5 | —                                                                             |
-| Instrument `sync-odds` with `runJob`                                                   | roadmap 6     | [plan](archive/plans/2026-09-02-production-deployment-implementation-plan.md) |
-| 7c component work — `Dialog`, `Sheet`, `Table`, `Toast`, `Card`'s element escape hatch | roadmap 7c    | —                                                                             |
-| 7c layout fixes from the mobile audit                                                  | roadmap 7c    | —                                                                             |
-| 7d craft — motion, accessibility, a dark-mode toggle                                   | roadmap 7d    | —                                                                             |
-| The whole of phase 8 — the outbox, the transport, preferences, unsubscribe             | roadmap 8     | [plan](plans/2026-09-03-email-notifications-implementation-plan.md)           |
-| Rate limiting, house rules page, the new-member path, the smoke checklist draft        | roadmap 9     | [plan](plans/2026-09-03-hardening-implementation-plan.md)                     |
+| Item                                                                                   | Source         | Has a plan                                                                    |
+| -------------------------------------------------------------------------------------- | -------------- | ----------------------------------------------------------------------------- |
+| Uncomment the three cron `schedule:` lines                                             | repo health 3  | —                                                                             |
+| Add `format:check` to `verify` and CI                                                  | repo health 5  | —                                                                             |
+| Instrument `sync-odds` with `runJob`                                                   | roadmap 6      | [plan](archive/plans/2026-09-02-production-deployment-implementation-plan.md) |
+| 7c component work — `Dialog`, `Sheet`, `Table`, `Toast`, `Card`'s element escape hatch | roadmap 7c     | —                                                                             |
+| 7c layout fixes from the mobile audit                                                  | roadmap 7c     | —                                                                             |
+| 7d craft — motion, accessibility, a dark-mode toggle                                   | roadmap 7d     | —                                                                             |
+| Give `deliverPending` a claim step                                                     | repo health 13 | [finding](repo-health.md#51-notification-delivery-has-no-claim-step)          |
 
 Row 1 above is `[CLOUD]` work that is currently blocked, not ready to pick up — see its
 "Blocked on" column in [repo health's Outstanding table](repo-health.md#outstanding). Row 2
 (`format:check`) was blocked on the same thing until the ESPN adapter's Prettier reconciliation
 landed — it is unblocked now.
 
-**The last two rows are the largest pieces of unbuilt work in the repo, and both are fully
-planned.** Phases 8 and 9 were designed in parallel cloud sessions and merged as specs and plans
-only — 16 tasks and 11 tasks respectively, each lane-tagged and each written to be executed by a
-session that has not read this conversation. Neither has a line of implementation code. Their
-decisions are recorded at
+**Phases 8 and 9 are built and merged as of 2026-09-05**, so what used to be the two largest
+unbuilt pieces here is gone from this table. Both were executed in parallel cloud sessions from
+their plans, then merged together and into `main`. What remains of them is not `[CLOUD]` work: a
+provider signup, two migrations against production, and a person's pass over the smoke checklist
+— all listed below. Their decisions are recorded at
 [D63–D68](decisions.md#d63--every-send-is-keyed-but-not-every-send-rides-a-feed-event) and
 [D69–D73](decisions.md#d69--rate-limiting-is-a-postgres-fixed-window-counter-enforced-at-the-action-boundary).
+The largest planned-but-unbuilt work in the repo is now 7c and 7d, which have no spec yet.
 
 #### What needs a desktop with Docker
 
@@ -226,6 +226,10 @@ decisions are recorded at
 | ------------------------------------------------------------- | ------------- |
 | Verify the `session-start` hook's Docker path                 | repo health 4 |
 | Run phase 6's DB-backed tests — they have only ever run in CI | roadmap 6     |
+
+Separately, applying migrations to production needs the production connection string rather than
+Docker: `0015` (notifications and preferences) and `0016` (rate limits) are both unapplied — see
+[repo health 12](repo-health.md#outstanding).
 
 Load sanity at real row counts (roadmap 9) used to be listed here — it turned out not to need
 Docker at all, just a database, which a cloud session can now get on its own. See
@@ -240,8 +244,7 @@ Docker at all, just a database, which a cloud session can now get on its own. Se
 | First real ESPN slate — set `ODDS_PROVIDER=espn` against production, backfill, reconcile                                           | roadmap 5     |
 | Hosted Postgres, Sentry signup, alerting destination                                                                               | roadmap 6     |
 | Apply the `job_runs` migration; set `ALERT_WEBHOOK_URL` and the Sentry DSNs — **phase 6's alerting does nothing until this lands** | roadmap 6     |
-| Email provider signup and sending-domain DNS                                                                                       | roadmap 8     |
-| Apply the notification migration to production, once phase 8 is built                                                              | roadmap 8     |
+| Email provider signup and sending-domain DNS, then `RESEND_API_KEY` and `EMAIL_FROM`                                               | roadmap 8     |
 
 #### What needs a person, either of you
 
@@ -250,8 +253,9 @@ Docker at all, just a database, which a cloud session can now get on its own. Se
 | The human test pass — still useful for phases 6-9, no longer gates phase 5 | both          |
 | Merging Dependabot's monthly PR                                            | repo health 6 |
 | ESLint 10 / TypeScript 7 — blocked upstream                                | repo health 7 |
-| Confirming a real email renders                                            | roadmap 8     |
+| Confirming a real email renders, and that one-click unsubscribe works      | roadmap 8     |
 | Break a cron on purpose once and confirm the alert arrives                 | roadmap 6     |
+| Validating [the smoke checklist](smoke-checklist.md) — it ships as a draft | roadmap 9     |
 
 ## Conventions
 

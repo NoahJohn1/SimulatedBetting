@@ -32,8 +32,8 @@ Where a status cannot be verified from the repo, it says so and dates the observ
 | 7b  | Design system                                                 | ✅ Complete                                                                          | —                                   | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md)                           |
 | 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | 🔲 Backlog                                                                           | [CLOUD]                             | —                                                                                                                                                                                    |
 | 7d  | [Craft](#7d--craft)                                           | 🔲 Backlog                                                                           | [CLOUD]                             | —                                                                                                                                                                                    |
-| 8   | [Email notifications](#8--email-notifications)                | 🔄 Partial — built, not yet sending                                                  | **[NOAH]** [MANUAL]                 | [spec](specs/2026-09-03-email-notifications-design.md) · [plan](plans/2026-09-03-email-notifications-implementation-plan.md)                                                         |
-| 9   | [Hardening](#9--hardening)                                    | 🔄 Built on a branch, not yet merged — the smoke checklist awaits a [MANUAL] pass    | **[MANUAL]**                        | [spec](specs/2026-09-03-hardening-design.md) · [plan](plans/2026-09-03-hardening-implementation-plan.md)                                                                             |
+| 8   | [Email notifications](#8--email-notifications)                | 🔄 Partial — built and merged; inert until a provider key is set                     | **[NOAH]** [LOCAL] [MANUAL]         | [spec](specs/2026-09-03-email-notifications-design.md) · [plan](plans/2026-09-03-email-notifications-implementation-plan.md)                                                         |
+| 9   | [Hardening](#9--hardening)                                    | 🔄 Built and merged — the smoke checklist awaits a [MANUAL] pass                     | **[MANUAL]**                        | [spec](specs/2026-09-03-hardening-design.md) · [plan](plans/2026-09-03-hardening-implementation-plan.md)                                                                             |
 
 ---
 
@@ -184,7 +184,9 @@ expiring offer, a dispute needing a ruling, account approval — plus digests fo
 the weekly allowance. Per-type toggles and a global off
 ([D50](decisions.md#d50--notifications-are-opt-out-email-with-per-type-switches)).
 
-**Status: designed, not built.**
+**Status: Tasks 1–14 built and merged to `main`.** Nothing reaches an inbox until the
+provider signup below happens — the transport is inert without an API key by design
+([D68](decisions.md#d68--the-email-transport-is-inert-without-an-api-key)), not broken.
 [Spec](specs/2026-09-03-email-notifications-design.md) ·
 [plan](plans/2026-09-03-email-notifications-implementation-plan.md) — 16 tasks, lane-tagged,
 decisions [D63–D68](decisions.md#d63--every-send-is-keyed-but-not-every-send-rides-a-feed-event).
@@ -200,10 +202,15 @@ decisions [D63–D68](decisions.md#d63--every-send-is-keyed-but-not-every-send-r
 | Apply the notification migration to production                     | 🔲 Backlog  | **[LOCAL]**  |
 | Confirm a real email renders correctly in an inbox                 | 🔲 Backlog  | **[MANUAL]** |
 
-**What's left.** Every `[CLOUD]` row is unblocked and ready for a session to execute — none of it
-waits on the `[NOAH]` provider signup, since the transport is inert without an API key
-([D68](decisions.md#d68--the-email-transport-is-inert-without-an-api-key)). The signup is only
-needed for delivery to actually reach an inbox.
+**What's left.** Three rows, none of them `[CLOUD]`: the provider signup, the migration against
+production, and one look at a real message in a real inbox. Until the first of those, every send
+is written to the outbox and logged rather than transmitted, which is the designed dev-mode
+behaviour and what `/admin/health` reports as the live transport.
+
+**Known, recorded, not fixed.** The integration review found that `deliverPending` has no claim
+step, so two overlapping flushes can send the same row twice — see
+[repo-health 5.1](repo-health.md#51-notification-delivery-has-no-claim-step). It wants a schema
+change and belongs to a session of its own, not to a merge.
 
 ---
 
@@ -213,7 +220,7 @@ needed for delivery to actually reach an inbox.
 page, and the new-member path — `/pending`, `/join`, `/no-season`, `/disabled` — treated as one
 sequence.
 
-**Status: Tasks 1–10 built on `claude/phase-9-hardening-urtq3o`, not yet merged to `main`.**
+**Status: Tasks 1–10 built and merged to `main`.**
 [Spec](specs/2026-09-03-hardening-design.md) ·
 [plan](plans/2026-09-03-hardening-implementation-plan.md) — 11 tasks, decisions
 [D69–D73](decisions.md#d69--rate-limiting-is-a-postgres-fixed-window-counter-enforced-at-the-action-boundary).
@@ -223,16 +230,20 @@ and [docs/README.md](README.md), not repeated here.
 | Task                                                                               | Status                                | Owner                                       |
 | ---------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------- |
 | [A written smoke checklist](smoke-checklist.md)                                    | 🔄 Drafted — awaiting a [MANUAL] pass | [CLOUD] to draft · **[MANUAL]** to validate |
-| Rate limiting on mutations                                                         | ✅ Complete on the branch             | —                                           |
+| Rate limiting on mutations                                                         | ✅ Complete                           | —                                           |
 | Load sanity — a full CFB Saturday and a season of feed events                      | ✅ Complete                           | —                                           |
-| A house rules page                                                                 | ✅ Complete on the branch             | —                                           |
-| The new-member path — `/pending`, `/join`, `/no-season`, `/disabled` as a sequence | ✅ Complete on the branch             | —                                           |
+| A house rules page                                                                 | ✅ Complete                           | —                                           |
+| The new-member path — `/pending`, `/join`, `/no-season`, `/disabled` as a sequence | ✅ Complete                           | —                                           |
+| Apply the `rate_limits` migration to production                                    | 🔲 Backlog                            | **[LOCAL]**                                 |
 
-**What's left.** Every `[CLOUD]` row is built on the branch. The smoke checklist ships as an
-unvalidated draft; the `[MANUAL]` pass corrects it rather than writing it from scratch
-([D73](decisions.md#d73--the-smoke-checklist-ships-unvalidated-with-a-run-log)), and this branch
-still needs to merge — with the parallel phase-8 email-notifications branch, then to `main` — before
-any of it reaches production.
+**What's left.** Two rows, neither `[CLOUD]`: the migration against production, and the
+[MANUAL] pass over the checklist. The checklist ships as an unvalidated draft on purpose; the
+pass corrects it rather than writing it from scratch
+([D73](decisions.md#d73--the-smoke-checklist-ships-unvalidated-with-a-run-log)).
+
+The limiter is live in code the moment the migration lands. Before that, `consume` fails open
+against a missing table ([D70](decisions.md#d70--the-rate-limiter-fails-open-and-counts-attempts-not-successes)),
+so the app works and simply does not limit — which is the pre-phase-9 behaviour, not a new failure.
 
 ---
 
