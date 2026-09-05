@@ -1,6 +1,6 @@
 import { boolean, index, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
-export const jobName = pgEnum('job_name', ['SETTLE', 'ALLOWANCE', 'RECONCILE', 'NOTIFY']);
+export const jobName = pgEnum('job_name', ['SETTLE', 'ALLOWANCE', 'RECONCILE', 'NOTIFY', 'SYNC_ODDS']);
 
 export type JobName = (typeof jobName.enumValues)[number];
 
@@ -9,9 +9,10 @@ export type JobName = (typeof jobName.enumValues)[number];
  *
  * It exists because `reconcile` leaves no other trace: a passing run writes no ledger entry,
  * changes no status and touches no timestamp, so its silence is indistinguishable from its
- * absence. `sync-odds` is deliberately not in the `job_name` enum — its health is read from
- * `max(markets.last_synced_at)`, which proves the sync wrote rows rather than that a handler
- * returned 200.
+ * absence. `sync-odds` writes here too, but `/admin/health` still reads its freshness from
+ * `max(markets.last_synced_at)` rather than this table — that stays the better evidence that the
+ * sync actually wrote rows, not just that the handler returned 200 (D58's durable reason, kept
+ * even after instrumentation).
  *
  * `ok` means the run was CLEAN: it completed without throwing *and* reported no per-item
  * failures. A settle pass that could not grade one game is not a successful settle pass.
