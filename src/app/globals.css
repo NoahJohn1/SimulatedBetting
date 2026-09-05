@@ -335,6 +335,29 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   Motion (Task 15). Every transition in the app names one of these two
+   durations rather than a literal number, and both default to 0s — a
+   0-duration transition is indistinguishable from none, so a component wired
+   to `--motion-base`/`--motion-fast` is inert until the media query below
+   says animation is welcome. Components pair this with a `data-state` flip
+   (`sheet.tsx`, `dialog.tsx`, `toast.tsx`) and additionally gate their own
+   *unmount* delay behind the same `prefers-reduced-motion` check, which is
+   what keeps a reduced-motion state change instant end to end and not just
+   visually — the same media query, checked twice, once in CSS and once in
+   the component's own `prefersMotion()` before it schedules anything.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --motion-base: 0s;
+  --motion-fast: 0s;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root {
+    --motion-base: 150ms;
+    --motion-fast: 120ms;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    Exposure to Tailwind.
 
    `inline` is load-bearing. With it, .bg-surface emits `var(--surface)` and the

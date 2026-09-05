@@ -76,7 +76,7 @@ export function OddsCell({
           currency: 'CASH',
         })
       }
-      className={`flex h-12 w-16 flex-col items-center justify-center rounded-lg border text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+      className={`flex h-12 w-16 flex-col items-center justify-center rounded-lg border text-xs transition-colors duration-[var(--motion-fast)] disabled:cursor-not-allowed disabled:opacity-40 ${
         active
           ? 'border-accent bg-accent text-accent-ink'
           : 'border-line bg-surface-sunken hover:border-line-hover'
