@@ -8,14 +8,17 @@ import { Money } from '@/components/ui/money';
 import type { Currency } from '@/db/schema';
 import { formatAmount } from '@/domain/money';
 import type { PlaceBetError } from '@/server/bets/types';
+import type { RateLimited } from '@/server/limits/types';
 import { useSlip } from './slip-context';
 
 /**
  * Every amount the slip quotes is in the slip's own denomination — the stake, the balance it
  * is checked against, and the payout. A cash slip reads exactly as it always did.
  */
-function message(error: PlaceBetError, currency: Currency): string {
+function message(error: PlaceBetError | RateLimited, currency: Currency): string {
   switch (error.code) {
+    case 'RATE_LIMITED':
+      return `You're placing bets too quickly. Try again in ${error.retryAfterSeconds} seconds.`;
     case 'LINE_MOVED':
       return 'The line moved while the slip was open. Review the new price and try again.';
     case 'INSUFFICIENT_FUNDS':

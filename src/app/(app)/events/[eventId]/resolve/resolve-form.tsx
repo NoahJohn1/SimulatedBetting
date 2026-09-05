@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import type { ResolveError } from '@/server/events/resolve';
+import type { RateLimited } from '@/server/limits/types';
 import { resolveEventAction } from '../../actions';
 
 export interface ResolveFormOutcome {
@@ -24,8 +25,10 @@ export interface ResolveFormProps {
   markets: ResolveFormMarket[];
 }
 
-function errorMessage(error: ResolveError): string {
+function errorMessage(error: ResolveError | RateLimited): string {
   switch (error.code) {
+    case 'RATE_LIMITED':
+      return `You're doing that too quickly. Try again in ${error.retryAfterSeconds} seconds.`;
     case 'INCOMPLETE_RESOLUTION':
       return 'Pick a winner for every market.';
     case 'RE_RESOLUTION_IS_ADMIN_ONLY':
@@ -50,7 +53,7 @@ export function ResolveForm({ eventId, attempt, markets }: ResolveFormProps) {
   const [pending, startTransition] = useTransition();
   const [winners, setWinners] = useState<Record<string, string>>({});
   const [note, setNote] = useState('');
-  const [error, setError] = useState<ResolveError | null>(null);
+  const [error, setError] = useState<ResolveError | RateLimited | null>(null);
 
   // A re-resolution is a correction, and D15's audit trail requires the note. The server's
   // NOTE_REQUIRED is the real gate; this is only the hint.

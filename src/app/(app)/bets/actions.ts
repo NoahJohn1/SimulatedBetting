@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { placeBet } from '@/server/bets/place';
 import type { PlaceBetResult } from '@/server/bets/types';
 import { requireApprovedMemberOrThrow } from '@/server/auth/session';
+import { consume } from '@/server/limits/consume';
+import type { RateLimited } from '@/server/limits/types';
 
 export interface PlaceBetActionInput {
   type: 'SINGLE' | 'PARLAY';
@@ -24,8 +26,12 @@ export interface PlaceBetActionInput {
  */
 export async function placeBetAction(
   input: PlaceBetActionInput,
-): Promise<PlaceBetResult & { stakeCents?: string }> {
+): Promise<(PlaceBetResult & { stakeCents?: string }) | { ok: false; error: RateLimited }> {
   const member = await requireApprovedMemberOrThrow();
+
+  // Before the service, in its own transaction, never inside placeBet's (money invariant 3).
+  const limited = await consume(member.userId, 'BET_PLACE');
+  if (limited) return { ok: false, error: limited };
 
   const result = await placeBet({
     userId: member.userId,

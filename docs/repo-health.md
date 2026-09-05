@@ -72,19 +72,22 @@ assumption that every test needs a database. It does not, and the table above mo
 Nothing here is `[CLOUD]` work that is not blocked on somebody else. Every row names its lane
 and what it is waiting on.
 
-| #   | Item                                                                            | Owner        | Blocked on                                                                                                                                                                                                                                                                                                                                   |
-| --- | ------------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Add `APP_URL` and `CRON_SECRET` as Actions secrets**                          | **[NOAH]**   | Nothing — this is the only thing stopping the deployed app from settling bets. [Step by step](#what-you-must-do--the-cron-fix-step-by-step)                                                                                                                                                                                                  |
-| 2   | **Dispatch both cron jobs by hand and confirm 200**                             | **[NOAH]**   | Row 1. The jobs now name the missing secret instead of exiting 3, so a red run says which side is wrong                                                                                                                                                                                                                                      |
-| 3   | Uncomment the three `schedule:` lines in `cron.yml`                             | [CLOUD]      | Rows 1 and 2. One line of work; the guard it needs already landed                                                                                                                                                                                                                                                                            |
-| 4   | Verify the `session-start` hook's Docker path                                   | **[LOCAL]**  | A desktop. The other four branches are proven — see [3.6](#36-session-start--a-hook)                                                                                                                                                                                                                                                         |
-| 5   | Add `format:check` to `verify` and CI                                           | [CLOUD]      | Nothing — [Done row 15](#done) landed, so this is no longer blocked on the ESPN adapter reconciliation it was waiting for                                                                                                                                                                                                                    |
-| 6   | Merge Dependabot's monthly PR                                                   | **[MANUAL]** | Nothing — standing monthly task. First fire 2026-09-02: [#14](https://github.com/NoahJohn1/SimulatedBetting/pull/14) and [#15](https://github.com/NoahJohn1/SimulatedBetting/pull/15) merged, [#16](https://github.com/NoahJohn1/SimulatedBetting/pull/16) and [#17](https://github.com/NoahJohn1/SimulatedBetting/pull/17) closed per row 7 |
-| 7   | ESLint 10 and TypeScript 7 majors                                               | **[MANUAL]** | Upstream. See [1.6](#16-the-dependency-majors-that-cannot-land-yet) — Dependabot re-proposes monthly, and a green run is the signal to merge                                                                                                                                                                                                 |
-| 8   | `db-migration` skill ([3.5](#35-db-migration--a-skill))                         | [CLOUD]      | Deliberately deferred. The trigger is a migration going wrong; it has not fired                                                                                                                                                                                                                                                              |
-| 9   | The human test pass, and the issues it produces ([4](#4-issues-and-milestones)) | **[MANUAL]** | Nothing — no longer gates phase 5 (2026-09-03), still useful for 6-9. Cheaper to run once phase 9 lands: its plan drafts a `docs/smoke-checklist.md` for the pass to follow, rather than deriving one from it ([D73](decisions.md#d73--the-smoke-checklist-ships-unvalidated-with-a-run-log))                                                |
-| 10  | **Apply the `job_runs` migration to production**                                | **[LOCAL]**  | Nothing — only the production database connection string, which Conner holds. Until it lands, `/admin/health` reports every job as never-run and no alert can fire — see [roadmap 6](roadmap.md#6--production-deployment)                                                                                                                    |
-| 11  | Set `ALERT_WEBHOOK_URL`, and the two Sentry DSNs                                | **[NOAH]**   | Nothing. Vercel environment variables only; the code is inert without them by design ([D59](decisions.md#d59--one-generic-webhook-carrying-both-content-and-text), [D62](decisions.md#d62--sentry-is-inert-without-a-dsn))                                                                                                                   |
+| #   | Item                                                                                    | Owner        | Blocked on                                                                                                                                                                                                                                                                                                                                   |
+| --- | --------------------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Add `APP_URL` and `CRON_SECRET` as Actions secrets**                                  | **[NOAH]**   | Nothing — this is the only thing stopping the deployed app from settling bets. [Step by step](#what-you-must-do--the-cron-fix-step-by-step)                                                                                                                                                                                                  |
+| 2   | **Dispatch both cron jobs by hand and confirm 200**                                     | **[NOAH]**   | Row 1. The jobs now name the missing secret instead of exiting 3, so a red run says which side is wrong                                                                                                                                                                                                                                      |
+| 3   | Uncomment the three `schedule:` lines in `cron.yml`                                     | [CLOUD]      | Rows 1 and 2. One line of work; the guard it needs already landed                                                                                                                                                                                                                                                                            |
+| 4   | Verify the `session-start` hook's Docker path                                           | **[LOCAL]**  | A desktop. The other four branches are proven — see [3.6](#36-session-start--a-hook)                                                                                                                                                                                                                                                         |
+| 5   | Add `format:check` to `verify` and CI                                                   | [CLOUD]      | Nothing — [Done row 15](#done) landed, so this is no longer blocked on the ESPN adapter reconciliation it was waiting for                                                                                                                                                                                                                    |
+| 6   | Merge Dependabot's monthly PR                                                           | **[MANUAL]** | Nothing — standing monthly task. First fire 2026-09-02: [#14](https://github.com/NoahJohn1/SimulatedBetting/pull/14) and [#15](https://github.com/NoahJohn1/SimulatedBetting/pull/15) merged, [#16](https://github.com/NoahJohn1/SimulatedBetting/pull/16) and [#17](https://github.com/NoahJohn1/SimulatedBetting/pull/17) closed per row 7 |
+| 7   | ESLint 10 and TypeScript 7 majors                                                       | **[MANUAL]** | Upstream. See [1.6](#16-the-dependency-majors-that-cannot-land-yet) — Dependabot re-proposes monthly, and a green run is the signal to merge                                                                                                                                                                                                 |
+| 8   | `db-migration` skill ([3.5](#35-db-migration--a-skill))                                 | [CLOUD]      | Deliberately deferred. The trigger is a migration going wrong; it has not fired                                                                                                                                                                                                                                                              |
+| 9   | The human test pass, and the issues it produces ([4](#4-issues-and-milestones))         | **[MANUAL]** | Nothing — no longer gates phase 5 (2026-09-03), still useful for 6-9. Cheaper to run once phase 9 lands: its plan drafts a `docs/smoke-checklist.md` for the pass to follow, rather than deriving one from it ([D73](decisions.md#d73--the-smoke-checklist-ships-unvalidated-with-a-run-log))                                                |
+| 10  | **Apply the `job_runs` migration to production**                                        | **[LOCAL]**  | Nothing — only the production database connection string, which Conner holds. Until it lands, `/admin/health` reports every job as never-run and no alert can fire — see [roadmap 6](roadmap.md#6--production-deployment)                                                                                                                    |
+| 11  | Set `ALERT_WEBHOOK_URL`, and the two Sentry DSNs                                        | **[NOAH]**   | Nothing. Vercel environment variables only; the code is inert without them by design ([D59](decisions.md#d59--one-generic-webhook-carrying-both-content-and-text), [D62](decisions.md#d62--sentry-is-inert-without-a-dsn))                                                                                                                   |
+| 12  | **Apply the notify and `rate_limits` migrations to production**                         | **[LOCAL]**  | Nothing — the same connection string as row 10, and cheapest applied in the same pass. `0015` (notifications, preferences) and `0016` (rate limits). Until `0016` lands, `consume` fails open and the app simply does not rate-limit ([D70](decisions.md#d70--the-rate-limiter-fails-open-and-counts-attempts-not-successes))                |
+| 13  | Give `deliverPending` a claim step ([5.1](#51-notification-delivery-has-no-claim-step)) | [CLOUD]      | Nothing, but it wants a schema change and a decision, so it belongs to its own session rather than to a merge                                                                                                                                                                                                                                |
+| 14  | Set `RESEND_API_KEY` and `EMAIL_FROM`, with sending-domain DNS                          | **[NOAH]**   | A transactional-email provider account. Until then every send is written to the outbox and logged instead of transmitted, which `/admin/health` reports as the live transport ([D68](decisions.md#d68--the-email-transport-is-inert-without-an-api-key))                                                                                     |
 
 ### What changed underneath all of this
 
@@ -638,6 +641,79 @@ recording only so that an empty issue list is not later read as evidence that th
 landed. The one thing that has changed is that the app is deployed, so the first issues may well
 arrive from production behavior rather than from the test pass; `from-test-pass` should stay
 reserved for the pass itself.
+
+---
+
+## 5. Findings from the phase 8/9 integration review
+
+Raised by `/code-review` on the merged range of the two branches, confirmed against the code,
+and deliberately **not** fixed during the merge itself. Four siblings of these were fixed in the
+same merge — the ones that were unambiguous and local. These three are not: each wants either a
+schema change or a decision about intended behaviour, and a merge is the wrong place to make
+either. They are real, and none of them is load-bearing on money.
+
+### 5.1 Notification delivery has no claim step
+
+`deliverPending` in [`src/server/notify/deliver.ts`](../src/server/notify/deliver.ts) SELECTs
+every row with `sent_at IS NULL`, sends, then stamps. There is no claim, no lock, and no
+`SKIP LOCKED`. `flushSoon()` sweeps **all** pending `IMMEDIATE` rows globally rather than the
+ones its own request enqueued, so two members acting at the same moment — or any action
+overlapping the daily notify cron — both pick up the same rows and both call `sendEmail`.
+
+**Why the dedupe key does not cover this.** `notifications.dedupe_key` is unique, so a fact is
+_enqueued_ once. It says nothing about how many times the single resulting row is _sent_. The
+outbox's whole promise is "one row, one email"; today it delivers the first half.
+
+**Why it was left.** Every fix needs a way to mark a row in flight — a `claimed_at` column and a
+migration, or a transaction held open across a network send. That is a change to phase 8's
+delivery model with a decision attached ([D64](decisions.md#d64--notifications-are-an-outbox)
+territory), and it should be reviewed as itself rather than smuggled into a merge commit.
+
+**How likely, honestly.** Low for a four-person app: it needs two sends inside one `after()`
+window. Not zero, and the symptom — a member getting the same email twice — is the kind of thing
+that reads as "this app is broken" rather than as a race.
+
+### 5.2 The optimistic reaction rollback restores too much
+
+[`src/app/(app)/feed/feed-list.tsx`](<../src/app/(app)/feed/feed-list.tsx>) snapshots the whole
+`cards` array before an optimistic reaction and restores it wholesale when the action is refused.
+If "Load more" appended a page in between — its cursor has already advanced — or a different
+reaction succeeded, the rollback discards that too. The fix is to roll back the one card by id
+rather than the list, but "what should an optimistic update do when the list moved underneath it"
+is a UI question that belongs with the 7c rebuild of the feed, not with a rate-limit merge.
+
+### 5.3 Preference writes are read-modify-write
+
+`muteType` and `disableAllEmail` in
+[`src/server/notify/preferences.ts`](../src/server/notify/preferences.ts) read the row, change
+one field, and write the whole thing back. Two unsubscribes racing — plausible, since a member
+can click one-click unsubscribe in two different emails — lose one another's change. The write is
+small enough to express as a single statement with an array append, which would close it. Left
+because it changes the module's shape and wants its own test.
+
+---
+
+## 6. A stale `.env.test` silently breaks the session hook
+
+Found on 2026-09-05, merging phases 8 and 9. The hook logged `.env.test present` and then
+`migrations FAILED`, and the two are the same fact: the file existed, so the hook did not write
+it, but it carried `localhost:5433` — the Docker Compose port from [3.7](#37-postgres-without-docker-in-a-cloud-session)'s
+`db:up` path. The native fallback cluster listens on **5432**, so every migration and every
+DB-backed test failed against a database that was up and healthy the whole time.
+
+`.env.test` is gitignored, so this is per-container state rather than anything in the repo, and
+the fix is one line:
+
+```bash
+echo "DATABASE_URL=postgres://simbet:simbet@127.0.0.1:5432/simbet_test" > .env.test
+npm run db:migrate:test
+```
+
+**The hook should check the port, not the file.** Presence is the wrong test — a `.env.test`
+pointing at a dead port is worse than none, because it suppresses the write that would have
+fixed it. Worth a `pg_isready` against the URL the file actually names, falling back to rewriting
+it. Filed as an observation rather than an Outstanding row because it costs one line to work
+around and the hook edit belongs with whoever next touches [3.6](#36-session-start--a-hook).
 
 ---
 

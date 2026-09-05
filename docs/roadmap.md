@@ -20,20 +20,20 @@ See [`repo-health.md`](repo-health.md#status-at-a-glance) for the same tags on r
 **What this table records is what is in the repository**, not what is on somebody's laptop.
 Where a status cannot be verified from the repo, it says so and dates the observation.
 
-| #   | Item                                                          | Status                                                                               | Who finishes what's left            | Reference                                                                                                                                                                            |
-| --- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | Core betting engine                                           | ✅ Complete                                                                          | —                                   | [spec](specs/2026-08-14-core-betting-engine-design.md)                                                                                                                               |
-| 2   | Social layer                                                  | ✅ Complete                                                                          | —                                   | [spec](specs/2026-08-17-social-layer-design.md) · [plan](archive/plans/2026-08-17-social-layer-implementation-plan.md)                                                               |
-| 3   | Custom events                                                 | ✅ Complete                                                                          | —                                   | [spec](specs/2026-08-17-custom-events-design.md) · [plan](archive/plans/2026-08-17-custom-events-implementation-plan.md)                                                             |
-| 4   | Peer-to-peer bets                                             | ✅ Complete                                                                          | —                                   | [spec](specs/2026-08-19-peer-to-peer-bets-design.md) · [plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md)                                                     |
-| 5   | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — merged to `main`, production cutover pending                        | **[NOAH]**                          | [PR #21](https://github.com/NoahJohn1/SimulatedBetting/pull/21) (merged) · [spec](specs/2026-08-22-espn-adapter-design.md) · [plan](plans/2026-08-22-espn-adapter-implementation.md) |
-| 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — cloud half built; nothing is live until the migration and env vars land | [CLOUD] **[NOAH]** [LOCAL] [MANUAL] | [spec](specs/2026-09-02-production-deployment-design.md) · [plan](archive/plans/2026-09-02-production-deployment-implementation-plan.md)                                             |
-| 7a  | UI foundations                                                | ✅ Complete                                                                          | —                                   | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md)                                |
-| 7b  | Design system                                                 | ✅ Complete                                                                          | —                                   | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md)                           |
-| 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | 🔲 Backlog                                                                           | [CLOUD]                             | —                                                                                                                                                                                    |
-| 7d  | [Craft](#7d--craft)                                           | 🔲 Backlog                                                                           | [CLOUD]                             | —                                                                                                                                                                                    |
-| 8   | [Email notifications](#8--email-notifications)                | 🔲 Backlog — spec and plan on `main`, nothing built                                  | [CLOUD] **[NOAH]** [LOCAL] [MANUAL] | [spec](specs/2026-09-03-email-notifications-design.md) · [plan](plans/2026-09-03-email-notifications-implementation-plan.md)                                                         |
-| 9   | [Hardening](#9--hardening)                                    | 🔲 Backlog — spec and plan on `main`, nothing built                                  | [CLOUD] [MANUAL]                    | [spec](specs/2026-09-03-hardening-design.md) · [plan](plans/2026-09-03-hardening-implementation-plan.md)                                                                             |
+| #   | Item                                                          | Status                                                                                                                    | Who finishes what's left            | Reference                                                                                                                                                                            |
+| --- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Core betting engine                                           | ✅ Complete                                                                                                               | —                                   | [spec](specs/2026-08-14-core-betting-engine-design.md)                                                                                                                               |
+| 2   | Social layer                                                  | ✅ Complete                                                                                                               | —                                   | [spec](specs/2026-08-17-social-layer-design.md) · [plan](archive/plans/2026-08-17-social-layer-implementation-plan.md)                                                               |
+| 3   | Custom events                                                 | ✅ Complete                                                                                                               | —                                   | [spec](specs/2026-08-17-custom-events-design.md) · [plan](archive/plans/2026-08-17-custom-events-implementation-plan.md)                                                             |
+| 4   | Peer-to-peer bets                                             | ✅ Complete                                                                                                               | —                                   | [spec](specs/2026-08-19-peer-to-peer-bets-design.md) · [plan](archive/plans/2026-08-19-peer-to-peer-bets-implementation-plan.md)                                                     |
+| 5   | [Real data: the ESPN adapter](#5--real-data-the-espn-adapter) | 🔄 In progress — merged to `main`, production cutover pending                                                             | **[NOAH]**                          | [PR #21](https://github.com/NoahJohn1/SimulatedBetting/pull/21) (merged) · [spec](specs/2026-08-22-espn-adapter-design.md) · [plan](plans/2026-08-22-espn-adapter-implementation.md) |
+| 6   | [Production deployment](#6--production-deployment)            | 🔄 Partial — cloud half built; nothing is live until the migration and env vars land                                      | [CLOUD] **[NOAH]** [LOCAL] [MANUAL] | [spec](specs/2026-09-02-production-deployment-design.md) · [plan](archive/plans/2026-09-02-production-deployment-implementation-plan.md)                                             |
+| 7a  | UI foundations                                                | ✅ Complete                                                                                                               | —                                   | [spec](specs/2026-08-22-ui-foundations-design.md) · [plan](archive/plans/2026-08-22-ui-foundations-implementation-plan.md) · [audit](mobile-audit.md)                                |
+| 7b  | Design system                                                 | ✅ Complete                                                                                                               | —                                   | [spec](specs/2026-08-24-design-system-design.md) · [plan](archive/plans/2026-08-24-design-system-implementation-plan.md) · [audit](design-system-audit.md)                           |
+| 7c  | [Screen-by-screen rebuild](#7c--screen-by-screen-rebuild)     | 🔄 Active — spec, design canvas and plan are the next step                                                                | [CLOUD] **[MANUAL]**                | —                                                                                                                                                                                    |
+| 7d  | [Craft](#7d--craft)                                           | 🔄 Active — specced together with 7c, built after it                                                                      | [CLOUD] **[MANUAL]**                | —                                                                                                                                                                                    |
+| 8   | [Email notifications](#8--email-notifications)                | 🔄 Built, in [PR #25](https://github.com/NoahJohn1/SimulatedBetting/pull/25); inert until a provider key is set           | **[NOAH]** [LOCAL] [MANUAL]         | [spec](specs/2026-09-03-email-notifications-design.md) · [plan](plans/2026-09-03-email-notifications-implementation-plan.md)                                                         |
+| 9   | [Hardening](#9--hardening)                                    | 🔄 Built, in [PR #25](https://github.com/NoahJohn1/SimulatedBetting/pull/25) — the smoke checklist awaits a [MANUAL] pass | **[MANUAL]**                        | [spec](specs/2026-09-03-hardening-design.md) · [plan](plans/2026-09-03-hardening-implementation-plan.md)                                                                             |
 
 ---
 
@@ -64,6 +64,20 @@ Full detail — the payload spike, the live-feed run, the persistence test, a sa
 set, the existing `*/15` cron starts pulling real data on its own schedule — no separate backfill
 step, unless a season needs seeding mid-week. Reconciling what lands only needs the production
 database, so that part is `[LOCAL]`, not `[NOAH]`.
+
+**The adapter needs no account, key or secret.** It reads `site.api.espn.com`'s public JSON with
+no `Authorization` header — `ODDS_PROVIDER` is the only switch, and `.env.local` is as good a
+place to set it as Vercel. So a real slate can be pulled into a local database and looked at
+without the production cutover, without Noah, and without touching production:
+
+```bash
+ODDS_PROVIDER=espn                                   # in .env.local
+curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/cron/sync-odds
+```
+
+That is the intended way to evaluate the UI against real content rather than fixtures, which is
+what [7c](#7c--screen-by-screen-rebuild) needs before it designs anything. It proves nothing
+about production — the cutover row above is still the cutover row.
 
 **The honest risk.** Undocumented endpoint, no SLA, can change shape without notice. Mitigated by
 the defensive parsing and kill switch above, both already built.
@@ -128,6 +142,17 @@ actually feel them:
 
 Games and the bet slip → Feed → Standings → Bets and Wagers → Events → Me → Admin.
 
+**Status: active, and the next thing to be specced.** 7c and 7d are being taken together — one
+spec, one design canvas, one plan, built in 7c-then-7d order — because 7d's inherited items are
+mostly craft applied to the same screens 7c rebuilds, and specifying them apart would design the
+same screens twice. New decisions start at **D74**.
+
+**Design against real content first.** The inherited backlog below is largely a list of things
+that only show up under real data — odds-board density at 375px, a 60-game CFB Saturday, a
+desktop layout that has never existed. Pull a real ESPN slate into a local database before
+designing anything; [phase 5](#5--real-data-the-espn-adapter) explains how, and it needs nothing
+from Vercel.
+
 #### What 7c inherits
 
 Deferred here by an earlier rung. This is a backlog, not a wish list — each line has a phase
@@ -158,6 +183,10 @@ than at the end — see the consequence noted on
 
 ### 7d — Craft
 
+**Specced with [7c](#7c--screen-by-screen-rebuild), built after it.** The rungs stay separate —
+the app is shippable at the end of 7c, which is the whole point of the ladder — but they share
+one spec and one plan.
+
 - Motion and transitions; skeleton loaders in place of spinners
 - Accessibility: keyboard paths, focus management, contrast, screen reader labels
 - Error and empty-state copy that reads like a person wrote it
@@ -184,26 +213,33 @@ expiring offer, a dispute needing a ruling, account approval — plus digests fo
 the weekly allowance. Per-type toggles and a global off
 ([D50](decisions.md#d50--notifications-are-opt-out-email-with-per-type-switches)).
 
-**Status: designed, not built.**
+**Status: Tasks 1–14 built, merged together with phase 9, and awaiting review in [PR #25](https://github.com/NoahJohn1/SimulatedBetting/pull/25).** Nothing reaches an inbox until the
+provider signup below happens — the transport is inert without an API key by design
+([D68](decisions.md#d68--the-email-transport-is-inert-without-an-api-key)), not broken.
 [Spec](specs/2026-09-03-email-notifications-design.md) ·
 [plan](plans/2026-09-03-email-notifications-implementation-plan.md) — 16 tasks, lane-tagged,
 decisions [D63–D68](decisions.md#d63--every-send-is-keyed-but-not-every-send-rides-a-feed-event).
 
-| Task                                                               | Status     | Owner        |
-| ------------------------------------------------------------------ | ---------- | ------------ |
-| Transactional email provider — signup, API key, sending-domain DNS | 🔲 Backlog | **[NOAH]**   |
-| `notification_preferences` table and migration                     | 🔲 Backlog | [CLOUD]      |
-| Per-type toggles plus a global off                                 | 🔲 Backlog | [CLOUD]      |
-| One-click unsubscribe, no sign-in required                         | 🔲 Backlog | [CLOUD]      |
-| Dev mode that logs instead of sending                              | 🔲 Backlog | [CLOUD]      |
-| Idempotency-keyed sends from the `feed_events` emit points         | 🔲 Backlog | [CLOUD]      |
-| Apply the notification migration to production                     | 🔲 Backlog | **[LOCAL]**  |
-| Confirm a real email renders correctly in an inbox                 | 🔲 Backlog | **[MANUAL]** |
+| Task                                                               | Status      | Owner        |
+| ------------------------------------------------------------------ | ----------- | ------------ |
+| Transactional email provider — signup, API key, sending-domain DNS | 🔲 Backlog  | **[NOAH]**   |
+| `notification_preferences` table and migration                     | ✅ Complete | [CLOUD]      |
+| Per-type toggles plus a global off                                 | ✅ Complete | [CLOUD]      |
+| One-click unsubscribe, no sign-in required                         | ✅ Complete | [CLOUD]      |
+| Dev mode that logs instead of sending                              | ✅ Complete | [CLOUD]      |
+| Idempotency-keyed sends from the `feed_events` emit points         | ✅ Complete | [CLOUD]      |
+| Apply the notification migration to production                     | 🔲 Backlog  | **[LOCAL]**  |
+| Confirm a real email renders correctly in an inbox                 | 🔲 Backlog  | **[MANUAL]** |
 
-**What's left.** Every `[CLOUD]` row is unblocked and ready for a session to execute — none of it
-waits on the `[NOAH]` provider signup, since the transport is inert without an API key
-([D68](decisions.md#d68--the-email-transport-is-inert-without-an-api-key)). The signup is only
-needed for delivery to actually reach an inbox.
+**What's left.** Three rows, none of them `[CLOUD]`: the provider signup, the migration against
+production, and one look at a real message in a real inbox. Until the first of those, every send
+is written to the outbox and logged rather than transmitted, which is the designed dev-mode
+behaviour and what `/admin/health` reports as the live transport.
+
+**Known, recorded, not fixed.** The integration review found that `deliverPending` has no claim
+step, so two overlapping flushes can send the same row twice — see
+[repo-health 5.1](repo-health.md#51-notification-delivery-has-no-claim-step). It wants a schema
+change and belongs to a session of its own, not to a merge.
 
 ---
 
@@ -213,25 +249,30 @@ needed for delivery to actually reach an inbox.
 page, and the new-member path — `/pending`, `/join`, `/no-season`, `/disabled` — treated as one
 sequence.
 
-**Status: designed, not built — except load sanity, done directly against a real database.**
+**Status: Tasks 1–10 built, merged together with phase 8, and awaiting review in [PR #25](https://github.com/NoahJohn1/SimulatedBetting/pull/25).**
 [Spec](specs/2026-09-03-hardening-design.md) ·
 [plan](plans/2026-09-03-hardening-implementation-plan.md) — 11 tasks, decisions
 [D69–D73](decisions.md#d69--rate-limiting-is-a-postgres-fixed-window-counter-enforced-at-the-action-boundary).
 Load sanity's results are written up in [repo-health.md 3.7](repo-health.md#37-postgres-without-docker-in-a-cloud-session)
 and [docs/README.md](README.md), not repeated here.
 
-| Task                                                                               | Status      | Owner                                       |
-| ---------------------------------------------------------------------------------- | ----------- | ------------------------------------------- |
-| A written smoke checklist                                                          | 🔲 Backlog  | [CLOUD] to draft · **[MANUAL]** to validate |
-| Rate limiting on mutations                                                         | 🔲 Backlog  | [CLOUD]                                     |
-| Load sanity — a full CFB Saturday and a season of feed events                      | ✅ Complete | —                                           |
-| A house rules page                                                                 | 🔲 Backlog  | [CLOUD]                                     |
-| The new-member path — `/pending`, `/join`, `/no-season`, `/disabled` as a sequence | 🔲 Backlog  | [CLOUD]                                     |
+| Task                                                                               | Status                                | Owner                                       |
+| ---------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------- |
+| [A written smoke checklist](smoke-checklist.md)                                    | 🔄 Drafted — awaiting a [MANUAL] pass | [CLOUD] to draft · **[MANUAL]** to validate |
+| Rate limiting on mutations                                                         | ✅ Complete                           | —                                           |
+| Load sanity — a full CFB Saturday and a season of feed events                      | ✅ Complete                           | —                                           |
+| A house rules page                                                                 | ✅ Complete                           | —                                           |
+| The new-member path — `/pending`, `/join`, `/no-season`, `/disabled` as a sequence | ✅ Complete                           | —                                           |
+| Apply the `rate_limits` migration to production                                    | 🔲 Backlog                            | **[LOCAL]**                                 |
 
-**What's left.** All four remaining rows are `[CLOUD]` work, ready to execute — see the plan for
-task order. The smoke checklist ships as an unvalidated draft; the `[MANUAL]` pass corrects it
-rather than writing it from scratch
+**What's left.** Two rows, neither `[CLOUD]`: the migration against production, and the
+[MANUAL] pass over the checklist. The checklist ships as an unvalidated draft on purpose; the
+pass corrects it rather than writing it from scratch
 ([D73](decisions.md#d73--the-smoke-checklist-ships-unvalidated-with-a-run-log)).
+
+The limiter is live in code the moment the migration lands. Before that, `consume` fails open
+against a missing table ([D70](decisions.md#d70--the-rate-limiter-fails-open-and-counts-attempts-not-successes)),
+so the app works and simply does not limit — which is the pre-phase-9 behaviour, not a new failure.
 
 ---
 

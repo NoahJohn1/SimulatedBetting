@@ -6,6 +6,16 @@ import { requireApprovedMemberOrThrow } from '@/server/auth/session';
 import { addComment, deleteComment, FeedError, toggleReaction } from '@/server/feed/social';
 import { getSeasonFeed, type FeedCard } from '@/server/feed/query';
 import { setMutedTypes } from '@/server/feed/preferences';
+import { consume } from '@/server/limits/consume';
+
+/**
+ * The feed actions have always returned a bare error *code* rather than a typed union. Keeping
+ * `retryAfterSeconds` optional on one shared shape is what lets every existing
+ * `return { error: err.code }` path stay exactly as it is while a caller can still read the
+ * countdown — a second, separate `{ error; retryAfterSeconds }` union member would not narrow
+ * under `'error' in result`, and `feed-list.tsx` needs it to.
+ */
+export type FeedActionError = { error: string; retryAfterSeconds?: number };
 
 /**
  * `occurredAt` crosses the action boundary as an ISO string. Dates do survive the boundary,
@@ -51,8 +61,11 @@ export async function loadMoreFeedAction(cursor: {
 export async function toggleReactionAction(
   eventId: string,
   emoji: string,
-): Promise<{ active: boolean } | { error: string }> {
+): Promise<{ active: boolean } | FeedActionError> {
   const member = await requireApprovedMemberOrThrow();
+
+  const limited = await consume(member.userId, 'REACTION');
+  if (limited) return { error: limited.code, retryAfterSeconds: limited.retryAfterSeconds };
 
   try {
     const result = await toggleReaction({
@@ -73,8 +86,11 @@ export async function toggleReactionAction(
 export async function addCommentAction(
   eventId: string,
   body: string,
-): Promise<{ commentId: string } | { error: string }> {
+): Promise<{ commentId: string } | FeedActionError> {
   const member = await requireApprovedMemberOrThrow();
+
+  const limited = await consume(member.userId, 'COMMENT');
+  if (limited) return { error: limited.code, retryAfterSeconds: limited.retryAfterSeconds };
 
   try {
     const result = await addComment({
@@ -95,8 +111,11 @@ export async function addCommentAction(
 export async function deleteCommentAction(
   commentId: string,
   eventId: string,
-): Promise<{ deleted: boolean } | { error: string }> {
+): Promise<{ deleted: boolean } | FeedActionError> {
   const member = await requireApprovedMemberOrThrow();
+
+  const limited = await consume(member.userId, 'COMMENT');
+  if (limited) return { error: limited.code, retryAfterSeconds: limited.retryAfterSeconds };
 
   try {
     const result = await deleteComment({
@@ -121,8 +140,12 @@ export async function deleteCommentAction(
  */
 export async function saveFeedPreferencesAction(
   mutedTypes: FeedEventType[],
-): Promise<{ saved: true }> {
+): Promise<{ saved: true } | FeedActionError> {
   const member = await requireApprovedMemberOrThrow();
+
+  const limited = await consume(member.userId, 'DEFAULT');
+  if (limited) return { error: limited.code, retryAfterSeconds: limited.retryAfterSeconds };
+
   await setMutedTypes(member.userId, mutedTypes);
   revalidatePath('/feed');
   revalidatePath('/me/feed-preferences');

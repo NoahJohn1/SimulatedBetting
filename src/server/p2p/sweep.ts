@@ -1,4 +1,4 @@
-import { and, eq, lt } from 'drizzle-orm';
+import { and, eq, gt, lt, lte } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { customEvents, events, games, markets, p2pWagers, selections } from '@/db/schema';
 import type { MarketType, Side } from '@/domain/grading';
@@ -8,6 +8,8 @@ import { lineToNumber } from '@/domain/line';
 import { isOverdue, verdictForLegStatus } from '@/domain/p2p';
 import { emitFeedEvent } from '@/server/feed/emit';
 import type { P2PDisputedPayload } from '@/server/feed/payload';
+import { enqueueNotification } from '@/server/notify/enqueue';
+import { adminUserIds, userIdForMembership } from '@/server/notify/recipients';
 import { postEntry } from '@/server/money/ledger';
 import { settleWagerInTx } from './settle-wager';
 import { loadSelectionSubject } from './subject';
@@ -17,11 +19,12 @@ export interface SweepP2PSummary {
   expired: number;
   settled: number;
   overdueFlagged: number;
+  expiringFlagged: number;
   errors: { wagerId: string; message: string }[];
 }
 
 /**
- * Three passes over the wager table, run from the `settle` cron route.
+ * Four passes over the wager table, run from the `settle` cron route.
  *
  * It rides an existing schedule rather than getting its own, and keeps no cursor, for the
  * same reason `sweepOverdueEvents` does (D37): one fewer entry to keep in sync and nothing
@@ -31,11 +34,18 @@ export interface SweepP2PSummary {
  * — the resumability `settleFinalGames` needs for the invocation limit (D3), applied here.
  */
 export async function sweepP2PWagers(now: Date = new Date()): Promise<SweepP2PSummary> {
-  const summary: SweepP2PSummary = { expired: 0, settled: 0, overdueFlagged: 0, errors: [] };
+  const summary: SweepP2PSummary = {
+    expired: 0,
+    settled: 0,
+    overdueFlagged: 0,
+    expiringFlagged: 0,
+    errors: [],
+  };
 
   await expirePass(now, summary);
   await settlePass(now, summary);
   await overduePass(now, summary);
+  await expiringPass(now, summary);
 
   return summary;
 }
@@ -213,18 +223,100 @@ async function overduePass(now: Date, summary: SweepP2PSummary): Promise<void> {
         attempt: wager.settlementAttempts + 1,
       };
 
-      const emitted = await db.transaction((tx) =>
-        emitFeedEvent(tx, {
+      const emitted = await db.transaction(async (tx) => {
+        const result = await emitFeedEvent(tx, {
           seasonId: wager.seasonId,
           type: 'P2P_DISPUTED',
           subjectMembershipId: wager.offererMembershipId,
           dedupeKey: `p2p:${wager.id}:overdue:${wager.settlementAttempts + 1}`,
           payload,
           occurredAt: now,
-        }),
-      );
+        });
+
+        // An overdue wager is a dispute nobody filed. The admin queue treats the two
+        // identically, so the notification does too.
+        for (const adminUserId of await adminUserIds(tx)) {
+          await enqueueNotification(tx, {
+            userId: adminUserId,
+            type: 'DISPUTE_NEEDS_RULING',
+            dedupeKey: `p2p:${wager.id}:overdue:${wager.settlementAttempts + 1}:${adminUserId}`,
+            payload: { wagerId: wager.id, subject, kind: 'P2P_OVERDUE' },
+          });
+        }
+
+        return result;
+      });
 
       if (emitted.applied) summary.overdueFlagged += 1;
+    } catch (err) {
+      summary.errors.push({ wagerId: wager.id, message: (err as Error).message });
+    }
+  }
+}
+
+const EXPIRING_WINDOW_MS = 24 * 3_600_000;
+
+/**
+ * Pass 4: offers about to lapse.
+ *
+ * One of the two notifications with no feed event to ride (D63). `expirePass` writes no card on
+ * purpose — an ignored offer is a non-event to the season — but it is very much an event to the
+ * two people involved, which is the reason this phase exists at all.
+ *
+ * Both parties are warned. Read literally it is the offerer's offer and the offerer's escrowed
+ * credits about to come back; but the person who can PREVENT the expiry is the opponent.
+ *
+ * There is no fixed lead time to rely on: an offer written with a two-hour window is inside this
+ * query the moment it is created, and gets its warning on the first sweep rather than a day
+ * ahead. The dedupe key makes that happen once, not once per sweep.
+ */
+async function expiringPass(now: Date, summary: SweepP2PSummary): Promise<void> {
+  const soon = new Date(now.getTime() + EXPIRING_WINDOW_MS);
+
+  const closing = await db
+    .select()
+    .from(p2pWagers)
+    .where(
+      and(
+        eq(p2pWagers.status, 'OFFERED'),
+        gt(p2pWagers.expiresAt, now),
+        lte(p2pWagers.expiresAt, soon),
+      ),
+    );
+
+  for (const wager of closing) {
+    try {
+      const subject =
+        wager.kind === 'FREEFORM'
+          ? (wager.description ?? '')
+          : ((await loadSelectionSubject(wager.selectionId!))?.subject ?? '');
+
+      let flagged = 0;
+      await db.transaction(async (tx) => {
+        const memberships = [wager.offererMembershipId, wager.opponentMembershipId].filter(
+          (id): id is string => id !== null,
+        );
+
+        for (const membershipId of memberships) {
+          const userId = await userIdForMembership(tx, membershipId);
+          if (!userId) continue;
+
+          const { applied } = await enqueueNotification(tx, {
+            userId,
+            type: 'OFFER_EXPIRING',
+            dedupeKey: `p2p:${wager.id}:expiring:${userId}`,
+            payload: {
+              wagerId: wager.id,
+              subject,
+              expiresAt: wager.expiresAt.toISOString(),
+            },
+          });
+          if (applied) flagged += 1;
+        }
+      });
+      // Counted only once the transaction that queued the rows has committed — incrementing
+      // inside it reported warnings that a later throw had rolled back.
+      summary.expiringFlagged += flagged;
     } catch (err) {
       summary.errors.push({ wagerId: wager.id, message: (err as Error).message });
     }

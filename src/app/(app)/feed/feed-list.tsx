@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { REACTION_EMOJI } from '@/server/feed/reaction-emoji';
+import { Callout } from '@/components/ui/callout';
 import { FeedCardView } from './feed-card';
 import { loadMoreFeedAction, toggleReactionAction, type SerializedFeedPage } from './actions';
 
@@ -42,6 +43,7 @@ export function FeedList({ initial }: { initial: SerializedFeedPage }) {
   const [cards, setCards] = useState(initial.cards);
   const [cursor, setCursor] = useState(initial.nextCursor);
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   function loadMore() {
     if (!cursor) return;
@@ -53,6 +55,9 @@ export function FeedList({ initial }: { initial: SerializedFeedPage }) {
   }
 
   function toggle(eventId: string, emoji: string) {
+    const previous = cards;
+    setError(null);
+
     // Optimistic: the reaction row is the one place in the app where a round trip would be
     // felt, and the worst case is a count that corrects itself on the next render.
     setCards((current) =>
@@ -75,12 +80,30 @@ export function FeedList({ initial }: { initial: SerializedFeedPage }) {
     );
 
     startTransition(async () => {
-      await toggleReactionAction(eventId, emoji);
+      const result = await toggleReactionAction(eventId, emoji);
+      // The handler previously discarded this result, which meant any refusal — a rate limit,
+      // a wrong season, a deleted event — left the optimistic update standing as a lie until
+      // something else refreshed the feed. Rate limiting is the first of those that happens in
+      // normal use, so the rollback lands with it.
+      if (result && 'error' in result) {
+        setCards(previous);
+        setError(
+          result.error === 'RATE_LIMITED'
+            ? `You're reacting too quickly. Try again in ${result.retryAfterSeconds} seconds.`
+            : 'That reaction did not stick.',
+        );
+      }
     });
   }
 
   return (
     <div className="flex flex-col gap-2 px-4 py-4">
+      {error ? (
+        <Callout tone="caution" className="mx-4">
+          {error}
+        </Callout>
+      ) : null}
+
       {cards.map((card) => (
         <FeedCardView
           key={card.id}

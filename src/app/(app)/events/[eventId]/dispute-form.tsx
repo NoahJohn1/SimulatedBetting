@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import type { DisputeError } from '@/server/events/dispute';
+import type { RateLimited } from '@/server/limits/types';
 import { disputeEventAction } from '../actions';
 
 // Mirrors `MAX_DISPUTE_REASON_LENGTH` in `@/server/events/dispute` — kept as a local literal
@@ -17,8 +18,10 @@ export interface DisputeFormProps {
   existingReason: string | null;
 }
 
-function errorMessage(error: DisputeError): string {
+function errorMessage(error: DisputeError | RateLimited): string {
   switch (error.code) {
+    case 'RATE_LIMITED':
+      return `You're doing that too quickly. Try again in ${error.retryAfterSeconds} seconds.`;
     case 'REASON_REQUIRED':
       return `Give a reason, up to ${MAX_DISPUTE_REASON_LENGTH} characters.`;
     case 'NOT_RESOLVED':
@@ -33,7 +36,7 @@ function errorMessage(error: DisputeError): string {
 export function DisputeForm({ eventId, alreadyDisputed, existingReason }: DisputeFormProps) {
   const [pending, startTransition] = useTransition();
   const [reason, setReason] = useState('');
-  const [error, setError] = useState<DisputeError | null>(null);
+  const [error, setError] = useState<DisputeError | RateLimited | null>(null);
   // Local state, not a re-fetch: once submitted (or already on the page load), the reason
   // replaces the form rather than the form staying up alongside it.
   const [submittedReason, setSubmittedReason] = useState<string | null>(

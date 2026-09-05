@@ -20,6 +20,7 @@ import type { LegStatus, MarketType, Side } from '@/domain/grading';
 import { gradeCustomLeg } from '@/domain/custom-grading';
 import { lineToNumber } from '@/domain/line';
 import { isBigWin, isParlayHit, multipleBasisPoints, survivingLegCount } from '@/domain/milestones';
+import { describeBet } from '@/server/feed/describe-leg';
 import { emitFeedEvent } from '@/server/feed/emit';
 import { buildCustomLegSnapshot, buildLegSnapshot } from '@/server/feed/snapshot';
 import type {
@@ -30,6 +31,8 @@ import type {
   ParlayHitPayload,
 } from '@/server/feed/payload';
 import { postEntry } from '@/server/money/ledger';
+import { enqueueNotification } from '@/server/notify/enqueue';
+import { userIdForMembership } from '@/server/notify/recipients';
 
 const homeTeams = alias(teams, 'resettle_home_teams');
 const awayTeams = alias(teams, 'resettle_away_teams');
@@ -316,6 +319,22 @@ export async function resettleBetInTx(tx: Tx, input: ResettleBetInput): Promise<
       payload: settledPayload,
       occurredAt: settledAt,
     });
+
+    const settledUserId = await userIdForMembership(tx, bet.membershipId);
+    if (settledUserId) {
+      await enqueueNotification(tx, {
+        userId: settledUserId,
+        type: 'BETS_SETTLED',
+        dedupeKey: `bet:${bet.id}:settled:${attempt}:${settledUserId}`,
+        payload: {
+          betId: bet.id,
+          outcome: newStatus,
+          netCents: (paidCents - bet.stakeCents).toString(),
+          subject: describeBet(snapshots),
+          correction: true,
+        },
+      });
+    }
 
     if (newStatus === 'WON' && isBigWin(bet.stakeCents, paidCents)) {
       const bigWin: BigWinPayload = {

@@ -29,6 +29,7 @@ export function CommentThread({
     COMMENT_EMPTY: 'Say something first.',
     COMMENT_TOO_LONG: `Keep it under ${MAX_COMMENT_LENGTH} characters.`,
     NOT_ALLOWED: 'Not your comment.',
+    RATE_LIMITED: 'You are commenting too quickly. Give it a few seconds.',
   };
 
   function submit() {

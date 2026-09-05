@@ -4,6 +4,9 @@ import { p2pWagers, seasonMemberships } from '@/db/schema';
 import { agreedVerdict } from '@/domain/p2p';
 import { emitFeedEvent } from '@/server/feed/emit';
 import type { P2PDisputedPayload } from '@/server/feed/payload';
+import { flushSoon } from '@/server/notify/deliver';
+import { enqueueNotification } from '@/server/notify/enqueue';
+import { adminUserIds } from '@/server/notify/recipients';
 import { settleWagerInTx } from './settle-wager';
 import { loadSelectionSubject } from './subject';
 import type {
@@ -31,7 +34,7 @@ import type {
 export async function claimWinner(input: ClaimWinnerInput): Promise<ClaimWinnerResult> {
   const now = input.now ?? new Date();
 
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const [wager] = await tx
       .select()
       .from(p2pWagers)
@@ -112,6 +115,18 @@ export async function claimWinner(input: ClaimWinnerInput): Promise<ClaimWinnerR
         occurredAt: now,
       });
 
+      // Every admin, because any of them can rule and none of them knows they are needed.
+      // Keyed on the attempt, so a dispute after an admin correction announces itself again
+      // rather than being swallowed — the same reason the feed key is.
+      for (const adminUserId of await adminUserIds(tx)) {
+        await enqueueNotification(tx, {
+          userId: adminUserId,
+          type: 'DISPUTE_NEEDS_RULING',
+          dedupeKey: `p2p:${wager.id}:disputed:${wager.settlementAttempts + 1}:${adminUserId}`,
+          payload: { wagerId: wager.id, subject, kind: 'P2P' },
+        });
+      }
+
       return {
         ok: true as const,
         outcome: 'DISPUTED' as const,
@@ -127,6 +142,9 @@ export async function claimWinner(input: ClaimWinnerInput): Promise<ClaimWinnerR
       paidCents: 0n,
     };
   });
+
+  if (result.ok && result.outcome === 'DISPUTED') flushSoon();
+  return result;
 }
 
 /**

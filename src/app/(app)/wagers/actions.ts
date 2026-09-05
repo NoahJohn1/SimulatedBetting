@@ -6,6 +6,8 @@ import { acceptWager } from '@/server/p2p/accept';
 import { claimWinner, proposeCancel } from '@/server/p2p/claim';
 import { cancelOffer, declineWager, offerWager } from '@/server/p2p/offer';
 import type { P2PVerdict, P2PWagerKind } from '@/server/p2p/types';
+import { consume } from '@/server/limits/consume';
+import type { RateLimited } from '@/server/limits/types';
 
 /**
  * Every action re-authorizes server-side. The board computes what a viewer may do, but that
@@ -25,6 +27,11 @@ export async function offerWagerAction(input: {
   resolvesBy: string;
 }) {
   const member = await requireApprovedMemberOrThrow();
+
+  // Before offerWager, which escrows the offerer's stake at offer time (D46) — a spent token
+  // with no escrow is possible and an escrow with no token is not, the safe direction.
+  const limited = await consume(member.userId, 'P2P_OFFER');
+  if (limited) return { ok: false as const, error: limited satisfies RateLimited };
 
   const result = await offerWager({
     actorUserId: member.userId,
@@ -48,6 +55,10 @@ export async function offerWagerAction(input: {
 
 export async function acceptWagerAction(wagerId: string) {
   const member = await requireApprovedMemberOrThrow();
+
+  const limited = await consume(member.userId, 'P2P_RESPOND');
+  if (limited) return { ok: false as const, error: limited satisfies RateLimited };
+
   const result = await acceptWager({ wagerId, actorUserId: member.userId });
 
   revalidatePath('/wagers');
@@ -59,6 +70,10 @@ export async function acceptWagerAction(wagerId: string) {
 
 export async function declineWagerAction(wagerId: string) {
   const member = await requireApprovedMemberOrThrow();
+
+  const limited = await consume(member.userId, 'P2P_RESPOND');
+  if (limited) return { ok: false as const, error: limited satisfies RateLimited };
+
   const result = await declineWager({ wagerId, actorUserId: member.userId });
 
   revalidatePath('/wagers');
@@ -69,6 +84,10 @@ export async function declineWagerAction(wagerId: string) {
 
 export async function cancelOfferAction(wagerId: string) {
   const member = await requireApprovedMemberOrThrow();
+
+  const limited = await consume(member.userId, 'P2P_RESPOND');
+  if (limited) return { ok: false as const, error: limited satisfies RateLimited };
+
   const result = await cancelOffer({ wagerId, actorUserId: member.userId });
 
   revalidatePath('/wagers');
@@ -79,6 +98,10 @@ export async function cancelOfferAction(wagerId: string) {
 
 export async function claimWinnerAction(wagerId: string, verdict: P2PVerdict) {
   const member = await requireApprovedMemberOrThrow();
+
+  const limited = await consume(member.userId, 'P2P_RESPOND');
+  if (limited) return { ok: false as const, error: limited satisfies RateLimited };
+
   const result = await claimWinner({ wagerId, actorUserId: member.userId, verdict });
 
   revalidatePath('/wagers');
@@ -92,6 +115,10 @@ export async function claimWinnerAction(wagerId: string, verdict: P2PVerdict) {
 
 export async function proposeCancelAction(wagerId: string) {
   const member = await requireApprovedMemberOrThrow();
+
+  const limited = await consume(member.userId, 'P2P_RESPOND');
+  if (limited) return { ok: false as const, error: limited satisfies RateLimited };
+
   const result = await proposeCancel({ wagerId, actorUserId: member.userId });
 
   revalidatePath('/wagers');

@@ -305,6 +305,8 @@ function manageMessage(code: string): string {
       return 'This event is closed, so its markets can no longer change.';
     case 'INVALID_PRICE':
       return 'Price must be -100 or lower, or 100 or higher.';
+    case 'RATE_LIMITED':
+      return 'You are doing that too quickly. Give it a few seconds.';
     default:
       return 'That change could not be saved.';
   }
