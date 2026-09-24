@@ -62,8 +62,11 @@ describe('EspnOddsProvider', () => {
 
     expect(games).toHaveLength(1);
     expect(games[0].externalId).toBe('1');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0][0] as string).toContain('/nfl/scoreboard');
+    // today + 14 days, one request per day
+    expect(fetchMock).toHaveBeenCalledTimes(15);
+    for (const call of fetchMock.mock.calls) {
+      expect(call[0] as string).toContain('/nfl/scoreboard');
+    }
   });
 
   it('getMarkets fans out to both sports and filters by the wanted external IDs', async () => {
@@ -81,8 +84,8 @@ describe('EspnOddsProvider', () => {
 
     expect(markets.filter((m) => m.gameExternalId === '1')).toHaveLength(1);
     expect(markets.filter((m) => m.gameExternalId === '2')).toHaveLength(1);
-    // 2 calls for getUpcomingGames (NFL, NCAAF) + 2 for getMarkets' fan-out (NFL, NCAAF)
-    expect(fetchMock).toHaveBeenCalledTimes(4);
+    // 15 days × 2 sports for getUpcomingGames + the same again for getMarkets' fan-out
+    expect(fetchMock).toHaveBeenCalledTimes(60);
   });
 
   it('getSkipped accumulates across both getUpcomingGames and getMarkets calls', async () => {
@@ -101,7 +104,8 @@ describe('EspnOddsProvider', () => {
     await provider.getMarkets([]);
 
     const skipped = provider.getSkipped();
-    expect(skipped).toEqual({ games: 2, markets: 0 });
+    // the mock returns the broken event on each of 15 days, for each of 2 sports
+    expect(skipped).toEqual({ games: 30, markets: 0 });
   });
 });
 
@@ -126,11 +130,16 @@ describe('EspnScoreProvider', () => {
     const provider = new EspnScoreProvider();
     await provider.getResults(['1']);
 
-    const url = new URL(fetchMock.mock.calls[0][0] as string);
-    const [from, to] = url.searchParams.get('dates')!.split('-');
-    expect(from < to).toBe(true);
-    // from must be before today: verifies daysBack > 0 was actually applied
+    const nflDates = fetchMock.mock.calls
+      .map((call) => new URL(call[0] as string))
+      .filter((url) => url.pathname.includes('/nfl/'))
+      .map((url) => url.searchParams.get('dates')!)
+      .sort();
+    // 3 days back + today + 1 day forward, one request per day
+    expect(nflDates).toHaveLength(5);
     const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    expect(from < todayStr).toBe(true);
+    // first < today verifies daysBack > 0 was actually applied
+    expect(nflDates[0] < todayStr).toBe(true);
+    expect(nflDates[nflDates.length - 1] > todayStr).toBe(true);
   });
 });
