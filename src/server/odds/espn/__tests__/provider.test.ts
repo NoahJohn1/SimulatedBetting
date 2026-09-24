@@ -62,8 +62,11 @@ describe('EspnOddsProvider', () => {
 
     expect(games).toHaveLength(1);
     expect(games[0].externalId).toBe('1');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0][0] as string).toContain('/nfl/scoreboard');
+    // today + 14 days, one request per day
+    expect(fetchMock).toHaveBeenCalledTimes(15);
+    for (const call of fetchMock.mock.calls) {
+      expect(call[0] as string).toContain('/nfl/scoreboard');
+    }
   });
 
   it('getMarkets fans out to both sports and filters by the wanted external IDs', async () => {
@@ -81,8 +84,29 @@ describe('EspnOddsProvider', () => {
 
     expect(markets.filter((m) => m.gameExternalId === '1')).toHaveLength(1);
     expect(markets.filter((m) => m.gameExternalId === '2')).toHaveLength(1);
-    // 2 calls for getUpcomingGames (NFL, NCAAF) + 2 for getMarkets' fan-out (NFL, NCAAF)
-    expect(fetchMock).toHaveBeenCalledTimes(4);
+    // 15 days × 2 sports, all from getUpcomingGames — getMarkets reuses them
+    expect(fetchMock).toHaveBeenCalledTimes(30);
+  });
+
+  it('getMarkets fetches a sport itself when getUpcomingGames never did', async () => {
+    const fetchMock = vi.fn().mockImplementation(async (url: string) => {
+      if (url.includes('/nfl/scoreboard')) return scoreboardWith([NFL_EVENT]);
+      return scoreboardWith([NCAAF_EVENT]);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const provider = new EspnOddsProvider();
+    await provider.getUpcomingGames('NFL', 14);
+    fetchMock.mockClear();
+
+    const markets = await provider.getMarkets(['1', '2']);
+
+    expect(markets.map((m) => m.gameExternalId).sort()).toEqual(['1', '2']);
+    // NFL reused; only NCAAF's 15 days fetched
+    expect(fetchMock).toHaveBeenCalledTimes(15);
+    for (const call of fetchMock.mock.calls) {
+      expect(call[0] as string).toContain('/college-football/scoreboard');
+    }
   });
 
   it('getSkipped accumulates across both getUpcomingGames and getMarkets calls', async () => {
@@ -101,7 +125,8 @@ describe('EspnOddsProvider', () => {
     await provider.getMarkets([]);
 
     const skipped = provider.getSkipped();
-    expect(skipped).toEqual({ games: 2, markets: 0 });
+    // the mock returns the broken event on each of 15 days, for each of 2 sports
+    expect(skipped).toEqual({ games: 30, markets: 0 });
   });
 });
 
@@ -126,11 +151,49 @@ describe('EspnScoreProvider', () => {
     const provider = new EspnScoreProvider();
     await provider.getResults(['1']);
 
-    const url = new URL(fetchMock.mock.calls[0][0] as string);
-    const [from, to] = url.searchParams.get('dates')!.split('-');
-    expect(from < to).toBe(true);
-    // from must be before today: verifies daysBack > 0 was actually applied
+    const nflDates = fetchMock.mock.calls
+      .map((call) => new URL(call[0] as string))
+      .filter((url) => url.pathname.includes('/nfl/'))
+      .map((url) => url.searchParams.get('dates')!)
+      .sort();
+    // 3 days back + today + 1 day forward, one request per day
+    expect(nflDates).toHaveLength(5);
     const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    expect(from < todayStr).toBe(true);
+    // first < today verifies daysBack > 0 was actually applied
+    expect(nflDates[0] < todayStr).toBe(true);
+    expect(nflDates[nflDates.length - 1] > todayStr).toBe(true);
+  });
+
+  describe('reaching back for games still awaiting a result', () => {
+    const DAY_MS = 86_400_000;
+
+    async function nflRequestCount(awaitingResultSince?: Date): Promise<number> {
+      const fetchMock = vi.fn().mockImplementation(() => scoreboardWith([NFL_EVENT]));
+      vi.stubGlobal('fetch', fetchMock);
+
+      await new EspnScoreProvider().getResults(['1'], { awaitingResultSince });
+
+      return fetchMock.mock.calls.filter((call) => (call[0] as string).includes('/nfl/')).length;
+    }
+
+    it('keeps the default 3-day look-back when nothing is outstanding', async () => {
+      // 3 back + today + 1 forward
+      expect(await nflRequestCount(undefined)).toBe(5);
+    });
+
+    it('keeps the default when the oldest outstanding game is recent', async () => {
+      expect(await nflRequestCount(new Date(Date.now() - DAY_MS))).toBe(5);
+    });
+
+    it('reaches back to the oldest outstanding game, plus a day for the Eastern date', async () => {
+      // 10 days ago → 11 back (the extra day covers a late game filed under the prior ET
+      // date) + today + 1 forward
+      expect(await nflRequestCount(new Date(Date.now() - 10 * DAY_MS))).toBe(13);
+    });
+
+    it('caps the look-back at 30 days', async () => {
+      // 30 back + today + 1 forward
+      expect(await nflRequestCount(new Date(Date.now() - 100 * DAY_MS))).toBe(32);
+    });
   });
 });
