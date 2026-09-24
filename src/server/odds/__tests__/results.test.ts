@@ -1,11 +1,11 @@
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/db/client';
-import { games } from '@/db/schema';
+import { games, type GameStatus } from '@/db/schema';
 import { FixtureOddsProvider, FixtureScoreProvider } from '@/fixtures/providers';
 import { syncResults } from '@/server/odds/results';
 import { syncOdds } from '@/server/odds/sync';
-import type { ProviderResult, ScoreProvider } from '@/server/odds/types';
+import type { GetResultsOptions, ProviderResult, ScoreProvider } from '@/server/odds/types';
 import { resetDb } from '@/test/db';
 
 async function gameByExternalId(externalId: string) {
@@ -80,5 +80,46 @@ describe('syncResults', () => {
   it('defaults gamesSkipped to zero for a provider that does not implement getSkipped', async () => {
     const summary = await syncResults({ provider: new FixtureScoreProvider() });
     expect(summary.gamesSkipped).toBe(0);
+  });
+
+  describe('awaitingResultSince', () => {
+    class RecordingScoreProvider implements ScoreProvider {
+      options: GetResultsOptions | undefined;
+      async getResults(_ids: string[], options?: GetResultsOptions): Promise<ProviderResult[]> {
+        this.options = options;
+        return [];
+      }
+    }
+
+    async function setGame(externalId: string, status: GameStatus, startsAt: Date) {
+      await db.update(games).set({ status, startsAt }).where(eq(games.externalId, externalId));
+    }
+
+    beforeEach(async () => {
+      // A known baseline: every fixture game finished, so only the games each test sets
+      // below can count as awaiting a result.
+      await db.update(games).set({ status: 'FINAL' });
+    });
+
+    it('is the start of the oldest game that has kicked off without a final result', async () => {
+      await setGame('nfl-2026-w1-buf-nyj', 'SCHEDULED', new Date('2020-01-05T18:00:00Z'));
+      await setGame('nfl-2026-w1-gb-chi', 'IN_PROGRESS', new Date('2020-01-01T18:00:00Z'));
+
+      const provider = new RecordingScoreProvider();
+      await syncResults({ provider });
+
+      expect(provider.options?.awaitingResultSince).toEqual(new Date('2020-01-01T18:00:00Z'));
+    });
+
+    it('ignores games that have not started, and postponed or canceled ones', async () => {
+      await setGame('nfl-2026-w1-buf-nyj', 'SCHEDULED', new Date(Date.now() + 86_400_000));
+      await setGame('nfl-2026-w1-kc-den', 'POSTPONED', new Date('2019-01-01T18:00:00Z'));
+      await setGame('ncaaf-2026-w2-mich-osu', 'CANCELED', new Date('2019-01-01T18:00:00Z'));
+
+      const provider = new RecordingScoreProvider();
+      await syncResults({ provider });
+
+      expect(provider.options?.awaitingResultSince).toBeUndefined();
+    });
   });
 });

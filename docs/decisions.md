@@ -1650,3 +1650,35 @@ _What this accepts:_ roughly seven times as many requests per run as before, aga
 endpoint with no SLA. They are small single-day requests, and any failure still fails the whole
 run loudly, as [D49](#d49--espns-public-json-is-the-odds-and-score-source-superseding-d2)
 intended.
+
+---
+
+### D81 — ESPN requests time out, and the results sync reaches back to the oldest unsettled game
+
+_Added 2026-09-24, following up D80._
+
+Two gaps turned up while fixing D80. Both come from the ESPN adapter's original design, and D80
+made the first more likely.
+
+**Timeout.** `fetch` had no timeout, so one hung ESPN request stalled a whole `sync-odds` run
+until the platform killed the function, and `job_runs` never got an error. With D80's 40
+requests per run instead of 6, that became roughly seven times likelier. Each request now aborts
+after 10 seconds and fails like any other request, with the sport and day in the message.
+
+**Look-back.** The results sync looked a fixed 3 days back. When the sync stopped running for
+longer than that, games that started earlier never received a result, so their bets never
+settled. Nothing would ever pick them up again. `syncResults` now passes the start of the
+oldest game that has kicked off and is still `SCHEDULED` or `IN_PROGRESS`, and
+`EspnScoreProvider` reaches back to it, plus one day for ESPN filing late games under their
+US Eastern date. The look-back never drops below the usual 3 days and never exceeds 30.
+Postponed and canceled games don't count: they aren't waiting on a score. While a backlog is
+being cleared, the results pass costs up to 64 requests (32 days × 2 sports) instead of the
+usual 10. Once every started game is final, it drops back to 10.
+
+_Rejected:_ no cap on the look-back. A game ESPN never finalizes, such as a removed event,
+would keep the window wide on every run forever. Past 30 days an admin settles it by hand.
+
+_Rejected:_ fetching only the dates on which outstanding games started, instead of a
+continuous window. It needs fewer requests during a backlog, but it has to work out each
+game's ESPN date from its start time, and it only pays off during an outage. The continuous
+window is the code path every run already uses.

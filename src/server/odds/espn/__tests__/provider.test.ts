@@ -163,4 +163,37 @@ describe('EspnScoreProvider', () => {
     expect(nflDates[0] < todayStr).toBe(true);
     expect(nflDates[nflDates.length - 1] > todayStr).toBe(true);
   });
+
+  describe('reaching back for games still awaiting a result', () => {
+    const DAY_MS = 86_400_000;
+
+    async function nflRequestCount(awaitingResultSince?: Date): Promise<number> {
+      const fetchMock = vi.fn().mockImplementation(() => scoreboardWith([NFL_EVENT]));
+      vi.stubGlobal('fetch', fetchMock);
+
+      await new EspnScoreProvider().getResults(['1'], { awaitingResultSince });
+
+      return fetchMock.mock.calls.filter((call) => (call[0] as string).includes('/nfl/')).length;
+    }
+
+    it('keeps the default 3-day look-back when nothing is outstanding', async () => {
+      // 3 back + today + 1 forward
+      expect(await nflRequestCount(undefined)).toBe(5);
+    });
+
+    it('keeps the default when the oldest outstanding game is recent', async () => {
+      expect(await nflRequestCount(new Date(Date.now() - DAY_MS))).toBe(5);
+    });
+
+    it('reaches back to the oldest outstanding game, plus a day for the Eastern date', async () => {
+      // 10 days ago → 11 back (the extra day covers a late game filed under the prior ET
+      // date) + today + 1 forward
+      expect(await nflRequestCount(new Date(Date.now() - 10 * DAY_MS))).toBe(13);
+    });
+
+    it('caps the look-back at 30 days', async () => {
+      // 30 back + today + 1 forward
+      expect(await nflRequestCount(new Date(Date.now() - 100 * DAY_MS))).toBe(32);
+    });
+  });
 });

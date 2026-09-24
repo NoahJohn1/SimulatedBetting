@@ -66,8 +66,17 @@ export interface OddsProvider {
   getSkipped?(): { games: number; markets: number };
 }
 
+export interface GetResultsOptions {
+  /**
+   * Start time of the oldest game that has kicked off but has no final result yet. A
+   * provider that fetches by date reaches back at least this far, so a sync outage longer
+   * than its usual look-back can't strand games unsettled (D81).
+   */
+  awaitingResultSince?: Date;
+}
+
 export interface ScoreProvider {
-  getResults(gameExternalIds: string[]): Promise<ProviderResult[]>;
+  getResults(gameExternalIds: string[], options?: GetResultsOptions): Promise<ProviderResult[]>;
   /**
    * Games skipped due to malformed provider data since this instance was constructed.
    * Optional — the fixture provider never skips, so it doesn't implement this.

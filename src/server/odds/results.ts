@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { games } from '@/db/schema';
+import { games, type GameStatus } from '@/db/schema';
 import type { ScoreProvider } from './types';
 
 export interface SyncResultsOptions {
@@ -12,6 +12,22 @@ export interface SyncResultsSummary {
   /** Games whose score changed after already being FINAL — these need re-settlement. */
   corrected: string[];
   gamesSkipped: number;
+}
+
+/**
+ * When the oldest game that has kicked off but isn't FINAL started, or undefined if there is
+ * none. Postponed and canceled games are excluded: they aren't waiting on a score, and a
+ * postponement comes back through the odds sync with its new start time.
+ */
+function oldestAwaitingResult(rows: { status: GameStatus; startsAt: Date }[]): Date | undefined {
+  const now = new Date();
+  let oldest: Date | undefined;
+  for (const row of rows) {
+    const awaiting = row.status === 'SCHEDULED' || row.status === 'IN_PROGRESS';
+    if (!awaiting || row.startsAt > now) continue;
+    if (!oldest || row.startsAt < oldest) oldest = row.startsAt;
+  }
+  return oldest;
 }
 
 /**
@@ -30,12 +46,16 @@ export async function syncResults(options: SyncResultsOptions): Promise<SyncResu
       status: games.status,
       homeScore: games.homeScore,
       awayScore: games.awayScore,
+      startsAt: games.startsAt,
     })
     .from(games);
 
   if (existing.length === 0) return { gamesUpdated: 0, corrected: [], gamesSkipped: 0 };
 
-  const reported = await options.provider.getResults(existing.map((g) => g.externalId));
+  const reported = await options.provider.getResults(
+    existing.map((g) => g.externalId),
+    { awaitingResultSince: oldestAwaitingResult(existing) },
+  );
   const byExternalId = new Map(existing.map((g) => [g.externalId, g]));
 
   const summary: SyncResultsSummary = { gamesUpdated: 0, corrected: [], gamesSkipped: 0 };
