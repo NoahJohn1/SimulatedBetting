@@ -6,7 +6,7 @@ import type {
   ProviderResult,
   ScoreProvider,
 } from '../types';
-import { fetchScoreboard } from './fetch-scoreboard';
+import { fetchScoreboard, type FetchScoreboardResult } from './fetch-scoreboard';
 
 const ALL_SPORTS: Sport[] = ['NFL', 'NCAAF'];
 const DEFAULT_WITHIN_DAYS = 14;
@@ -18,17 +18,23 @@ export class EspnOddsProvider implements OddsProvider {
   private lastWithinDays = DEFAULT_WITHIN_DAYS;
   private skippedGames = 0;
   private skippedMarkets = 0;
+  /**
+   * Each sport's window from getUpcomingGames, so getMarkets doesn't fetch the same 15 days
+   * again. The sync-odds route builds a new provider per run, so this never outlives a run.
+   */
+  private windows = new Map<Sport, FetchScoreboardResult>();
 
   async getUpcomingGames(sport: Sport, withinDays: number): Promise<ProviderGame[]> {
     this.lastWithinDays = withinDays;
 
-    const { items, skippedGames } = await fetchScoreboard(sport, {
+    const window = await fetchScoreboard(sport, {
       daysBack: 0,
       daysForward: withinDays,
     });
-    this.skippedGames += skippedGames;
+    this.windows.set(sport, window);
+    this.skippedGames += window.skippedGames;
 
-    return items.map((item) => item.game);
+    return window.items.map((item) => item.game);
   }
 
   async getMarkets(gameExternalIds: string[]): Promise<ProviderMarket[]> {
@@ -36,17 +42,16 @@ export class EspnOddsProvider implements OddsProvider {
     const markets: ProviderMarket[] = [];
 
     for (const sport of ALL_SPORTS) {
+      const window =
+        this.windows.get(sport) ??
+        (await fetchScoreboard(sport, { daysBack: 0, daysForward: this.lastWithinDays }));
       // Only skippedMarkets is accumulated here, deliberately mirroring getUpcomingGames's
-      // opposite omission (it only accumulates skippedGames): this fetch covers the same
-      // window getUpcomingGames already fetched, so re-counting skippedGames here would
+      // opposite omission (it only accumulates skippedGames): this is the same window
+      // getUpcomingGames already fetched, so re-counting skippedGames here would
       // double-count the same malformed events.
-      const { items, skippedMarkets } = await fetchScoreboard(sport, {
-        daysBack: 0,
-        daysForward: this.lastWithinDays,
-      });
-      this.skippedMarkets += skippedMarkets;
+      this.skippedMarkets += window.skippedMarkets;
 
-      for (const item of items) {
+      for (const item of window.items) {
         if (wanted.has(item.game.externalId)) markets.push(...item.markets);
       }
     }

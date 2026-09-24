@@ -84,8 +84,29 @@ describe('EspnOddsProvider', () => {
 
     expect(markets.filter((m) => m.gameExternalId === '1')).toHaveLength(1);
     expect(markets.filter((m) => m.gameExternalId === '2')).toHaveLength(1);
-    // 15 days × 2 sports for getUpcomingGames + the same again for getMarkets' fan-out
-    expect(fetchMock).toHaveBeenCalledTimes(60);
+    // 15 days × 2 sports, all from getUpcomingGames — getMarkets reuses them
+    expect(fetchMock).toHaveBeenCalledTimes(30);
+  });
+
+  it('getMarkets fetches a sport itself when getUpcomingGames never did', async () => {
+    const fetchMock = vi.fn().mockImplementation(async (url: string) => {
+      if (url.includes('/nfl/scoreboard')) return scoreboardWith([NFL_EVENT]);
+      return scoreboardWith([NCAAF_EVENT]);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const provider = new EspnOddsProvider();
+    await provider.getUpcomingGames('NFL', 14);
+    fetchMock.mockClear();
+
+    const markets = await provider.getMarkets(['1', '2']);
+
+    expect(markets.map((m) => m.gameExternalId).sort()).toEqual(['1', '2']);
+    // NFL reused; only NCAAF's 15 days fetched
+    expect(fetchMock).toHaveBeenCalledTimes(15);
+    for (const call of fetchMock.mock.calls) {
+      expect(call[0] as string).toContain('/college-football/scoreboard');
+    }
   });
 
   it('getSkipped accumulates across both getUpcomingGames and getMarkets calls', async () => {
