@@ -43,7 +43,10 @@ Findings below come from real requests made against
   one request with the right query params, not a loop.
 - `?dates=YYYYMMDD-YYYYMMDD` spans multiple weeks in a single call (confirmed: a 2-week range
   returned weeks 3 and 4 together), so `getUpcomingGames(sport, withinDays)` is one request per
-  sport, not a per-week loop.
+  sport, not a per-week loop. _No longer true as of 2026-09-24:_ ESPN now rejects every range
+  with a 400, and the adapter makes one request per day — see
+  [D80](../decisions.md#d80--the-espn-adapter-fetches-one-day-per-request-because-date-ranges-stopped-working)
+  and the [per-day fetch spec](2026-09-24-espn-per-day-fetch-design.md).
 - Not every scheduled game has odds yet (11/16 NFL games did in the spike) — a game with no
   `odds` array is normal, not an error.
 

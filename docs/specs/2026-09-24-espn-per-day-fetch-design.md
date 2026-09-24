@@ -1,7 +1,7 @@
 # ESPN Per-Day Fetch — Design Spec
 
 **Date:** 2026-09-24
-**Status:** Designed, not yet built.
+**Status:** Built — see the [implementation plan](../plans/2026-09-24-espn-per-day-fetch-implementation-plan.md).
 **Scope:** A fix to the ESPN adapter's request layer. Both the odds sync and the results sync.
 **Amends:** [ESPN adapter spec](2026-08-22-espn-adapter-design.md) — its finding that
 `?dates=YYYYMMDD-YYYYMMDD` covers a multi-week window in one request no longer holds.

@@ -1623,3 +1623,30 @@ future rewrites buys nothing.
 
 _What this accepts:_ a second vitest environment and two dev dependencies, the cost D51 twice
 declined — accepted now because the behaviour exists, which was always the condition.
+
+---
+
+### D80 — The ESPN adapter fetches one day per request, because date ranges stopped working
+
+_Added 2026-09-24 while fixing a failing sync-odds run._
+
+ESPN's scoreboard endpoint now answers any `?dates=YYYYMMDD-YYYYMMDD` range with a 400, even a
+two-day one. The [ESPN adapter spec](specs/2026-08-22-espn-adapter-design.md) had confirmed
+that a single range request covered a multi-week window, and `fetchScoreboard` relied on it for
+both the odds and results syncs, so every `sync-odds` run failed before writing anything.
+`fetchScoreboard` now requests each UTC day in the window with `?dates=YYYYMMDD`, at most four
+at once, and merges the days without duplicates. The windows are unchanged: 15 days for odds,
+5 for results. `EspnOddsProvider` reuses its odds window for markets instead of fetching it
+twice, so a run costs about 40 requests.
+
+_Rejected:_ one request per month (`?dates=YYYYMM`), trimmed in code. It loads a month to use
+two weeks, and a busy CFB month is over the `limit=200` cap, so games would drop silently.
+
+_Rejected:_ one request per ESPN week (`?week=N&seasontype=N`). It needs the current week and
+season type from ESPN's calendar first, which is fragile around preseason, bowls, and the
+playoffs, and leans harder on the same undocumented API that just changed.
+
+_What this accepts:_ roughly seven times as many requests per run as before, against an
+endpoint with no SLA. They are small single-day requests, and any failure still fails the whole
+run loudly, as [D49](#d49--espns-public-json-is-the-odds-and-score-source-superseding-d2)
+intended.
