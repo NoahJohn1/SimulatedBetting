@@ -195,4 +195,15 @@ describe('fetchScoreboard', () => {
       /NFL scoreboard request for 20260924 failed: .*timeout/,
     );
   });
+
+  it('keeps the underlying network error in the message, not just "fetch failed"', async () => {
+    const dnsError = new TypeError('fetch failed', {
+      cause: new Error('getaddrinfo ENOTFOUND site.api.espn.com'),
+    });
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(dnsError));
+
+    await expect(fetchScoreboard('NFL', { daysBack: 0, daysForward: 0 })).rejects.toThrow(
+      'ESPN NFL scoreboard request for 20260924 failed: fetch failed (getaddrinfo ENOTFOUND site.api.espn.com)',
+    );
+  });
 });

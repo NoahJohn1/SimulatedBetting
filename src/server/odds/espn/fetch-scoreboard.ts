@@ -74,6 +74,16 @@ async function mapWithLimit<T, R>(
   return results;
 }
 
+/**
+ * Node's fetch reports every network failure as a bare "fetch failed" and puts the real
+ * reason (DNS, refused, reset) on `cause`. `job_runs` stores only the message, so the cause
+ * has to be folded in to be of any use there.
+ */
+function describe(error: unknown): string {
+  if (!(error instanceof Error)) return String(error);
+  return error.cause instanceof Error ? `${error.message} (${error.cause.message})` : error.message;
+}
+
 export interface ParsedGame {
   game: ProviderGame;
   markets: ProviderMarket[];
@@ -100,8 +110,7 @@ async function fetchScoreboardDay(sport: Sport, day: string): Promise<FetchScore
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
   } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    throw new Error(`ESPN ${sport} scoreboard request for ${day} failed: ${reason}`, {
+    throw new Error(`ESPN ${sport} scoreboard request for ${day} failed: ${describe(error)}`, {
       cause: error,
     });
   }
