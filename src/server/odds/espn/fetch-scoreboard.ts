@@ -9,8 +9,13 @@ const SPORT_PATH: Record<Sport, string> = {
 };
 
 const MS_PER_DAY = 86_400_000;
-/** Enough to keep a 15-day window quick without hammering an unofficial endpoint. */
+/** Enough to keep a multi-day window quick without hammering an unofficial endpoint. */
 const MAX_IN_FLIGHT = 4;
+/**
+ * A single-day scoreboard answers in well under a second. Without a cap, one hung request
+ * would stall the whole run until the platform killed it, leaving no error behind (D81).
+ */
+const REQUEST_TIMEOUT_MS = 10_000;
 
 function formatEspnDate(date: Date): string {
   return date.toISOString().slice(0, 10).replace(/-/g, '');
@@ -84,12 +89,22 @@ export interface FetchScoreboardResult {
 /**
  * One scoreboard request for one day. A single malformed event is skipped and counted, not
  * thrown — the rest of the day still comes back. A request-level failure (unreachable,
- * non-200) is NOT caught here; it propagates so the caller's tick fails openly and the next
- * cron run retries (see the plan's Global Constraints for why this is scoped to the whole
- * tick, not per-sport).
+ * timed out, non-200) is NOT swallowed here; it propagates so the caller's tick fails openly
+ * and the next cron run retries (see the ESPN adapter plan's Global Constraints for why this
+ * is scoped to the whole tick, not per-sport).
  */
 async function fetchScoreboardDay(sport: Sport, day: string): Promise<FetchScoreboardResult> {
-  const response = await fetch(buildUrl(sport, day));
+  let response: Response;
+  try {
+    response = await fetch(buildUrl(sport, day), {
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`ESPN ${sport} scoreboard request for ${day} failed: ${reason}`, {
+      cause: error,
+    });
+  }
   if (!response.ok) {
     throw new Error(
       `ESPN ${sport} scoreboard request for ${day} failed: ${response.status} ${response.statusText}`,

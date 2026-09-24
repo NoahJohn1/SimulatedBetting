@@ -175,4 +175,24 @@ describe('fetchScoreboard', () => {
 
     expect(maxInFlight).toBe(4);
   });
+
+  it('gives every request a timeout signal', async () => {
+    const fetchMock = fetchReturning('event-with-odds.json');
+    vi.stubGlobal('fetch', fetchMock);
+
+    await fetchScoreboard('NFL', { daysBack: 0, daysForward: 1 });
+
+    for (const call of fetchMock.mock.calls) {
+      expect((call[1] as RequestInit | undefined)?.signal).toBeInstanceOf(AbortSignal);
+    }
+  });
+
+  it('rejects naming the day when a request never completes', async () => {
+    const timeout = new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(timeout));
+
+    await expect(fetchScoreboard('NFL', { daysBack: 0, daysForward: 0 })).rejects.toThrow(
+      /NFL scoreboard request for 20260924 failed: .*timeout/,
+    );
+  });
 });
